@@ -1,0 +1,525 @@
+{
+  "version": "1.0.0",
+  "description": "Gameplay mechanics and energy/condition systems",
+  "lastUpdated": "2024-01-01",
+
+  "energy": {
+    "initial": 100,
+    "scale": {
+      "min": 0,
+      "max": 100
+    },
+
+    "costs": {
+      "batting": {
+        "ballFaced": 0.8,
+        "runTaken": 1.5,
+        "boundary": 2.0,
+        "six": 2.5,
+        "quickSingle": 2.0,
+        "dive": 3.0
+      },
+      "bowling": {
+        "ballBowled": 1.2,
+        "fastBall": 1.5,
+        "spinner": 1.0,
+        "yorker": 1.8,
+        "bouncer": 2.0,
+        "slower": 0.8
+      },
+      "fielding": {
+        "fieldingAction": 0.5,
+        "wicketKeeping": 0.3,
+        "boundaryFielding": 2.0,
+        "dive": 3.0,
+        "sprint": 2.5,
+        "throw": 1.0,
+        "catch": 1.5
+      },
+      "running": {
+        "single": 1.0,
+        "two": 2.5,
+        "three": 4.0,
+        "overthrow": 1.5
+      }
+    },
+
+    "recovery": {
+      "betweenBalls": 0.1,
+      "betweenOvers": {
+        "batting": 2.0,
+        "bowling": 3.0,
+        "fielding": 1.5
+      },
+      "drinkBreak": 5.0,
+      "inningsBreak": 15.0,
+      "betweenMatches": 100.0,
+      "timeout": 8.0
+    },
+
+    "factors": {
+      "fitness": {
+        "multiplier": -0.5,
+        "minimum": 0.3
+      },
+      "age": {
+        "under25": 0.8,
+        "25to30": 1.0,
+        "30to35": 1.2,
+        "over35": 1.5
+      },
+      "weather": {
+        "hot": 1.3,
+        "humid": 1.4,
+        "cool": 0.9,
+        "cold": 0.8
+      },
+      "pitch": {
+        "hard": 1.1,
+        "soft": 0.9
+      }
+    },
+
+    "impact": {
+      "thresholds": {
+        "excellent": 90,
+        "good": 70,
+        "average": 50,
+        "poor": 30,
+        "critical": 15
+      },
+      "effects": {
+        "excellent": 1.05,
+        "good": 1.0,
+        "average": 0.95,
+        "poor": 0.85,
+        "critical": 0.70
+      }
+    }
+  },
+
+  "confidence": {
+    "initial": 50,
+    "scale": {
+      "min": 0,
+      "max": 100
+    },
+
+    "changes": {
+      "batting": {
+        "positiveEvents": {
+          "single": 0.5,
+          "boundary": 3,
+          "six": 5,
+          "fifty": 8,
+          "hundred": 15,
+          "partnership50": 2,
+          "partnership100": 4,
+          "partnership150": 6,
+          "winningShot": 10
+        },
+        "negativeEvents": {
+          "dot": -0.1,
+          "beaten": -0.5,
+          "edge": -1,
+          "wicket": -8,
+          "duck": -8,
+          "goldenDuck": -12,
+          "singleDigit": -4,
+          "slowInnings": -2
+        }
+      },
+      "bowling": {
+        "positiveEvents": {
+          "dot": 0.2,
+          "beaten": 0.5,
+          "wicket": 4,
+          "maiden": 2,
+          "bowled": 5,
+          "lbw": 4,
+          "caught": 3,
+          "fiveWickets": 12,
+          "hatTrick": 20
+        },
+        "negativeEvents": {
+          "single": -0.1,
+          "boundary": -1,
+          "six": -3,
+          "expensiveOver": -2,
+          "fiftyAgainst": -3,
+          "hundredAgainst": -6
+        }
+      },
+      "fielding": {
+        "positiveEvents": {
+          "catch": 3,
+          "runOut": 4,
+          "directHit": 6,
+          "stumping": 5,
+          "goodStop": 1,
+          "boundarySaved": 2
+        },
+        "negativeEvents": {
+          "drop": -4,
+          "misfield": -2,
+          "missedRunOut": -3,
+          "overthrow": -2,
+          "boundaryGiven": -1
+        }
+      },
+      "team": {
+        "positiveEvents": {
+          "victory": 10,
+          "closeVictory": 12,
+          "comeback": 8,
+          "dominantWin": 6
+        },
+        "negativeEvents": {
+          "defeat": -8,
+          "heavyDefeat": -12,
+          "collapse": -6,
+          "throwAway": -10
+        }
+      }
+    },
+
+    "decay": {
+      "natural": {
+        "perBall": 0.05,
+        "perOver": 0.3,
+        "perMatch": 1.0
+      },
+      "pressure": {
+        "multiplier": 1.5,
+        "minimum": 0.1
+      }
+    },
+
+    "impact": {
+      "performance": {
+        "veryLow": -0.25,
+        "low": -0.15,
+        "average": 0.0,
+        "high": 0.15,
+        "veryHigh": 0.25
+      },
+      "shotSelection": {
+        "low": 1.3,
+        "high": 0.8
+      },
+      "riskTaking": {
+        "low": 0.7,
+        "high": 1.4
+      },
+      "pressure": {
+        "low": 1.4,
+        "high": 0.7
+      }
+    }
+  },
+
+  "morale": {
+    "initial": 50,
+    "scale": {
+      "min": 0,
+      "max": 100
+    },
+
+    "teamEvents": {
+      "positive": {
+        "partnership": 2,
+        "breakthrough": 3,
+        "momentum": 2,
+        "comeback": 5,
+        "victory": 8
+      },
+      "negative": {
+        "collapse": -5,
+        "droppedCatch": -2,
+        "misfield": -1,
+        "defeat": -6
+      }
+    },
+
+    "individualEvents": {
+      "positive": {
+        "goodPerformance": 3,
+        "matchWinning": 8,
+        "milestone": 5
+      },
+      "negative": {
+        "poorPerformance": -3,
+        "costly": -5,
+        "disappointing": -2
+      }
+    },
+
+    "impact": {
+      "team": {
+        "high": 1.1,
+        "low": 0.9
+      },
+      "individual": {
+        "high": 1.05,
+        "low": 0.95
+      }
+    }
+  },
+
+  "form": {
+    "scale": {
+      "min": 0,
+      "max": 100
+    },
+    "initial": 50,
+
+    "calculation": {
+      "recentMatches": 5,
+      "weights": [0.4, 0.25, 0.15, 0.12, 0.08],
+      "decayRate": 0.1
+    },
+
+    "impact": {
+      "performance": {
+        "excellent": 1.15,
+        "good": 1.05,
+        "average": 1.0,
+        "poor": 0.90,
+        "veryPoor": 0.80
+      },
+      "confidence": {
+        "carryOver": 0.3
+      }
+    },
+
+    "thresholds": {
+      "veryPoor": 20,
+      "poor": 40,
+      "average": 60,
+      "good": 80,
+      "excellent": 95
+    }
+  },
+
+  "pressure": {
+    "scale": {
+      "min": 0.0,
+      "max": 1.0
+    },
+
+    "calculation": {
+      "situationalWeight": 0.5,
+      "personalWeight": 0.3,
+      "teamWeight": 0.2
+    },
+
+    "situational": {
+      "chase": {
+        "comfortable": -0.2,
+        "gettable": 0.0,
+        "difficult": 0.3,
+        "nearImpossible": 0.6
+      },
+      "phase": {
+        "powerplay": -0.1,
+        "middle": 0.0,
+        "death": 0.4
+      },
+      "wickets": {
+        "noneDown": -0.1,
+        "fewDown": 0.0,
+        "halfDown": 0.2,
+        "manyDown": 0.4
+      },
+      "over": {
+        "lastBall": 0.3,
+        "lastOver": 0.4,
+        "superOver": 0.8
+      }
+    },
+
+    "personal": {
+      "temperament": {
+        "calm": 0.6,
+        "average": 1.0,
+        "nervous": 1.5
+      },
+      "experience": {
+        "veteran": 0.8,
+        "experienced": 1.0,
+        "newcomer": 1.3
+      }
+    },
+
+    "impact": {
+      "performance": 0.25,
+      "decision": 0.20,
+      "technique": 0.15,
+      "timing": 0.18,
+      "placement": 0.12
+    }
+  },
+
+  "fatigue": {
+    "accumulation": {
+      "ballBased": true,
+      "actionBased": true,
+      "timeBased": false
+    },
+
+    "factors": {
+      "workload": {
+        "batting": {
+          "ballsFaced": 0.1,
+          "runsScored": 0.05
+        },
+        "bowling": {
+          "ballsBowled": 0.15,
+          "overs": 2.0
+        },
+        "fielding": {
+          "actions": 0.3,
+          "overs": 0.5
+        }
+      },
+      "intensity": {
+        "high": 1.5,
+        "medium": 1.0,
+        "low": 0.7
+      }
+    },
+
+    "recovery": {
+      "passive": {
+        "betweenBalls": 0.02,
+        "betweenOvers": 0.5,
+        "betweenInnings": 5.0
+      },
+      "active": {
+        "drinkBreak": 3.0,
+        "timeout": 4.0
+      }
+    },
+
+    "impact": {
+      "cumulative": true,
+      "threshold": {
+        "minor": 25,
+        "moderate": 50,
+        "severe": 75
+      },
+      "effects": {
+        "minor": 0.05,
+        "moderate": 0.15,
+        "severe": 0.30
+      }
+    }
+  },
+
+  "momentum": {
+    "scale": {
+      "min": -1.0,
+      "max": 1.0
+    },
+    "initial": 0.0,
+
+    "triggers": {
+      "positive": {
+        "boundary": 0.1,
+        "wicket": -0.2,
+        "partnership": 0.15,
+        "goodOver": 0.08,
+        "catch": 0.05
+      },
+      "negative": {
+        "wicket": -0.2,
+        "maiden": -0.1,
+        "misfield": -0.05,
+        "drop": -0.15,
+        "badOver": -0.12
+      }
+    },
+
+    "decay": {
+      "perBall": 0.02,
+      "perOver": 0.08,
+      "natural": 0.95
+    },
+
+    "impact": {
+      "team": {
+        "confidence": 0.1,
+        "aggression": 0.15,
+        "pressure": -0.1
+      },
+      "opposition": {
+        "confidence": -0.08,
+        "pressure": 0.08
+      }
+    }
+  },
+
+  "experience": {
+    "factors": {
+      "matches": {
+        "weights": {
+          "international": 1.0,
+          "domestic": 0.6,
+          "league": 0.8
+        }
+      },
+      "performance": {
+        "average": 0.5,
+        "consistency": 0.3,
+        "bigMatch": 0.2
+      }
+    },
+
+    "impact": {
+      "pressure": {
+        "rookie": 1.4,
+        "experienced": 1.0,
+        "veteran": 0.7
+      },
+      "decision": {
+        "rookie": 0.8,
+        "experienced": 1.0,
+        "veteran": 1.2
+      }
+    }
+  },
+
+  "consistency": {
+    "calculation": {
+      "sampleSize": 10,
+      "varianceWeight": 0.7,
+      "averageWeight": 0.3
+    },
+
+    "impact": {
+      "reliable": 0.85,
+      "average": 1.0,
+      "unpredictable": 1.3
+    }
+  },
+
+  "recovery": {
+    "automatic": {
+      "enabled": true,
+      "intervals": ["ball", "over", "innings"]
+    },
+
+    "manual": {
+      "drinkBreak": {
+        "available": 2,
+        "duration": 150,
+        "cooldown": 10
+      },
+      "timeout": {
+        "available": 1,
+        "duration": 150,
+        "cooldown": 0
+      }
+    }
+  }
+}

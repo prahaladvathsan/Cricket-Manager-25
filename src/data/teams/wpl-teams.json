@@ -1,0 +1,182 @@
+[
+  {
+    "id": "t_mumbai",
+    "name": "Mumbai Thunders",
+    "shortName": "MUM",
+    "homeVenue": "v_wankhede",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Mahela Jayawardene",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#004BA0",
+      "secondary": "#D1AB3E"
+    }
+  },
+  {
+    "id": "t_london",
+    "name": "London Lions",
+    "shortName": "LON",
+    "homeVenue": "v_lords",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Andrew Strauss",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#8B0000",
+      "secondary": "#FFD700"
+    }
+  },
+  {
+    "id": "t_melbourne",
+    "name": "Melbourne Meteors",
+    "shortName": "MEL",
+    "homeVenue": "v_mcg",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Justin Langer",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#006A4E",
+      "secondary": "#FFD700"
+    }
+  },
+  {
+    "id": "t_cape_town",
+    "name": "Cape Town Crusaders",
+    "shortName": "CPT",
+    "homeVenue": "v_newlands",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Jacques Kallis",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#007749",
+      "secondary": "#FFB612"
+    }
+  },
+  {
+    "id": "t_karachi",
+    "name": "Karachi Kings",
+    "shortName": "KAR",
+    "homeVenue": "v_national_stadium",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Wasim Akram",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#01411C",
+      "secondary": "#FFFFFF"
+    }
+  },
+  {
+    "id": "t_colombo",
+    "name": "Colombo Cobras",
+    "shortName": "COL",
+    "homeVenue": "v_premadasa",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Kumar Sangakkara",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#FFCE00",
+      "secondary": "#003DA5"
+    }
+  },
+  {
+    "id": "t_dhaka",
+    "name": "Dhaka Dynamites",
+    "shortName": "DHA",
+    "homeVenue": "v_sher_e_bangla",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Chandika Hathurusingha",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#006A4E",
+      "secondary": "#F42A41"
+    }
+  },
+  {
+    "id": "t_kingston",
+    "name": "Kingston Storm",
+    "shortName": "KIN",
+    "homeVenue": "v_sabina_park",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Phil Simmons",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#A7252C",
+      "secondary": "#FFD700"
+    }
+  },
+  {
+    "id": "t_wellington",
+    "name": "Wellington Warriors",
+    "shortName": "WEL",
+    "homeVenue": "v_basin_reserve",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Stephen Fleming",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#000000",
+      "secondary": "#FFFFFF"
+    }
+  },
+  {
+    "id": "t_kabul",
+    "name": "Kabul Eagles",
+    "shortName": "KAB",
+    "homeVenue": "v_ghazi_stadium",
+    "playerIds": [],
+    "captainId": null,
+    "coachName": "Lalchand Rajput",
+    "finances": {
+      "salaryCap": 90,
+      "usedCap": 0,
+      "remainingBudget": 90
+    },
+    "colors": {
+      "primary": "#DA020E",
+      "secondary": "#000000"
+    }
+  }
+]

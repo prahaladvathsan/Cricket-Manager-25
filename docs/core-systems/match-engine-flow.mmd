@@ -1,0 +1,73 @@
+---
+title: Cricket Manager Match Engine Flow
+---
+flowchart TD
+    %% Test Script Layer
+    TEST["detailedMatchTest.js\n- Load 22 players\n- Create teams\n- Initialize stores"] --> ME["MatchEngine\nOrchestrator"]
+
+    %% Store Layer
+    ME --> STORES["Zustand Stores\nplayerStore\nteamStore\nmatchStore"]
+
+    %% Match Engine Flow
+    ME --> INIT["Match Initialization\nsetupOpeningPlayers()\nsetupFieldFormation()"]
+    INIT --> INNINGS["simulateInnings()\nBall-by-ball loop"]
+
+    %% Field Setup (Once per innings)
+    INIT --> FPS["FieldPositioningSystem\n- Load field-positioning-config.json\n- setFormation() random selection\n- Convert 9 fielders to polar coordinates\n- Return fieldingPositions array"]
+
+    %% Ball Simulation Loop
+    INNINGS --> SBS["SimpleBallSimulator\n4-Step Process with Algebraic Physics"]
+
+    %% 4-Step Ball Simulation
+    SBS --> STEP1["Step 1: DecisionCalculator\nIndependent probability checks\nBowler: intelligence/20 + variations/20\nBatsman: judgment/20 + shotSelection/20\n→ decisionResult"]
+
+    STEP1 --> STEP2["Step 2: ContactCalculator\nBase probability matrix\nIndependent execution checks 0-3 each\nContact Quality = battingRaw - bowlingRaw\n→ contactResult -97 to +97"]
+
+    STEP2 --> STEP3["Step 3: TrajectoryCalculator\nShot speed = 50 + contactQuality×1.2 + shotPower×2\nAttribute-driven direction selection\nAlgebraic trajectory calculations\n→ trajectoryResult"]
+
+    STEP3 --> STEP4["Step 4: FieldingCalculator2D\nUse polar coordinate fielders\nAlgebraic interception analysis\nRunningDecisionCalculator for batting\n→ fieldingResult"]
+
+    %% Direction Selection Detail
+    STEP3 --> DIR["Direction Selection Process\n1. Roll 1-range360 for options\n2. Generate n random directions\n3. Angular gap analysis (grounded) or distance separation (aerial)\n4. Placement attribute chooses best vs 2nd best"]
+
+    %% Algebraic Components
+    FPS --> BTP["BallTrajectoryPhysics\nphysics-config.json\nAlgebraic trajectory calculations"]
+    FPS --> FMC["FielderMovementCalculator\nInterception analysis\nAll 9 fielders evaluated"]
+    FMC --> RDC["RunningDecisionCalculator\nrunning-config.json\nJudgment vs fielding time"]
+
+    %% Configuration Files
+    CONFIG1["mentality-config.json"] --> STEP1
+    CONFIG2["fielding-config.json"] --> STEP2
+    CONFIG3["field-positioning-config.json"] --> FPS
+    CONFIG4["physics-config.json"] --> BTP
+    CONFIG5["running-config.json"] --> RDC
+
+    %% Helper Components
+    PE["ProbabilityEngine\nUsed by all calculators"] --> STEP2
+    ES["EventSystem\nSelection managers only"] -.-> BSM["BowlerSelectionManager\nNot used in current flow"]
+    ES -.-> BATSM["BatsmanSelectionManager\nNot used in current flow"]
+
+    %% Result Processing
+    STEP4 --> OUTCOME["determineFinalOutcome()\nCombine trajectory + fielding\nGenerate commentary\n→ Complete BallResult"]
+
+    OUTCOME --> PROCESS["MatchEngine.processBallResult()\nUpdate match state\nCheck innings completion\nHandle wickets, overs, match end"]
+
+    PROCESS --> NEXT{"Next Ball?"}
+    NEXT -->|Yes| SBS
+    NEXT -->|No - Over/Innings/Match End| END["Match Complete\nGenerate statistics\nSave logs to match_logs/"]
+
+    %% Performance Notes
+    PERF["Performance Notes\n• Field formation: once per innings\n• 2D simulation: ~25,000 balls/second\n• Config files: loaded once at startup\n• Fielder analysis: all 9 fielders per ball\n• No artificial delays in instant mode"]
+
+    %% Styling
+    classDef testLayer fill:#e1f5fe
+    classDef engineLayer fill:#f3e5f5
+    classDef calculatorLayer fill:#e8f5e8
+    classDef configLayer fill:#fff3e0
+    classDef componentLayer fill:#fce4ec
+
+    class TEST testLayer
+    class ME,STORES,INIT,INNINGS engineLayer
+    class SBS,STEP1,STEP2,STEP3,STEP4,DIR,OUTCOME,PROCESS calculatorLayer
+    class CONFIG1,CONFIG2,CONFIG3,CONFIG4,CONFIG5 configLayer
+    class FPS,BTP,FMC,RDC,PE,ES,BSM,BATSM componentLayer

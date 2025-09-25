@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "description": "Algebraic trajectory and movement calculations with fixed physics assumptions",
+  "lastUpdated": "2024-01-01",
+
+  "fieldDimensions": {
+    "boundaryRadius": 90,
+    "pitchLength": 22,
+    "strikerOffset": 11,
+    "description": "Circular boundary with striker at 11 yards from center (not origin)"
+  },
+
+  "shotTypes": {
+    "aerial": {
+      "launchAngle": 45,
+      "description": "Fixed 45-degree launch angle for maximum range calculation"
+    },
+    "grounded": {
+      "description": "Direct straight-line trajectory with algebraic deceleration"
+    }
+  },
+
+  "ballMovement": {
+    "gravity": 10,
+    "constantSpeed": true,
+    "description": "Ultra-simplified physics: gravity=10 m/s², constant speed movement, no deceleration"
+  },
+
+  "fielderMovement": {
+    "baseSpeed": 8.0,
+    "description": "Basic fielder movement speed (will use throw_speed attribute when available)"
+  },
+
+  "algebraicCalculations": {
+    "interceptionFormula": {
+      "description": "Direct algebraic interception for grounded shots",
+      "timeStep": 0.1,
+      "maxIterations": 100
+    },
+    "aerialInterception": {
+      "description": "Bounce point analysis for aerial shots",
+      "catchWindow": 0.5,
+      "throwSpeedDefault": 25
+    },
+    "directionSelection": {
+      "description": "Angular gap analysis for optimal shot placement",
+      "minAngularGap": 10,
+      "maxDirectionOptions": 20
+    }
+  },
+
+  "boundaryCache": {
+    "description": "Pre-calculated boundary distances for all 360 degrees from striker position",
+    "enabled": true,
+    "precision": "integer_degrees"
+  }
+}

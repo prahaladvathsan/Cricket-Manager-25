@@ -1,0 +1,98 @@
+{
+  "schema": {
+    "description": "Template for player data structure following the consolidated dev guide",
+    "player": {
+      "id": "string - UUID-based unique identifier (e.g., p_12a3b4c5-d6e7-f8g9-h0i1-j2k3l4m5n6o7)",
+      "name": "string - Display name",
+      "fullName": "string - Full legal name (for name tweaking failsafe)",
+      "age": "number - Current age in years",
+      "nationality": "string - ISO country code (e.g., IND, AUS, ENG)",
+      "role": "string - batsman | bowler | all-rounder | wicket-keeper",
+      "battingHand": "string - right | left",
+      "bowlingHand": "string - right | left | null (for non-bowlers)",
+      "bowlingType": "string - fast | fast-medium | medium | off-break | leg-break | left-arm-orthodox | chinaman | null",
+      "teams": "array - Array of team IDs player has been part of (historical)",
+      "currentTeam": "string - Current team ID or null if unassigned",
+      "attributes": {
+        "batting": {
+          "technique": "number 1-20",
+          "timing": "number 1-20", 
+          "footwork": "number 1-20",
+          "placement": "number 1-20",
+          "range360": "number 1-20",
+          "defensiveShots": "number 1-20",
+          "neutralShots": "number 1-20",
+          "attackingShots": "number 1-20",
+          "vsPace": "number 1-20",
+          "vsSpin": "number 1-20"
+        },
+        "bowling": {
+          "accuracy": "number 1-20",
+          "bowlingSpeed": "number 1-20",
+          "swing": "number 1-20",
+          "turn": "number 1-20",
+          "variations": "number 1-20",
+          "intelligence": "number 1-20",
+          "defensiveBowling": "number 1-20",
+          "neutralBowling": "number 1-20",
+          "attackingBowling": "number 1-20"
+        },
+        "physical": {
+          "strength": "number 1-20",
+          "speed": "number 1-20",
+          "agility": "number 1-20",
+          "maxFitness": "number 1-20",
+          "endurance": "number 1-20",
+          "stamina": "number 1-20"
+        },
+        "fielding": {
+          "catching": "number 1-20",
+          "reflexes": "number 1-20",
+          "groundFielding": "number 1-20",
+          "throwPower": "number 1-20",
+          "throwAccuracy": "number 1-20",
+          "wicketkeeping": {
+            "keeping": "number 1-20 (only for wicket-keepers)",
+            "collecting": "number 1-20 (only for wicket-keepers)",
+            "stumping": "number 1-20 (only for wicket-keepers)"
+          }
+        },
+        "mental": {
+          "concentration": "number 1-20",
+          "temperament": "number 1-20",
+          "aggression": "number 1-20",
+          "judgement": "number 1-20",
+          "leadership": "number 1-20"
+        }
+      },
+      "careerStats": {
+        "matches": "number",
+        "innings": "number",
+        "runs": "number",
+        "wickets": "number",
+        "catches": "number",
+        "stumpings": "number"
+      },
+      "seasonStats": {
+        "matches": "number",
+        "innings": "number",
+        "runs": "number",
+        "wickets": "number",
+        "catches": "number",
+        "stumpings": "number"
+      },
+      "condition": {
+        "form": "number 0-100",
+        "fitness": "number 0-100",
+        "fatigue": "number 0-100",
+        "morale": "number 0-100",
+        "injury": "string - null | minor | moderate | severe"
+      },
+      "contract": {
+        "salary": "number",
+        "duration": "number",
+        "retentionStatus": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "v_wankhede",
+    "name": "Wankhede Stadium",
+    "city": "Mumbai",
+    "country": "India",
+    "capacity": 33108,
+    "characteristics": {
+      "pitchType": "batting-friendly",
+      "boundaries": "short-square",
+      "conditions": "humid"
+    }
+  },
+  {
+    "id": "v_lords",
+    "name": "Lord's Cricket Ground",
+    "city": "London",
+    "country": "England",
+    "capacity": 31100,
+    "characteristics": {
+      "pitchType": "balanced",
+      "boundaries": "traditional",
+      "conditions": "overcast"
+    }
+  },
+  {
+    "id": "v_mcg",
+    "name": "Melbourne Cricket Ground",
+    "city": "Melbourne",
+    "country": "Australia",
+    "capacity": 100024,
+    "characteristics": {
+      "pitchType": "pace-friendly",
+      "boundaries": "large",
+      "conditions": "moderate"
+    }
+  },
+  {
+    "id": "v_newlands",
+    "name": "Newlands Cricket Ground",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "capacity": 25000,
+    "characteristics": {
+      "pitchType": "pace-friendly",
+      "boundaries": "scenic-medium",
+      "conditions": "windy"
+    }
+  },
+  {
+    "id": "v_national_stadium",
+    "name": "National Stadium",
+    "city": "Karachi",
+    "country": "Pakistan",
+    "capacity": 34228,
+    "characteristics": {
+      "pitchType": "spin-friendly",
+      "boundaries": "medium",
+      "conditions": "hot-dry"
+    }
+  },
+  {
+    "id": "v_premadasa",
+    "name": "R. Premadasa Stadium",
+    "city": "Colombo",
+    "country": "Sri Lanka",
+    "capacity": 35000,
+    "characteristics": {
+      "pitchType": "spin-friendly",
+      "boundaries": "short",
+      "conditions": "humid-tropical"
+    }
+  },
+  {
+    "id": "v_sher_e_bangla",
+    "name": "Sher-e-Bangla National Stadium",
+    "city": "Dhaka",
+    "country": "Bangladesh",
+    "capacity": 26000,
+    "characteristics": {
+      "pitchType": "spin-friendly",
+      "boundaries": "medium",
+      "conditions": "hot-humid"
+    }
+  },
+  {
+    "id": "v_sabina_park",
+    "name": "Sabina Park",
+    "city": "Kingston",
+    "country": "Jamaica",
+    "capacity": 21000,
+    "characteristics": {
+      "pitchType": "pace-friendly",
+      "boundaries": "compact",
+      "conditions": "tropical"
+    }
+  },
+  {
+    "id": "v_basin_reserve",
+    "name": "Basin Reserve",
+    "city": "Wellington",
+    "country": "New Zealand",
+    "capacity": 11600,
+    "characteristics": {
+      "pitchType": "seamer-friendly",
+      "boundaries": "traditional",
+      "conditions": "windy-cool"
+    }
+  },
+  {
+    "id": "v_ghazi_stadium",
+    "name": "Ghazi Amanullah Khan International Cricket Stadium",
+    "city": "Kabul",
+    "country": "Afghanistan",
+    "capacity": 14000,
+    "characteristics": {
+      "pitchType": "balanced",
+      "boundaries": "medium",
+      "conditions": "dry-altitude"
+    }
+  }
+]

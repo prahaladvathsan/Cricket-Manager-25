@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply bg-cricket-background text-cricket-text-primary;
+  }
+
+  #root {
+    height: 100%;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-cricket-primary hover:bg-cricket-secondary text-white px-4 py-2 rounded transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-cricket-surface hover:bg-cricket-primary text-cricket-text-primary px-4 py-2 rounded border border-cricket-primary transition-colors;
+  }
+
+  .card {
+    @apply bg-cricket-surface rounded-lg shadow-lg border border-gray-700;
+  }
+
+  .input-field {
+    @apply bg-cricket-surface border border-gray-600 rounded px-3 py-2 text-cricket-text-primary focus:border-cricket-primary focus:outline-none;
+  }
+
+  .nav-link {
+    @apply text-cricket-text-secondary hover:text-cricket-text-primary transition-colors px-3 py-2 rounded;
+  }
+
+  .nav-link.active {
+    @apply text-cricket-text-primary bg-cricket-primary;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #4a5568 #2d3748;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #2d3748;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "version": "1.0.0",
+  "description": "Core simulation configuration for cricket match engine",
+  "lastUpdated": "2024-01-01",
+
+  "match": {
+    "format": {
+      "overs": 20,
+      "maxWickets": 10,
+      "powerplayOvers": 6,
+      "maxBowlerOvers": 4,
+      "fieldRestrictions": {
+        "powerplay": {
+          "outsideCircle": 2,
+          "behindWicket": 2
+        },
+        "normal": {
+          "outsideCircle": 5
+        }
+      }
+    },
+
+    "timing": {
+      "ballDelay": {
+        "instant": 0,
+        "fast": 200,
+        "normal": 1000,
+        "slow": 2000
+      },
+      "overBreak": 3000,
+      "inningsBreak": 600000,
+      "matchDelay": 1000
+    },
+
+    "phases": {
+      "powerplay": {
+        "overs": 6,
+        "fieldRestrictions": true,
+        "aggressionBonus": 0.2
+      },
+      "middle": {
+        "startOver": 7,
+        "endOver": 15,
+        "consolidationPhase": true
+      },
+      "death": {
+        "startOver": 16,
+        "endOver": 20,
+        "maximumAggression": true,
+        "aggressionMultiplier": 1.5
+      }
+    }
+  },
+
+  "players": {
+    "attributes": {
+      "scale": {
+        "min": 1,
+        "max": 20
+      },
+      "weights": {
+        "technique": 0.25,
+        "timing": 0.20,
+        "power": 0.15,
+        "placement": 0.15,
+        "matchupSpecific": 0.25
+      }
+    },
+
+    "condition": {
+      "scale": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": {
+        "energy": 100,
+        "confidence": 50,
+        "fatigue": 0,
+        "morale": 50
+      },
+      "thresholds": {
+        "energy": {
+          "critical": 20,
+          "low": 40,
+          "good": 70,
+          "excellent": 90
+        },
+        "confidence": {
+          "veryLow": 20,
+          "low": 40,
+          "average": 60,
+          "high": 80,
+          "veryHigh": 95
+        },
+        "fatigue": {
+          "fresh": 10,
+          "slight": 30,
+          "moderate": 60,
+          "high": 80,
+          "exhausted": 95
+        }
+      }
+    }
+  },
+
+  "features": {
+    "weather": {
+      "enabled": true,
+      "impact": {
+        "swing": true,
+        "spin": true,
+        "visibility": true,
+        "fatigue": true
+      }
+    },
+
+    "pitch": {
+      "enabled": true,
+      "types": ["green", "dusty", "flat", "hard", "soft"],
+      "impact": {
+        "bounce": true,
+        "turn": true,
+        "pace": true,
+        "wear": true
+      }
+    },
+
+    "fatigue": {
+      "enabled": true,
+      "accumulation": true,
+      "recovery": true,
+      "impact": {
+        "performance": true,
+        "injury": false
+      }
+    },
+
+    "morale": {
+      "enabled": true,
+      "teamMorale": true,
+      "individualMorale": true,
+      "impact": {
+        "confidence": true,
+        "performance": true
+      }
+    },
+
+    "pressure": {
+      "enabled": true,
+      "situational": true,
+      "crowd": false,
+      "impact": {
+        "performance": true,
+        "decision": true
+      }
+    },
+
+    "injuries": {
+      "enabled": false,
+      "duringMatch": false,
+      "chronic": false
+    }
+  },
+
+  "balance": {
+    "expectedScores": {
+      "powerplay": {
+        "min": 35,
+        "average": 50,
+        "max": 70
+      },
+      "firstInnings": {
+        "min": 120,
+        "average": 160,
+        "max": 220
+      },
+      "chaseSuccess": {
+        "easy": 0.85,
+        "moderate": 0.65,
+        "difficult": 0.35,
+        "veryDifficult": 0.15
+      }
+    },
+
+    "boundaries": {
+      "expectedPer20Overs": {
+        "fours": 15,
+        "sixes": 6
+      },
+      "phaseDistribution": {
+        "powerplay": 0.35,
+        "middle": 0.35,
+        "death": 0.30
+      }
+    },
+
+    "wickets": {
+      "expectedPer20Overs": 7,
+      "phaseDistribution": {
+        "powerplay": 0.25,
+        "middle": 0.45,
+        "death": 0.30
+      }
+    }
+  },
+
+  "difficulty": {
+    "easy": {
+      "playerAttributeBonus": 2,
+      "userTeamBonus": 3,
+      "aiMistakeIncrease": 0.3,
+      "chaseTargetReduction": 0.9
+    },
+    "normal": {
+      "playerAttributeBonus": 0,
+      "userTeamBonus": 0,
+      "aiMistakeIncrease": 0,
+      "chaseTargetReduction": 1.0
+    },
+    "hard": {
+      "playerAttributeBonus": -1,
+      "userTeamBonus": -2,
+      "aiMistakeIncrease": -0.2,
+      "chaseTargetReduction": 1.1
+    },
+    "expert": {
+      "playerAttributeBonus": -3,
+      "userTeamBonus": -4,
+      "aiMistakeIncrease": -0.4,
+      "chaseTargetReduction": 1.2
+    }
+  },
+
+  "realism": {
+    "scoreDistribution": {
+      "enableRealistic": true,
+      "avoidExtremes": true,
+      "maintainBalance": true
+    },
+
+    "playerBehavior": {
+      "fatigue": true,
+      "pressure": true,
+      "formVariation": true,
+      "consistency": true
+    },
+
+    "matchFlow": {
+      "naturalProgression": true,
+      "situationalAwareness": true,
+      "tacticalChanges": true
+    }
+  },
+
+  "commentary": {
+    "enabled": true,
+    "verbosity": "normal",
+    "includeAnalysis": true,
+    "includeStats": true,
+    "personalityDriven": false
+  },
+
+  "simulation": {
+    "deterministic": true,
+    "seedable": true,
+    "reproducible": true,
+    "debugging": {
+      "logDecisions": false,
+      "logProbabilities": false,
+      "logCalculations": false
+    }
+  }
+}

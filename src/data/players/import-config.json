@@ -1,0 +1,334 @@
+{
+  "version": "1.0.0",
+  "description": "Configuration for converting raw player statistics to game attributes",
+  "attributeConversions": {
+    "batting": {
+      "technique": {
+        "description": "Fundamental batting skill, foundation for consistency",
+        "formula": "weighted_average([average, strike_rate_consistency, dot_ball_percentage])",
+        "weights": [0.5, 0.3, 0.2],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["average", "consistency_score", "dot_ball_percentage"]
+      },
+      "timing": {
+        "description": "Ability to meet ball at optimal moment",
+        "formula": "strike_rate_efficiency * boundary_timing_score",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["strike_rate", "boundary_percentage", "timing_metrics"]
+      },
+      "footwork": {
+        "description": "Movement to get into position, affects vs spin/pace",
+        "formula": "average(vs_spin_performance, vs_pace_performance, strike_rotation)",
+        "weights": [0.4, 0.4, 0.2],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["vs_spin_avg", "vs_pace_avg", "single_percentage"]
+      },
+      "placement": {
+        "description": "Ability to find gaps in field",
+        "formula": "boundary_efficiency * gap_finding_score",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["boundary_percentage", "dot_ball_percentage", "field_placement_analysis"]
+      },
+      "range360": {
+        "description": "Ability to score all around wicket",
+        "formula": "scoring_zones_coverage * shot_variety",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["scoring_areas", "shot_types", "boundary_distribution"]
+      },
+      "defensiveShots": {
+        "description": "Proficiency in defensive strokes",
+        "formula": "dot_ball_control * defensive_stability",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["dot_ball_percentage", "defensive_shot_success", "stability_metrics"]
+      },
+      "neutralShots": {
+        "description": "Proficiency in rotating strike, singles",
+        "formula": "single_percentage * strike_rotation_efficiency",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["single_percentage", "strike_rotation", "running_between_wickets"]
+      },
+      "attackingShots": {
+        "description": "Proficiency in boundary-hitting shots",
+        "formula": "boundary_percentage * power_hitting_score",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["boundary_percentage", "six_percentage", "power_play_performance"]
+      },
+      "vsPace": {
+        "description": "Effectiveness against fast bowling",
+        "formula": "vs_pace_average * vs_pace_strike_rate_efficiency",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["vs_pace_avg", "vs_pace_sr", "vs_pace_consistency"]
+      },
+      "vsSpin": {
+        "description": "Effectiveness against spin bowling",
+        "formula": "vs_spin_average * vs_spin_strike_rate_efficiency",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["vs_spin_avg", "vs_spin_sr", "vs_spin_consistency"]
+      }
+    },
+    "bowling": {
+      "accuracy": {
+        "description": "Line and length consistency",
+        "formula": "economy_rate_consistency * wide_percentage_inverse",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["economy_rate", "wide_percentage", "no_ball_percentage"]
+      },
+      "bowlingSpeed": {
+        "description": "Pace of delivery (for all bowler types)",
+        "formula": "speed_metrics * pace_effectiveness",
+        "weights": [0.5, 0.5],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["avg_speed", "speed_variation", "pace_effectiveness"]
+      },
+      "swing": {
+        "description": "Ability to move ball through air",
+        "formula": "swing_effectiveness * wicket_percentage_swing",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["swing_delivery_success", "wickets_via_swing", "movement_metrics"]
+      },
+      "turn": {
+        "description": "Seam/spin deviation off pitch",
+        "formula": "turn_effectiveness * wicket_percentage_turn",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["spin_delivery_success", "wickets_via_spin", "turn_metrics"]
+      },
+      "variations": {
+        "description": "Different deliveries available",
+        "formula": "delivery_variety * variation_effectiveness",
+        "weights": [0.5, 0.5],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["delivery_types", "variation_success_rate", "unpredictability"]
+      },
+      "intelligence": {
+        "description": "Tactical bowling awareness, field setting understanding",
+        "formula": "match_situation_bowling * wicket_taking_intelligence",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["situational_bowling", "wicket_timing", "tactical_awareness"]
+      },
+      "defensiveBowling": {
+        "description": "Containing runs, tight lines",
+        "formula": "economy_rate * defensive_phases_performance",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["economy_rate", "middle_overs_economy", "run_containment"]
+      },
+      "neutralBowling": {
+        "description": "Building pressure, probing lines",
+        "formula": "pressure_building * consistency_score",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["dot_ball_percentage", "maiden_overs", "pressure_metrics"]
+      },
+      "attackingBowling": {
+        "description": "Wicket-taking intent and execution",
+        "formula": "strike_rate * wicket_taking_percentage",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["bowling_strike_rate", "wicket_percentage", "attacking_phases"]
+      }
+    },
+    "physical": {
+      "strength": {
+        "description": "Raw physical power",
+        "formula": "power_hitting_metrics * throwing_power",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["six_percentage", "boundary_power", "throw_distance"]
+      },
+      "speed": {
+        "description": "Running pace",
+        "formula": "running_speed * between_wickets_efficiency",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["running_speed", "quick_singles", "running_between_wickets"]
+      },
+      "agility": {
+        "description": "Quick movement changes",
+        "formula": "fielding_agility * batting_footwork_speed",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["fielding_mobility", "footwork_speed", "reaction_time"]
+      },
+      "maxFitness": {
+        "description": "Peak physical condition ceiling",
+        "formula": "career_longevity * fitness_consistency",
+        "weights": [0.5, 0.5],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["career_games", "fitness_record", "injury_history"]
+      },
+      "endurance": {
+        "description": "Ability to maintain performance over time",
+        "formula": "long_format_performance * match_consistency",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["test_performance", "match_load", "performance_decline"]
+      },
+      "stamina": {
+        "description": "Energy reserves for sustained effort",
+        "formula": "match_duration_performance * energy_maintenance",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["late_innings_performance", "bowling_spell_length", "energy_metrics"]
+      }
+    },
+    "fielding": {
+      "catching": {
+        "description": "General catching ability",
+        "formula": "catch_success_rate * catch_difficulty_score",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["catches_taken", "catch_attempts", "catch_difficulty"]
+      },
+      "reflexes": {
+        "description": "Reaction time for close catches, sharp chances",
+        "formula": "close_catch_success * reaction_time_score",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["slip_catches", "close_catches", "reaction_catches"]
+      },
+      "groundFielding": {
+        "description": "Stopping and gathering ground balls",
+        "formula": "ground_fielding_efficiency * misfield_percentage_inverse",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["ground_fielding_success", "misfields", "fielding_efficiency"]
+      },
+      "throwPower": {
+        "description": "Strength of throw",
+        "formula": "throw_distance * throw_strength_metrics",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["throw_distance", "boundary_throws", "throw_power"]
+      },
+      "throwAccuracy": {
+        "description": "Precision of throw to target",
+        "formula": "direct_hit_percentage * throw_accuracy_score",
+        "weights": [0.8, 0.2],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["direct_hits", "throw_attempts", "throw_accuracy"]
+      }
+    },
+    "mental": {
+      "concentration": {
+        "description": "Sustained focus",
+        "formula": "consistency_score * error_rate_inverse",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["performance_consistency", "error_rate", "concentration_lapses"]
+      },
+      "temperament": {
+        "description": "Pressure handling under stress",
+        "formula": "pressure_situation_performance * clutch_performance",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["high_pressure_performance", "clutch_moments", "pressure_resistance"]
+      },
+      "aggression": {
+        "description": "Natural attacking instinct",
+        "formula": "attacking_frequency * aggressive_shot_success",
+        "weights": [0.5, 0.5],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["attacking_percentage", "aggressive_success", "risk_taking"]
+      },
+      "judgement": {
+        "description": "Decision-making in match situations",
+        "formula": "decision_quality * situational_awareness",
+        "weights": [0.6, 0.4],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["good_decisions", "bad_decisions", "situational_play"]
+      },
+      "leadership": {
+        "description": "Influence on team and match situations",
+        "formula": "captain_performance * team_influence_score",
+        "weights": [0.7, 0.3],
+        "minValue": 1,
+        "maxValue": 20,
+        "baseStats": ["captaincy_record", "team_performance_impact", "leadership_moments"]
+      }
+    }
+  },
+  "dataValidation": {
+    "requiredFields": [
+      "name", "age", "nationality", "role", 
+      "batting_average", "strike_rate", "matches_played"
+    ],
+    "optionalFields": [
+      "bowling_average", "economy_rate", "catches", "stumpings"
+    ],
+    "dataTypes": {
+      "name": "string",
+      "age": "number",
+      "nationality": "string",
+      "matches_played": "number",
+      "batting_average": "number",
+      "strike_rate": "number"
+    }
+  },
+  "processingRules": {
+    "roleMapping": {
+      "Batsman": "batsman",
+      "Bowler": "bowler", 
+      "All-rounder": "all-rounder",
+      "Wicket-keeper": "wicket-keeper",
+      "WK": "wicket-keeper"
+    },
+    "nationalityMapping": {
+      "India": "IND",
+      "Australia": "AUS",
+      "England": "ENG",
+      "South Africa": "RSA",
+      "Pakistan": "PAK",
+      "Sri Lanka": "SLK",
+      "Bangladesh": "BAN",
+      "West Indies": "WI",
+      "New Zealand": "NZ",
+      "Afghanistan": "AFG"
+    }
+  }
+}
