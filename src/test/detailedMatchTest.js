@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import MatchEngine from '../core/match-engine/MatchEngine.js';
 import { create } from 'zustand';
+import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 
 console.log('🏏 Starting Detailed Cricket Match Test with MatchEngine');
 console.log('========================================================\n');
@@ -265,17 +266,62 @@ try {
   console.log(`✅ Loaded ${playerData.length} players`);
   logEvent('DATA_LOADED', { playersCount: playerData.length });
 
-  // Prepare player data with proper IDs
-  const playersWithIds = playerData.map((player, index) => ({
-    ...player,
-    id: player.id || `player_${index}`,
-    bowlingType: player.bowlingType || (player.role.toLowerCase().includes('bowler') ? 'medium' : null)
-  }));
+  // Calculate playstyle ratings for all players
+  console.log('📊 Calculating playstyle ratings for all players...');
+  const playersWithPlaystyles = playerData.map((player, index) => {
+    // Ensure player has proper ID
+    const playerWithId = {
+      ...player,
+      id: player.id || `player_${index}`,
+      bowlingType: player.bowlingType || (player.role && player.role.toLowerCase().includes('bowler') ? 'medium' : null)
+    };
 
-  const topPlayers = playerData.sort((a, b) => b.rating - a.rating);
+    // Calculate playstyle ratings
+    const ratings = playstyleCalculator.calculateAllPlaystyleRatings(playerWithId);
+
+    // Get primary playstyles
+    const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
+      playerWithId,
+      playerWithId.role || 'batsman',
+      3
+    );
+
+    // Add playstyle data to player
+    return {
+      ...playerWithId,
+      playstyleRatings: ratings,
+      primaryPlaystyle: {
+        batting: primaryPlaystyles.batting[0]?.name || null,
+        bowling: primaryPlaystyles.bowling[0]?.name || null
+      }
+    };
+  });
+
+  console.log(`✅ Playstyle ratings calculated for ${playersWithPlaystyles.length} players`);
+
+  // Show some example playstyles
+  const topPlayersWithPlaystyles = playersWithPlaystyles
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 5);
+
+  console.log('\nTop 5 Players with Playstyles:');
+  topPlayersWithPlaystyles.forEach((player, i) => {
+    console.log(`${i+1}. ${player.name} (${player.role})`);
+    if (player.primaryPlaystyle.batting) {
+      const rating = player.playstyleRatings.batting[player.primaryPlaystyle.batting];
+      console.log(`   Batting: ${player.primaryPlaystyle.batting} (${rating.toFixed(1)}/100)`);
+    }
+    if (player.primaryPlaystyle.bowling) {
+      const rating = player.playstyleRatings.bowling[player.primaryPlaystyle.bowling];
+      console.log(`   Bowling: ${player.primaryPlaystyle.bowling} (${rating.toFixed(1)}/100)`);
+    }
+  });
+  console.log('');
+
+  const topPlayers = playersWithPlaystyles.sort((a, b) => b.rating - a.rating);
 
   // Select top players ignoring roles - anyone can bat and bowl
-  const selectedPlayers = playerData
+  const selectedPlayers = playersWithPlaystyles
     .filter(p => p.rating > 4.0)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 22); // Get top 22 players for both teams
