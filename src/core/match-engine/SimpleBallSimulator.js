@@ -12,6 +12,7 @@ import BallTrajectoryPhysics from './BallTrajectoryPhysics.js';
 import FieldPositioningSystem from './FieldPositioningSystem.js';
 import FielderMovementCalculator from './FielderMovementCalculator.js';
 import ProbabilityEngine from './ProbabilityEngine.js';
+import attributeModifierSystem from './AttributeModifierSystem.js';
 
 /**
  * @typedef {Object} BallResult
@@ -50,24 +51,43 @@ class SimpleBallSimulator {
    */
   async simulateBall(ballContext) {
     try {
-      // Step 1: Decision Calculation
+      // Apply playstyle modifiers to players before simulation
+      const matchContext = this.buildMatchContext(ballContext);
+
+      // Store original players for metadata
+      const originalStriker = ballContext.striker;
+      const originalBowler = ballContext.bowler;
+
+      // Apply batting modifiers to striker
+      const modifiedStriker = attributeModifierSystem.applyBattingModifiers(
+        ballContext.striker,
+        matchContext
+      );
+
+      // Apply bowling modifiers to bowler
+      const modifiedBowler = attributeModifierSystem.applyBowlingModifiers(
+        ballContext.bowler,
+        matchContext
+      );
+
+      // Step 1: Decision Calculation (with modified attributes)
       const decisionResult = this.decisionCalculator.calculateDecision({
-        striker: ballContext.striker,
-        bowler: ballContext.bowler
+        striker: modifiedStriker,
+        bowler: modifiedBowler
       });
 
-      // Step 2: Contact Calculation
+      // Step 2: Contact Calculation (with modified attributes)
       const contactResult = this.contactCalculator.calculateContact({
-        striker: ballContext.striker,
-        bowler: ballContext.bowler,
+        striker: modifiedStriker,
+        bowler: modifiedBowler,
         decisionResult
       });
 
-      // Step 3: Trajectory Calculation with 2D components
+      // Step 3: Trajectory Calculation with 2D components (with modified attributes)
       const trajectoryResult = this.trajectoryCalculator.calculateTrajectory({
         contactResult,
-        striker: ballContext.striker,
-        bowler: ballContext.bowler,
+        striker: modifiedStriker,
+        bowler: modifiedBowler,
         battingMentality: ballContext.battingMentality || 'neutral',
         bowlingMentality: ballContext.bowlingMentality || 'neutral',
         wicketKeeper: ballContext.wicketKeeper || ballContext.bowler,
@@ -84,7 +104,7 @@ class SimpleBallSimulator {
 
         fieldingResult = this.fieldingCalculator.calculateFielding({
           trajectoryResult,
-          striker: ballContext.striker,
+          striker: modifiedStriker,
           nonStriker: ballContext.nonStriker,
           fieldingTeam: ballContext.fieldingTeam,
           wicketKeeper: ballContext.wicketKeeper || ballContext.bowler,
@@ -106,6 +126,20 @@ class SimpleBallSimulator {
           contactResult,
           trajectoryResult,
           fieldingResult,
+          playstyleModifiers: {
+            striker: {
+              original: originalStriker.name,
+              playstyle: modifiedStriker.matchMetadata?.activePlaystyle || null,
+              rating: modifiedStriker.matchMetadata?.playstyleRating || 0,
+              appliedModifiers: modifiedStriker.matchMetadata?.appliedModifiers || []
+            },
+            bowler: {
+              original: originalBowler.name,
+              playstyle: modifiedBowler.matchMetadata?.activePlaystyle || null,
+              rating: modifiedBowler.matchMetadata?.playstyleRating || 0,
+              appliedModifiers: modifiedBowler.matchMetadata?.appliedModifiers || []
+            }
+          },
           timestamp: Date.now()
         }
       };
@@ -216,6 +250,50 @@ class SimpleBallSimulator {
   }
 
   /**
+   * Build match context for playstyle modifier evaluation
+   * @param {Object} ballContext - Ball context
+   * @returns {Object} Match context
+   */
+  buildMatchContext(ballContext) {
+    const matchSituation = ballContext.matchSituation || {};
+
+    return {
+      // Match phase
+      phase: matchSituation.phase || this.determinePhase(matchSituation.over),
+      over: matchSituation.over || 1,
+      ball: matchSituation.ball || 1,
+
+      // Team state
+      wicketsInHand: matchSituation.wicketsInHand || 10,
+      currentRunRate: matchSituation.currentRunRate || 0,
+      requiredRunRate: matchSituation.requiredRunRate || 0,
+
+      // Innings state
+      ballsLeft: matchSituation.ballsLeft || 120,
+      target: matchSituation.target || null,
+
+      // Partnership state
+      currentPartnership: matchSituation.currentPartnership || 0,
+      currentPartnershipBalls: matchSituation.currentPartnershipBalls || 0,
+
+      // Player state
+      ballsFaced: matchSituation.ballsFaced || 0,
+      oversBowled: matchSituation.oversBowled || 0
+    };
+  }
+
+  /**
+   * Determine match phase from over number
+   * @param {number} over - Current over
+   * @returns {string} Phase (powerplay, middle, death)
+   */
+  determinePhase(over) {
+    if (over <= 6) return 'powerplay';
+    if (over >= 17) return 'death';
+    return 'middle';
+  }
+
+  /**
    * Set field formation for fielding team
    * @param {string} formationType - Formation type (attacking, neutral, defensive)
    * @param {Object[]} fielders - Array of 9 fielders
@@ -252,7 +330,8 @@ class SimpleBallSimulator {
         '2D ball trajectory simulation',
         'Physics-based fielding interception',
         'Running decision calculation',
-        'Realistic field positioning'
+        'Realistic field positioning',
+        'Playstyle-based attribute modifiers'
       ]
     };
   }

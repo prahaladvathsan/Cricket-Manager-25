@@ -36,6 +36,7 @@ npm run lint:fix     # Fix ESLint issues automatically
 ### Core Systems
 - **Match Engine**: SimpleBallSimulator with 4-step simulation + 2D physics-based fielding (Decision → Contact → Trajectory → 2D Fielding) [`docs/core-systems/match-engine.md`]
 - **Player System**: Attribute-based player modeling (1-20 scale) [`docs/data/player-attributes.md`]
+- **Playstyle System**: Dynamic attribute modifiers based on match context (21 playstyles) [`docs/core-systems/playstyle-system.md`]
 - **State Management**: Zustand stores for game state [`docs/frontend/state-management.md`]
 - **League System**: WPL structure and scheduling [`docs/core-systems/league-system.md`]
 
@@ -62,6 +63,7 @@ src/
 ### ⚙️ Core Systems
 - [Match Engine](docs/core-systems/match-engine.md) - Ball-by-ball simulation
 - [Player System](docs/core-systems/player-system.md) - Attributes and progression
+- [Playstyle System](docs/core-systems/playstyle-system.md) - Dynamic attribute modifiers
 - [League System](docs/core-systems/league-system.md) - WPL structure
 - [Auction System](docs/core-systems/auction-system.md) - Player trading
 - [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management
@@ -105,7 +107,18 @@ src/
 - **Match Simulation**: Complete match engine integration with UI
 - **State Integration**: Full Zustand store integration across components
 
-✅ Recently Completed (Simplified Algebraic Physics System + Ultra-High Performance)
+✅ Recently Completed (Playstyle System Integration)
+- **Playstyle System**: Complete implementation with 21 unique playstyles (16 batting + 9 bowling)
+- **Dynamic Attribute Modifiers**: Context-based modifiers applied during match simulation
+- **Fully Configurable**: All weightages, modifiers, and conditions externalized to JSON config files
+- **PlaystyleCalculator**: Calculates 0-100 ratings for all playstyles based on player attributes
+- **AttributeModifierSystem**: Applies playstyle modifiers based on match context (phase, wickets, run rate, etc.)
+- **Match Engine Integration**: Seamless integration into SimpleBallSimulator with metadata tracking
+- **Player Schema Extension**: Added playstyleRatings and primaryPlaystyle fields to player objects
+- **PlayerStore Methods**: Calculate, update, and query playstyle data for all players
+- **Comprehensive Documentation**: Complete guide with examples and customization instructions
+
+✅ Previously Completed (Simplified Algebraic Physics System + Ultra-High Performance)
 - **Algebraic Physics Engine**: Replaced complex simulations with direct mathematical formulas
 - **Polar Coordinate System**: 9 fielders positioned using (r, θ) coordinates from striker
 - **Fixed Launch Angle Physics**: 45° assumption with `bounce_distance = speed²/gravity` formula

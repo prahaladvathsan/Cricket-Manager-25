@@ -12,6 +12,7 @@ The Cricket Manager match engine is a simplified ball-by-ball simulation system 
 
 ```
 SimpleBallSimulator
+├── AttributeModifierSystem (Playstyle-based attribute modifiers)
 ├── DecisionCalculator (Pre-contact decisions)
 ├── ContactCalculator (Contact quality determination)
 ├── TrajectoryCalculator (Shot direction & trajectory with 2D physics)
@@ -25,16 +26,17 @@ SimpleBallSimulator
 
 **Single Import**: Users only need `import SimpleBallSimulator` - all calculators are managed internally.
 
-### Data Flow (4-Step Architecture)
+### Data Flow (4-Step Architecture with Playstyle Modifiers)
 
 1. **Ball Context Setup**: Players, mentalities, match situation prepared
-2. **4-Step Ball Simulation**:
+2. **Playstyle Modifier Application**: AttributeModifierSystem applies context-based modifiers to player attributes
+3. **4-Step Ball Simulation** (with modified attributes):
    - **Step 1**: DecisionCalculator - Delivery threat vs Judgment ability
    - **Step 2**: ContactCalculator - Execution scores + decision scores = contact type
    - **Step 3**: TrajectoryCalculator - Attribute-driven direction selection + algebraic trajectory
    - **Step 4**: FieldingCalculator2D - Algebraic fielding with polar coordinate interception
-3. **Result Processing**: Final outcome with detailed metadata returned
-4. **Match Integration**: Results used by match engine for state updates
+4. **Result Processing**: Final outcome with detailed metadata (including playstyle effects) returned
+5. **Match Integration**: Results used by match engine for state updates
 
 ## Ball Simulation Components
 

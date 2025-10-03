@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 
 /**
  * @typedef {Object} PlayerStore
@@ -157,26 +158,129 @@ const usePlayerStore = create((set, get) => ({
   getFilteredPlayers: () => {
     const state = get();
     const { players, filters } = state;
-    
+
     return Object.values(players).filter(player => {
       // Apply role filter
       if (filters.role !== 'all' && player.role !== filters.role) return false;
-      
+
       // Apply nationality filter
       if (filters.nationality !== 'all' && player.nationality !== filters.nationality) return false;
-      
+
       // Apply age filter
       if (player.age < filters.ageMin || player.age > filters.ageMax) return false;
-      
+
       // Apply search term
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
-        if (!player.name.toLowerCase().includes(searchLower) && 
+        if (!player.name.toLowerCase().includes(searchLower) &&
             !player.fullName.toLowerCase().includes(searchLower)) return false;
       }
-      
+
       return true;
     });
+  },
+
+  /**
+   * Calculate playstyle ratings for a player
+   * @param {string} playerId - Player ID
+   * @returns {Object} Playstyle ratings object
+   */
+  calculatePlayerPlaystyles: (playerId) => {
+    const state = get();
+    const player = state.players[playerId];
+
+    if (!player) {
+      console.warn(`Player ${playerId} not found`);
+      return null;
+    }
+
+    // Calculate all playstyle ratings
+    const ratings = playstyleCalculator.calculateAllPlaystyleRatings(player);
+
+    // Get primary playstyles
+    const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
+      player,
+      player.role,
+      3
+    );
+
+    return {
+      ratings,
+      primary: {
+        batting: primaryPlaystyles.batting[0]?.name || null,
+        bowling: primaryPlaystyles.bowling[0]?.name || null
+      }
+    };
+  },
+
+  /**
+   * Update player playstyle ratings
+   * @param {string} playerId - Player ID
+   */
+  updatePlayerPlaystyles: (playerId) => set((state) => {
+    const player = state.players[playerId];
+
+    if (!player) {
+      console.warn(`Player ${playerId} not found`);
+      return state;
+    }
+
+    // Calculate playstyle ratings
+    const ratings = playstyleCalculator.calculateAllPlaystyleRatings(player);
+
+    // Get primary playstyles
+    const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
+      player,
+      player.role,
+      3
+    );
+
+    // Update player with playstyle data
+    return {
+      players: {
+        ...state.players,
+        [playerId]: {
+          ...player,
+          playstyleRatings: ratings,
+          primaryPlaystyle: {
+            batting: primaryPlaystyles.batting[0]?.name || null,
+            bowling: primaryPlaystyles.bowling[0]?.name || null
+          }
+        }
+      }
+    };
+  }),
+
+  /**
+   * Calculate and update playstyles for all players
+   */
+  updateAllPlayerPlaystyles: () => {
+    const state = get();
+    const playerIds = Object.keys(state.players);
+
+    playerIds.forEach(playerId => {
+      get().updatePlayerPlaystyles(playerId);
+    });
+
+    console.log(`✅ Updated playstyles for ${playerIds.length} players`);
+  },
+
+  /**
+   * Get player playstyle breakdown
+   * @param {string} playerId - Player ID
+   * @param {string} category - 'batting' or 'bowling'
+   * @param {string} playstyleName - Playstyle name
+   * @returns {Object} Detailed breakdown
+   */
+  getPlayerPlaystyleBreakdown: (playerId, category, playstyleName) => {
+    const state = get();
+    const player = state.players[playerId];
+
+    if (!player) {
+      return null;
+    }
+
+    return playstyleCalculator.getPlaystyleBreakdown(player, category, playstyleName);
   }
 }));
 

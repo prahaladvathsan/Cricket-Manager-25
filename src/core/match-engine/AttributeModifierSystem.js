@@ -1,0 +1,386 @@
+/**
+ * @file AttributeModifierSystem.js
+ * @description Apply playstyle-based attribute modifiers during match simulation
+ * @module core/match-engine/AttributeModifierSystem
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load playstyle modifiers configuration
+const modifiersPath = path.join(__dirname, '../../data/config/playstyle-modifiers.json');
+const playstyleModifiers = JSON.parse(fs.readFileSync(modifiersPath, 'utf8'));
+
+/**
+ * AttributeModifierSystem class for applying playstyle modifiers
+ */
+class AttributeModifierSystem {
+  constructor() {
+    this.modifiers = playstyleModifiers;
+    this.operators = playstyleModifiers.conditionOperators;
+  }
+
+  /**
+   * Apply playstyle modifiers to a player's attributes
+   * @param {Object} player - Player object with attributes and playstyleRatings
+   * @param {string} category - 'batting' or 'bowling'
+   * @param {string} playstyleName - Name of the active playstyle
+   * @param {Object} matchContext - Current match situation
+   * @returns {Object} Player object with modified attributes
+   */
+  applyPlaystyleModifiers(player, category, playstyleName, matchContext) {
+    // Clone player object to avoid mutating original
+    const modifiedPlayer = JSON.parse(JSON.stringify(player));
+
+    // Get playstyle modifiers configuration
+    const playstyleConfig = this.modifiers[category]?.[playstyleName];
+
+    if (!playstyleConfig || !playstyleConfig.modifiers) {
+      return modifiedPlayer; // No modifiers, return unchanged
+    }
+
+    // Get playstyle rating for this playstyle
+    const playstyleRating = player.playstyleRatings?.[category]?.[playstyleName] || 0;
+
+    if (playstyleRating === 0) {
+      return modifiedPlayer; // No rating, no modifiers apply
+    }
+
+    // Track applied modifiers for metadata
+    const appliedModifiers = [];
+
+    // Process each modifier
+    for (const modifier of playstyleConfig.modifiers) {
+      // Check if all conditions are met
+      const conditionsMet = this.evaluateConditions(modifier.conditions, matchContext);
+
+      if (conditionsMet) {
+        // Apply effects
+        for (const effect of modifier.effects) {
+          this.applyEffect(
+            modifiedPlayer,
+            effect,
+            playstyleRating,
+            matchContext
+          );
+        }
+
+        appliedModifiers.push({
+          name: modifier.name,
+          sideEffect: modifier.sideEffect || false,
+          effects: modifier.effects.length
+        });
+      }
+    }
+
+    // Store metadata about applied modifiers
+    if (!modifiedPlayer.matchMetadata) {
+      modifiedPlayer.matchMetadata = {};
+    }
+    modifiedPlayer.matchMetadata.appliedModifiers = appliedModifiers;
+    modifiedPlayer.matchMetadata.activePlaystyle = playstyleName;
+    modifiedPlayer.matchMetadata.playstyleRating = playstyleRating;
+
+    return modifiedPlayer;
+  }
+
+  /**
+   * Evaluate if all conditions are met
+   * @param {Array} conditions - Array of condition objects
+   * @param {Object} matchContext - Current match situation
+   * @returns {boolean} True if all conditions are met
+   */
+  evaluateConditions(conditions, matchContext) {
+    // Empty conditions array means always active
+    if (!conditions || conditions.length === 0) {
+      return true;
+    }
+
+    // All conditions must be true (AND logic)
+    return conditions.every(condition =>
+      this.evaluateCondition(condition, matchContext)
+    );
+  }
+
+  /**
+   * Evaluate a single condition
+   * @param {Object} condition - Condition object with field, operator, value
+   * @param {Object} matchContext - Current match situation
+   * @returns {boolean} True if condition is met
+   */
+  evaluateCondition(condition, matchContext) {
+    const { field, operator, value } = condition;
+
+    // Get field value from match context
+    let fieldValue = this.getContextValue(matchContext, field);
+
+    // Handle special cases
+    if (fieldValue === undefined || fieldValue === null) {
+      return false;
+    }
+
+    // Handle relative comparisons (e.g., requiredRunRate > currentRunRate)
+    let compareValue = value;
+    if (typeof value === 'string' && matchContext[value] !== undefined) {
+      compareValue = matchContext[value];
+    }
+
+    // Perform comparison based on operator
+    switch (operator) {
+      case '==':
+        return fieldValue === compareValue;
+      case '!=':
+        return fieldValue !== compareValue;
+      case '>':
+        return fieldValue > compareValue;
+      case '<':
+        return fieldValue < compareValue;
+      case '>=':
+        return fieldValue >= compareValue;
+      case '<=':
+        return fieldValue <= compareValue;
+      default:
+        console.warn(`Unknown operator: ${operator}`);
+        return false;
+    }
+  }
+
+  /**
+   * Get value from match context with nested support
+   * @param {Object} matchContext - Current match situation
+   * @param {string} field - Field name (supports dot notation)
+   * @returns {*} Field value
+   */
+  getContextValue(matchContext, field) {
+    if (!matchContext) {
+      return undefined;
+    }
+
+    // Handle nested fields (e.g., 'innings.phase')
+    const parts = field.split('.');
+    let value = matchContext;
+
+    for (const part of parts) {
+      if (value && typeof value === 'object' && part in value) {
+        value = value[part];
+      } else {
+        return undefined;
+      }
+    }
+
+    return value;
+  }
+
+  /**
+   * Apply a single effect to player attributes
+   * @param {Object} player - Player object (will be mutated)
+   * @param {Object} effect - Effect object with attribute and scalingFactor
+   * @param {number} playstyleRating - Playstyle rating (0-100)
+   * @param {Object} matchContext - Current match situation
+   */
+  applyEffect(player, effect, playstyleRating, matchContext) {
+    const { attribute, scalingFactor, perOverMultiplier } = effect;
+
+    // Get current attribute value
+    const currentValue = this.getAttributeValue(player, attribute);
+
+    if (currentValue === null || currentValue === undefined) {
+      return; // Attribute not found, skip
+    }
+
+    // Calculate modifier
+    let modifier = 1 + (playstyleRating * scalingFactor);
+
+    // Handle per-over multiplier (for Workhorse "Consistency" modifier)
+    if (perOverMultiplier && matchContext.oversBowled) {
+      modifier = 1 + (playstyleRating * scalingFactor * matchContext.oversBowled);
+    }
+
+    // Apply modifier
+    const newValue = currentValue * modifier;
+
+    // Set modified value
+    this.setAttributeValue(player, attribute, newValue);
+  }
+
+  /**
+   * Get attribute value from player object
+   * Handles nested attribute structure (batting, bowling, physical, mental)
+   * @param {Object} player - Player object
+   * @param {string} attributeName - Name of attribute
+   * @returns {number|null} Attribute value or null if not found
+   */
+  getAttributeValue(player, attributeName) {
+    if (!player || !player.attributes) {
+      return null;
+    }
+
+    const attributes = player.attributes;
+
+    // Check in batting attributes
+    if (attributes.batting && attributes.batting[attributeName] !== undefined) {
+      return attributes.batting[attributeName];
+    }
+
+    // Check in bowling attributes
+    if (attributes.bowling && attributes.bowling[attributeName] !== undefined) {
+      return attributes.bowling[attributeName];
+    }
+
+    // Check in physical attributes
+    if (attributes.physical && attributes.physical[attributeName] !== undefined) {
+      return attributes.physical[attributeName];
+    }
+
+    // Check in mental attributes
+    if (attributes.mental && attributes.mental[attributeName] !== undefined) {
+      return attributes.mental[attributeName];
+    }
+
+    // Check in fielding attributes
+    if (attributes.fielding && attributes.fielding[attributeName] !== undefined) {
+      return attributes.fielding[attributeName];
+    }
+
+    return null;
+  }
+
+  /**
+   * Set attribute value in player object
+   * Handles nested attribute structure (batting, bowling, physical, mental)
+   * @param {Object} player - Player object (will be mutated)
+   * @param {string} attributeName - Name of attribute
+   * @param {number} value - New value
+   */
+  setAttributeValue(player, attributeName, value) {
+    if (!player || !player.attributes) {
+      return;
+    }
+
+    const attributes = player.attributes;
+
+    // Set in batting attributes
+    if (attributes.batting && attributes.batting[attributeName] !== undefined) {
+      attributes.batting[attributeName] = value;
+      return;
+    }
+
+    // Set in bowling attributes
+    if (attributes.bowling && attributes.bowling[attributeName] !== undefined) {
+      attributes.bowling[attributeName] = value;
+      return;
+    }
+
+    // Set in physical attributes
+    if (attributes.physical && attributes.physical[attributeName] !== undefined) {
+      attributes.physical[attributeName] = value;
+      return;
+    }
+
+    // Set in mental attributes
+    if (attributes.mental && attributes.mental[attributeName] !== undefined) {
+      attributes.mental[attributeName] = value;
+      return;
+    }
+
+    // Set in fielding attributes
+    if (attributes.fielding && attributes.fielding[attributeName] !== undefined) {
+      attributes.fielding[attributeName] = value;
+      return;
+    }
+  }
+
+  /**
+   * Apply modifiers for batting playstyle
+   * @param {Object} striker - Batsman player object
+   * @param {Object} matchContext - Current match situation
+   * @returns {Object} Modified player object
+   */
+  applyBattingModifiers(striker, matchContext) {
+    // Get active batting playstyle (from player's primary playstyle)
+    const activePlaystyle = striker.primaryPlaystyle?.batting || striker.primaryPlaystyle;
+
+    if (!activePlaystyle) {
+      return striker; // No playstyle set, return unchanged
+    }
+
+    return this.applyPlaystyleModifiers(striker, 'batting', activePlaystyle, matchContext);
+  }
+
+  /**
+   * Apply modifiers for bowling playstyle
+   * @param {Object} bowler - Bowler player object
+   * @param {Object} matchContext - Current match situation
+   * @returns {Object} Modified player object
+   */
+  applyBowlingModifiers(bowler, matchContext) {
+    // Get active bowling playstyle (from player's primary playstyle)
+    const activePlaystyle = bowler.primaryPlaystyle?.bowling || bowler.primaryPlaystyle;
+
+    if (!activePlaystyle) {
+      return bowler; // No playstyle set, return unchanged
+    }
+
+    return this.applyPlaystyleModifiers(bowler, 'bowling', activePlaystyle, matchContext);
+  }
+
+  /**
+   * Get modifier information for display/debugging
+   * @param {string} category - 'batting' or 'bowling'
+   * @param {string} playstyleName - Name of playstyle
+   * @param {Object} matchContext - Current match situation
+   * @returns {Object} Information about active modifiers
+   */
+  getActiveModifiersInfo(category, playstyleName, matchContext) {
+    const playstyleConfig = this.modifiers[category]?.[playstyleName];
+
+    if (!playstyleConfig) {
+      return {
+        playstyle: playstyleName,
+        category,
+        activeModifiers: [],
+        inactiveModifiers: []
+      };
+    }
+
+    const activeModifiers = [];
+    const inactiveModifiers = [];
+
+    for (const modifier of playstyleConfig.modifiers) {
+      const conditionsMet = this.evaluateConditions(modifier.conditions, matchContext);
+
+      const modifierInfo = {
+        name: modifier.name,
+        sideEffect: modifier.sideEffect || false,
+        conditions: modifier.conditions,
+        effects: modifier.effects
+      };
+
+      if (conditionsMet) {
+        activeModifiers.push(modifierInfo);
+      } else {
+        inactiveModifiers.push(modifierInfo);
+      }
+    }
+
+    return {
+      playstyle: playstyleName,
+      category,
+      description: playstyleConfig.description,
+      activeModifiers,
+      inactiveModifiers
+    };
+  }
+}
+
+// Export singleton instance
+const attributeModifierSystem = new AttributeModifierSystem();
+
+export default attributeModifierSystem;
+
+// Also export class for testing
+export { AttributeModifierSystem };

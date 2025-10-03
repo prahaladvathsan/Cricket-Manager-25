@@ -88,6 +88,44 @@
         "morale": "number 0-100",
         "injury": "string - null | minor | moderate | severe"
       },
+      "playstyleRatings": {
+        "description": "Playstyle ratings calculated from player attributes (0-100 scale)",
+        "batting": {
+          "Opener - Slogger": "number 0-100",
+          "Opener - Balanced": "number 0-100",
+          "Opener - Anchor": "number 0-100",
+          "Top Order - Slogger": "number 0-100",
+          "Top Order - Balanced": "number 0-100",
+          "Top Order - Anchor": "number 0-100",
+          "Middle Order - Slogger": "number 0-100",
+          "Middle Order - Balanced": "number 0-100",
+          "Middle Order - Anchor": "number 0-100",
+          "Lower Order - Slogger": "number 0-100",
+          "Lower Order - Balanced": "number 0-100",
+          "Lower Order - Anchor": "number 0-100",
+          "Finisher": "number 0-100",
+          "Runner": "number 0-100",
+          "Pinch-Hitter": "number 0-100",
+          "Wall": "number 0-100"
+        },
+        "bowling": {
+          "New Ball": "number 0-100",
+          "Striker": "number 0-100",
+          "Heartbreaker": "number 0-100",
+          "Death Bowler": "number 0-100",
+          "Workhorse": "number 0-100",
+          "Magician": "number 0-100",
+          "Controller": "number 0-100",
+          "Janitor": "number 0-100",
+          "Tactician": "number 0-100",
+          "Balanced": "number 0-100"
+        }
+      },
+      "primaryPlaystyle": {
+        "description": "Player's primary playstyle for their role",
+        "batting": "string - Name of primary batting playstyle",
+        "bowling": "string - Name of primary bowling playstyle"
+      },
       "contract": {
         "salary": "number",
         "duration": "number",

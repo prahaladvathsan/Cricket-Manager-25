@@ -1,0 +1,636 @@
+{
+  "version": "1.0.0",
+  "description": "Playstyle attribute weightings for calculating PlaystyleRatings (0-100 scale)",
+  "lastUpdated": "2025-01-10",
+  "notes": [
+    "PlaystyleRating formula: Σ(attribute × weight) / max_possible × 100",
+    "Max possible = Σ(weight × 20) for attributes on 1-20 scale",
+    "All weightages are editable - adjust to change playstyle calculations",
+    "Higher weight = more important for that playstyle"
+  ],
+
+  "batting": {
+    "Opener - Slogger": {
+      "description": "Aggressive powerplay hitter, excels with new ball",
+      "attributes": {
+        "technique": 2,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 1,
+        "defensiveShots": 0,
+        "neutralShots": 0,
+        "attackingShots": 2,
+        "vsPace": 2,
+        "vsSpin": 1,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 1,
+        "temperament": 1,
+        "aggression": 2,
+        "judgement": 1,
+        "creativity": 2
+      }
+    },
+
+    "Opener - Balanced": {
+      "description": "Solid opening batsman, builds platform while scoring steadily",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 2,
+        "defensiveShots": 2,
+        "neutralShots": 2,
+        "attackingShots": 1,
+        "vsPace": 2,
+        "vsSpin": 1,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 2,
+        "creativity": 1
+      }
+    },
+
+    "Opener - Anchor": {
+      "description": "Defensive opener, builds innings with low risk",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 3,
+        "placement": 2,
+        "range360": 1,
+        "defensiveShots": 3,
+        "neutralShots": 2,
+        "attackingShots": 0,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 0,
+        "judgement": 3,
+        "creativity": 1
+      }
+    },
+
+    "Top Order - Slogger": {
+      "description": "Aggressive middle overs batsman, targets spinners",
+      "attributes": {
+        "technique": 2,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 2,
+        "defensiveShots": 0,
+        "neutralShots": 1,
+        "attackingShots": 3,
+        "vsPace": 1,
+        "vsSpin": 3,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 1,
+        "temperament": 1,
+        "aggression": 3,
+        "judgement": 2,
+        "creativity": 2
+      }
+    },
+
+    "Top Order - Balanced": {
+      "description": "Versatile top order batsman, adapts to situation",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 2,
+        "defensiveShots": 2,
+        "neutralShots": 2,
+        "attackingShots": 2,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 2,
+        "creativity": 2
+      }
+    },
+
+    "Top Order - Anchor": {
+      "description": "Steady accumulator, builds innings in top order",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 3,
+        "placement": 2,
+        "range360": 2,
+        "defensiveShots": 2,
+        "neutralShots": 3,
+        "attackingShots": 1,
+        "vsPace": 2,
+        "vsSpin": 3,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 3,
+        "temperament": 2,
+        "aggression": 0,
+        "judgement": 3,
+        "creativity": 1
+      }
+    },
+
+    "Middle Order - Slogger": {
+      "description": "Power hitter in middle overs, accelerates scoring",
+      "attributes": {
+        "technique": 2,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 3,
+        "defensiveShots": 0,
+        "neutralShots": 1,
+        "attackingShots": 3,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 3,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 1,
+        "temperament": 2,
+        "aggression": 3,
+        "judgement": 2,
+        "creativity": 2
+      }
+    },
+
+    "Middle Order - Balanced": {
+      "description": "Versatile middle order batsman, handles pace and spin",
+      "attributes": {
+        "technique": 2,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 2,
+        "defensiveShots": 1,
+        "neutralShots": 2,
+        "attackingShots": 2,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 2,
+        "creativity": 2
+      }
+    },
+
+    "Middle Order - Anchor": {
+      "description": "Consolidates middle order, partners with hitters",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 1,
+        "defensiveShots": 3,
+        "neutralShots": 3,
+        "attackingShots": 1,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 0,
+        "judgement": 3,
+        "creativity": 1
+      }
+    },
+
+    "Lower Order - Slogger": {
+      "description": "Tail-end power hitter, maximizes boundaries",
+      "attributes": {
+        "technique": 1,
+        "timing": 1,
+        "footwork": 1,
+        "placement": 1,
+        "range360": 2,
+        "defensiveShots": 0,
+        "neutralShots": 0,
+        "attackingShots": 3,
+        "vsPace": 1,
+        "vsSpin": 1,
+        "strength": 3,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 1,
+        "temperament": 1,
+        "aggression": 3,
+        "judgement": 1,
+        "creativity": 2
+      }
+    },
+
+    "Lower Order - Balanced": {
+      "description": "Capable tail-ender, supports main batsmen",
+      "attributes": {
+        "technique": 2,
+        "timing": 1,
+        "footwork": 1,
+        "placement": 1,
+        "range360": 1,
+        "defensiveShots": 1,
+        "neutralShots": 2,
+        "attackingShots": 2,
+        "vsPace": 2,
+        "vsSpin": 1,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 2,
+        "temperament": 1,
+        "aggression": 1,
+        "judgement": 2,
+        "creativity": 1
+      }
+    },
+
+    "Lower Order - Anchor": {
+      "description": "Defensive tail-ender, prolongs innings",
+      "attributes": {
+        "technique": 2,
+        "timing": 1,
+        "footwork": 2,
+        "placement": 1,
+        "range360": 0,
+        "defensiveShots": 3,
+        "neutralShots": 2,
+        "attackingShots": 0,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 0,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 3,
+        "temperament": 2,
+        "aggression": 0,
+        "judgement": 2,
+        "creativity": 0
+      }
+    },
+
+    "Finisher": {
+      "description": "Death overs specialist, closes innings with power",
+      "attributes": {
+        "technique": 2,
+        "timing": 3,
+        "footwork": 2,
+        "placement": 2,
+        "range360": 3,
+        "defensiveShots": 0,
+        "neutralShots": 1,
+        "attackingShots": 3,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 3,
+        "speed": 2,
+        "agility": 2,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 3,
+        "judgement": 3,
+        "creativity": 3
+      }
+    },
+
+    "Runner": {
+      "description": "Strike rotator, excels at running between wickets",
+      "attributes": {
+        "technique": 2,
+        "timing": 2,
+        "footwork": 2,
+        "placement": 3,
+        "range360": 2,
+        "defensiveShots": 1,
+        "neutralShots": 3,
+        "attackingShots": 1,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 1,
+        "speed": 3,
+        "agility": 3,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 3,
+        "creativity": 2
+      }
+    },
+
+    "Pinch-Hitter": {
+      "description": "Promoted hitter for quick impact, disrupts bowling",
+      "attributes": {
+        "technique": 1,
+        "timing": 2,
+        "footwork": 1,
+        "placement": 1,
+        "range360": 2,
+        "defensiveShots": 0,
+        "neutralShots": 1,
+        "attackingShots": 3,
+        "vsPace": 2,
+        "vsSpin": 2,
+        "strength": 3,
+        "speed": 1,
+        "agility": 2,
+        "concentration": 1,
+        "temperament": 2,
+        "aggression": 3,
+        "judgement": 2,
+        "creativity": 3
+      }
+    },
+
+    "Wall": {
+      "description": "Ultra-defensive batsman, blocks everything",
+      "attributes": {
+        "technique": 3,
+        "timing": 2,
+        "footwork": 3,
+        "placement": 1,
+        "range360": 0,
+        "defensiveShots": 3,
+        "neutralShots": 2,
+        "attackingShots": 0,
+        "vsPace": 3,
+        "vsSpin": 3,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 0,
+        "judgement": 3,
+        "creativity": 0
+      }
+    }
+  },
+
+  "bowling": {
+    "New Ball": {
+      "description": "Powerplay specialist, exploits new ball swing",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 3,
+        "swing": 3,
+        "turn": 0,
+        "variations": 2,
+        "intelligence": 2,
+        "defensiveBowling": 1,
+        "neutralBowling": 1,
+        "attackingBowling": 3,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 3,
+        "judgement": 2
+      }
+    },
+
+    "Striker": {
+      "description": "Wicket-taker, aggressive attacking bowler",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 3,
+        "swing": 2,
+        "turn": 2,
+        "variations": 2,
+        "intelligence": 2,
+        "defensiveBowling": 1,
+        "neutralBowling": 1,
+        "attackingBowling": 3,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 3,
+        "judgement": 2
+      }
+    },
+
+    "Heartbreaker": {
+      "description": "Partnership breaker, gets crucial wickets",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 2,
+        "swing": 2,
+        "turn": 2,
+        "variations": 3,
+        "intelligence": 3,
+        "defensiveBowling": 1,
+        "neutralBowling": 2,
+        "attackingBowling": 2,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 3,
+        "temperament": 2,
+        "aggression": 2,
+        "judgement": 3
+      }
+    },
+
+    "Death Bowler": {
+      "description": "Death overs specialist, contains in final overs",
+      "attributes": {
+        "accuracy": 3,
+        "bowlingSpeed": 2,
+        "swing": 1,
+        "turn": 1,
+        "variations": 3,
+        "intelligence": 3,
+        "defensiveBowling": 3,
+        "neutralBowling": 2,
+        "attackingBowling": 1,
+        "strength": 2,
+        "speed": 1,
+        "agility": 2,
+        "stamina": 2,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 1,
+        "judgement": 3
+      }
+    },
+
+    "Workhorse": {
+      "description": "Consistent middle overs bowler, builds pressure",
+      "attributes": {
+        "accuracy": 3,
+        "bowlingSpeed": 2,
+        "swing": 1,
+        "turn": 1,
+        "variations": 2,
+        "intelligence": 2,
+        "defensiveBowling": 2,
+        "neutralBowling": 3,
+        "attackingBowling": 1,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 3,
+        "concentration": 3,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 2
+      }
+    },
+
+    "Magician": {
+      "description": "Spin wizard, deceives with variations",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 1,
+        "swing": 1,
+        "turn": 3,
+        "variations": 3,
+        "intelligence": 3,
+        "defensiveBowling": 1,
+        "neutralBowling": 2,
+        "attackingBowling": 3,
+        "strength": 1,
+        "speed": 1,
+        "agility": 2,
+        "stamina": 2,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 2,
+        "judgement": 3
+      }
+    },
+
+    "Controller": {
+      "description": "Economy specialist, restricts run flow",
+      "attributes": {
+        "accuracy": 3,
+        "bowlingSpeed": 2,
+        "swing": 1,
+        "turn": 1,
+        "variations": 2,
+        "intelligence": 3,
+        "defensiveBowling": 3,
+        "neutralBowling": 3,
+        "attackingBowling": 1,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 0,
+        "judgement": 3
+      }
+    },
+
+    "Janitor": {
+      "description": "Cleanup bowler, finishes tail",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 3,
+        "swing": 2,
+        "turn": 2,
+        "variations": 2,
+        "intelligence": 2,
+        "defensiveBowling": 2,
+        "neutralBowling": 2,
+        "attackingBowling": 2,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 2,
+        "judgement": 2
+      }
+    },
+
+    "Tactician": {
+      "description": "Strategic bowler, outthinks batsmen",
+      "attributes": {
+        "accuracy": 3,
+        "bowlingSpeed": 1,
+        "swing": 2,
+        "turn": 2,
+        "variations": 3,
+        "intelligence": 3,
+        "defensiveBowling": 2,
+        "neutralBowling": 3,
+        "attackingBowling": 2,
+        "strength": 1,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 3,
+        "temperament": 3,
+        "aggression": 1,
+        "judgement": 3
+      }
+    },
+
+    "Balanced": {
+      "description": "Well-rounded bowler, no weaknesses",
+      "attributes": {
+        "accuracy": 2,
+        "bowlingSpeed": 2,
+        "swing": 2,
+        "turn": 2,
+        "variations": 2,
+        "intelligence": 2,
+        "defensiveBowling": 2,
+        "neutralBowling": 2,
+        "attackingBowling": 2,
+        "strength": 2,
+        "speed": 1,
+        "agility": 1,
+        "stamina": 2,
+        "concentration": 2,
+        "temperament": 2,
+        "aggression": 1,
+        "judgement": 2
+      }
+    }
+  },
+
+  "roleCategories": {
+    "batsman": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor", "Finisher", "Runner", "Pinch-Hitter", "Wall"],
+    "bowler": ["New Ball", "Striker", "Heartbreaker", "Death Bowler", "Workhorse", "Magician", "Controller", "Janitor", "Tactician", "Balanced"],
+    "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced", "Balanced"],
+    "wicket-keeper": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Finisher"]
+  }
+}
