@@ -7,7 +7,6 @@ import fs from 'fs';
 import path from 'path';
 import MatchEngine from '../core/match-engine/MatchEngine.js';
 import { create } from 'zustand';
-import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 
 console.log('🏏 Starting Detailed Cricket Match Test with MatchEngine');
 console.log('========================================================\n');
@@ -259,69 +258,38 @@ function createMockMatchStore() {
 
 async function runDetailedMatchTest() {
 try {
-  // Load player data
-  logEvent('MATCH_START', { message: 'Loading player database' });
-  console.log('Loading player data...');
-  const playerData = JSON.parse(fs.readFileSync('src/data/players/processed/player_database_from_excel.json', 'utf8'));
-  console.log(`✅ Loaded ${playerData.length} players`);
-  logEvent('DATA_LOADED', { playersCount: playerData.length });
-
-  // Calculate playstyle ratings for all players
-  console.log('📊 Calculating playstyle ratings for all players...');
-  const playersWithPlaystyles = playerData.map((player, index) => {
-    // Ensure player has proper ID
-    const playerWithId = {
-      ...player,
-      id: player.id || `player_${index}`,
-      bowlingType: player.bowlingType || (player.role && player.role.toLowerCase().includes('bowler') ? 'medium' : null)
-    };
-
-    // Calculate playstyle ratings
-    const ratings = playstyleCalculator.calculateAllPlaystyleRatings(playerWithId);
-
-    // Get primary playstyles
-    const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
-      playerWithId,
-      playerWithId.role || 'batsman',
-      3
-    );
-
-    // Add playstyle data to player
-    return {
-      ...playerWithId,
-      playstyleRatings: ratings,
-      primaryPlaystyle: {
-        batting: primaryPlaystyles.batting[0]?.name || null,
-        bowling: primaryPlaystyles.bowling[0]?.name || null
-      }
-    };
+  // Load master player database with pre-calculated playstyles
+  logEvent('MATCH_START', { message: 'Loading master player database' });
+  console.log('Loading master player database...');
+  const masterDb = JSON.parse(fs.readFileSync('src/data/players/master_player_database.json', 'utf8'));
+  const playerData = masterDb.players;
+  console.log(`✅ Loaded ${playerData.length} players from master database v${masterDb.version}`);
+  console.log(`   Generated: ${masterDb.generated}`);
+  console.log(`   All players have pre-calculated playstyle ratings and top 3 playstyles\n`);
+  logEvent('DATA_LOADED', {
+    playersCount: playerData.length,
+    databaseVersion: masterDb.version,
+    configVersions: masterDb.configVersions
   });
 
-  console.log(`✅ Playstyle ratings calculated for ${playersWithPlaystyles.length} players`);
-
-  // Show some example playstyles
-  const topPlayersWithPlaystyles = playersWithPlaystyles
+  // Show some example playstyles from master database
+  const topPlayersWithPlaystyles = playerData
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 5);
 
-  console.log('\nTop 5 Players with Playstyles:');
+  console.log('Top 5 Players with Pre-Calculated Playstyles:');
   topPlayersWithPlaystyles.forEach((player, i) => {
     console.log(`${i+1}. ${player.name} (${player.role})`);
-    if (player.primaryPlaystyle.batting) {
-      const rating = player.playstyleRatings.batting[player.primaryPlaystyle.batting];
-      console.log(`   Batting: ${player.primaryPlaystyle.batting} (${rating.toFixed(1)}/100)`);
-    }
-    if (player.primaryPlaystyle.bowling) {
-      const rating = player.playstyleRatings.bowling[player.primaryPlaystyle.bowling];
-      console.log(`   Bowling: ${player.primaryPlaystyle.bowling} (${rating.toFixed(1)}/100)`);
-    }
+    console.log(`   Primary: ${player.primaryPlaystyle.batting || player.primaryPlaystyle.bowling || 'None'}`);
+    console.log(`   Top 3 Batting: ${player.topPlaystyles.batting.map(p => `${p.name} (${p.rating.toFixed(1)})`).join(', ')}`);
+    console.log(`   Top 3 Bowling: ${player.topPlaystyles.bowling.map(p => `${p.name} (${p.rating.toFixed(1)})`).join(', ')}`);
+    console.log('');
   });
-  console.log('');
 
-  const topPlayers = playersWithPlaystyles.sort((a, b) => b.rating - a.rating);
+  const topPlayers = playerData.sort((a, b) => b.rating - a.rating);
 
   // Select top players ignoring roles - anyone can bat and bowl
-  const selectedPlayers = playersWithPlaystyles
+  const selectedPlayers = playerData
     .filter(p => p.rating > 4.0)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 22); // Get top 22 players for both teams

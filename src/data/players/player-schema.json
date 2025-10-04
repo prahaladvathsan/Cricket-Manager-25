@@ -89,7 +89,7 @@
         "injury": "string - null | minor | moderate | severe"
       },
       "playstyleRatings": {
-        "description": "Playstyle ratings calculated from player attributes (0-100 scale)",
+        "description": "All playstyle ratings calculated from player attributes (0-100 scale)",
         "batting": {
           "Opener - Slogger": "number 0-100",
           "Opener - Balanced": "number 0-100",
@@ -121,8 +121,39 @@
           "Balanced": "number 0-100"
         }
       },
+      "topPlaystyles": {
+        "description": "Top 3 playstyles for each category with ratings",
+        "batting": [
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          },
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          },
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          }
+        ],
+        "bowling": [
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          },
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          },
+          {
+            "name": "string - Playstyle name",
+            "rating": "number 0-100"
+          }
+        ]
+      },
       "primaryPlaystyle": {
-        "description": "Player's primary playstyle for their role",
+        "description": "Player's primary (highest rated) playstyle for their role",
         "batting": "string - Name of primary batting playstyle",
         "bowling": "string - Name of primary bowling playstyle"
       },
