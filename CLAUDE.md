@@ -36,7 +36,7 @@ npm run lint:fix     # Fix ESLint issues automatically
 ### Core Systems
 - **Match Engine**: SimpleBallSimulator with 4-step simulation + 2D physics-based fielding (Decision → Contact → Trajectory → 2D Fielding) [`docs/core-systems/match-engine.md`]
 - **Player System**: Attribute-based player modeling (1-20 scale) [`docs/data/player-attributes.md`]
-- **Playstyle System**: Dynamic attribute modifiers based on match context (21 playstyles) [`docs/core-systems/playstyle-system.md`]
+- **Playstyle System**: Dynamic attribute modifiers based on match context (24 playstyles: 16 batting + 8 bowling) [`docs/core-systems/playstyle-system.md`]
 - **State Management**: Zustand stores for game state [`docs/frontend/state-management.md`]
 - **League System**: WPL structure and scheduling [`docs/core-systems/league-system.md`]
 
@@ -61,12 +61,13 @@ src/
 - [Design Patterns](docs/architecture/design-patterns.md) - Code conventions
 
 ### ⚙️ Core Systems
-- [Match Engine](docs/core-systems/match-engine.md) - Ball-by-ball simulation
+- [Match Engine](docs/core-systems/match-engine.md) - Ball-by-ball simulation architecture
+- [Match Engine Tuning](docs/core-systems/match-engine-tuning.md) - Outcome probability tuning
 - [Player System](docs/core-systems/player-system.md) - Attributes and progression
 - [Playstyle System](docs/core-systems/playstyle-system.md) - Dynamic attribute modifiers
-- [League System](docs/core-systems/league-system.md) - WPL structure
-- [Auction System](docs/core-systems/auction-system.md) - Player trading
-- [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management
+- [League System](docs/core-systems/league-system.md) - WPL structure (planned)
+- [Auction System](docs/core-systems/auction-system.md) - Player trading (planned)
+- [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management (planned)
 
 ### 🎨 Frontend & UI
 - [State Management](docs/frontend/state-management.md) - Zustand stores guide
@@ -93,64 +94,32 @@ src/
 ## Current Development Status
 
 ### ✅ Completed (Phase 1-2)
-- **Project Structure**: Complete React + Vite setup with Zustand
-- **Team Selection**: User team selection and persistence
-- **Squad Management**: Comprehensive team management interface
-- **Data Processing**: Advanced T20 statistics processing with GMA filtering
-- **Match Engine**: SimpleBallSimulator with direct 4-step calculation
-- **Strategic Selection Systems**: Intelligent bowler and batsman selection with event-driven architecture
-- **Documentation**: Organized documentation structure
-- **Codebase Cleanup**: Removed ~4,000 lines of duplicate code, modular data processing
+- **Project Structure**: React 18 + Vite + Zustand state management
+- **Player System**: Master database with 545 players, playstyle ratings, attribute system (1-20 scale)
+- **Match Engine**: SimpleBallSimulator with 4-step calculation + 2D algebraic fielding (~50k+ balls/sec)
+- **Match Engine Tuning**: Preliminary outcome probability tuning complete (see [`docs/core-systems/match-engine-tuning.md`])
+- **Data Processing**: External cricket-data-processor module with GMA filtering
+- **Squad Management**: Team selection and persistence
+- **Configuration System**: All probabilities externalized to JSON config files
+- **Documentation**: Organized structure with component-specific guides
+- **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
 
 ### 🔄 In Progress (Phase 2)
-- **Player Browser**: Search and filtering interface for player database
-- **Match Simulation**: Complete match engine integration with UI
-- **State Integration**: Full Zustand store integration across components
-
-✅ Recently Completed (Playstyle System - Fully Tested & Integrated)
-- **Playstyle System**: Complete implementation with 21 unique playstyles (16 batting + 9 bowling)
-- **Dynamic Attribute Modifiers**: Context-based modifiers applied during match simulation
-- **Fully Configurable**: All weightages, modifiers, and conditions externalized to JSON config files
-- **PlaystyleCalculator**: Calculates 0-100 ratings for all playstyles based on player attributes
-- **AttributeModifierSystem**: Applies playstyle modifiers based on match context (phase, wickets, run rate, etc.)
-- **Match Engine Integration**: Seamless integration into SimpleBallSimulator with metadata tracking
-- **Player Schema Extension**: Added playstyleRatings and primaryPlaystyle fields to player objects
-- **PlayerStore Methods**: Calculate, update, and query playstyle data for all players
-- **Full Match Testing**: All 1123 players tested with playstyle ratings and primary playstyle assignment
-- **Comprehensive Documentation**: Complete guide with examples and customization instructions
-
-✅ Previously Completed (Simplified Algebraic Physics System + Ultra-High Performance)
-- **Algebraic Physics Engine**: Replaced complex simulations with direct mathematical formulas
-- **Polar Coordinate System**: 9 fielders positioned using (r, θ) coordinates from striker
-- **Fixed Launch Angle Physics**: 45° assumption with `bounce_distance = speed²/gravity` formula
-- **Boundary Distance Cache**: Pre-calculated distances for all 360° from striker position
-- **Direct Interception Formulas**: Algebraic fielder interception using `V*sin(θ) ≤ U` checks
-- **Constant Speed Movement**: No deceleration or complex forces (gravity only for projectiles)
-- **Angular Gap Direction Selection**: Grounded shots use angular gaps, aerial shots use distance separation
-- **Ultra-High Performance**: Achieved ~50,000+ balls/second simulation speed
-- **Simplified Configuration**: Updated physics-config.json for algebraic calculations
+- **Player Browser**: Search and filtering interface
+- **Match UI**: Complete match visualization and live simulation
+- **State Integration**: Full Zustand store integration
 
 ### 📋 Next Priorities (Phase 3-4)
 - **WPL Auction System**: Player bidding and squad building
 - **League Structure**: Season calendar and match scheduling
 - **AI Opponents**: Computer team decision making
-- **Advanced UI**: Match visualization and tactical interfaces
+- **Match UI**: Live ball-by-ball visualization with commentary
 
-### 🔮 Future Match Engine Enhancements
-- ✅ **COMPLETED** - Simplified algebraic physics system with maximum performance
-- ✅ **COMPLETED** - Polar coordinate fielder positioning and direct interception formulas
-- **Comprehensive Field Position Library**: Add exhaustive list of cricket fielding positions
-- **Dynamic Conditions**: Re-introduce environmental factors (weather, pitch, pressure)
-- **Complex Mentalities**: Multi-factor mentality determination
-- **Player Development**: Attribute growth based on performance
-- **Advanced Field Tactics**: User-controlled field setting and tactical changes
-
-### 📝 Recent Updates (Documentation Reorganization)
-- **Documentation Structure**: Organized docs by component area with clear hierarchy
-- **Central Navigation**: CLAUDE.md streamlined as central guide with cross-references
-- **Component Guides**: Detailed documentation for each major system
-- **API References**: Complete store methods and usage patterns
-- **Developer Guides**: Setup instructions, patterns, and best practices
+### 🔮 Future Enhancements
+- **Field Position Library**: Exhaustive cricket fielding position names
+- **Environmental Factors**: Weather, pitch conditions, pressure situations
+- **Player Development**: Attribute growth and form fluctuations
+- **User Field Tactics**: Manual field setting and in-match tactical changes
 
 ## Data Processing
 
@@ -171,69 +140,53 @@ See [`cricket-data-processor/README.md`] for processing pipeline details.
 - **Condition**: form, fitness, fatigue, morale (0-100 scale)
 
 ### Match Engine
-**SimpleBallSimulator**: 4-step calculation (Decision → Contact → Trajectory → Algebraic Fielding) with direct mathematical formulas
-**Import**: `import SimpleBallSimulator from '../core/match-engine/SimpleBallSimulator.js'`
-**Performance**: ~50,000+ balls/second simulation speed
+**SimpleBallSimulator**: 4-step algebraic calculation (Decision → Contact → Trajectory → 2D Fielding)
 
-See [`docs/core-systems/match-engine.md`] for detailed technical implementation.
+**Key Features**:
+- All cricket dismissals: bowled, lbw, stumped, caught_behind, caught, run_out
+- Shot types: missed, edged_behind, grounded, aerial
+- Playstyle system with 24 dynamic modifiers (16 batting + 4 pace + 4 spin)
+- Tactics system: batting mentality (attacking/neutral/defensive), bowling mentality, field formations
+- Performance: ~50,000+ balls/second
+
+**Usage**: `import SimpleBallSimulator from '../core/match-engine/SimpleBallSimulator.js'`
+
+**Documentation**:
+- Technical details: [`docs/core-systems/match-engine.md`]
+- Outcome tuning: [`docs/core-systems/match-engine-tuning.md`]
+- Playstyle system: [`docs/core-systems/playstyle-system.md`]
 
 ### World Premier League Teams
 10 teams representing major cricket cities: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles.
 
 ## Important Notes
 
-- **No Python dependencies** in main repository (data processing is external)
-- **Client-side only** - no backend required for MVP
-- **Deterministic simulation** with seeded randomization
-- **Extensible architecture** for future feature additions
-- **Realistic balance** between simulation depth and performance
+- **Client-side only** - no backend required for MVP (LocalStorage persistence)
+- **No Python dependencies** - data processing is external module
+- **Configuration-driven** - all probabilities in `src/data/config/*.json` files
+- **Performance optimized** - algebraic calculations, ~50k balls/sec
+- **Deterministic** - seeded randomization for reproducible results
 
-## Documentation Maintenance Guidelines
+## Development Guidelines
 
-### For Claude Code Instances
+### Configuration-First Approach
+- **All probabilities** must be in `src/data/config/*.json` files
+- **No hardcoded values** - import from config files
+- **Test-driven tuning** - use `src/test/diagnosticBallTest.js` to validate outcomes
 
-**IMPORTANT**: After completing any significant task or feature implementation, always update relevant documentation:
+### Documentation Updates
+After completing features:
+1. Update "Current Development Status" in CLAUDE.md
+2. Create/update component docs in `docs/` folder
+3. Keep CLAUDE.md light - move details to specific doc files
 
-1. **Update CLAUDE.md**:
-   - Add completed features to "Current Development Status"
-   - Update roadmap priorities
-   - Add new component references if created
-
-2. **Component Documentation**:
-   - Create/update docs for new components in appropriate folder
-   - Update API documentation for new store methods or props
-   - Add examples and usage patterns
-
-3. **Cross-References**:
-   - Update links between related documentation
-   - Ensure CLAUDE.md navigation index is current
-   - Verify all documentation links are valid
-
-### Documentation Structure Rules
-
-- **CLAUDE.md**: Central navigation hub only (~150 lines max)
-- **Component Docs**: Detailed guides in organized folders
-- **API Docs**: Method signatures, parameters, examples
-- **Examples**: Code snippets for common patterns
-
-### Required Updates After Task Completion
-
-1. **New Features**: Create component documentation
-2. **API Changes**: Update stores-api.md or match-engine-api.md
-3. **Architecture Changes**: Update system-overview.md
-4. **Completed Milestones**: Update development status in CLAUDE.md
-
-### Quick Documentation Commands
-
-```bash
-# Find broken documentation links
-grep -r "docs/" CLAUDE.md docs/ | grep -E "\[.*\]\(.*\.md\)"
-
-# Update last modified date
-echo "Last updated: $(date)" >> docs/README.md
-```
+### Testing
+- **Unit tests**: Component-specific functionality
+- **Diagnostic tests**: `src/test/diagnosticBallTest.js` for match engine outcomes
+- **Integration tests**: Full match simulation in `src/test/detailedMatchTest.js`
 
 ---
 
-**For detailed information on any component, see the specific documentation linked above.**
-- make sure all the probability values and thresholds are all not hardcoded in any file and are imported from files in the config folder
+**Last Updated**: January 2025 - Bowling Playstyle System Revamp Complete
+
+For detailed information, see component-specific documentation in the `docs/` folder.

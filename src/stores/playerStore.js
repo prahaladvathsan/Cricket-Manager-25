@@ -36,8 +36,15 @@ const usePlayerStore = create((set, get) => ({
   initializePlayers: (playersData) => set(() => {
     const playersMap = {};
     const available = [];
+    let bowlingTypeAssigned = 0;
 
     playersData.forEach(player => {
+      // Assign random bowlingType if null
+      if (player.bowlingType === null || player.bowlingType === undefined) {
+        player.bowlingType = Math.random() < 0.5 ? 'pace' : 'spin';
+        bowlingTypeAssigned++;
+      }
+
       // Players from master database already have playstyleRatings, topPlaystyles, and primaryPlaystyle
       playersMap[player.id] = player;
       if (!player.currentTeam) {
@@ -46,6 +53,9 @@ const usePlayerStore = create((set, get) => ({
     });
 
     console.log(`✅ Initialized ${playersData.length} players with pre-calculated playstyle data`);
+    if (bowlingTypeAssigned > 0) {
+      console.log(`✅ Assigned random bowlingType to ${bowlingTypeAssigned} players`);
+    }
 
     return {
       players: playersMap,

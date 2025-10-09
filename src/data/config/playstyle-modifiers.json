@@ -9,7 +9,6 @@
     "Conditions use match context fields: phase, over, wicketsInHand, currentRunRate, requiredRunRate, etc.",
     "Multiple modifiers for same playstyle can be active simultaneously"
   ],
-
   "conditionOperators": {
     "==": "Equal to",
     "!=": "Not equal to",
@@ -18,7 +17,6 @@
     ">=": "Greater than or equal",
     "<=": "Less than or equal"
   },
-
   "batting": {
     "Opener - Slogger": {
       "description": "Aggressive powerplay hitter, momentum generator",
@@ -26,21 +24,41 @@
         {
           "name": "New Ball Mastery",
           "conditions": [
-            {"field": "phase", "operator": "==", "value": "powerplay"}
+            {
+              "field": "phase",
+              "operator": "==",
+              "value": "powerplay"
+            }
           ],
           "effects": [
-            {"attribute": "vsPace", "scalingFactor": 0.004},
-            {"attribute": "technique", "scalingFactor": 0.003}
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "technique",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Momentum Generation",
           "conditions": [
-            {"field": "over", "operator": "<=", "value": 8}
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 8
+            }
           ],
           "effects": [
-            {"attribute": "aggression", "scalingFactor": 0.0035},
-            {"attribute": "creativity", "scalingFactor": 0.0025}
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.0035
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
@@ -48,128 +66,236 @@
           "sideEffect": true,
           "conditions": [],
           "effects": [
-            {"attribute": "technique", "scalingFactor": -0.003},
-            {"attribute": "concentration", "scalingFactor": -0.0025}
+            {
+              "attribute": "technique",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "concentration",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Opener - Balanced": {
       "description": "Platform builder, reliable opener",
       "modifiers": [
         {
           "name": "New Ball Mastery",
           "conditions": [
-            {"field": "phase", "operator": "==", "value": "powerplay"}
+            {
+              "field": "phase",
+              "operator": "==",
+              "value": "powerplay"
+            }
           ],
           "effects": [
-            {"attribute": "vsPace", "scalingFactor": 0.004},
-            {"attribute": "technique", "scalingFactor": 0.003}
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "technique",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Platform Building",
           "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 7}
+            {
+              "field": "wicketsInHand",
+              "operator": ">=",
+              "value": 7
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": 0.003},
-            {"attribute": "defensiveShots", "scalingFactor": 0.0025}
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
           "name": "Post-Powerplay Struggle",
           "sideEffect": true,
           "conditions": [
-            {"field": "phase", "operator": "!=", "value": "powerplay"},
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "phase",
+              "operator": "!=",
+              "value": "powerplay"
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": -0.003},
-            {"attribute": "neutralShots", "scalingFactor": -0.0025}
+            {
+              "attribute": "concentration",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Opener - Anchor": {
       "description": "Defensive opener, absorbs pressure",
       "modifiers": [
         {
           "name": "Pressure Resistance",
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 6}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 6
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": 0.005},
-            {"attribute": "judgement", "scalingFactor": 0.004}
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Platform Building",
           "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 7}
+            {
+              "field": "wicketsInHand",
+              "operator": ">=",
+              "value": 7
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": 0.003},
-            {"attribute": "defensiveShots", "scalingFactor": 0.0025}
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
           "name": "Post-Powerplay Struggle",
           "sideEffect": true,
           "conditions": [
-            {"field": "phase", "operator": "!=", "value": "powerplay"},
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "phase",
+              "operator": "!=",
+              "value": "powerplay"
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": -0.003},
-            {"attribute": "neutralShots", "scalingFactor": -0.0025}
+            {
+              "attribute": "concentration",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Top Order - Slogger": {
       "description": "Middle overs aggressor, spin dominator",
       "modifiers": [
         {
           "name": "Spin Dominance",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "vsSpin", "scalingFactor": 0.005},
-            {"attribute": "placement", "scalingFactor": 0.003}
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "placement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Calculated Aggression",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 16
+            }
           ],
           "effects": [
-            {"attribute": "judgement", "scalingFactor": 0.004},
-            {"attribute": "creativity", "scalingFactor": 0.003}
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Batting Collapse",
           "sideEffect": true,
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 5}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 5
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.005},
-            {"attribute": "range360", "scalingFactor": -0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.005
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": -0.004
+            }
           ]
         }
       ]
     },
-
     "Top Order - Balanced": {
       "description": "Consistent all-phase batsman",
       "modifiers": [
@@ -177,237 +303,446 @@
           "name": "Consistency Boost",
           "conditions": [],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": 0.0025},
-            {"attribute": "technique", "scalingFactor": 0.002}
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.0025
+            },
+            {
+              "attribute": "technique",
+              "scalingFactor": 0.002
+            }
           ]
         },
         {
           "name": "Partnership Stability",
           "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 6}
+            {
+              "field": "wicketsInHand",
+              "operator": ">=",
+              "value": 6
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.003},
-            {"attribute": "judgement", "scalingFactor": 0.0025}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
           "name": "Batting Collapse",
           "sideEffect": true,
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 5}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 5
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.005},
-            {"attribute": "range360", "scalingFactor": -0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.005
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": -0.004
+            }
           ]
         }
       ]
     },
-
     "Top Order - Anchor": {
       "description": "Steady accumulator in top order",
       "modifiers": [
         {
           "name": "Spin Dominance",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "vsSpin", "scalingFactor": 0.005},
-            {"attribute": "placement", "scalingFactor": 0.003}
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "placement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Partnership Stability",
           "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 6}
+            {
+              "field": "wicketsInHand",
+              "operator": ">=",
+              "value": 6
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.003},
-            {"attribute": "judgement", "scalingFactor": 0.0025}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
           "name": "Death Overs Inefficiency",
           "sideEffect": true,
           "conditions": [
-            {"field": "phase", "operator": "==", "value": "death"}
+            {
+              "field": "phase",
+              "operator": "==",
+              "value": "death"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.005},
-            {"attribute": "range360", "scalingFactor": -0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.005
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": -0.004
+            }
           ]
         }
       ]
     },
-
     "Middle Order - Slogger": {
       "description": "Power hitter in middle overs",
       "modifiers": [
         {
           "name": "Middle Overs Mastery",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 16
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": 0.006},
-            {"attribute": "strength", "scalingFactor": 0.004},
-            {"attribute": "range360", "scalingFactor": 0.003}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "strength",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Calculated Aggression",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 16
+            }
           ],
           "effects": [
-            {"attribute": "judgement", "scalingFactor": 0.004},
-            {"attribute": "creativity", "scalingFactor": 0.003}
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Batting Collapse",
           "sideEffect": true,
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 4}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 4
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.005},
-            {"attribute": "range360", "scalingFactor": -0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.005
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": -0.004
+            }
           ]
         }
       ]
     },
-
     "Middle Order - Balanced": {
       "description": "Versatile middle order batsman",
       "modifiers": [
         {
           "name": "Spin Dominance",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "vsSpin", "scalingFactor": 0.005},
-            {"attribute": "placement", "scalingFactor": 0.003}
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "placement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Pace Dominance",
           "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
+            {
+              "field": "over",
+              "operator": ">=",
+              "value": 7
+            },
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 16
+            }
           ],
           "effects": [
-            {"attribute": "vsPace", "scalingFactor": 0.004},
-            {"attribute": "footwork", "scalingFactor": 0.003}
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "footwork",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Acceleration Pressure",
           "sideEffect": true,
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.003},
-            {"attribute": "aggression", "scalingFactor": -0.0025}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Middle Order - Anchor": {
       "description": "Consolidator in middle order",
       "modifiers": [
         {
           "name": "Consolidation",
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 7}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 7
+            }
           ],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": 0.005},
-            {"attribute": "concentration", "scalingFactor": 0.004},
-            {"attribute": "judgement", "scalingFactor": 0.003}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Partnership",
           "conditions": [
-            {"field": "currentPartnership", "operator": ">", "value": 20}
+            {
+              "field": "currentPartnership",
+              "operator": ">",
+              "value": 20
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.004},
-            {"attribute": "placement", "scalingFactor": 0.003}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "placement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Acceleration Pressure",
           "sideEffect": true,
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.003},
-            {"attribute": "aggression", "scalingFactor": -0.0025}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Lower Order - Slogger": {
       "description": "Tail-end power hitter",
       "modifiers": [
         {
           "name": "Tail-End Hitting",
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 5}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 5
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": 0.005},
-            {"attribute": "strength", "scalingFactor": 0.004},
-            {"attribute": "range360", "scalingFactor": 0.003}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "strength",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Pressure Hitting",
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": 12}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "aggression", "scalingFactor": 0.006},
-            {"attribute": "creativity", "scalingFactor": 0.004}
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Pressure Hitting Alternate",
           "conditions": [
-            {"field": "ballsLeft", "operator": "<=", "value": 18}
+            {
+              "field": "ballsLeft",
+              "operator": "<=",
+              "value": 18
+            }
           ],
           "effects": [
-            {"attribute": "aggression", "scalingFactor": 0.006},
-            {"attribute": "creativity", "scalingFactor": 0.004}
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Powerplay Struggle",
           "sideEffect": true,
           "conditions": [
-            {"field": "over", "operator": "<=", "value": 6}
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 6
+            }
           ],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": -0.004},
-            {"attribute": "neutralShots", "scalingFactor": -0.003}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": -0.004
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": -0.003
+            }
           ]
         }
       ]
     },
-
     "Lower Order - Balanced": {
       "description": "Capable tail-ender",
       "modifiers": [
@@ -415,113 +750,213 @@
           "name": "Bowling Adaptation",
           "conditions": [],
           "effects": [
-            {"attribute": "vsPace", "scalingFactor": 0.003},
-            {"attribute": "neutralShots", "scalingFactor": 0.003}
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Time Management",
           "conditions": [
-            {"field": "ballsLeft", "operator": "<=", "value": 60},
-            {"field": "currentRunRate", "operator": ">", "value": "requiredRunRate"}
+            {
+              "field": "ballsLeft",
+              "operator": "<=",
+              "value": 60
+            },
+            {
+              "field": "currentRunRate",
+              "operator": ">",
+              "value": "requiredRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.004},
-            {"attribute": "judgement", "scalingFactor": 0.003}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Powerplay Struggle",
           "sideEffect": true,
           "conditions": [
-            {"field": "over", "operator": "<=", "value": 6}
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 6
+            }
           ],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": -0.004},
-            {"attribute": "neutralShots", "scalingFactor": -0.003}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": -0.004
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": -0.003
+            }
           ]
         }
       ]
     },
-
     "Lower Order - Anchor": {
       "description": "Defensive tail-ender",
       "modifiers": [
         {
           "name": "Immovable",
           "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 5}
+            {
+              "field": "wicketsInHand",
+              "operator": "<=",
+              "value": 5
+            }
           ],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": 0.005},
-            {"attribute": "vsPace", "scalingFactor": 0.004},
-            {"attribute": "vsSpin", "scalingFactor": 0.004}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Time Management",
           "conditions": [
-            {"field": "ballsLeft", "operator": "<=", "value": 60},
-            {"field": "currentRunRate", "operator": ">", "value": "requiredRunRate"}
+            {
+              "field": "ballsLeft",
+              "operator": "<=",
+              "value": 60
+            },
+            {
+              "field": "currentRunRate",
+              "operator": ">",
+              "value": "requiredRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.004},
-            {"attribute": "judgement", "scalingFactor": 0.003}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Acceleration Pressure",
           "sideEffect": true,
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.003},
-            {"attribute": "aggression", "scalingFactor": -0.0025}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Finisher": {
       "description": "Death overs specialist",
       "modifiers": [
         {
           "name": "Death Overs Excellence",
           "conditions": [
-            {"field": "phase", "operator": "==", "value": "death"}
+            {
+              "field": "phase",
+              "operator": "==",
+              "value": "death"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": 0.007},
-            {"attribute": "range360", "scalingFactor": 0.005},
-            {"attribute": "judgement", "scalingFactor": 0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": 0.007
+            },
+            {
+              "attribute": "range360",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "High-Pressure Performance",
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "concentration", "scalingFactor": 0.005},
-            {"attribute": "aggression", "scalingFactor": 0.006},
-            {"attribute": "creativity", "scalingFactor": 0.004}
+            {
+              "attribute": "concentration",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Early Innings Wasted",
           "sideEffect": true,
           "conditions": [
-            {"field": "over", "operator": "<=", "value": 12}
+            {
+              "field": "over",
+              "operator": "<=",
+              "value": 12
+            }
           ],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": -0.005},
-            {"attribute": "neutralShots", "scalingFactor": -0.005}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": -0.005
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": -0.005
+            }
           ]
         }
       ]
     },
-
     "Runner": {
       "description": "Strike rotator specialist",
       "modifiers": [
@@ -529,56 +964,106 @@
           "name": "Strike Rotation",
           "conditions": [],
           "effects": [
-            {"attribute": "speed", "scalingFactor": 0.005},
-            {"attribute": "neutralShots", "scalingFactor": 0.004},
-            {"attribute": "placement", "scalingFactor": 0.003}
+            {
+              "attribute": "speed",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "placement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Momentum Maintenance",
           "conditions": [
-            {"field": "currentRunRate", "operator": ">=", "value": "requiredRunRate"}
+            {
+              "field": "currentRunRate",
+              "operator": ">=",
+              "value": "requiredRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "aggression", "scalingFactor": 0.003},
-            {"attribute": "creativity", "scalingFactor": 0.0025}
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "creativity",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
           "name": "Boundary Limitation",
           "sideEffect": true,
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.004},
-            {"attribute": "strength", "scalingFactor": -0.003}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.004
+            },
+            {
+              "attribute": "strength",
+              "scalingFactor": -0.003
+            }
           ]
         }
       ]
     },
-
     "Pinch-Hitter": {
       "description": "Instant impact specialist",
       "modifiers": [
         {
           "name": "Instant Impact",
           "conditions": [
-            {"field": "ballsFaced", "operator": "<=", "value": 10}
+            {
+              "field": "ballsFaced",
+              "operator": "<=",
+              "value": 10
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": 0.006},
-            {"attribute": "aggression", "scalingFactor": 0.005},
-            {"attribute": "strength", "scalingFactor": 0.004}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": 0.005
+            },
+            {
+              "attribute": "strength",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Bowling Disruption",
           "conditions": [],
           "effects": [
-            {"attribute": "vsPace", "scalingFactor": 0.003},
-            {"attribute": "vsSpin", "scalingFactor": 0.003},
-            {"attribute": "judgement", "scalingFactor": 0.0025}
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.003
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.0025
+            }
           ]
         },
         {
@@ -586,13 +1071,18 @@
           "sideEffect": true,
           "conditions": [],
           "effects": [
-            {"attribute": "technique", "scalingFactor": -0.003},
-            {"attribute": "concentration", "scalingFactor": -0.0025}
+            {
+              "attribute": "technique",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "concentration",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     },
-
     "Wall": {
       "description": "Ultra-defensive batsman",
       "modifiers": [
@@ -600,402 +1090,571 @@
           "name": "Defensive Mastery",
           "conditions": [],
           "effects": [
-            {"attribute": "defensiveShots", "scalingFactor": 0.006},
-            {"attribute": "vsPace", "scalingFactor": 0.004},
-            {"attribute": "vsSpin", "scalingFactor": 0.004}
+            {
+              "attribute": "defensiveShots",
+              "scalingFactor": 0.006
+            },
+            {
+              "attribute": "vsPace",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "vsSpin",
+              "scalingFactor": 0.004
+            }
           ]
         },
         {
           "name": "Time Management",
           "conditions": [
-            {"field": "ballsLeft", "operator": "<=", "value": 60},
-            {"field": "currentRunRate", "operator": ">", "value": "requiredRunRate"}
+            {
+              "field": "ballsLeft",
+              "operator": "<=",
+              "value": 60
+            },
+            {
+              "field": "currentRunRate",
+              "operator": ">",
+              "value": "requiredRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "neutralShots", "scalingFactor": 0.004},
-            {"attribute": "judgement", "scalingFactor": 0.003}
+            {
+              "attribute": "neutralShots",
+              "scalingFactor": 0.004
+            },
+            {
+              "attribute": "judgement",
+              "scalingFactor": 0.003
+            }
           ]
         },
         {
           "name": "Acceleration Pressure",
           "sideEffect": true,
           "conditions": [
-            {"field": "requiredRunRate", "operator": ">", "value": "currentRunRate"}
+            {
+              "field": "requiredRunRate",
+              "operator": ">",
+              "value": "currentRunRate"
+            }
           ],
           "effects": [
-            {"attribute": "attackingShots", "scalingFactor": -0.003},
-            {"attribute": "aggression", "scalingFactor": -0.0025}
+            {
+              "attribute": "attackingShots",
+              "scalingFactor": -0.003
+            },
+            {
+              "attribute": "aggression",
+              "scalingFactor": -0.0025
+            }
           ]
         }
       ]
     }
   },
-
   "bowling": {
-    "New Ball": {
-      "description": "Powerplay specialist",
-      "modifiers": [
-        {
-          "name": "New Ball Swing",
-          "conditions": [
-            {"field": "over", "operator": "<=", "value": 6}
-          ],
-          "effects": [
-            {"attribute": "variations", "scalingFactor": 0.006},
-            {"attribute": "swing", "scalingFactor": 0.006}
-          ]
-        },
-        {
-          "name": "First Over",
-          "conditions": [
-            {"field": "over", "operator": "<=", "value": 2}
-          ],
-          "effects": [
-            {"attribute": "intelligence", "scalingFactor": 0.01},
-            {"attribute": "bowlingSpeed", "scalingFactor": 0.01}
-          ]
-        },
-        {
-          "name": "Old Ball Struggle",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "over", "operator": ">", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": -0.008},
-            {"attribute": "swing", "scalingFactor": -0.008}
-          ]
-        }
-      ]
+    "pace": {
+      "Swing Bowler": {
+        "description": "Exploits new ball movement with swing and seam",
+        "modifiers": [
+          {
+            "name": "New Ball Movement",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 6
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "swing",
+                "scalingFactor": 0.007
+              },
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Seam Exploitation",
+            "conditions": [
+              {
+                "field": "batsmanTechnique",
+                "operator": "<",
+                "value": 13
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "swing",
+                "scalingFactor": 0.005
+              },
+              {
+                "attribute": "intelligence",
+                "scalingFactor": 0.003
+              }
+            ]
+          },
+          {
+            "name": "Old Ball Inefficiency",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 14
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "variations",
+                "scalingFactor": -0.005
+              }
+            ]
+          }
+        ]
+      },
+      "Hit-the-Deck Seamer": {
+        "description": "Hard length specialist, relentless pressure bowler",
+        "modifiers": [
+          {
+            "name": "Hard Length Discipline",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 6
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "bowlingSpeed",
+                "scalingFactor": 0.005
+              },
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Relentless Pressure",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 7
+              },
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 16
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "neutralBowling",
+                "scalingFactor": 0.003
+              }
+            ]
+          },
+          {
+            "name": "Fatigue Drop-off",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "oversBowled",
+                "operator": ">=",
+                "value": 3
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": -0.004
+              }
+            ]
+          }
+        ]
+      },
+      "Short-Ball Specialist": {
+        "description": "Intimidating pace bowler using short-pitched deliveries",
+        "modifiers": [
+          {
+            "name": "Short Ball Hostility",
+            "conditions": [
+              {
+                "field": "batsmanFootwork",
+                "operator": "<",
+                "value": 13
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "bowlingSpeed",
+                "scalingFactor": 0.006
+              },
+              {
+                "attribute": "aggression",
+                "flatBonus": 1
+              }
+            ]
+          },
+          {
+            "name": "Psychological Pressure",
+            "conditions": [
+              {
+                "field": "batsmanConcentration",
+                "operator": "<=",
+                "value": 12
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "temperament",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Fatigue Drop-off",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "oversBowled",
+                "operator": ">=",
+                "value": 3
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": -0.004
+              }
+            ]
+          }
+        ]
+      },
+      "Death Specialist": {
+        "description": "Death overs yorker specialist, calm under pressure",
+        "modifiers": [
+          {
+            "name": "Yorker Accuracy",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 17
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.006
+              },
+              {
+                "attribute": "variations",
+                "scalingFactor": 0.005
+              }
+            ]
+          },
+          {
+            "name": "Calm Under Pressure",
+            "conditions": [
+              {
+                "field": "requiredRunRate",
+                "operator": ">",
+                "value": "currentRunRate"
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "temperament",
+                "scalingFactor": 0.005
+              }
+            ]
+          },
+          {
+            "name": "Powerplay Struggle",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 6
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "swing",
+                "scalingFactor": -0.004
+              }
+            ]
+          }
+        ]
+      }
     },
-
-    "Striker": {
-      "description": "Wicket-taker",
-      "modifiers": [
-        {
-          "name": "Field Placement",
-          "conditions": [],
-          "effects": [
-            {"attribute": "bowlingSpeed", "scalingFactor": 0.005},
-            {"attribute": "defensiveBowling", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Aggressive Line",
-          "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 5}
-          ],
-          "effects": [
-            {"attribute": "attackingBowling", "scalingFactor": 0.004},
-            {"attribute": "variations", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Middle Overs Decline",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 12}
-          ],
-          "effects": [
-            {"attribute": "neutralBowling", "scalingFactor": -0.003},
-            {"attribute": "stamina", "scalingFactor": -0.0025}
-          ]
-        }
-      ]
-    },
-
-    "Heartbreaker": {
-      "description": "Partnership breaker",
-      "modifiers": [
-        {
-          "name": "Breakthroughs",
-          "conditions": [
-            {"field": "currentPartnershipBalls", "operator": ">=", "value": 30}
-          ],
-          "effects": [
-            {"attribute": "swing", "scalingFactor": 0.005},
-            {"attribute": "variations", "scalingFactor": 0.004},
-            {"attribute": "intelligence", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Pressure Building",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.003},
-            {"attribute": "neutralBowling", "scalingFactor": 0.0025}
-          ]
-        },
-        {
-          "name": "Tail Resistance",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 4}
-          ],
-          "effects": [
-            {"attribute": "attackingBowling", "scalingFactor": -0.004},
-            {"attribute": "temperament", "scalingFactor": -0.003}
-          ]
-        }
-      ]
-    },
-
-    "Death Bowler": {
-      "description": "Death overs specialist",
-      "modifiers": [
-        {
-          "name": "Death Overs Mastery",
-          "conditions": [
-            {"field": "phase", "operator": "==", "value": "death"}
-          ],
-          "effects": [
-            {"attribute": "variations", "scalingFactor": 0.006},
-            {"attribute": "intelligence", "scalingFactor": 0.005},
-            {"attribute": "defensiveBowling", "scalingFactor": 0.004}
-          ]
-        },
-        {
-          "name": "Pressure Immunity",
-          "conditions": [
-            {"field": "requiredRunRate", "operator": "<", "value": "currentRunRate"}
-          ],
-          "effects": [
-            {"attribute": "temperament", "scalingFactor": 0.006},
-            {"attribute": "accuracy", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Powerplay Weakness",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "phase", "operator": "==", "value": "powerplay"}
-          ],
-          "effects": [
-            {"attribute": "swing", "scalingFactor": -0.004},
-            {"attribute": "attackingBowling", "scalingFactor": -0.003}
-          ]
-        }
-      ]
-    },
-
-    "Workhorse": {
-      "description": "Consistent middle overs bowler",
-      "modifiers": [
-        {
-          "name": "Pressure Building",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.003},
-            {"attribute": "neutralBowling", "scalingFactor": 0.0025}
-          ]
-        },
-        {
-          "name": "Consistency",
-          "conditions": [],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.003, "perOverMultiplier": true},
-            {"attribute": "intelligence", "scalingFactor": 0.0025, "perOverMultiplier": true}
-          ],
-          "note": "Effects multiply by number of overs bowled"
-        },
-        {
-          "name": "Tail Resistance",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 4}
-          ],
-          "effects": [
-            {"attribute": "attackingBowling", "scalingFactor": -0.004},
-            {"attribute": "temperament", "scalingFactor": -0.003}
-          ]
-        }
-      ]
-    },
-
-    "Magician": {
-      "description": "Spin wizard",
-      "modifiers": [
-        {
-          "name": "Aggressive Line",
-          "conditions": [
-            {"field": "wicketsInHand", "operator": ">=", "value": 5}
-          ],
-          "effects": [
-            {"attribute": "attackingBowling", "scalingFactor": 0.004},
-            {"attribute": "variations", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Pressure Building",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.003},
-            {"attribute": "neutralBowling", "scalingFactor": 0.0025}
-          ]
-        },
-        {
-          "name": "Slippery Ball",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "over", "operator": "<=", "value": 12}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": -0.003},
-            {"attribute": "neutralBowling", "scalingFactor": -0.004}
-          ]
-        }
-      ]
-    },
-
-    "Controller": {
-      "description": "Economy specialist",
-      "modifiers": [
-        {
-          "name": "Run Control",
-          "conditions": [
-            {"field": "currentRunRate", "operator": ">", "value": "requiredRunRate"}
-          ],
-          "effects": [
-            {"attribute": "intelligence", "scalingFactor": 0.005},
-            {"attribute": "neutralBowling", "scalingFactor": 0.004},
-            {"attribute": "defensiveBowling", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Tactical Bowling",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.004},
-            {"attribute": "variations", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Tail Resistance",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "wicketsInHand", "operator": "<=", "value": 4}
-          ],
-          "effects": [
-            {"attribute": "attackingBowling", "scalingFactor": -0.004},
-            {"attribute": "temperament", "scalingFactor": -0.003}
-          ]
-        }
-      ]
-    },
-
-    "Janitor": {
-      "description": "Cleanup bowler",
-      "modifiers": [
-        {
-          "name": "Cleanup",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 12}
-          ],
-          "effects": [
-            {"attribute": "neutralBowling", "scalingFactor": 0.004},
-            {"attribute": "attackingBowling", "scalingFactor": 0.003},
-            {"attribute": "accuracy", "scalingFactor": 0.0025}
-          ]
-        },
-        {
-          "name": "Field Placement",
-          "conditions": [],
-          "effects": [
-            {"attribute": "bowlingSpeed", "scalingFactor": 0.005},
-            {"attribute": "defensiveBowling", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Middle Overs Decline",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 12}
-          ],
-          "effects": [
-            {"attribute": "neutralBowling", "scalingFactor": -0.003},
-            {"attribute": "stamina", "scalingFactor": -0.0025}
-          ]
-        }
-      ]
-    },
-
-    "Tactician": {
-      "description": "Strategic bowler",
-      "modifiers": [
-        {
-          "name": "Field Placement",
-          "conditions": [],
-          "effects": [
-            {"attribute": "bowlingSpeed", "scalingFactor": 0.005},
-            {"attribute": "defensiveBowling", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Tactical Bowling",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.004},
-            {"attribute": "variations", "scalingFactor": 0.003}
-          ]
-        },
-        {
-          "name": "Powerplay Weakness",
-          "sideEffect": true,
-          "conditions": [
-            {"field": "phase", "operator": "==", "value": "powerplay"}
-          ],
-          "effects": [
-            {"attribute": "swing", "scalingFactor": -0.004},
-            {"attribute": "attackingBowling", "scalingFactor": -0.003}
-          ]
-        }
-      ]
-    },
-
-    "Balanced": {
-      "description": "Well-rounded bowler",
-      "modifiers": [
-        {
-          "name": "Adaptability",
-          "conditions": [],
-          "effects": [
-            {"attribute": "intelligence", "scalingFactor": 0.002},
-            {"attribute": "accuracy", "scalingFactor": 0.002},
-            {"attribute": "neutralBowling", "scalingFactor": 0.002}
-          ]
-        },
-        {
-          "name": "Pressure Building",
-          "conditions": [
-            {"field": "over", "operator": ">=", "value": 7},
-            {"field": "over", "operator": "<=", "value": 16}
-          ],
-          "effects": [
-            {"attribute": "accuracy", "scalingFactor": 0.003},
-            {"attribute": "neutralBowling", "scalingFactor": 0.0025}
-          ]
-        }
-      ]
+    "spin": {
+      "Classical Spinner": {
+        "description": "Traditional spinner with flight, dip, and deceptive loop",
+        "modifiers": [
+          {
+            "name": "Flight & Dip",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 7
+              },
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 16
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "turn",
+                "scalingFactor": 0.005
+              },
+              {
+                "attribute": "variations",
+                "scalingFactor": 0.003
+              }
+            ]
+          },
+          {
+            "name": "Deceptive Loop",
+            "conditions": [
+              {
+                "field": "batsmanFootwork",
+                "operator": "<",
+                "value": 13
+              }
+            ],
+            "effects": [
+              {
+                "targetPlayer": "batsman",
+                "attribute": "judgement",
+                "flatPenalty": 1
+              },
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Powerplay Struggle",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 6
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "turn",
+                "scalingFactor": -0.004
+              }
+            ]
+          }
+        ]
+      },
+      "Flat Spinner": {
+        "description": "Quick, skiddy spinner focused on accuracy and economy",
+        "modifiers": [
+          {
+            "name": "Skiddy Trajectory",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 10
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.005
+              },
+              {
+                "attribute": "defensiveBowling",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Quick Through Air",
+            "conditions": [
+              {
+                "field": "batsmanFootwork",
+                "operator": "<",
+                "value": 13
+              }
+            ],
+            "effects": [
+              {
+                "targetPlayer": "batsman",
+                "attribute": "timing",
+                "flatPenalty": 1
+              }
+            ]
+          },
+          {
+            "name": "Less Turn",
+            "sideEffect": true,
+            "conditions": [],
+            "effects": [
+              {
+                "attribute": "turn",
+                "scalingFactor": -0.002
+              }
+            ]
+          }
+        ]
+      },
+      "Mystery Spinner": {
+        "description": "Deceptive spinner with multiple variations and trick balls",
+        "modifiers": [
+          {
+            "name": "Variation Mastery",
+            "conditions": [
+              {
+                "field": "batsmanTechnique",
+                "operator": "<",
+                "value": 13
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "variations",
+                "scalingFactor": 0.006
+              },
+              {
+                "attribute": "intelligence",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Trick Ball",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": ">=",
+                "value": 10
+              },
+              {
+                "field": "currentPartnership",
+                "operator": ">=",
+                "value": 30
+              }
+            ],
+            "effects": [
+              {
+                "targetPlayer": "batsman",
+                "attribute": "judgement",
+                "flatPenalty": 2
+              }
+            ]
+          },
+          {
+            "name": "Over-Experimentation",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "phase",
+                "operator": "==",
+                "value": "powerplay"
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": -0.005
+              }
+            ]
+          },
+          {
+            "name": "Over-Experimentation Death",
+            "sideEffect": true,
+            "conditions": [
+              {
+                "field": "phase",
+                "operator": "==",
+                "value": "death"
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": -0.005
+              }
+            ]
+          }
+        ]
+      },
+      "Containment Spinner": {
+        "description": "Metronomic line and length specialist, dot ball pressure",
+        "modifiers": [
+          {
+            "name": "Metronomic Line",
+            "conditions": [
+              {
+                "field": "over",
+                "operator": "<=",
+                "value": 12
+              }
+            ],
+            "effects": [
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.005
+              },
+              {
+                "attribute": "defensiveBowling",
+                "scalingFactor": 0.004
+              }
+            ]
+          },
+          {
+            "name": "Dot Ball Pressure",
+            "conditions": [
+              {
+                "field": "currentRunRate",
+                "operator": "<",
+                "value": "requiredRunRate"
+              }
+            ],
+            "effects": [
+              {
+                "targetPlayer": "batsman",
+                "attribute": "concentration",
+                "flatPenalty": 1
+              }
+            ]
+          },
+          {
+            "name": "Low Wicket Threat",
+            "sideEffect": true,
+            "conditions": [],
+            "effects": [
+              {
+                "attribute": "attackingBowling",
+                "scalingFactor": -0.004
+              }
+            ]
+          }
+        ]
+      }
     }
   },
-
   "matchContextFields": {
     "phase": "Match phase: 'powerplay', 'middle', 'death'",
     "over": "Current over number (1-20)",

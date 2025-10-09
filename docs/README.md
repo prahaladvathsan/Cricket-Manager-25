@@ -25,10 +25,8 @@ This documentation provides comprehensive guides for developing and understandin
 - **[Navigation](frontend/routing-navigation.md)** - App navigation *(Coming Soon)*
 
 ### 📊 Data & Configuration
-- **[Player Attributes](data/player-attributes.md)** - Attribute system (1-20 scale)
-- **[Statistical Calculations](data/statistical-calculations.md)** - Raw stats processing
-- **[Data Processing](data/data-processing.md)** - External processor guide
-- **[Game Balance](data/game-balance.md)** - Balance configuration *(Coming Soon)*
+- **[Player Attributes](data/player-attributes.md)** - Attribute system reference (1-20 scale)
+- **[Configuration Guide](data/configuration-guide.md)** - Match engine config files
 
 ### 🛠️ Development
 - **[Setup Guide](development/setup-guide.md)** - Detailed setup instructions
@@ -54,21 +52,23 @@ This documentation provides comprehensive guides for developing and understandin
 3. Reference [API Documentation](api/) for methods
 4. Follow patterns in [State Management](frontend/state-management.md)
 
-### For Data Processing
-1. Read [Data Processing Guide](data/data-processing.md)
+### For Configuration
+1. Review [Configuration Guide](data/configuration-guide.md)
 2. Understand [Player Attributes](data/player-attributes.md) system
-3. Review [Statistical Calculations](data/statistical-calculations.md)
+3. Check [Match Engine Tuning](core-systems/match-engine-tuning.md)
 
 ## Documentation Status
 
 ### ✅ Complete
 - Architecture overview and data flow
-- Match engine architecture
-- Player system (attributes, conditions, development)
+- Match engine architecture and tuning guide
+- Playstyle system with dynamic modifiers
+- Player attribute reference
+- Configuration file documentation
 - State management guide with examples
 - Complete stores API reference
-- Data processing pipeline guide
 - Development setup instructions
+- Test script documentation
 
 ### 🔄 In Progress
 - UI component library documentation

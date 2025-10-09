@@ -30,24 +30,34 @@ class AttributeModifierSystem {
    * @param {string} category - 'batting' or 'bowling'
    * @param {string} playstyleName - Name of the active playstyle
    * @param {Object} matchContext - Current match situation
-   * @returns {Object} Player object with modified attributes
+   * @param {Object} opponentPlayer - Optional: opponent player for targetPlayer effects
+   * @returns {Object} Object with modified player and opponent player (if modified)
    */
-  applyPlaystyleModifiers(player, category, playstyleName, matchContext) {
+  applyPlaystyleModifiers(player, category, playstyleName, matchContext, opponentPlayer = null) {
     // Clone player object to avoid mutating original
     const modifiedPlayer = JSON.parse(JSON.stringify(player));
+    let modifiedOpponent = opponentPlayer ? JSON.parse(JSON.stringify(opponentPlayer)) : null;
 
     // Get playstyle modifiers configuration
-    const playstyleConfig = this.modifiers[category]?.[playstyleName];
+    let playstyleConfig;
+
+    if (category === 'bowling') {
+      // For bowling, need to check pace or spin subcategory
+      const bowlingType = player.bowlingType || 'pace';
+      playstyleConfig = this.modifiers.bowling?.[bowlingType]?.[playstyleName];
+    } else {
+      playstyleConfig = this.modifiers[category]?.[playstyleName];
+    }
 
     if (!playstyleConfig || !playstyleConfig.modifiers) {
-      return modifiedPlayer; // No modifiers, return unchanged
+      return { player: modifiedPlayer, opponent: modifiedOpponent }; // No modifiers, return unchanged
     }
 
     // Get playstyle rating for this playstyle
     const playstyleRating = player.playstyleRatings?.[category]?.[playstyleName] || 0;
 
     if (playstyleRating === 0) {
-      return modifiedPlayer; // No rating, no modifiers apply
+      return { player: modifiedPlayer, opponent: modifiedOpponent }; // No rating, no modifiers apply
     }
 
     // Track applied modifiers for metadata
@@ -61,12 +71,22 @@ class AttributeModifierSystem {
       if (conditionsMet) {
         // Apply effects
         for (const effect of modifier.effects) {
-          this.applyEffect(
-            modifiedPlayer,
-            effect,
-            playstyleRating,
-            matchContext
-          );
+          // Check if effect targets opponent
+          if (effect.targetPlayer === 'batsman' && modifiedOpponent) {
+            this.applyEffect(
+              modifiedOpponent,
+              effect,
+              playstyleRating,
+              matchContext
+            );
+          } else {
+            this.applyEffect(
+              modifiedPlayer,
+              effect,
+              playstyleRating,
+              matchContext
+            );
+          }
         }
 
         appliedModifiers.push({
@@ -85,7 +105,7 @@ class AttributeModifierSystem {
     modifiedPlayer.matchMetadata.activePlaystyle = playstyleName;
     modifiedPlayer.matchMetadata.playstyleRating = playstyleRating;
 
-    return modifiedPlayer;
+    return { player: modifiedPlayer, opponent: modifiedOpponent };
   }
 
   /**
@@ -178,12 +198,12 @@ class AttributeModifierSystem {
   /**
    * Apply a single effect to player attributes
    * @param {Object} player - Player object (will be mutated)
-   * @param {Object} effect - Effect object with attribute and scalingFactor
+   * @param {Object} effect - Effect object with attribute and modifier type
    * @param {number} playstyleRating - Playstyle rating (0-100)
    * @param {Object} matchContext - Current match situation
    */
   applyEffect(player, effect, playstyleRating, matchContext) {
-    const { attribute, scalingFactor, perOverMultiplier } = effect;
+    const { attribute, scalingFactor, flatBonus, flatPenalty, perOverMultiplier } = effect;
 
     // Get current attribute value
     const currentValue = this.getAttributeValue(player, attribute);
@@ -192,16 +212,29 @@ class AttributeModifierSystem {
       return; // Attribute not found, skip
     }
 
-    // Calculate modifier
-    let modifier = 1 + (playstyleRating * scalingFactor);
+    let newValue;
 
-    // Handle per-over multiplier (for Workhorse "Consistency" modifier)
-    if (perOverMultiplier && matchContext.oversBowled) {
-      modifier = 1 + (playstyleRating * scalingFactor * matchContext.oversBowled);
+    // Handle different effect types
+    if (flatBonus !== undefined) {
+      // Direct addition (flat bonus)
+      newValue = currentValue + flatBonus;
+    } else if (flatPenalty !== undefined) {
+      // Direct subtraction (flat penalty)
+      newValue = currentValue - flatPenalty;
+    } else if (scalingFactor !== undefined) {
+      // Multiplicative modifier (existing logic)
+      let modifier = 1 + (playstyleRating * scalingFactor);
+
+      // Handle per-over multiplier (for Workhorse "Consistency" modifier)
+      if (perOverMultiplier && matchContext.oversBowled) {
+        modifier = 1 + (playstyleRating * scalingFactor * matchContext.oversBowled);
+      }
+
+      newValue = currentValue * modifier;
+    } else {
+      // No valid effect type found
+      return;
     }
-
-    // Apply modifier
-    const newValue = currentValue * modifier;
 
     // Set modified value
     this.setAttributeValue(player, attribute, newValue);
@@ -298,34 +331,42 @@ class AttributeModifierSystem {
    * Apply modifiers for batting playstyle
    * @param {Object} striker - Batsman player object
    * @param {Object} matchContext - Current match situation
-   * @returns {Object} Modified player object
+   * @param {Object} opponentPlayer - Optional: opponent player (bowler) for targetPlayer effects
+   * @returns {Object} Modified player object (or { player, opponent } if opponent was modified)
    */
-  applyBattingModifiers(striker, matchContext) {
+  applyBattingModifiers(striker, matchContext, opponentPlayer = null) {
     // Get active batting playstyle (from player's primary playstyle)
     const activePlaystyle = striker.primaryPlaystyle?.batting || striker.primaryPlaystyle;
 
     if (!activePlaystyle) {
-      return striker; // No playstyle set, return unchanged
+      return opponentPlayer ? { player: striker, opponent: opponentPlayer } : striker;
     }
 
-    return this.applyPlaystyleModifiers(striker, 'batting', activePlaystyle, matchContext);
+    const result = this.applyPlaystyleModifiers(striker, 'batting', activePlaystyle, matchContext, opponentPlayer);
+
+    // Return format depends on whether opponent was provided
+    return opponentPlayer ? result : result.player;
   }
 
   /**
    * Apply modifiers for bowling playstyle
    * @param {Object} bowler - Bowler player object
    * @param {Object} matchContext - Current match situation
-   * @returns {Object} Modified player object
+   * @param {Object} opponentPlayer - Optional: opponent player (batsman) for targetPlayer effects
+   * @returns {Object} Modified player object (or { player, opponent } if opponent was modified)
    */
-  applyBowlingModifiers(bowler, matchContext) {
+  applyBowlingModifiers(bowler, matchContext, opponentPlayer = null) {
     // Get active bowling playstyle (from player's primary playstyle)
     const activePlaystyle = bowler.primaryPlaystyle?.bowling || bowler.primaryPlaystyle;
 
     if (!activePlaystyle) {
-      return bowler; // No playstyle set, return unchanged
+      return opponentPlayer ? { player: bowler, opponent: opponentPlayer } : bowler;
     }
 
-    return this.applyPlaystyleModifiers(bowler, 'bowling', activePlaystyle, matchContext);
+    const result = this.applyPlaystyleModifiers(bowler, 'bowling', activePlaystyle, matchContext, opponentPlayer);
+
+    // Return format depends on whether opponent was provided
+    return opponentPlayer ? result : result.player;
   }
 
   /**

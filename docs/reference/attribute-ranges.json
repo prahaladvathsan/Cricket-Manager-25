@@ -1,0 +1,67 @@
+{
+  "playerAttributes": {
+    "scale": {
+      "min": 1,
+      "max": 20,
+      "description": "All player attributes use 1-20 scale"
+    },
+    "batting": {
+      "technique": "Fundamental batting skill, foundation for consistency",
+      "timing": "Ability to meet ball at optimal moment",
+      "footwork": "Movement to get into position, affects vs spin/pace",
+      "placement": "Ability to find gaps in field",
+      "range360": "Ability to score all around wicket",
+      "defensiveShots": "Proficiency in defensive strokes",
+      "neutralShots": "Proficiency in rotating strike, singles",
+      "attackingShots": "Proficiency in boundary-hitting shots",
+      "vsPace": "Effectiveness against fast bowling",
+      "vsSpin": "Effectiveness against spin bowling"
+    },
+    "bowling": {
+      "accuracy": "Line and length consistency",
+      "bowlingSpeed": "Pace of delivery (for all bowler types)",
+      "swing": "Ability to move ball through air",
+      "turn": "Seam/spin deviation off pitch",
+      "variations": "Different deliveries available",
+      "intelligence": "Tactical bowling awareness",
+      "defensiveBowling": "Containing runs, tight lines",
+      "neutralBowling": "Building pressure, probing lines",
+      "attackingBowling": "Wicket-taking intent and execution"
+    },
+    "physical": {
+      "strength": "Raw physical power",
+      "speed": "Running pace",
+      "agility": "Quick movement changes",
+      "maxFitness": "Peak physical condition ceiling",
+      "endurance": "Ability to maintain performance over time",
+      "stamina": "Energy reserves for sustained effort"
+    },
+    "fielding": {
+      "catching": "General catching ability",
+      "reflexes": "Reaction time for close catches",
+      "groundFielding": "Stopping and gathering ground balls",
+      "throwPower": "Strength of throw",
+      "throwAccuracy": "Precision of throw to target"
+    },
+    "wicketkeeping": {
+      "keeping": "General wicket-keeping skill",
+      "collecting": "Gathering deliveries cleanly",
+      "stumping": "Stumping technique and speed"
+    },
+    "mental": {
+      "concentration": "Sustained focus",
+      "temperament": "Pressure handling under stress",
+      "aggression": "Natural attacking instinct",
+      "judgement": "Decision-making in match situations",
+      "leadership": "Influence on team and match situations"
+    }
+  },
+  "condition": {
+    "form": "0-100, recent performance trend",
+    "fitness": "0-100, physical readiness",
+    "fatigue": "0-100, accumulated fatigue across matches",
+    "morale": "0-100, mental state",
+    "energy": "0-100, current energy level in match",
+    "confidence": "0-100, current confidence level in match"
+  }
+}

@@ -28,14 +28,28 @@ class PlaystyleCalculator {
    * @param {Object} player - Player object with attributes
    * @param {string} category - 'batting' or 'bowling'
    * @param {string} playstyleName - Name of the playstyle
+   * @param {string} bowlingType - Optional: 'pace' or 'spin' for bowling playstyles
    * @returns {number} PlaystyleRating (0-100 scale)
    */
-  calculatePlaystyleRating(player, category, playstyleName) {
+  calculatePlaystyleRating(player, category, playstyleName, bowlingType = null) {
     // Get playstyle weightings
-    const playstyleConfig = this.weightings[category]?.[playstyleName];
+    let playstyleConfig;
+
+    if (category === 'bowling') {
+      // For bowling, check if we need to look in pace or spin subcategory
+      if (bowlingType) {
+        playstyleConfig = this.weightings.bowling?.[bowlingType]?.[playstyleName];
+      } else {
+        // Try to find in either pace or spin
+        playstyleConfig = this.weightings.bowling?.pace?.[playstyleName] ||
+                         this.weightings.bowling?.spin?.[playstyleName];
+      }
+    } else {
+      playstyleConfig = this.weightings[category]?.[playstyleName];
+    }
 
     if (!playstyleConfig) {
-      console.warn(`Playstyle "${playstyleName}" not found in category "${category}"`);
+      console.warn(`Playstyle "${playstyleName}" not found in category "${category}"${bowlingType ? ` (${bowlingType})` : ''}`);
       return 0;
     }
 
@@ -129,13 +143,37 @@ class PlaystyleCalculator {
       );
     }
 
-    // Calculate bowling playstyle ratings
-    for (const playstyleName in this.weightings.bowling) {
-      ratings.bowling[playstyleName] = this.calculatePlaystyleRating(
-        player,
-        'bowling',
-        playstyleName
-      );
+    // Calculate bowling playstyle ratings based on player's bowlingType
+    const bowlingType = player.bowlingType || 'pace'; // Default to pace if not specified
+
+    if (bowlingType === 'pace' || bowlingType === 'spin') {
+      // Calculate ratings for the player's specific bowling type
+      for (const playstyleName in this.weightings.bowling[bowlingType]) {
+        ratings.bowling[playstyleName] = this.calculatePlaystyleRating(
+          player,
+          'bowling',
+          playstyleName,
+          bowlingType
+        );
+      }
+    } else {
+      // If bowlingType is invalid, calculate for both pace and spin
+      for (const playstyleName in this.weightings.bowling.pace) {
+        ratings.bowling[playstyleName] = this.calculatePlaystyleRating(
+          player,
+          'bowling',
+          playstyleName,
+          'pace'
+        );
+      }
+      for (const playstyleName in this.weightings.bowling.spin) {
+        ratings.bowling[playstyleName] = this.calculatePlaystyleRating(
+          player,
+          'bowling',
+          playstyleName,
+          'spin'
+        );
+      }
     }
 
     return ratings;
@@ -151,24 +189,36 @@ class PlaystyleCalculator {
   getPlayerPrimaryPlaystyles(player, role, topN = 3) {
     const allRatings = this.calculateAllPlaystyleRatings(player);
 
-    // Get applicable playstyles based on role
-    const applicablePlaystyles = this.weightings.roleCategories[role.toLowerCase()] || [];
-
     const result = {
       batting: [],
       bowling: []
     };
 
+    // Get applicable batting playstyles based on role
+    const roleCategories = this.weightings.roleCategories[role.toLowerCase()];
+    let applicableBattingPlaystyles = [];
+
+    if (Array.isArray(roleCategories)) {
+      // Old structure: array of batting playstyles
+      applicableBattingPlaystyles = roleCategories;
+    } else if (roleCategories && roleCategories.batting) {
+      // New structure: object with batting array
+      applicableBattingPlaystyles = roleCategories.batting;
+    } else {
+      // Default: all batting playstyles
+      applicableBattingPlaystyles = Object.keys(allRatings.batting);
+    }
+
     // Filter and sort batting playstyles
     const battingPlaystyles = Object.entries(allRatings.batting)
-      .filter(([name]) => applicablePlaystyles.includes(name))
+      .filter(([name]) => applicableBattingPlaystyles.includes(name))
       .map(([name, rating]) => ({ name, rating }))
       .sort((a, b) => b.rating - a.rating)
       .slice(0, topN);
 
     result.batting = battingPlaystyles;
 
-    // Filter and sort bowling playstyles
+    // Bowling playstyles - no role filtering, based on bowlingType only
     const bowlingPlaystyles = Object.entries(allRatings.bowling)
       .map(([name, rating]) => ({ name, rating }))
       .sort((a, b) => b.rating - a.rating)
@@ -209,10 +259,18 @@ class PlaystyleCalculator {
    * @param {Object} player - Player object
    * @param {string} category - 'batting' or 'bowling'
    * @param {string} playstyleName - Name of playstyle
+   * @param {string} bowlingType - Optional: 'pace' or 'spin' for bowling playstyles
    * @returns {Object} Detailed breakdown with attribute contributions
    */
-  getPlaystyleBreakdown(player, category, playstyleName) {
-    const playstyleConfig = this.weightings[category]?.[playstyleName];
+  getPlaystyleBreakdown(player, category, playstyleName, bowlingType = null) {
+    let playstyleConfig;
+
+    if (category === 'bowling') {
+      const type = bowlingType || player.bowlingType || 'pace';
+      playstyleConfig = this.weightings.bowling?.[type]?.[playstyleName];
+    } else {
+      playstyleConfig = this.weightings[category]?.[playstyleName];
+    }
 
     if (!playstyleConfig) {
       return null;

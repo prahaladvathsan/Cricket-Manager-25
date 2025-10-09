@@ -1,153 +1,175 @@
-# Statistics to Player Attributes Mapping v5.0 (GMA)
+# Player Attributes Reference
 
-This document defines how raw cricket statistics are converted into game attributes for the Cricket Manager simulation using a **Geometric Moving Average (GMA)** weighting system combined with **Gaussian (Normal) Distribution** mapping. This ensures a realistic spread of talent while filtering out players from low-level cricket.
+This document describes the player attribute system used in Cricket Manager for match simulation and team management.
 
-## Attribute System Overview
+## Attribute Scale
 
-All player attributes use a **1-20 scale**. The mapping from statistical performance to an attribute score is based on a player's percentile rank within the **GMA-filtered population**, which is then mapped to a standard normal distribution curve.
+All attributes use a **1-20 scale** where:
+- **1-5**: Below average / Weakness
+- **6-10**: Average / Developing
+- **11-15**: Above average / Proficient
+- **16-20**: Elite / World-class
 
-- **Attributes 1-20**: All attributes now use the full 1-20 range through Gaussian distribution mapping
-- **No Special Cases**: All statistics that meet GMA thresholds are converted using the same Gaussian model
-- **Random Fallbacks**: Players who do not meet statistical thresholds get random values between 1-4
+## Attribute Categories
 
-This system uses temporal weighting to filter out unreliable performances while ensuring all attributes follow a realistic bell-curve distribution.
+### 🏏 Batting Attributes
 
-## Data Processing Pipeline
+| Attribute | Description | Match Engine Usage |
+|-----------|-------------|-------------------|
+| **technique** | Shot execution and technical soundness | Batting execution check (1 of 3) |
+| **timing** | Ability to time shots for power | Batting execution check (2 of 3), drives shot speed |
+| **footwork** | Movement to the ball | Batting execution check (3 of 3) |
+| **defensive_shots** | Ability to play defensive strokes | Shot type selection |
+| **neutral_shots** | Singles and rotation ability | Shot type selection |
+| **attacking_shots** | Boundary hitting ability | Shot type selection |
+| **range360** | Shot direction variety | Number of direction options (1-20 possible directions) |
+| **placement** | Gap finding ability | Direction selection quality (d20 ≤ placement = best direction) |
+| **vsPace** | Performance against pace bowling | Attribute modifier vs pace bowlers |
+| **vsSpin** | Performance against spin bowling | Attribute modifier vs spin bowlers |
+| **creativity** | Shot innovation and variety | Future feature |
 
-### Phase 1: Geometric Moving Average Calculation (`stats_consolidator_gma.py`)
-Processes ball-by-ball T20 data with year-based geometric moving average weighting to prioritize recent performance and filter out players from low-level cricket.
+### 🥎 Bowling Attributes
 
-#### GMA Parameters
-- **GMA Factor**: 2.0 (recent year gets 2x weight of previous year)
-- **Years Lookback**: 5 years
-- **Weighting Pattern**: [0.516, 0.258, 0.129, 0.065, 0.032] (normalized)
+| Attribute | Description | Match Engine Usage |
+|-----------|-------------|-------------------|
+| **accuracy** | Line and length control | Bowling execution check (1 of 3) |
+| **defensive_bowling** | Dot ball bowling ability | Economy rate and containment |
+| **neutral_bowling** | Balanced attack/defense bowling | Standard bowling approach |
+| **attacking_bowling** | Wicket-taking aggression | Strike rate and wicket probability |
+| **ball_speed** (pace) | Bowling speed | Bowling execution check (3 of 3 for pace) |
+| **turn** (spin) | Amount of turn/spin | Bowling execution check (3 of 3 for spin) |
+| **swing** (pace) | Swing/seam movement | Bowling execution check (2 of 3 for pace) |
+| **flight** (spin) | Flight and dip variation | Bowling execution check (2 of 3 for spin) |
+| **variations** | Variety of deliveries | Bowling decision check (2 of 2) |
+| **intelligence** | Tactical bowling awareness | Bowling decision check (1 of 2) |
 
-#### Career Recency Requirements
-- **Must be active in the most recent year** in the dataset
-- Multi-year involvement preferred for reliability
+### 💪 Physical Attributes
 
-#### Annual Qualification Thresholds
-- **Batting:** Minimum **36 balls faced per year** for meaningful involvement
-- **Bowling:** Minimum **36 balls bowled per year** for meaningful involvement (6 overs)
+| Attribute | Description | Match Engine Usage |
+|-----------|-------------|-------------------|
+| **strength** | Physical power | Shot speed calculation (d(strength) roll) |
+| **speed** | Running speed | Fielder movement speed, running speed |
+| **agility** | Movement and reflexes | Fielding effectiveness |
+| **stamina** | Endurance over long periods | Fatigue accumulation rate |
+| **fitness** | Current physical condition | Performance modifier |
+| **endurance** | Recovery ability | Fatigue recovery rate |
 
-#### Final GMA Qualification Thresholds
-- **Batting:** Minimum **200+ weighted balls** (scaled proportionally for fewer active years)
-- **Bowling:** Minimum **240+ weighted balls** (scaled proportionally for fewer active years)
+### 🧠 Mental Attributes
 
-### Phase 2: Attribute Conversion (`attribute_converter_gma.py`)
-Uses the Gaussian distribution model to convert GMA-weighted stats to 1-20 attributes.
+| Attribute | Description | Match Engine Usage |
+|-----------|-------------|-------------------|
+| **concentration** | Focus under pressure | Performance consistency |
+| **temperament** | Composure in high-pressure situations | Pressure modifier |
+| **judgment** | Decision-making quality | Batting decision check (1 of 2), running decisions |
+| **aggression** | Risk-taking propensity | Mentality determination |
+| **leadership** | Team influence and captaincy | Future feature |
 
-## Batting Attributes Conversion
+### ⚡ Fielding & Wicket-Keeping
 
-| **Attribute** | **Primary Statistics** | **Calculation Method** | **Sample Size Required** |
-|---------------|----------------------|----------------------|-------------------------|
-| **Technique** | Batting Average | Direct percentile conversion via Gaussian model | GMA qualification |
-| **Timing** | Batting Strike Rate | Direct percentile conversion via Gaussian model | GMA qualification |
-| **Defensive Shots** | Dot Ball % (60%) + Inverse Dismissal Rate (40%) | Weighted percentile combination, Gaussian model | GMA qualification |
-| **Neutral Shots** | Singles % + Doubles % + Triples % | Combined percentage, Gaussian model | GMA qualification |
-| **Attacking Shots** | Six % (60%) + Boundary % (40%) | Weighted percentile combination, Gaussian model | GMA qualification |
-| **Range360** | Shot Angle Coverage for 4s & 6s | Degrees covered out of 360°, Gaussian model | GMA qualification |
-| **Placement** | Fours % (60%) + Twos % (20%) + Threes % (20%) | Weighted combination, Gaussian model | GMA qualification |
-| **Footwork** | Inverse % Bowled/LBW Dismissals | Percentile ranking (lower dismissal% = higher), Gaussian model | GMA qualification |
-| **vsPace** | vs Pace Strike Rate | Percentile among players with pace data, Gaussian model | 5+ weighted balls vs pace |
-| **vsSpin** | vs Spin Strike Rate | Percentile among players with spin data, Gaussian model | 5+ weighted balls vs spin |
-| **Creativity** | Shot Variety Entropy | Percentile among players with creativity data, Gaussian model | GMA qualification |
+| Attribute | Description | Match Engine Usage |
+|-----------|-------------|-------------------|
+| **catching** | Catching ability | Catch success probability = catching / 20 |
+| **throwing** | Throw accuracy and power | Run-out probability |
+| **agility_fielding** | Field movement speed | Interception radius |
+| **reflexes** | Reaction time | Close-in catching |
+| **wk_catching** (keeper) | Wicket-keeping catching | Keeper-specific catches |
+| **wk_reflexes** (keeper) | Keeper reaction time | Stumping probability |
 
-### 2D Simulation Integration
+## Condition Attributes (0-100 Scale)
 
-**Range360** and **Placement** attributes now have direct integration with the 2D fielding simulation:
+| Attribute | Description | Effect on Performance |
+|-----------|-------------|---------------------|
+| **form** | Recent performance trend | ±20% attribute modifier |
+| **fitness** | Physical readiness | Performance degradation if low |
+| **fatigue** | Match/session tiredness | Cumulative performance penalty |
+| **morale** | Mental state and confidence | Concentration and judgment modifier |
 
-- **Range360**: Determines number of shot direction options in attribute-driven direction selection
-  - Roll: `1 to range360` determines how many possible directions are evaluated
-  - Higher range360 = more directional options = better gap finding ability
+## Match Engine Integration
 
-- **Placement**: Determines shot direction selection quality
-  - Roll d20: if ≤ placement → choose best direction (highest expected shot distance)
-  - Roll d20: if > placement → choose 2nd best direction
-  - Higher placement = more likely to find the best available gap
+### Decision Phase (Independent Probability Checks)
 
-## Bowling Attributes Conversion
+**Bowling Decision Score (0-2)**:
+- Intelligence check: Success if `random() < intelligence/20`
+- Variations check: Success if `random() < variations/20`
 
-| **Attribute** | **Primary Statistics** | **Calculation Method** | **Sample Size Required** |
-|---------------|----------------------|----------------------|-------------------------|
-| **Accuracy** | Economy Rate (inverted) | Lower economy = higher attribute, Gaussian model | GMA qualification |
-| **Defensive Bowling** | Dot Ball % | Direct percentile conversion, Gaussian model | GMA qualification |
-| **Neutral Bowling** | Boundary % (inverted) | Lower boundary concession = higher attribute, Gaussian model | GMA qualification |
-| **Attacking Bowling** | Control % (inverted) | Lower control = higher attacking, Gaussian model | GMA qualification |
-| **Ball Speed/Turn** | Bowling Average | For pace: speed, for spin: turn, Gaussian model | GMA qualification |
-| **Swing/Flight** | Control % (inverted) | For pace: swing, for spin: flight, Gaussian model | GMA qualification |
-| **Variations** | Line Entropy (50%) + Length Entropy (50%) | Weighted by inverse bowling average in each zone, Gaussian model | GMA qualification |
-| **Intelligence** | Bowling Strike Rate | Direct percentile conversion, Gaussian model | GMA qualification |
+**Batting Decision Score (0-2)**:
+- Judgment check: Success if `random() < judgment/20`
+- Shot selection check: Success if `random() < shotSelection/20`
 
-## Physical Attributes Conversion
+### Contact Phase (Execution + Contact Quality)
 
-| **Attribute** | **Primary Statistics** | **Calculation Method** | **Sample Size Required** |
-|---------------|----------------------|----------------------|-------------------------|
-| **Stamina** | Total Balls Bowled + Balls Faced | Combined activity measure, Gaussian model | GMA qualification |
-| **Strength** | Average Shot Distance | Distance for boundary shots, Gaussian model | Shot distance data available |
-| **Speed** | Run Out Dismissal % (inverted) | Lower run out rate = higher speed, Gaussian model | GMA qualification |
-| **Max Fitness** | Total Matches Played | Match participation, Gaussian model | GMA qualification |
-| **Endurance** | Random (1-20) | No statistical basis available | N/A |
+**Bowling Execution (0-3)**:
+- Accuracy check: Success if `random() < accuracy/20`
+- Swing/Flight check: Success if `random() < swing/20` or `flight/20`
+- Speed/Turn check: Success if `random() < speed/20` or `turn/20`
 
-## Mental Attributes Conversion
+**Batting Execution (0-3)**:
+- Timing check: Success if `random() < timing/20`
+- Footwork check: Success if `random() < footwork/20`
+- Technique check: Success if `random() < technique/20`
 
-| **Attribute** | **Primary Statistics** | **Calculation Method** | **Sample Size Required** |
-|---------------|----------------------|----------------------|-------------------------|
-| **Intelligence** | Bowling Strike Rate | For bowlers: percentile conversion, Gaussian model | GMA bowling qualification |
-| **Temperament** | Performance Variance Across Phases (inverted) | Lower variance = higher temperament, Gaussian model | Phase-wise data available |
-| **Judgement** | Control % | Binary control field percentile, Gaussian model | GMA qualification |
-| **Concentration** | Performance Variance Across Phases (inverted) | Lower variance = higher concentration, Gaussian model | Phase-wise data available |
-| **Aggression** | Random (1-20) | No reliable statistical measure | N/A |
-| **Leadership** | Random (1-20) | No reliable statistical measure | N/A |
-
-### Mental Attributes in 2D Simulation
-
-**Judgement** attribute integration with running decision system:
-
-- **Running Error Probability**: `1 - combinedJudgment / 40`
-- **Combined Judgment**: `(striker.judgment + nonStriker.judgment) / 2`
-- **Higher Judgment** = lower error probability = safer running decisions
-- **Usage**: Determines if batsmen make correct running decisions based on fielding time vs running time analysis
-
-## Fielding & Wicket-keeping Attributes
-These attributes maintain their previous calculation methods using the GMA-filtered population and Gaussian distribution conversion.
-
-| **Attribute Category** | **Key Details** | **2D Simulation Usage** |
-|---------------|-------------------|-------------------------|
-| **Fielding** | Based on dismissal involvement rates, Gaussian model conversion | Used in catching probability and interception analysis |
-| **Wicket-keeping** | Based on stumping and dismissal rates for keepers, Gaussian model conversion | Edge catching probability and wicket-keeping specific dismissals |
-| **Speed** | Used for fielder movement calculations in 2D simulation | `baseSpeed + (speedAttribute * speedMultiplier)` |
-| **Agility** | Used for fielding effectiveness and reach calculations | Affects interception radius and movement efficiency |
-| **Catching** | Probability of successful catch when fielder intercepts ball | `catchingAttribute / 20` success probability |
-
-## New Calculation Details
-
-### Range360 Score Calculation
-```python
-def calculate_range360_new(boundary_shots_data):
-    """
-    Calculate Range360 based on shot angle coverage for 4s and 6s
-    Score: Number of degrees covered out of 360°
-    """
-    if len(boundary_shots_data) == 0:
-        return 0
-    
-    # Get all shot angles for boundaries (4s and 6s)
-    angles = []
-    for shot in boundary_shots_data:
-        if shot.runs >= 4:  # 4s and 6s only
-            angle = calculate_shot_angle(shot.wagonX, shot.wagonY)
-            angles.append(int(angle))  # Round to nearest degree
-    
-    # Count unique degrees covered
-    unique_degrees = set(angles)
-    coverage_score = len(unique_degrees)  # Out of 360 possible
-    
-    return coverage_score
+**Contact Quality Calculation**:
+```
+battingRawScore = timing + footwork + technique + d40
+bowlingRawScore = accuracy + swing/flight + speed/turn + d40
+contactQuality = battingRawScore - bowlingRawScore  // Range: -97 to +97
 ```
 
-### Entropy Calculations for Variations
-```python
-def calculate_line_length_entropy(bowling_data):
-    """
-    Calculate entropy for line and length variations
+### Trajectory Phase
+
+**Shot Speed**:
+```
+baseSpeed = 12
+contactQualityComponent = sqrt(abs(contactQuality)) * 1.5 * sign(contactQuality)
+strengthComponent = sqrt(d(strength)) * sqrt(20) * 0.65
+speed = baseSpeed + contactQualityComponent + strengthComponent
+// Clamped to 10-40 m/s
+```
+
+**Shot Direction**:
+```
+numDirections = roll(1, range360)  // 1-20 possible directions
+directions = generate(numDirections)  // Random angles
+bestDirection = evaluateBest(directions)  // Gap analysis
+if roll(d20) <= placement:
+  selectedDirection = bestDirection
+else:
+  selectedDirection = 2ndBestDirection
+```
+
+### Fielding Phase
+
+**Fielder Speed**: `baseSpeed + (speedAttribute * speedMultiplier)`
+**Catch Probability**: `catchingAttribute / 20`
+**Interception**: Algebraic time-to-ball vs time-to-fielder analysis
+
+### Running Phase
+
+**Running Error Probability**:
+```
+combinedJudgment = (striker.judgment + nonStriker.judgment) / 2
+errorProbability = 1 - (combinedJudgment / 40)
+```
+
+## Playstyle System
+
+Players have playstyle ratings (0-100) for 21 different playstyles that apply dynamic attribute modifiers based on match context:
+
+- **16 Batting Playstyles**: Anchor, Aggressor, Accumulator, Power Hitter, etc.
+- **9 Bowling Playstyles**: Death Specialist, Powerplay Bowler, Wicket Taker, etc.
+
+See [`docs/core-systems/playstyle-system.md`] for complete playstyle documentation.
+
+## Data Source
+
+Player attributes are generated from real T20 cricket statistics using an external data processor with GMA (Geometric Moving Average) filtering and percentile-based conversion.
+
+**Processing Pipeline**: Raw T20 Data → GMA Filtering → Percentile Ranking → 1-20 Attribute Conversion → Enhanced Player Database
+
+For data processing details, see the `cricket-data-processor` repository documentation.
+
+## Related Documentation
+
+- [Match Engine Architecture](../core-systems/match-engine.md) - How attributes are used in simulation
+- [Playstyle System](../core-systems/playstyle-system.md) - Dynamic attribute modifiers
+- [Configuration Guide](configuration-guide.md) - Match engine config files

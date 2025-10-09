@@ -5,8 +5,9 @@
 The playstyle system introduces dynamic attribute modifiers that adapt player performance based on match context. Each player has playstyle ratings for various playing styles, and these ratings determine how effectively contextual modifiers enhance (or reduce) their attributes during match simulation.
 
 **Key Features:**
-- **21 Unique Playstyles**: 16 batting + 9 bowling (with overlap for balanced styles)
+- **24 Unique Playstyles**: 16 batting + 8 bowling (4 pace + 4 spin)
 - **Dynamic Modifiers**: Attributes adjust based on match situation (phase, wickets, run rate, etc.)
+- **Bowling Type Segregation**: Pace and spin bowlers have distinct playstyles based on bowlingType field
 - **Fully Configurable**: All weightages, modifiers, and conditions externalized to JSON
 - **Non-Invasive Integration**: Existing match engine logic unchanged, only input attributes modified
 - **Performance Optimized**: Modifiers calculated once per ball with minimal overhead
@@ -50,9 +51,10 @@ The playstyle system introduces dynamic attribute modifiers that adapt player pe
 - All-rounder
 - Wicket-keeper
 
-**Playstyle** (21 types): Specific playing style within role
-- **Batting**: Opener-Slogger, Finisher, Wall, etc.
-- **Bowling**: Death Bowler, New Ball, Workhorse, etc.
+**Playstyle** (24 types): Specific playing style within role
+- **Batting**: Opener-Slogger, Finisher, Wall, etc. (16 total)
+- **Bowling - Pace**: Swing Bowler, Hit-the-Deck Seamer, Short-Ball Specialist, Death Specialist (4 total)
+- **Bowling - Spin**: Classical Spinner, Flat Spinner, Mystery Spinner, Containment Spinner (4 total)
 
 **PlaystyleRating** (0-100 scale): Player's suitability for each playstyle
 - Calculated from weighted attribute sum
@@ -83,13 +85,26 @@ Defines attribute weightages for calculating playstyle ratings.
     }
   },
   "bowling": {
-    "Death Bowler": {
-      "attributes": {
-        "accuracy": 3,
-        "variations": 3,
-        "intelligence": 3,
-        "defensiveBowling": 3,
-        "temperament": 3
+    "pace": {
+      "Death Specialist": {
+        "attributes": {
+          "accuracy": 2,
+          "variations": 2,
+          "intelligence": 2,
+          "defensiveBowling": 1,
+          "temperament": 2
+        }
+      }
+    },
+    "spin": {
+      "Classical Spinner": {
+        "attributes": {
+          "accuracy": 1,
+          "turn": 1,
+          "variations": 1,
+          "intelligence": 1,
+          "neutralBowling": 2
+        }
       }
     }
   }
@@ -377,13 +392,14 @@ Updated player schema includes:
       "Wall": 23.1
     },
     "bowling": {
-      "Death Bowler": 65.3,
-      "New Ball": 42.8
+      "Death Specialist": 65.3,
+      "Swing Bowler": 42.8,
+      "Classical Spinner": 31.5
     }
   },
   "primaryPlaystyle": {
     "batting": "Finisher",
-    "bowling": "Death Bowler"
+    "bowling": "Death Specialist"
   }
 }
 ```
@@ -438,51 +454,59 @@ Updated player schema includes:
 
 ## Bowling Playstyles
 
-### Phase Specialists
+Bowling playstyles are segregated by bowlingType (pace/spin), with each type having 4 specialized playstyles.
 
-**New Ball**
-- **Description**: Powerplay specialist
-- **Key Attributes**: swing, bowlingSpeed, variations
-- **Bonuses**: New ball swing (over≤6), first over (over≤2)
-- **Penalties**: Old ball struggle (over>16)
+### Pace Bowling Playstyles
 
-**Death Bowler**
-- **Description**: Death overs specialist
-- **Key Attributes**: variations, intelligence, defensiveBowling
-- **Bonuses**: Death overs mastery (phase=death), pressure immunity
-- **Penalties**: Powerplay weakness
+**Swing Bowler**
+- **Description**: Exploits new ball movement with swing and seam
+- **Key Attributes**: bowlingSpeed, swing, variations
+- **Bonuses**: New ball movement (over≤6), seam exploitation (vs weak technique batsmen)
+- **Special Effects**: None
 
-**Workhorse**
-- **Description**: Consistent middle overs
-- **Key Attributes**: accuracy, stamina, neutralBowling
-- **Bonuses**: Pressure building, consistency (per over bowled)
-- **Penalties**: Tail resistance (≤4 wickets)
+**Hit-the-Deck Seamer**
+- **Description**: Hard length specialist, relentless pressure bowler
+- **Key Attributes**: bowlingSpeed, neutralBowling, stamina
+- **Bonuses**: Hard length dominance (always), stamina advantage (overs bowled>3)
+- **Special Effects**: None
 
-### Role Specialists
+**Short-Ball Specialist**
+- **Description**: Intimidating pace bowler using short-pitched deliveries
+- **Key Attributes**: bowlingSpeed, defensiveBowling, attackingBowling, stamina
+- **Bonuses**: Short ball hostility (vs weak footwork batsmen), bounce exploitation (always)
+- **Special Effects**: Aggression +1 (flat bonus)
 
-**Striker**
-- **Description**: Wicket-taker
-- **Key Attributes**: bowlingSpeed, attackingBowling, aggression
-- **Bonuses**: Field placement (always), aggressive line (≥5 wickets)
-- **Penalties**: Middle overs decline
+**Death Specialist**
+- **Description**: Death overs yorker specialist, calm under pressure
+- **Key Attributes**: accuracy, variations, intelligence, temperament
+- **Bonuses**: Death overs mastery (phase=death, over>=17), yorker precision (phase=death)
+- **Penalties**: Powerplay vulnerability (over≤6)
 
-**Heartbreaker**
-- **Description**: Partnership breaker
-- **Key Attributes**: variations, intelligence, swing
-- **Bonuses**: Breakthroughs (partnership≥30 balls), pressure building
-- **Penalties**: Tail resistance
+### Spin Bowling Playstyles
 
-**Controller**
-- **Description**: Economy specialist
-- **Key Attributes**: intelligence, accuracy, defensiveBowling
-- **Bonuses**: Run control (CRR>RRR), tactical bowling
-- **Penalties**: Tail resistance
+**Classical Spinner**
+- **Description**: Traditional spinner with flight, dip, and deceptive loop
+- **Key Attributes**: turn, variations, intelligence, neutralBowling
+- **Bonuses**: Flight deception (always), middle overs control (over 7-16)
+- **Special Effects**: Deceptive loop reduces batsman judgement -1 (targets batsman, vs weak footwork)
 
-**Magician**
-- **Description**: Spin wizard
-- **Key Attributes**: turn, variations, intelligence
-- **Bonuses**: Aggressive line, pressure building
-- **Penalties**: Slippery ball (over≤12)
+**Flat Spinner**
+- **Description**: Quick, skiddy spinner focused on accuracy and economy
+- **Key Attributes**: accuracy, defensiveBowling, stamina
+- **Bonuses**: Accuracy lock-down (always), containment (middle overs)
+- **Penalties**: Weak technique exploitation failure (vs strong batsmen)
+
+**Mystery Spinner**
+- **Description**: Deceptive spinner with multiple variations and trick balls
+- **Key Attributes**: variations, intelligence, attackingBowling
+- **Bonuses**: Variation mastery (always), mental pressure (vs low concentration batsmen)
+- **Special Effects**: Mental pressure reduces batsman concentration -1 (targets batsman)
+
+**Containment Spinner**
+- **Description**: Metronomic line and length specialist, dot ball pressure
+- **Key Attributes**: accuracy, intelligence, defensiveBowling
+- **Bonuses**: Dot ball pressure (always), tactical accuracy (always)
+- **Special Effects**: Induces impatience, batsman aggression +1 (targets batsman)
 
 ## Performance Impact
 
@@ -510,11 +534,11 @@ judgement: 15 → 20.1 (+34%)
 Overall batting effectiveness: +45% in death overs
 ```
 
-**Death Bowler (Rating: 90) in Death Overs:**
+**Death Specialist (Rating: 90) in Death Overs:**
 ```
 variations: 17 → 26.2 (+54%)
 intelligence: 16 → 23.2 (+45%)
-defensiveBowling: 15 → 20.4 (+36%)
+accuracy: 15 → 20.4 (+36%)
 Overall bowling effectiveness: +45% in death overs
 ```
 

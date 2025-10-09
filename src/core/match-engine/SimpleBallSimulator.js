@@ -58,17 +58,23 @@ class SimpleBallSimulator {
       const originalStriker = ballContext.striker;
       const originalBowler = ballContext.bowler;
 
-      // Apply batting modifiers to striker
-      const modifiedStriker = attributeModifierSystem.applyBattingModifiers(
+      // Apply batting modifiers to striker (passing bowler for potential targetPlayer effects)
+      const battingResult = attributeModifierSystem.applyBattingModifiers(
         ballContext.striker,
-        matchContext
+        matchContext,
+        ballContext.bowler
       );
 
-      // Apply bowling modifiers to bowler
-      const modifiedBowler = attributeModifierSystem.applyBowlingModifiers(
+      // Apply bowling modifiers to bowler (passing batsman for potential targetPlayer effects)
+      const bowlingResult = attributeModifierSystem.applyBowlingModifiers(
         ballContext.bowler,
-        matchContext
+        matchContext,
+        battingResult.player || battingResult
       );
+
+      // Extract modified players
+      const modifiedStriker = battingResult.player || battingResult;
+      const modifiedBowler = bowlingResult.player || bowlingResult;
 
       // Step 1: Decision Calculation (with modified attributes)
       const decisionResult = this.decisionCalculator.calculateDecision({
@@ -97,11 +103,11 @@ class SimpleBallSimulator {
       });
 
       // Step 4: 2D Fielding Calculation
+      // Calculate fielding analysis for ALL shots (even wickets/boundaries) to track closest fielder data
       let fieldingResult = null;
-      if (!trajectoryResult.isWicket &&
-          trajectoryResult.shotType !== 'missed' &&
-          trajectoryResult.shotType !== 'caught_behind') {
 
+      // Only calculate fielding for shots that actually travel (not missed/edged_behind)
+      if (trajectoryResult.shotType !== 'missed' && trajectoryResult.shotType !== 'edged_behind') {
         fieldingResult = this.fieldingCalculator.calculateFielding({
           trajectoryResult,
           striker: modifiedStriker,
@@ -256,6 +262,8 @@ class SimpleBallSimulator {
    */
   buildMatchContext(ballContext) {
     const matchSituation = ballContext.matchSituation || {};
+    const striker = ballContext.striker || {};
+    const bowler = ballContext.bowler || {};
 
     return {
       // Match phase
@@ -278,7 +286,18 @@ class SimpleBallSimulator {
 
       // Player state
       ballsFaced: matchSituation.ballsFaced || 0,
-      oversBowled: matchSituation.oversBowled || 0
+      oversBowled: matchSituation.oversBowled || 0,
+
+      // Batsman attributes (for bowling playstyle conditions)
+      batsmanTechnique: striker.attributes?.batting?.technique || 0,
+      batsmanFootwork: striker.attributes?.batting?.footwork || 0,
+      batsmanConcentration: striker.attributes?.mental?.concentration || 0,
+      batsmanDefensiveShots: striker.attributes?.batting?.defensiveShots || 0,
+
+      // Bowler attributes (for batting playstyle conditions)
+      bowlerAccuracy: bowler.attributes?.bowling?.accuracy || 0,
+      bowlerSwing: bowler.attributes?.bowling?.swing || 0,
+      bowlerTurn: bowler.attributes?.bowling?.turn || 0
     };
   }
 
@@ -296,7 +315,7 @@ class SimpleBallSimulator {
   /**
    * Set field formation for fielding team
    * @param {string} formationType - Formation type (attacking, neutral, defensive)
-   * @param {Object[]} fielders - Array of 9 fielders
+   * @param {Object[]} fielders - Array of 11 fielders
    * @returns {Object[]} Positioned fielders
    */
   setFieldFormation(formationType, fielders) {

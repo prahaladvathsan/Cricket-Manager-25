@@ -396,241 +396,154 @@
   },
 
   "bowling": {
-    "New Ball": {
-      "description": "Powerplay specialist, exploits new ball swing",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 3,
-        "swing": 3,
-        "turn": 0,
-        "variations": 2,
-        "intelligence": 2,
-        "defensiveBowling": 1,
-        "neutralBowling": 1,
-        "attackingBowling": 3,
-        "strength": 2,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 2,
-        "temperament": 2,
-        "aggression": 3,
-        "judgement": 2
+    "pace": {
+      "Swing Bowler": {
+        "description": "Exploits new ball movement with swing and seam",
+        "attributes": {
+          "accuracy": 0,
+          "bowlingSpeed": 2,
+          "swing": 2,
+          "turn": 0,
+          "variations": 1,
+          "intelligence": 1,
+          "defensiveBowling": 0,
+          "neutralBowling": 1,
+          "attackingBowling": 1,
+          "stamina": 1,
+          "temperament": 1
+        }
+      },
+
+      "Hit-the-Deck Seamer": {
+        "description": "Hard length specialist, relentless pressure bowler",
+        "attributes": {
+          "accuracy": 1,
+          "bowlingSpeed": 2,
+          "swing": 1,
+          "turn": 0,
+          "variations": 1,
+          "intelligence": 0,
+          "defensiveBowling": 0,
+          "neutralBowling": 2,
+          "attackingBowling": 1,
+          "stamina": 2,
+          "temperament": 0
+        }
+      },
+
+      "Short-Ball Specialist": {
+        "description": "Intimidating pace bowler using short-pitched deliveries",
+        "attributes": {
+          "accuracy": 1,
+          "bowlingSpeed": 2,
+          "swing": 0,
+          "turn": 0,
+          "variations": 0,
+          "intelligence": 0,
+          "defensiveBowling": 2,
+          "neutralBowling": 0,
+          "attackingBowling": 2,
+          "stamina": 2,
+          "temperament": 1
+        }
+      },
+
+      "Death Specialist": {
+        "description": "Death overs yorker specialist, calm under pressure",
+        "attributes": {
+          "accuracy": 2,
+          "bowlingSpeed": 0,
+          "swing": 0,
+          "turn": 0,
+          "variations": 2,
+          "intelligence": 2,
+          "defensiveBowling": 1,
+          "neutralBowling": 0,
+          "attackingBowling": 1,
+          "stamina": 0,
+          "temperament": 2
+        }
       }
     },
 
-    "Striker": {
-      "description": "Wicket-taker, aggressive attacking bowler",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 3,
-        "swing": 2,
-        "turn": 2,
-        "variations": 2,
-        "intelligence": 2,
-        "defensiveBowling": 1,
-        "neutralBowling": 1,
-        "attackingBowling": 3,
-        "strength": 2,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 2,
-        "temperament": 2,
-        "aggression": 3,
-        "judgement": 2
-      }
-    },
+    "spin": {
+      "Classical Spinner": {
+        "description": "Traditional spinner with flight, dip, and deceptive loop",
+        "attributes": {
+          "accuracy": 1,
+          "bowlingSpeed": 0,
+          "swing": 0,
+          "turn": 1,
+          "variations": 1,
+          "intelligence": 1,
+          "defensiveBowling": 1,
+          "neutralBowling": 2,
+          "attackingBowling": 1,
+          "stamina": 0,
+          "temperament": 1
+        }
+      },
 
-    "Heartbreaker": {
-      "description": "Partnership breaker, gets crucial wickets",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 2,
-        "swing": 2,
-        "turn": 2,
-        "variations": 3,
-        "intelligence": 3,
-        "defensiveBowling": 1,
-        "neutralBowling": 2,
-        "attackingBowling": 2,
-        "strength": 1,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 3,
-        "temperament": 2,
-        "aggression": 2,
-        "judgement": 3
-      }
-    },
+      "Flat Spinner": {
+        "description": "Quick, skiddy spinner focused on accuracy and economy",
+        "attributes": {
+          "accuracy": 1,
+          "bowlingSpeed": 0,
+          "swing": 0,
+          "turn": 0,
+          "variations": 1,
+          "intelligence": 0,
+          "defensiveBowling": 2,
+          "neutralBowling": 1,
+          "attackingBowling": 0,
+          "stamina": 2,
+          "temperament": 1
+        }
+      },
 
-    "Death Bowler": {
-      "description": "Death overs specialist, contains in final overs",
-      "attributes": {
-        "accuracy": 3,
-        "bowlingSpeed": 2,
-        "swing": 1,
-        "turn": 1,
-        "variations": 3,
-        "intelligence": 3,
-        "defensiveBowling": 3,
-        "neutralBowling": 2,
-        "attackingBowling": 1,
-        "strength": 2,
-        "speed": 1,
-        "agility": 2,
-        "stamina": 2,
-        "concentration": 3,
-        "temperament": 3,
-        "aggression": 1,
-        "judgement": 3
-      }
-    },
+      "Mystery Spinner": {
+        "description": "Deceptive spinner with multiple variations and trick balls",
+        "attributes": {
+          "accuracy": 0,
+          "bowlingSpeed": 0,
+          "swing": 0,
+          "turn": 1,
+          "variations": 2,
+          "intelligence": 2,
+          "defensiveBowling": 0,
+          "neutralBowling": 1,
+          "attackingBowling": 2,
+          "stamina": 0,
+          "temperament": 1
+        }
+      },
 
-    "Workhorse": {
-      "description": "Consistent middle overs bowler, builds pressure",
-      "attributes": {
-        "accuracy": 3,
-        "bowlingSpeed": 2,
-        "swing": 1,
-        "turn": 1,
-        "variations": 2,
-        "intelligence": 2,
-        "defensiveBowling": 2,
-        "neutralBowling": 3,
-        "attackingBowling": 1,
-        "strength": 2,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 3,
-        "concentration": 3,
-        "temperament": 2,
-        "aggression": 1,
-        "judgement": 2
-      }
-    },
-
-    "Magician": {
-      "description": "Spin wizard, deceives with variations",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 1,
-        "swing": 1,
-        "turn": 3,
-        "variations": 3,
-        "intelligence": 3,
-        "defensiveBowling": 1,
-        "neutralBowling": 2,
-        "attackingBowling": 3,
-        "strength": 1,
-        "speed": 1,
-        "agility": 2,
-        "stamina": 2,
-        "concentration": 2,
-        "temperament": 2,
-        "aggression": 2,
-        "judgement": 3
-      }
-    },
-
-    "Controller": {
-      "description": "Economy specialist, restricts run flow",
-      "attributes": {
-        "accuracy": 3,
-        "bowlingSpeed": 2,
-        "swing": 1,
-        "turn": 1,
-        "variations": 2,
-        "intelligence": 3,
-        "defensiveBowling": 3,
-        "neutralBowling": 3,
-        "attackingBowling": 1,
-        "strength": 1,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 3,
-        "temperament": 3,
-        "aggression": 0,
-        "judgement": 3
-      }
-    },
-
-    "Janitor": {
-      "description": "Cleanup bowler, finishes tail",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 3,
-        "swing": 2,
-        "turn": 2,
-        "variations": 2,
-        "intelligence": 2,
-        "defensiveBowling": 2,
-        "neutralBowling": 2,
-        "attackingBowling": 2,
-        "strength": 2,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 2,
-        "temperament": 2,
-        "aggression": 2,
-        "judgement": 2
-      }
-    },
-
-    "Tactician": {
-      "description": "Strategic bowler, outthinks batsmen",
-      "attributes": {
-        "accuracy": 3,
-        "bowlingSpeed": 1,
-        "swing": 2,
-        "turn": 2,
-        "variations": 3,
-        "intelligence": 3,
-        "defensiveBowling": 2,
-        "neutralBowling": 3,
-        "attackingBowling": 2,
-        "strength": 1,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 3,
-        "temperament": 3,
-        "aggression": 1,
-        "judgement": 3
-      }
-    },
-
-    "Balanced": {
-      "description": "Well-rounded bowler, no weaknesses",
-      "attributes": {
-        "accuracy": 2,
-        "bowlingSpeed": 2,
-        "swing": 2,
-        "turn": 2,
-        "variations": 2,
-        "intelligence": 2,
-        "defensiveBowling": 2,
-        "neutralBowling": 2,
-        "attackingBowling": 2,
-        "strength": 2,
-        "speed": 1,
-        "agility": 1,
-        "stamina": 2,
-        "concentration": 2,
-        "temperament": 2,
-        "aggression": 1,
-        "judgement": 2
+      "Containment Spinner": {
+        "description": "Metronomic line and length specialist, dot ball pressure",
+        "attributes": {
+          "accuracy": 2,
+          "bowlingSpeed": 0,
+          "swing": 0,
+          "turn": 0,
+          "variations": 0,
+          "intelligence": 2,
+          "defensiveBowling": 2,
+          "neutralBowling": 1,
+          "attackingBowling": 0,
+          "stamina": 1,
+          "temperament": 1
+        }
       }
     }
   },
 
   "roleCategories": {
     "batsman": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor", "Finisher", "Runner", "Pinch-Hitter", "Wall"],
-    "bowler": ["New Ball", "Striker", "Heartbreaker", "Death Bowler", "Workhorse", "Magician", "Controller", "Janitor", "Tactician", "Balanced"],
-    "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced", "Balanced"],
+    "bowler": {
+      "pace": ["Swing Bowler", "Hit-the-Deck Seamer", "Short-Ball Specialist", "Death Specialist"],
+      "spin": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner"]
+    },
+    "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced"],
     "wicket-keeper": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Finisher"]
   }
 }

@@ -117,4 +117,4 @@ scripts/
 src/test/
 
 # Claude settings (local only)
-.claude/settings.local.json
+.claude/settings.local.json~$*.xlsx

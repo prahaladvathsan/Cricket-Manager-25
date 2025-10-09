@@ -10,7 +10,9 @@
       "role": "string - batsman | bowler | all-rounder | wicket-keeper",
       "battingHand": "string - right | left",
       "bowlingHand": "string - right | left | null (for non-bowlers)",
-      "bowlingType": "string - fast | fast-medium | medium | off-break | leg-break | left-arm-orthodox | chinaman | null",
+      "bowlingType": "string - pace | spin | null",
+      "bowlingStyle": "string - Full bowling style description (e.g., Right-arm fast-medium, Slow left-arm orthodox) | null",
+      "bowlingStyleAbbrev": "string - Abbreviated bowling style (e.g., RFM, SLA, LBG) | null",
       "teams": "array - Array of team IDs player has been part of (historical)",
       "currentTeam": "string - Current team ID or null if unassigned",
       "attributes": {
@@ -109,16 +111,15 @@
           "Wall": "number 0-100"
         },
         "bowling": {
-          "New Ball": "number 0-100",
-          "Striker": "number 0-100",
-          "Heartbreaker": "number 0-100",
-          "Death Bowler": "number 0-100",
-          "Workhorse": "number 0-100",
-          "Magician": "number 0-100",
-          "Controller": "number 0-100",
-          "Janitor": "number 0-100",
-          "Tactician": "number 0-100",
-          "Balanced": "number 0-100"
+          "description": "Bowling playstyles based on bowlingType (pace or spin)",
+          "Swing Bowler": "number 0-100 (pace)",
+          "Hit-the-Deck Seamer": "number 0-100 (pace)",
+          "Short-Ball Specialist": "number 0-100 (pace)",
+          "Death Specialist": "number 0-100 (pace)",
+          "Classical Spinner": "number 0-100 (spin)",
+          "Flat Spinner": "number 0-100 (spin)",
+          "Mystery Spinner": "number 0-100 (spin)",
+          "Containment Spinner": "number 0-100 (spin)"
         }
       },
       "topPlaystyles": {
