@@ -132,6 +132,7 @@ class PostMatchProcessor {
       result,
       status: 'completed',
       ballByBallCount: ballByBall.length,
+      ballByBallData: ballByBall, // Include for leaderboards
       timestamp: new Date().toISOString()
     };
   }

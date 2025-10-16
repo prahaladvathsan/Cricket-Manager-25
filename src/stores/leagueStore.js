@@ -42,6 +42,11 @@ const useLeagueStore = create((set, get) => ({
     lowestScore: null
   },
 
+  // Playoffs
+  playoffFixtures: [],
+  playoffResults: [],
+  champion: null,
+
   // Actions
   /**
    * Initialize a new league season
@@ -173,6 +178,30 @@ const useLeagueStore = create((set, get) => ({
   })),
 
   /**
+   * Set playoff fixtures
+   * @param {Array} fixtures - Playoff fixtures
+   */
+  setPlayoffFixtures: (fixtures) => set(() => ({
+    playoffFixtures: fixtures
+  })),
+
+  /**
+   * Add playoff result
+   * @param {Object} result - Playoff match result
+   */
+  addPlayoffResult: (result) => set((state) => ({
+    playoffResults: [...state.playoffResults, result]
+  })),
+
+  /**
+   * Set season champion
+   * @param {Object} championInfo - Champion information
+   */
+  setChampion: (championInfo) => set(() => ({
+    champion: championInfo
+  })),
+
+  /**
    * Get club by ID
    * @param {string} clubId - Club ID
    * @returns {Object|null} Club object or null
@@ -235,7 +264,10 @@ const useLeagueStore = create((set, get) => ({
       completedMatches: 0,
       highestScore: null,
       lowestScore: null
-    }
+    },
+    playoffFixtures: [],
+    playoffResults: [],
+    champion: null
   })
 }));
 

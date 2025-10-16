@@ -8,8 +8,10 @@ import fs from 'fs';
 import SquadDistributor from './SquadDistributor.js';
 import ScheduleGenerator from './ScheduleGenerator.js';
 import PlayoffGenerator from './PlayoffGenerator.js';
+import PlayoffSimulator from './PlayoffSimulator.js';
 import MatchOrchestrator from './MatchOrchestrator.js';
 import StandingsCalculator from './StandingsCalculator.js';
+import LeaderboardsCalculator from './LeaderboardsCalculator.js';
 import { create } from 'zustand';
 
 class LeagueSimulator {
@@ -23,7 +25,9 @@ class LeagueSimulator {
     this.scheduleGenerator = new ScheduleGenerator();
     this.playoffGenerator = new PlayoffGenerator();
     this.matchOrchestrator = new MatchOrchestrator(playerStore, teamStore, matchStore, leagueStore);
+    this.playoffSimulator = new PlayoffSimulator(this.matchOrchestrator, leagueStore);
     this.standingsCalculator = new StandingsCalculator();
+    this.leaderboards = new LeaderboardsCalculator();
   }
 
   /**
@@ -37,6 +41,9 @@ class LeagueSimulator {
     console.log('\n' + '='.repeat(80));
     console.log('🏆 INITIALIZING WORLD PREMIER LEAGUE SEASON');
     console.log('='.repeat(80) + '\n');
+
+    // Clean up old match logs
+    this.cleanupMatchLogs();
 
     // Step 1: Distribute squads
     console.log('📋 Step 1: Distributing players across clubs...');
@@ -130,7 +137,10 @@ class LeagueSimulator {
       }
 
       // Simulate match
-      await this.matchOrchestrator.simulateMatch(fixture, homeClub, awayClub);
+      const result = await this.matchOrchestrator.simulateMatch(fixture, homeClub, awayClub);
+
+      // Update leaderboards
+      this.leaderboards.updateFromMatch(result);
 
       // Show progress
       if (showProgress && matchCount % showStandingsAfterEvery === 0) {
@@ -176,7 +186,63 @@ class LeagueSimulator {
       matchesPlayed: matchCount,
       duration,
       finalStandings,
-      playoffTeams
+      playoffTeams,
+      leaderboards: this.leaderboards.getAllLeaderboards()
+    };
+  }
+
+  /**
+   * Simulate full season including playoffs
+   * @param {Object} options - Simulation options
+   * @returns {Promise<Object>} Complete season results
+   */
+  async simulateFullSeason(options = {}) {
+    const {
+      includePlayoffs = true,
+      showLeaderboards = true
+    } = options;
+
+    // Simulate league stage
+    const leagueResults = await this.simulateFullLeague(options);
+
+    // Display leaderboards after league stage
+    if (showLeaderboards) {
+      this.leaderboards.displayLeaderboards(10);
+    }
+
+    let playoffResults = null;
+    let champion = null;
+
+    // Simulate playoffs if requested
+    if (includePlayoffs) {
+      const clubsMap = this.leagueStore.getState().clubs;
+      playoffResults = await this.playoffSimulator.simulatePlayoffs(clubsMap, leagueResults.finalStandings);
+      champion = playoffResults.champion;
+
+      // Update playoff results in leaderboards
+      playoffResults.results.forEach(result => {
+        this.leaderboards.updateFromMatch(result);
+      });
+
+      // Update league store stage
+      this.leagueStore.getState().setStage('completed');
+      this.leagueStore.getState().setChampion(champion);
+    }
+
+    // Display final leaderboards after playoffs
+    if (showLeaderboards && includePlayoffs) {
+      console.log('\n\n');
+      console.log('='.repeat(80));
+      console.log('📊 FINAL SEASON LEADERBOARDS (Including Playoffs)');
+      console.log('='.repeat(80));
+      this.leaderboards.displayLeaderboards(10);
+    }
+
+    return {
+      league: leagueResults,
+      playoffs: playoffResults,
+      champion,
+      leaderboards: this.leaderboards.getAllLeaderboards()
     };
   }
 
@@ -276,6 +342,35 @@ class LeagueSimulator {
       lowestScore: state.stats.lowestScore,
       standings: state.getCurrentStandings()
     };
+  }
+
+  /**
+   * Clean up old match logs and league results
+   */
+  cleanupMatchLogs() {
+    try {
+      // Clean up match logs directory
+      const matchLogsDir = 'match_logs/league';
+      if (fs.existsSync(matchLogsDir)) {
+        const files = fs.readdirSync(matchLogsDir);
+        files.forEach(file => {
+          fs.unlinkSync(`${matchLogsDir}/${file}`);
+        });
+        console.log(`🗑️  Cleaned up ${files.length} old match log(s)`);
+      }
+
+      // Clean up old league results files
+      const rootFiles = fs.readdirSync('.');
+      const leagueResultFiles = rootFiles.filter(f => f.startsWith('league_results_') && f.endsWith('.json'));
+      leagueResultFiles.forEach(file => {
+        fs.unlinkSync(file);
+      });
+      if (leagueResultFiles.length > 0) {
+        console.log(`🗑️  Cleaned up ${leagueResultFiles.length} old league result(s)\n`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  Could not clean up old logs: ${error.message}`);
+    }
   }
 }
 
