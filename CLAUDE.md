@@ -37,6 +37,7 @@ npm run lint:fix     # Fix ESLint issues automatically
 - **Match Engine**: SimpleBallSimulator with 4-step simulation + 2D physics-based fielding (Decision → Contact → Trajectory → 2D Fielding) [`docs/core-systems/match-engine.md`]
 - **Player System**: Attribute-based player modeling (1-20 scale) [`docs/data/player-attributes.md`]
 - **Playstyle System**: Dynamic attribute modifiers based on match context (24 playstyles: 16 batting + 8 bowling) [`docs/core-systems/playstyle-system.md`]
+- **Tactics System**: T20 tactical control with acceleration tiers and bowling plans (7-stage modifier chain) [`docs/core-systems/tactics-system.md`]
 - **State Management**: Zustand stores for game state [`docs/frontend/state-management.md`]
 - **League System**: WPL structure and scheduling [`docs/core-systems/league-system.md`]
 
@@ -65,6 +66,7 @@ src/
 - [Match Engine Tuning](docs/core-systems/match-engine-tuning.md) - Outcome probability tuning
 - [Player System](docs/core-systems/player-system.md) - Attributes and progression
 - [Playstyle System](docs/core-systems/playstyle-system.md) - Dynamic attribute modifiers
+- [Tactics System](docs/core-systems/tactics-system.md) - T20 tactical control (acceleration tiers, bowling plans, DLS targets)
 - [League System](docs/core-systems/league-system.md) - WPL structure (planned)
 - [Auction System](docs/core-systems/auction-system.md) - Player trading (planned)
 - [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management (planned)
@@ -103,10 +105,13 @@ src/
 - **Configuration System**: All probabilities externalized to JSON config files
 - **Documentation**: Organized structure with component-specific guides
 - **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
+- **T20 Tactics System**: 7-stage modifier chain with acceleration tiers, bowling plans, and DLS-based pacing (see [`docs/core-systems/tactics-system.md`])
+- **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`INTERACTIVE_MATCH_COMPLETE.md`])
 
-### 🔄 In Progress (Phase 2)
+### 🔄 In Progress (Phase 2-3)
+- **React UI Components**: Match screen, pre-match setup, tactical controls
 - **Player Browser**: Search and filtering interface
-- **Match UI**: Complete match visualization and live simulation
+- **Match Visualization**: UI wrapper for interactive match system
 - **State Integration**: Full Zustand store integration
 
 ### 📋 Next Priorities (Phase 3-4)
@@ -145,8 +150,8 @@ See [`cricket-data-processor/README.md`] for processing pipeline details.
 **Key Features**:
 - All cricket dismissals: bowled, lbw, stumped, caught_behind, caught, run_out
 - Shot types: missed, edged_behind, grounded, aerial
-- Playstyle system with 24 dynamic modifiers (16 batting + 4 pace + 4 spin)
-- Tactics system: batting mentality (attacking/neutral/defensive), bowling mentality, field formations
+- 7-stage modifier chain: Playstyle → Tactics → Mentality → Matchups → Confidence → Energy → Context
+- 24 playstyles (16 batting + 8 bowling) + 5 acceleration tiers + 14 bowling plans
 - Performance: ~50,000+ balls/second
 
 **Usage**: `import SimpleBallSimulator from '../core/match-engine/SimpleBallSimulator.js'`
@@ -155,6 +160,7 @@ See [`cricket-data-processor/README.md`] for processing pipeline details.
 - Technical details: [`docs/core-systems/match-engine.md`]
 - Outcome tuning: [`docs/core-systems/match-engine-tuning.md`]
 - Playstyle system: [`docs/core-systems/playstyle-system.md`]
+- Tactics system: [`docs/core-systems/tactics-system.md`]
 
 ### World Premier League Teams
 10 teams representing major cricket cities: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles.
@@ -184,9 +190,22 @@ After completing features:
 - **Unit tests**: Component-specific functionality
 - **Diagnostic tests**: `src/test/diagnosticBallTest.js` for match engine outcomes
 - **Integration tests**: Full match simulation in `src/test/detailedMatchTest.js`
+- **Interactive tests**: Playable match in `src/test/interactiveMatchTest.js`
+- **Demo tests**: Automated playthrough in `src/test/demoInteractiveMatch.js`
+
+### Interactive Match System Quick Start
+```bash
+# Run automated demo (no user input required)
+node src/test/demoInteractiveMatch.js
+
+# Play full interactive match (you control everything)
+node src/test/interactiveMatchTest.js
+```
+
+See [`INTERACTIVE_MATCH_COMPLETE.md`] for complete guide.
 
 ---
 
-**Last Updated**: January 2025 - Bowling Playstyle System Revamp Complete
+**Last Updated**: January 2025 - Interactive Match System Complete
 
 For detailed information, see component-specific documentation in the `docs/` folder.

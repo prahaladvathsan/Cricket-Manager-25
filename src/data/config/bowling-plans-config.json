@@ -1,0 +1,326 @@
+{
+  "version": "1.0.0",
+  "description": "Bowling plan configurations for pace and spin bowlers in T20 tactical system",
+  "lastUpdated": "2025-01-10",
+
+  "paceBowling": {
+    "lineLengthPlans": {
+      "Attacking Line": {
+        "description": "Stumps + Pads targeting",
+        "tendencyScores": {
+          "attacking": 7,
+          "neutral": 2,
+          "defensive": 1
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "swing": 1,
+            "attackingBowling": 1
+          },
+          "penalties": {
+            "accuracy": -1,
+            "stamina": -1
+          }
+        },
+        "playstyleBoosted": ["Swing Bowler"]
+      },
+      "Wide Line": {
+        "description": "Outside Off-Stump",
+        "tendencyScores": {
+          "attacking": 1,
+          "neutral": 4,
+          "defensive": 5
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "defensiveBowling": 1
+          },
+          "penalties": {
+            "attackingBowling": -1,
+            "variations": -1
+          }
+        },
+        "playstyleBoosted": ["Hit-the-Deck Seamer"]
+      },
+      "Short-Pitched": {
+        "description": "Bouncers and short balls",
+        "tendencyScores": {
+          "attacking": 3,
+          "neutral": 3,
+          "defensive": 4
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "bowlingSpeed": 1,
+            "attackingBowling": 1
+          },
+          "penalties": {
+            "accuracy": -1,
+            "stamina": -1
+          }
+        },
+        "playstyleBoosted": ["Short-Ball Specialist"]
+      },
+      "Yorker Execution": {
+        "description": "Death Specialist yorkers",
+        "tendencyScores": {
+          "attacking": 3,
+          "neutral": 1,
+          "defensive": 6
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "variations": 1
+          },
+          "penalties": {
+            "bowlingSpeed": -1,
+            "stamina": -1
+          }
+        },
+        "playstyleBoosted": ["Death Specialist"]
+      }
+    },
+    "variationPlans": {
+      "Pace Variation Mix": {
+        "description": "Mix of slower balls and changes of pace",
+        "tendencyScores": {
+          "attacking": 4,
+          "neutral": 4,
+          "defensive": 2
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "variations": 2
+          },
+          "penalties": {
+            "bowlingSpeed": -1,
+            "accuracy": -1
+          }
+        },
+        "playstyleBoosted": ["Death Specialist"]
+      },
+      "Swing/Seam Focus": {
+        "description": "Focus on conventional swing and seam",
+        "tendencyScores": {
+          "attacking": 6,
+          "neutral": 3,
+          "defensive": 1
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "swing": 2
+          },
+          "penalties": {
+            "bowlingSpeed": -1,
+            "variations": -1
+          }
+        },
+        "playstyleBoosted": ["Swing Bowler"]
+      },
+      "Bouncer Barrage": {
+        "description": "Aggressive short ball strategy",
+        "tendencyScores": {
+          "attacking": 7,
+          "neutral": 1,
+          "defensive": 2
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "bowlingSpeed": 1,
+            "attackingBowling": 1
+          },
+          "penalties": {
+            "accuracy": -2
+          }
+        },
+        "playstyleBoosted": ["Short-Ball Specialist"]
+      },
+      "Consistent Accuracy": {
+        "description": "Repeating same line and length",
+        "tendencyScores": {
+          "attacking": 1,
+          "neutral": 5,
+          "defensive": 4
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "temperament": 1
+          },
+          "penalties": {
+            "attackingBowling": -1,
+            "bowlingSpeed": -1
+          }
+        },
+        "playstyleBoosted": ["Hit-the-Deck Seamer"]
+      }
+    }
+  },
+
+  "spinBowling": {
+    "lineLengthPlans": {
+      "Flight & Loop": {
+        "description": "Traditional flight and dip",
+        "tendencyScores": {
+          "attacking": 4,
+          "neutral": 2,
+          "defensive": 4
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "flight": 1,
+            "attackingBowling": 1
+          },
+          "penalties": {
+            "accuracy": -1,
+            "defensiveBowling": -1
+          }
+        },
+        "playstyleBoosted": ["Classical Spinner"]
+      },
+      "Flat & Fast": {
+        "description": "Quick, skiddy deliveries",
+        "tendencyScores": {
+          "attacking": 1,
+          "neutral": 2,
+          "defensive": 7
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "defensiveBowling": 1
+          },
+          "penalties": {
+            "flight": -1,
+            "attackingBowling": -1
+          }
+        },
+        "playstyleBoosted": ["Flat Spinner"]
+      },
+      "Wide of Off": {
+        "description": "Outside off-stump line",
+        "tendencyScores": {
+          "attacking": 3,
+          "neutral": 1,
+          "defensive": 6
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "defensiveBowling": 1
+          },
+          "penalties": {
+            "turn": -1,
+            "attackingBowling": -1
+          }
+        },
+        "playstyleBoosted": ["Mystery Spinner"]
+      },
+      "Stumps Attack": {
+        "description": "Attacking the stumps",
+        "tendencyScores": {
+          "attacking": 6,
+          "neutral": 3,
+          "defensive": 1
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "turn": 1,
+            "attackingBowling": 1
+          },
+          "penalties": {
+            "accuracy": -1,
+            "stamina": -1
+          }
+        },
+        "playstyleBoosted": ["Classical Spinner"]
+      }
+    },
+    "variationPlans": {
+      "Turn Candy Bag": {
+        "description": "Multiple variations with different turn",
+        "tendencyScores": {
+          "attacking": 7,
+          "neutral": 2,
+          "defensive": 1
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "turn": 1,
+            "variations": 1
+          },
+          "penalties": {
+            "accuracy": -1,
+            "stamina": -1
+          }
+        },
+        "playstyleBoosted": ["Mystery Spinner"]
+      },
+      "Flight Variation": {
+        "description": "Varying flight and loop",
+        "tendencyScores": {
+          "attacking": 2,
+          "neutral": 4,
+          "defensive": 4
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "flight": 1,
+            "variations": 1
+          },
+          "penalties": {
+            "turn": -1,
+            "defensiveBowling": -1
+          }
+        },
+        "playstyleBoosted": ["Classical Spinner"]
+      },
+      "Pace Variation": {
+        "description": "Changes of pace",
+        "tendencyScores": {
+          "attacking": 1,
+          "neutral": 3,
+          "defensive": 6
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "variations": 1,
+            "intelligence": 1
+          },
+          "penalties": {
+            "turn": -1,
+            "flight": -1
+          }
+        },
+        "playstyleBoosted": ["Flat Spinner"]
+      },
+      "Consistent Line": {
+        "description": "Metronomic accuracy",
+        "tendencyScores": {
+          "attacking": 1,
+          "neutral": 5,
+          "defensive": 4
+        },
+        "attributeModifiers": {
+          "bonuses": {
+            "accuracy": 1,
+            "temperament": 1
+          },
+          "penalties": {
+            "attackingBowling": -1,
+            "variations": -1
+          }
+        },
+        "playstyleBoosted": ["Containment Spinner"]
+      }
+    }
+  },
+
+  "playstyleBoostAmount": 10,
+  "mentalityCalculation": {
+    "description": "Combine line-length and variation tendency scores, then convert to percentages",
+    "formula": "Total each tendency type, divide by sum of all tendencies"
+  }
+}

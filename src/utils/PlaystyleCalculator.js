@@ -55,7 +55,7 @@ class PlaystyleCalculator {
 
     const attributes = playstyleConfig.attributes;
 
-    // Calculate weighted sum
+    // Calculate weighted sum from attributes
     let weightedSum = 0;
     let maxPossible = 0;
 
@@ -71,13 +71,49 @@ class PlaystyleCalculator {
       }
     }
 
-    // Calculate rating as percentage (0-100)
-    if (maxPossible === 0) {
-      return 0;
+    const attributeRating = maxPossible > 0 ? (weightedSum / maxPossible) * 100 : 0;
+
+    let finalRating = 0;
+
+    if (category === 'batting') {
+      const battingOverall = player.attributes.overall?.batting_overall || 10;
+      const primaryBatPos = player.primaryBattingPosition;
+
+      let posRating = 0;
+      if (primaryBatPos >= 1 && primaryBatPos <= 2) {
+        if (playstyleName.includes('opener')) {
+          posRating = 20;
+        }
+      }
+      else if (primaryBatPos >= 3 && primaryBatPos <= 4) {
+        if (playstyleName.includes('top-order')) {
+          posRating = 20;
+        }
+      }
+      else if (primaryBatPos >= 5 && primaryBatPos <= 6) {
+        if (playstyleName.includes('middle-order')) {
+          posRating = 20;
+        }
+      }
+      else if (primaryBatPos >= 7 && primaryBatPos <= 8) {
+        if (playstyleName.includes('lower-order')) {
+          posRating = 20;
+        }
+      }
+      else if (primaryBatPos >= 9 && primaryBatPos <= 11) {
+        if (playstyleName === 'Runner' || playstyleName === 'Pinch-Hitter' || playstyleName === 'Wall') {
+          posRating = 10;
+        }
+      }
+
+      finalRating = (attributeRating * 0.6) + (battingOverall) + (posRating);
+
+    } else if (category === 'bowling') {
+      const bowlingOverall = player.attributes.overall?.bowling_overall || 10;
+      finalRating = (attributeRating * 0.8) + (bowlingOverall);
     }
 
-    const rating = (weightedSum / maxPossible) * 100;
-    return Math.max(0, Math.min(100, rating)); // Clamp to 0-100
+    return Math.max(0, Math.min(100, finalRating)); // Clamp to 0-100
   }
 
   /**

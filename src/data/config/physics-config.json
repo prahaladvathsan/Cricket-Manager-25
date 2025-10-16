@@ -4,10 +4,10 @@
   "lastUpdated": "2024-01-01",
 
   "fieldDimensions": {
-    "boundaryRadius": 90,
-    "pitchLength": 22,
-    "strikerOffset": 11,
-    "description": "Circular boundary with striker at 11 yards from center (not origin)"
+    "boundaryRadius": 70,
+    "pitchLength": 20.12,
+    "strikerOffset": 10.06,
+    "description": "All dimensions in METERS. Boundary 70m from center. Pitch length 20.12m (22 yards), striker 10.06m (11 yards) from center"
   },
 
   "shotTypes": {

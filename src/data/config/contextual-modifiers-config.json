@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "description": "Contextual modifiers for situational match effects in T20 cricket",
+  "lastUpdated": "2025-01-10",
+
+  "leftRightPartnership": {
+    "description": "Active when striker and non-striker have different batting hands",
+    "trigger": {
+      "condition": "(striker.battingHand === 'left' && nonStriker.battingHand === 'right') || (striker.battingHand === 'right' && nonStriker.battingHand === 'left')"
+    },
+    "effects": {
+      "bowler": {
+        "accuracy": -2
+      }
+    },
+    "reasoning": "Bowler must constantly adjust line between deliveries"
+  },
+
+  "newBallBoost": {
+    "description": "Swing boost for pace bowlers with new ball in early overs",
+    "trigger": {
+      "oversRange": [1, 4],
+      "bowlerType": "pace",
+      "condition": "over >= 1 && over <= 4 && bowlerType === 'pace'"
+    },
+    "effects": {
+      "bowler": {
+        "swing": 2
+      }
+    },
+    "reasoning": "New ball swings more in first 4 overs"
+  },
+
+  "usage": {
+    "description": "These modifiers are auto-applied based on match context, no user input required",
+    "application": "Check conditions before each ball simulation, apply modifiers if triggered"
+  }
+}

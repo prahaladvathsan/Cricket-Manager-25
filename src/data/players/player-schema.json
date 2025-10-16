@@ -18,7 +18,7 @@
       "attributes": {
         "batting": {
           "technique": "number 1-20",
-          "timing": "number 1-20", 
+          "timing": "number 1-20",
           "footwork": "number 1-20",
           "placement": "number 1-20",
           "range360": "number 1-20",
@@ -26,13 +26,15 @@
           "neutralShots": "number 1-20",
           "attackingShots": "number 1-20",
           "vsPace": "number 1-20",
-          "vsSpin": "number 1-20"
+          "vsSpin": "number 1-20",
+          "creativity": "number 1-20"
         },
         "bowling": {
           "accuracy": "number 1-20",
           "bowlingSpeed": "number 1-20",
           "swing": "number 1-20",
           "turn": "number 1-20",
+          "flight": "number 1-20",
           "variations": "number 1-20",
           "intelligence": "number 1-20",
           "defensiveBowling": "number 1-20",
@@ -53,11 +55,9 @@
           "groundFielding": "number 1-20",
           "throwPower": "number 1-20",
           "throwAccuracy": "number 1-20",
-          "wicketkeeping": {
-            "keeping": "number 1-20 (only for wicket-keepers)",
-            "collecting": "number 1-20 (only for wicket-keepers)",
-            "stumping": "number 1-20 (only for wicket-keepers)"
-          }
+          "keeping": "number 1-20",
+          "collecting": "number 1-20",
+          "stumping": "number 1-20"
         },
         "mental": {
           "concentration": "number 1-20",
@@ -65,6 +65,10 @@
           "aggression": "number 1-20",
           "judgement": "number 1-20",
           "leadership": "number 1-20"
+        },
+        "overall": {
+          "batting_overall": "number 0-100",
+          "bowling_overall": "number 0-100"
         }
       },
       "careerStats": {
@@ -88,8 +92,17 @@
         "fitness": "number 0-100",
         "fatigue": "number 0-100",
         "morale": "number 0-100",
-        "injury": "string - null | minor | moderate | severe"
+        "injury": "string - null | minor | moderate | severe",
+        "confidence": "number 0-100",
+        "energy": "number 0-100",
+        "injuryDuration": "number | null"
       },
+      "contract": {
+        "salary": "number",
+        "duration": "number",
+        "retentionStatus": "string"
+      },
+      "rating": "number",
       "playstyleRatings": {
         "description": "All playstyle ratings calculated from player attributes (0-100 scale)",
         "batting": {
@@ -155,13 +168,25 @@
       },
       "primaryPlaystyle": {
         "description": "Player's primary (highest rated) playstyle for their role",
-        "batting": "string - Name of primary batting playstyle",
-        "bowling": "string - Name of primary bowling playstyle"
+        "batting": "string - Name of primary batting playstyle | null",
+        "bowling": "string - Name of primary bowling playstyle | null"
       },
-      "contract": {
-        "salary": "number",
-        "duration": "number",
-        "retentionStatus": "string"
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": "number 1-8",
+          "Hit-the-Deck Seamer": "number 1-8",
+          "Short-Ball Specialist": "number 1-8",
+          "Death Specialist": "number 1-8",
+          "Classical Spinner": "number 1-8",
+          "Flat Spinner": "number 1-8",
+          "Mystery Spinner": "number 1-8",
+          "Containment Spinner": "number 1-8"
+        },
+        "defaultBattingTier": "string - Build | Rotate | Cruise | Attack | Rampage",
+        "defaultBowlingPlans": {
+          "lineLength": "string",
+          "variation": "string"
+        }
       }
     }
   }

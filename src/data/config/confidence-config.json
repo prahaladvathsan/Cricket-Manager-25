@@ -1,0 +1,140 @@
+{
+  "version": "1.0.0",
+  "description": "Confidence system configuration for dynamic player performance in T20 matches",
+  "lastUpdated": "2025-01-10",
+
+  "confidenceLevels": {
+    "Shattered": {
+      "range": [0, 20],
+      "attributeModifier": -2,
+      "description": "All attributes -2"
+    },
+    "Low": {
+      "range": [21, 40],
+      "attributeModifier": -1,
+      "description": "All attributes -1"
+    },
+    "Normal": {
+      "range": [41, 60],
+      "attributeModifier": 0,
+      "description": "No change"
+    },
+    "High": {
+      "range": [61, 80],
+      "attributeModifier": 1,
+      "description": "All attributes +1"
+    },
+    "Sky-High": {
+      "range": [81, 100],
+      "attributeModifier": 2,
+      "description": "All attributes +2"
+    }
+  },
+
+  "battingTriggers": {
+    "ballLevel": {
+      "score4": {
+        "change": 1,
+        "description": "Score 4 runs"
+      },
+      "score6": {
+        "change": 2,
+        "description": "Score 6 runs"
+      },
+      "every10Balls": {
+        "change": 2,
+        "description": "Every 10 balls survived"
+      },
+      "every3Dots": {
+        "change": -2,
+        "description": "Every 3 consecutive dot balls"
+      }
+    },
+    "milestones": {
+      "reach25": {
+        "change": 5,
+        "description": "Reach 25 runs"
+      },
+      "reach50": {
+        "change": 10,
+        "description": "Reach 50 runs"
+      }
+    },
+    "overLevel": {
+      "targetMet": {
+        "baseChange": 5,
+        "bonusPerRun": 1,
+        "description": "+5+x where x = runs above target"
+      },
+      "targetMissed": {
+        "baseChange": -5,
+        "penaltyPerRun": 1,
+        "description": "-5-x where x = runs below target"
+      },
+      "crrCheck": {
+        "change": -2,
+        "description": "CRR < RRR (2nd innings) or CRR < TRR (1st innings) at over end"
+      }
+    }
+  },
+
+  "bowlingTriggers": {
+    "ballLevel": {
+      "takeWicket": {
+        "change": 5,
+        "description": "Take a wicket"
+      },
+      "every3Dots": {
+        "change": 1,
+        "description": "Every 3 dot balls"
+      },
+      "concedeBoundary": {
+        "change": -1,
+        "description": "Concede a boundary"
+      }
+    },
+    "overLevel": {
+      "maidenOver": {
+        "change": 3,
+        "description": "Bowl a maiden over"
+      },
+      "targetDefended": {
+        "baseChange": 5,
+        "bonusPerRun": 1,
+        "description": "+5+x where x = runs saved below target"
+      },
+      "targetFailed": {
+        "baseChange": -5,
+        "penaltyPerRun": 1,
+        "description": "-5-x where x = runs conceded above target"
+      },
+      "crrCheck": {
+        "change": -2,
+        "description": "CRR > RRR (2nd innings) or CRR > TRR (1st innings) at over end"
+      }
+    },
+    "milestones": {
+      "wicketHaul": {
+        "change": 5,
+        "description": "3, 4, or 5+ wicket haul"
+      }
+    }
+  },
+
+  "matchLevelTracking": {
+    "moraleCalculation": {
+      "description": "After match, morale = average of confidence values from last 5 matches",
+      "rollingWindow": 5
+    },
+    "matchStart": {
+      "description": "At match start, confidence = morale",
+      "initialConfidence": "morale"
+    }
+  },
+
+  "limits": {
+    "min": 0,
+    "max": 100,
+    "description": "Confidence cannot go below 0 or above 100"
+  }
+}

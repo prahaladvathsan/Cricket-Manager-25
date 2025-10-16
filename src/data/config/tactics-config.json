@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "description": "Batting acceleration tier configurations for T20 tactical system",
+  "lastUpdated": "2025-01-10",
+
+  "accelerationTiers": {
+    "Blockade": {
+      "description": "Ultra Defensive - Survival focus",
+      "mentalityProbabilities": {
+        "defensive": 0.66,
+        "neutral": 0.25,
+        "attacking": 0.09
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "judgement": 2
+        },
+        "penalties": {
+          "range360": -2
+        }
+      },
+      "playstyleBoosted": ["Opener - Anchor", "Wall"]
+    },
+    "Build": {
+      "description": "Consolidate - Platform building",
+      "mentalityProbabilities": {
+        "defensive": 0.50,
+        "neutral": 0.33,
+        "attacking": 0.17
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "creativity": 2
+        },
+        "penalties": {
+          "placement": -1,
+          "technique": -1
+        }
+      },
+      "playstyleBoosted": ["Opener - Anchor", "Wall"]
+    },
+    "Rotate": {
+      "description": "Singles Focus - Strike rotation",
+      "mentalityProbabilities": {
+        "defensive": 0.25,
+        "neutral": 0.50,
+        "attacking": 0.25
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "speed": 2
+        },
+        "penalties": {
+          "strength": -2
+        }
+      },
+      "playstyleBoosted": ["Opener - Balanced", "Middle Order - Balanced", "Top Order - Balanced", "Runner"]
+    },
+    "Cruise": {
+      "description": "Controlled Aggression - Balanced attack",
+      "mentalityProbabilities": {
+        "defensive": 0.17,
+        "neutral": 0.33,
+        "attacking": 0.50
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "placement": 1,
+          "footwork": 1
+        },
+        "penalties": {
+          "judgement": -2
+        }
+      },
+      "playstyleBoosted": ["Opener - Balanced", "Middle Order - Balanced", "Top Order - Balanced", "Runner"]
+    },
+    "Blitz": {
+      "description": "High Risk Attack - Boundary hunting",
+      "mentalityProbabilities": {
+        "defensive": 0.09,
+        "neutral": 0.25,
+        "attacking": 0.66
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "timing": 2,
+          "technique": 1
+        },
+        "penalties": {
+          "judgement": -3
+        }
+      },
+      "playstyleBoosted": ["Opener - Slogger", "Middle Order - Slogger", "Top Order - Slogger", "Lower Order - Slogger", "Pinch-Hitter"]
+    },
+    "Hit Out/Get Out": {
+      "description": "Maximum Attack - All-out aggression",
+      "mentalityProbabilities": {
+        "defensive": 0.05,
+        "neutral": 0.05,
+        "attacking": 0.90
+      },
+      "attributeModifiers": {
+        "bonuses": {
+          "strength": 2,
+          "timing": 2
+        },
+        "penalties": {
+          "judgement": -2,
+          "speed": -2
+        }
+      },
+      "playstyleBoosted": ["Opener - Slogger", "Middle Order - Slogger", "Top Order - Slogger", "Lower Order - Slogger", "Pinch-Hitter"]
+    }
+  },
+
+  "playstyleBoostAmount": 10,
+  "autoTierSelection": {
+    "description": "Rules for automatic tier selection based on match situation",
+    "enabled": true,
+    "logic": {
+      "description": "Select tier based on TRR comparison and resources left",
+      "runsBehindThresholds": {
+        "massive": 20,
+        "significant": 10,
+        "slight": 5
+      },
+      "runsAheadThresholds": {
+        "massive": 20,
+        "significant": 10,
+        "slight": 5
+      },
+      "tierMapping": {
+        "massiveBehind": "Hit Out/Get Out",
+        "significantBehind": "Blitz",
+        "slightBehind": "Cruise",
+        "onPar": "Rotate",
+        "slightAhead": "Rotate",
+        "significantAhead": "Build",
+        "massiveAhead": "Blockade"
+      }
+    }
+  }
+}

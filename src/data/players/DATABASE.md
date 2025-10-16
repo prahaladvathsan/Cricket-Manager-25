@@ -10,8 +10,8 @@ The Cricket Manager uses a **single master player database** with all playstyle 
 src/data/players/master_player_database.json
 ```
 
-**File Size**: 4.4 MB
-**Players**: 1,123
+**File Size**: 5.6 MB
+**Players**: 1,431
 **Schema Version**: player-schema.json v2.0.0
 
 ---
@@ -28,7 +28,7 @@ The master database follows this structure:
     "playstyle-weightings": "1.0.0",
     "playstyle-modifiers": "1.0.0"
   },
-  "playerCount": 1123,
+  "playerCount": 1431,
   "schema": "player-schema.json v2.0.0",
   "description": "Master player database with pre-calculated playstyle ratings and top 3 playstyles",
   "players": [ ...player objects... ]
@@ -148,12 +148,14 @@ node scripts/buildMasterPlayerDatabase.js
 ```
 
 This script:
-1. Loads the source player data
-2. Calculates all playstyle ratings for 1,123 players (~97ms)
+1. Loads the source player data from `enhanced_player_database_gma.json`
+2. Calculates all playstyle ratings for 1,431 players (~296ms)
 3. Determines top 3 playstyles for each category
 4. Identifies primary playstyles based on role
 5. Generates the master database with metadata
 6. Saves to `src/data/players/master_player_database.json`
+
+**Alternative Script**: `updateMasterPlayerDatabase.js` - Directly reads from `enhanced_player_database_gma.json` and performs all transformations and calculations.
 
 ---
 
@@ -218,19 +220,25 @@ console.log(player.primaryPlaystyle.batting);
 - Database size: 2.1 MB
 - Load time: ~50ms
 - Playstyle calculation: ~1ms per player on first access
-- Total for 1,123 players: ~1,123ms if all accessed
+- Total for 1,431 players: ~1,431ms if all accessed
 
 ### After (Pre-Calculated)
-- Database size: 4.4 MB
-- Load time: ~80ms
+- Database size: 5.6 MB
+- Load time: ~100ms
 - Playstyle access: Instant (already in memory)
-- Total: **~80ms** ⚡
+- Total: **~100ms** ⚡
 
 **Performance gain: ~14x faster for full database access**
 
 ---
 
 ## Version History
+
+### v2.1.0 (2025-10-07)
+- 🔄 Updated source to `enhanced_player_database_gma.json`
+- 📈 Expanded player count to 1,431 players
+- 🛠️ Added `updateMasterPlayerDatabase.js` script for direct transformation
+- 📊 Database size: 5.6 MB (1,431 players)
 
 ### v2.0.0 (2025-10-04)
 - ✨ Added pre-calculated playstyle ratings for all 21 playstyles
@@ -250,7 +258,10 @@ console.log(player.primaryPlaystyle.batting);
 ## Related Files
 
 - **Schema**: `src/data/players/player-schema.json`
-- **Build Script**: `scripts/buildMasterPlayerDatabase.js`
+- **Build Scripts**:
+  - `scripts/buildMasterPlayerDatabase.js` - Original build script
+  - `scripts/updateMasterPlayerDatabase.js` - Direct transformation from enhanced GMA database
+- **Source Data**: `src/data/players/processed/enhanced_player_database_gma.json`
 - **Playstyle Calculator**: `src/utils/PlaystyleCalculator.js`
 - **Playstyle Weightings**: `src/data/config/playstyle-weightings.json`
 - **Playstyle Modifiers**: `src/data/config/playstyle-modifiers.json`

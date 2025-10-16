@@ -1,115 +1,63 @@
 {
   "version": "1.0.0",
   "description": "Field positioning configurations for 2D fielding simulation",
-  "lastUpdated": "2024-01-01",
+  "lastUpdated": "2025-10-13",
 
   "fieldDimensions": {
-    "boundaryRadius": 90,
-    "innerCircleRadius": 30,
-    "pitchLength": 22,
-    "description": "Field dimensions for 2D coordinate system"
+    "boundaryRadius": 70,
+    "pitchLength": 20.12,
+    "strikerOffset": 10.06,
+    "description": "Field dimensions for 2D coordinate system in METERS. Boundary 70m from center. Pitch 20.12m (22 yards)."
   },
 
   "formations": {
     "attacking": {
-      "description": "Aggressive field with close-in fielders and catching positions",
+      "description": "Aggressive field with close-in catchers; emphasis on slips and short leg",
       "positions": [
-        {"name": "slip", "x": 5, "y": -8, "angle": 225},
-        {"name": "point", "x": 25, "y": -25, "angle": 315},
-        {"name": "cover", "x": 35, "y": -15, "angle": 340},
-        {"name": "mid_off", "x": 30, "y": 0, "angle": 0},
-        {"name": "mid_on", "x": 30, "y": 0, "angle": 180},
-        {"name": "mid_wicket", "x": 25, "y": 25, "angle": 45},
-        {"name": "square_leg", "x": 15, "y": 30, "angle": 90},
-        {"name": "fine_leg", "x": 10, "y": 15, "angle": 120},
-        {"name": "third_man", "x": 20, "y": -20, "angle": 300}
+        {"name": "bowler", "x": 0, "y": -10},
+        {"name": "keeper", "x": 0, "y": 20},
+        {"name": "first_slip", "x": -5, "y": 6},
+        {"name": "gully", "x": -12, "y": 9},
+        {"name": "point", "x": -14, "y": 0},
+        {"name": "cover", "x": -16, "y": -10},
+        {"name": "mid_off", "x": -14, "y": -22},
+        {"name": "mid_on", "x": 14, "y": -22},
+        {"name": "mid_wicket", "x": 18, "y": -8},
+        {"name": "short_leg", "x": 8, "y": 6},
+        {"name": "leg_gully", "x": 10, "y": 10}
       ]
     },
     "neutral": {
-      "description": "Balanced field formation with mixed close and boundary fielders",
+      "description": "Balanced ring with one catcher and two boundary sweepers",
       "positions": [
-        {"name": "slip", "x": 5, "y": -8, "angle": 225},
-        {"name": "point", "x": 45, "y": -45, "angle": 315},
-        {"name": "cover", "x": 50, "y": -25, "angle": 340},
-        {"name": "mid_off", "x": 35, "y": 0, "angle": 0},
-        {"name": "mid_on", "x": 35, "y": 0, "angle": 180},
-        {"name": "mid_wicket", "x": 40, "y": 40, "angle": 45},
-        {"name": "square_leg", "x": 35, "y": 50, "angle": 90},
-        {"name": "fine_leg", "x": 25, "y": 35, "angle": 120},
-        {"name": "third_man", "x": 40, "y": -35, "angle": 300}
+        {"name": "bowler", "x": 0, "y": -10},
+        {"name": "keeper", "x": 0, "y": 20},
+        {"name": "slip", "x": -6, "y": 6},
+        {"name": "point", "x": -22, "y": -6},
+        {"name": "cover", "x": -34, "y": -18},
+        {"name": "mid_off", "x": -26, "y": -8},
+        {"name": "mid_on", "x": 26, "y": -8},
+        {"name": "mid_wicket", "x": 28, "y": -16},
+        {"name": "square_leg", "x": 16, "y": -2},
+        {"name": "fine_leg", "x": 20, "y": 34},
+        {"name": "third_man", "x": -20, "y": 34}
       ]
     },
     "defensive": {
-      "description": "Defensive field with most fielders on the boundary",
+      "description": "Defensive field with boundary riders in key zones; single catcher retained",
       "positions": [
-        {"name": "slip", "x": 5, "y": -8, "angle": 225},
-        {"name": "point", "x": 75, "y": -75, "angle": 315},
-        {"name": "cover", "x": 80, "y": -45, "angle": 340},
-        {"name": "long_off", "x": 85, "y": 0, "angle": 0},
-        {"name": "long_on", "x": 85, "y": 0, "angle": 180},
-        {"name": "deep_mid_wicket", "x": 75, "y": 75, "angle": 45},
-        {"name": "deep_square_leg", "x": 65, "y": 85, "angle": 90},
-        {"name": "deep_fine_leg", "x": 55, "y": 70, "angle": 120},
-        {"name": "deep_third_man", "x": 70, "y": -70, "angle": 300}
+        {"name": "bowler", "x": 0, "y": -10},
+        {"name": "keeper", "x": 0, "y": 20},
+        {"name": "deep_point", "x": -36, "y": -60},
+        {"name": "deep_cover", "x": -60, "y": -36},
+        {"name": "long_off", "x": -65, "y": -10},
+        {"name": "long_on", "x": 65, "y": -10},
+        {"name": "deep_mid_wicket", "x": 52, "y": -42},
+        {"name": "deep_square_leg", "x": 0, "y": -65},
+        {"name": "deep_fine_leg", "x": 24, "y": 56},
+        {"name": "deep_third_man", "x": -24, "y": 56},
+        {"name": "slip", "x": -6, "y": 6}
       ]
     }
-  },
-
-  "fieldingAttributes": {
-    "speed": {
-      "description": "Fielder movement speed affects interception time",
-      "baseSpeed": 8.0,
-      "speedMultiplier": 0.5,
-      "maxSpeed": 15.0
-    },
-    "agility": {
-      "description": "Affects fielder acceleration and direction changes",
-      "baseAcceleration": 2.0,
-      "agilityMultiplier": 0.3,
-      "maxAcceleration": 5.0
-    },
-    "catching": {
-      "description": "Probability of successfully catching aerial shots",
-      "baseCatchRate": 0.5,
-      "catchingMultiplier": 0.025,
-      "maxCatchRate": 0.95
-    },
-    "throwPower": {
-      "description": "Affects throw speed and distance",
-      "baseThrowSpeed": 25.0,
-      "powerMultiplier": 1.5,
-      "maxThrowSpeed": 45.0
-    },
-    "throwAccuracy": {
-      "description": "Affects throw accuracy and stumping chances",
-      "baseAccuracy": 0.7,
-      "accuracyMultiplier": 0.015,
-      "maxAccuracy": 0.98
-    }
-  },
-
-  "specialPositions": {
-    "wicketKeeper": {
-      "x": 0,
-      "y": -2,
-      "angle": 180,
-      "description": "Wicket keeper position behind stumps"
-    },
-    "bowler": {
-      "x": 0,
-      "y": 22,
-      "angle": 0,
-      "description": "Bowler position at non-striker end after delivery"
-    }
-  },
-
-  "fieldingZones": {
-    "slips": {"angleStart": 200, "angleEnd": 250, "radius": 8},
-    "point": {"angleStart": 290, "angleEnd": 340, "radius": 50},
-    "covers": {"angleStart": 320, "angleEnd": 20, "radius": 50},
-    "straight": {"angleStart": 350, "angleEnd": 10, "radius": 65},
-    "onSide": {"angleStart": 10, "angleEnd": 170, "radius": 50},
-    "legSide": {"angleStart": 60, "angleEnd": 150, "radius": 50},
-    "fine": {"angleStart": 150, "angleEnd": 200, "radius": 45}
   }
 }

@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import MatchEngine from '../core/match-engine/MatchEngine.js';
+import MatchEngine from '../core/match-engine/core/MatchEngine.js';
 import { create } from 'zustand';
 
 console.log('🏏 Starting Detailed Cricket Match Test with MatchEngine');
@@ -82,11 +82,26 @@ function createMockMatchStore() {
     matchId: null,
     status: 'scheduled',
     teams: { batting: {}, bowling: {} },
-    innings: { number: 1, isComplete: false },
+    innings: { number: 1, isComplete: false, battedPlayers: [] },
     currentBall: { over: 0, ball: 0, matchSituation: {} },
     ballByBall: [],
     matchConditions: {},
     commentary: [],
+    tacticsState: {
+      battingParScore: null,
+      targetRunRate: 8.0,
+      overTargets: [],
+      accelerationMode: 'auto',
+      currentAcceleration: {
+        striker: 'Rotate',
+        nonStriker: 'Rotate'
+      },
+      bowlingPlans: {},
+      pressureIndex: {
+        batting: 50,
+        bowling: 50
+      }
+    },
 
     initializeMatch: (config) => {
       set({
@@ -120,7 +135,8 @@ function createMockMatchStore() {
           nonStriker: null,
           bowler: null,
           target: null,
-          isComplete: false
+          isComplete: false,
+          battedPlayers: [] // Track all batsmen who have batted
         },
         currentBall: {
           over: 0,
@@ -135,13 +151,21 @@ function createMockMatchStore() {
     },
 
     setOpeningBatsmen: (striker, nonStriker) => {
-      set(state => ({
-        innings: {
-          ...state.innings,
-          striker,
-          nonStriker
-        }
-      }));
+      set(state => {
+        // Add new batsmen to battedPlayers list
+        const battedPlayers = new Set(state.innings.battedPlayers);
+        if (striker) battedPlayers.add(striker);
+        if (nonStriker) battedPlayers.add(nonStriker);
+
+        return {
+          innings: {
+            ...state.innings,
+            striker,
+            nonStriker,
+            battedPlayers: Array.from(battedPlayers)
+          }
+        };
+      });
     },
 
     setOpeningBowler: (bowler) => {
@@ -149,6 +173,15 @@ function createMockMatchStore() {
         innings: {
           ...state.innings,
           bowler
+        }
+      }));
+    },
+
+    updateTacticsState: (tacticsUpdate) => {
+      set(state => ({
+        tacticsState: {
+          ...state.tacticsState,
+          ...tacticsUpdate
         }
       }));
     },
@@ -180,12 +213,13 @@ function createMockMatchStore() {
         }
 
         // Update ball counter
-        let newBall = state.currentBall.ball + 1;
+        let newBall = state.currentBall.ball;
         let newOver = state.currentBall.over;
 
         if (newBallData.isLegal) {
-          if (newBall > 6) {
-            newBall = 1;
+          newBall += 1;
+          if (newBall === 6) {
+            newBall = 0;
             newOver += 1;
           }
         }
@@ -197,7 +231,8 @@ function createMockMatchStore() {
             ...state.currentBall,
             over: newOver,
             ball: newBall
-          }
+          },
+          tacticsState: state.tacticsState // Preserve tactics state
         };
       });
     },
@@ -213,7 +248,8 @@ function createMockMatchStore() {
           battingTeam: state.innings.bowlingTeam,
           bowlingTeam: state.innings.battingTeam,
           target,
-          isComplete: false
+          isComplete: false,
+          battedPlayers: [] // Reset for second innings
         },
         teams: {
           batting: {
@@ -288,17 +324,18 @@ try {
 
   const topPlayers = playerData.sort((a, b) => b.rating - a.rating);
 
-  // Select top players ignoring roles - anyone can bat and bowl
-  const selectedPlayers = playerData
-    .filter(p => p.rating > 4.0)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 22); // Get top 22 players for both teams
+  // Classify players into roles based on their attributes
+  // Since the database has all batsmen, we need to infer roles from attributes
+  playerData.forEach(player => {
+    const battingAttrs = player.attributes.batting;
+    const bowlingAttrs = player.attributes.bowling;
 
-  // Give everyone a bowlingType since anyone can bowl
-  selectedPlayers.forEach(player => {
+    // Calculate average batting and bowling skill
+    const battingAvg = Object.values(battingAttrs).reduce((a, b) => a + b, 0) / Object.keys(battingAttrs).length;
+    const bowlingAvg = Object.values(bowlingAttrs).reduce((a, b) => a + b, 0) / Object.keys(bowlingAttrs).length;
+
+    // Assign bowlingType based on bowling attributes
     if (!player.bowlingType) {
-      // Assign bowlingType based on bowling attributes
-      const bowlingAttrs = player.attributes.bowling;
       if (bowlingAttrs.bowlingSpeed > 12) {
         player.bowlingType = 'fast';
       } else if (bowlingAttrs.turn > 10 || bowlingAttrs.variations > 10) {
@@ -307,28 +344,89 @@ try {
         player.bowlingType = 'medium';
       }
     }
+
+    // Classify role based on attribute balance
+    // All-rounder: Good at both batting and bowling
+    if (battingAvg >= 10 && bowlingAvg >= 10) {
+      player.role = 'all-rounder';
+    }
+    // Bowler: Better bowling than batting
+    else if (bowlingAvg > battingAvg && bowlingAvg >= 8) {
+      player.role = 'bowler';
+    }
+    // Otherwise keep as batsman (default role in database)
+    // Note: wicket-keeper classification would need fielding analysis
   });
 
-  console.log(`\nTop 11 players (ignoring roles):`);
-  selectedPlayers.slice(0, 11).forEach((player, i) => {
-    const battingAvg = Object.values(player.attributes.batting).reduce((a, b) => a + b, 0) / Object.keys(player.attributes.batting).length;
-    const bowlingAvg = Object.values(player.attributes.bowling).reduce((a, b) => a + b, 0) / Object.keys(player.attributes.bowling).length;
-    console.log(`${i+1}. ${player.name} (${player.role}) - Rating: ${player.rating} - Bat: ${battingAvg.toFixed(1)}, Bowl: ${bowlingAvg.toFixed(1)} (${player.bowlingType})`);
+  /**
+   * Select balanced team with minimum bowling requirement
+   * @param {Array} availablePlayers - Pool of players to select from
+   * @param {number} teamSize - Number of players to select (default 11)
+   * @returns {Array} Selected team with at least 5 bowlers/all-rounders
+   */
+  function selectBalancedTeam(availablePlayers, teamSize = 11) {
+    const bowlers = availablePlayers.filter(p => p.role === 'bowler').sort((a, b) => b.rating - a.rating);
+    const allRounders = availablePlayers.filter(p => p.role === 'all-rounder').sort((a, b) => b.rating - a.rating);
+    const batsmen = availablePlayers.filter(p => p.role === 'batsman').sort((a, b) => b.rating - a.rating);
+    const keepers = availablePlayers.filter(p => p.role === 'wicket-keeper').sort((a, b) => b.rating - a.rating);
+
+    const team = [];
+    const MIN_BOWLING_OPTIONS = 5; // Minimum bowlers + all-rounders
+
+    // 1. Select at least 1 wicket-keeper (if available)
+    if (keepers.length > 0) {
+      team.push(keepers[0]);
+    }
+
+    // 2. Select all-rounders (count towards bowling requirement)
+    const allRoundersToSelect = Math.min(allRounders.length, 3); // Max 3 all-rounders
+    for (let i = 0; i < allRoundersToSelect && team.length < teamSize; i++) {
+      team.push(allRounders[i]);
+    }
+
+    // 3. Calculate how many pure bowlers we need
+    const bowlingOptionsSelected = team.filter(p => p.role === 'all-rounder' || p.role === 'bowler').length;
+    const pureBowlersNeeded = Math.max(0, MIN_BOWLING_OPTIONS - bowlingOptionsSelected);
+
+    // 4. Select pure bowlers
+    for (let i = 0; i < pureBowlersNeeded && i < bowlers.length && team.length < teamSize; i++) {
+      team.push(bowlers[i]);
+    }
+
+    // 5. Fill remaining slots with best available players (prioritize batsmen)
+    const remaining = availablePlayers
+      .filter(p => !team.includes(p))
+      .sort((a, b) => b.rating - a.rating);
+
+    while (team.length < teamSize && remaining.length > 0) {
+      team.push(remaining.shift());
+    }
+
+    return team;
+  }
+
+  // Select two balanced teams
+  const allPlayers = playerData.filter(p => p.rating > 4.0).sort((a, b) => b.rating - a.rating);
+
+  // Select Team A
+  const teamAPlayers = selectBalancedTeam(allPlayers, 11);
+
+  // Remove Team A players from pool and select Team B
+  const remainingPlayers = allPlayers.filter(p => !teamAPlayers.includes(p));
+  const teamBPlayers = selectBalancedTeam(remainingPlayers, 11);
+
+  // Ensure all players have IDs
+  teamAPlayers.forEach((p, i) => {
+    if (!p.id) p.id = `teamA_player_${i}`;
+  });
+
+  teamBPlayers.forEach((p, i) => {
+    if (!p.id) p.id = `teamB_player_${i}`;
   });
 
   // Create two teams with proper squad structure
-  console.log('\n🏏 TEAM SELECTION');
-  console.log('==================');
-
-  const teamAPlayers = selectedPlayers.slice(0, 11).map((p, i) => ({
-    ...p,
-    id: p.id || `teamA_player_${i}`
-  }));
-
-  const teamBPlayers = selectedPlayers.slice(11, 22).map((p, i) => ({
-    ...p,
-    id: p.id || `teamB_player_${i}`
-  }));
+  console.log('\n🏏 TEAM SELECTION (Balanced with minimum 5 bowling options)');
+  console.log('===========================================================');
 
   const teamA = {
     id: 'mumbai_thunders',
@@ -346,15 +444,26 @@ try {
 
   matchData.teams = { teamA, teamB };
 
-  console.log(`\nTeam A: ${teamA.name}`);
-  teamA.players.forEach((p, i) => {
-    console.log(`${i+1}. ${p.name} (${p.role}) - ${p.rating}`);
-  });
+  // Helper function to show team composition
+  function displayTeamComposition(team) {
+    console.log(`\n${team.name}:`);
+    team.players.forEach((p, i) => {
+      console.log(`${i+1}. ${p.name} (${p.role}) - ${p.rating}`);
+    });
 
-  console.log(`\nTeam B: ${teamB.name}`);
-  teamB.players.forEach((p, i) => {
-    console.log(`${i+1}. ${p.name} (${p.role}) - ${p.rating}`);
-  });
+    // Show bowling composition
+    const bowlers = team.players.filter(p => p.role === 'bowler').length;
+    const allRounders = team.players.filter(p => p.role === 'all-rounder').length;
+    const batsmen = team.players.filter(p => p.role === 'batsman').length;
+    const keepers = team.players.filter(p => p.role === 'wicket-keeper').length;
+    const bowlingOptions = bowlers + allRounders;
+
+    console.log(`   Composition: ${batsmen} Batsmen, ${allRounders} All-rounders, ${bowlers} Bowlers, ${keepers} Keeper(s)`);
+    console.log(`   Bowling options: ${bowlingOptions} (${bowlers} pure bowlers + ${allRounders} all-rounders)`);
+  }
+
+  displayTeamComposition(teamA);
+  displayTeamComposition(teamB);
 
   logEvent('TEAMS_SELECTED', { teamA: teamA.name, teamB: teamB.name });
 
@@ -368,8 +477,8 @@ try {
   const matchStore = createMockMatchStore();
 
   // Initialize stores with data
-  const allPlayers = [...teamAPlayers, ...teamBPlayers];
-  playerStore.getState().initializePlayers(allPlayers);
+  const allSelectedPlayers = [...teamAPlayers, ...teamBPlayers];
+  playerStore.getState().initializePlayers(allSelectedPlayers);
   teamStore.getState().initializeTeams({ teamA, teamB });
 
   // Create MatchEngine

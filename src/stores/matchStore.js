@@ -64,7 +64,8 @@ const useMatchStore = create((set, get) => ({
     striker: null, // player on strike
     nonStriker: null, // player at non-striker end
     bowler: null, // current bowler
-    isComplete: false
+    isComplete: false,
+    battedPlayers: [] // Track all players who have batted in this innings
   },
 
   // Current Ball State
@@ -92,6 +93,24 @@ const useMatchStore = create((set, get) => ({
 
   // Commentary
   commentary: [],
+
+  // Tactics State
+  tacticsState: {
+    battingParScore: null,      // User-set pre-match par score
+    bowlingParScore: null,      // User-set pre-match par score
+    targetRunRate: 8.0,         // Auto-calculated from par/target
+    overTargets: [],            // DLS-based per-over targets {over, runs, wickets}
+    accelerationMode: 'auto',   // 'auto' or 'manual'
+    currentAcceleration: {      // Per batsman acceleration tier
+      striker: 'Rotate',
+      nonStriker: 'Rotate'
+    },
+    bowlingPlans: {},           // Per bowler: {bowlerId: {lineLength, variation}}
+    pressureIndex: {            // Calculated each ball
+      batting: 50,
+      bowling: 50
+    }
+  },
 
   // Match Settings
   settings: {
@@ -164,7 +183,23 @@ const useMatchStore = create((set, get) => ({
       },
       ballByBall: [],
       matchConditions: {},
-      commentary: [`${tossWinner === homeTeam.id ? homeTeam.name : awayTeam.name} won the toss and chose to ${tossDecision === 'bat' ? 'bat first' : 'bowl first'}`]
+      commentary: [`${tossWinner === homeTeam.id ? homeTeam.name : awayTeam.name} won the toss and chose to ${tossDecision === 'bat' ? 'bat first' : 'bowl first'}`],
+      tacticsState: {
+        battingParScore: matchConfig.battingParScore || null,
+        bowlingParScore: matchConfig.bowlingParScore || null,
+        targetRunRate: 8.0,
+        overTargets: [],
+        accelerationMode: 'auto',
+        currentAcceleration: {
+          striker: 'Rotate',
+          nonStriker: 'Rotate'
+        },
+        bowlingPlans: {},
+        pressureIndex: {
+          batting: 50,
+          bowling: 50
+        }
+      }
     };
   }),
 
@@ -173,31 +208,50 @@ const useMatchStore = create((set, get) => ({
    * @param {string} striker - Opening batsman on strike
    * @param {string} nonStriker - Opening batsman at non-striker end
    */
-  setOpeningBatsmen: (striker, nonStriker) => set((state) => ({
+  setOpeningBatsmen: (striker, nonStriker) => set((state) => {
+    // Add new batsmen to battedPlayers list if not already there
+    const battedPlayers = new Set(state.innings.battedPlayers);
+    if (striker) battedPlayers.add(striker);
+    if (nonStriker) battedPlayers.add(nonStriker);
+
+    return {
+      innings: {
+        ...state.innings,
+        striker,
+        nonStriker,
+        battedPlayers: battedArray
+      },
+      currentBall: {
+        ...state.currentBall,
+        striker,
+        nonStriker
+      }
+    };
+  }),
+
+  /**
+   * Set current bowler (for any over, not just opening over)
+   * @param {string} bowler - Current bowler ID
+   */
+  setCurrentBowler: (bowler) => set((state) => ({
     innings: {
       ...state.innings,
-      striker,
-      nonStriker
+      bowler
     },
     currentBall: {
       ...state.currentBall,
-      striker,
-      nonStriker
+      bowler
     }
   })),
 
   /**
-   * Set opening bowler
-   * @param {string} bowler - Opening bowler
+   * Update tactics state
+   * @param {Object} tacticsUpdate - Tactics state updates
    */
-  setOpeningBowler: (bowler) => set((state) => ({
-    innings: {
-      ...state.innings,
-      bowler
-    },
-    currentBall: {
-      ...state.currentBall,
-      bowler
+  updateTacticsState: (tacticsUpdate) => set((state) => ({
+    tacticsState: {
+      ...state.tacticsState,
+      ...tacticsUpdate
     }
   })),
 
@@ -260,7 +314,8 @@ const useMatchStore = create((set, get) => ({
       matchConditions: {
         ...state.matchConditions,
         ...ballResult.conditionUpdates
-      }
+      },
+      tacticsState: state.tacticsState // Preserve tactics state
     };
   }),
 
@@ -280,7 +335,8 @@ const useMatchStore = create((set, get) => ({
         striker: null,
         nonStriker: null,
         bowler: null,
-        isComplete: false
+        isComplete: false,
+        battedPlayers: [] // Reset for second innings
       },
       teams: {
         batting: {
@@ -373,7 +429,23 @@ const useMatchStore = create((set, get) => ({
     },
     ballByBall: [],
     matchConditions: {},
-    commentary: []
+    commentary: [],
+    tacticsState: {
+      battingParScore: null,
+      bowlingParScore: null,
+      targetRunRate: 8.0,
+      overTargets: [],
+      accelerationMode: 'auto',
+      currentAcceleration: {
+        striker: 'Rotate',
+        nonStriker: 'Rotate'
+      },
+      bowlingPlans: {},
+      pressureIndex: {
+        batting: 50,
+        bowling: 50
+      }
+    }
   }),
 
   /**

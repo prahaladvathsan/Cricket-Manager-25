@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "description": "Shot trajectory calculation parameters for ball speed and direction",
+  "lastUpdated": "2024-01-01",
+
+  "directionCalculation": {
+    "controlFactorMultiplier": 0.3,
+    "biasAreas": [45, 90, 135, 225, 270, 315],
+    "description": "Parameters for calculating shot direction based on control and bias"
+  },
+
+  "shotSpeedCalculation": {
+    "baseSpeed": 12,
+    "contactQualityMultiplier": 1.5,
+    "shotPowerMultiplier": 0.65,
+    "description": "contactQualityMultiplier is now applied to sqrt(contactQuality), so 1.5 × sqrt(100) = 15",
+    "speedLimits": {
+      "min": 10,
+      "max": 40
+    }
+  }
+}

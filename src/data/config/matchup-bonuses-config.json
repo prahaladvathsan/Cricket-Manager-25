@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "description": "Batsman vs bowling style matchup modifiers for T20 tactical system",
+  "lastUpdated": "2025-01-10",
+
+  "bowlingStyles": [
+    "Swing Bowler",
+    "Hit-the-Deck Seamer",
+    "Short-Ball Specialist",
+    "Death Specialist",
+    "Classical Spinner",
+    "Flat Spinner",
+    "Mystery Spinner",
+    "Containment Spinner"
+  ],
+
+  "matchupEffects": {
+    "majorStrength": {
+      "description": "Batsman ranks this bowl style 1-2 (best matchup)",
+      "ranks": [1, 2],
+      "attributeModifiers": {
+        "timing": 2,
+        "creativity": 2,
+        "technique": 2
+      }
+    },
+    "strength": {
+      "description": "Batsman ranks this bowl style 3-4 (good matchup)",
+      "ranks": [3, 4],
+      "attributeModifiers": {
+        "timing": 1,
+        "creativity": 1,
+        "technique": 1
+      }
+    },
+    "weakness": {
+      "description": "Batsman ranks this bowl style 5-6 (poor matchup)",
+      "ranks": [5, 6],
+      "attributeModifiers": {
+        "timing": -1,
+        "creativity": -1,
+        "technique": -1
+      }
+    },
+    "majorWeakness": {
+      "description": "Batsman ranks this bowl style 7-8 (worst matchup)",
+      "ranks": [7, 8],
+      "attributeModifiers": {
+        "timing": -2,
+        "creativity": -2,
+        "technique": -2
+      }
+    }
+  },
+
+  "preferenceGeneration": {
+    "description": "How to generate random 1-8 rankings for batsmen",
+    "method": "Shuffle array [1,2,3,4,5,6,7,8] and assign to bowlingStyles array in order"
+  }
+}

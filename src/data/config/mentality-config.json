@@ -6,22 +6,22 @@
   "batting": {
     "attacking": {
       "shotType": {
-        "aerial": 0.70,
-        "grounded": 0.30
+        "aerial": 0.50,
+        "grounded": 0.50
       },
       "description": "Aggressive batting approach with more aerial shots"
     },
     "neutral": {
       "shotType": {
-        "aerial": 0.45,
-        "grounded": 0.55
+        "aerial": 0.30,
+        "grounded": 0.70
       },
       "description": "Balanced batting approach"
     },
     "defensive": {
       "shotType": {
-        "aerial": 0.20,
-        "grounded": 0.80
+        "aerial": 0.10,
+        "grounded": 0.90
       },
       "description": "Conservative batting approach with more grounded shots"
     }
@@ -46,18 +46,18 @@
     "description": "Contact type probability thresholds based on decision score delta",
     "baseProbabilityMatrix": {
       "description": "Base probabilities based on batting decision score minus bowling decision score",
-      "-2": { "missed": 0.51, "edged": 0.14, "middled": 0.35 },
-      "-1": { "missed": 0.43, "edged": 0.12, "middled": 0.45 },
-      "0": { "missed": 0.35, "edged": 0.10, "middled": 0.55 },
-      "1": { "missed": 0.27, "edged": 0.08, "middled": 0.65 },
-      "2": { "missed": 0.19, "edged": 0.06, "middled": 0.75 }
+      "-2": { "missed": 0.32, "edged": 0.17, "middled": 0.51 },
+      "-1": { "missed": 0.26, "edged": 0.15, "middled": 0.59 },
+      "0": { "missed": 0.20, "edged": 0.13, "middled": 0.67 },
+      "1": { "missed": 0.14, "edged": 0.11, "middled": 0.75 },
+      "2": { "missed": 0.08, "edged": 0.09, "middled": 0.83 } 
     },
     "executionAdjustments": {
       "description": "Probability adjustments per execution score difference",
       "perPointDifference": {
-        "missed": -0.04,
+        "missed": -0.03,
         "edged": -0.01,
-        "middled": 0.05
+        "middled": 0.04
       }
     },
     "contactQuality": {
@@ -71,18 +71,20 @@
   },
 
   "edgeBehavior": {
-    "contactQualityThreshold": 0,
+    "contactQualityThreshold": -10,
+    "description": "Edges with contactQuality < -30 go behind wicket, better edges go to slips",
     "poorContact": {
-      "carriesChance": 0.667,
-      "fallsShortChance": 0.333
+      "carriesChance": 0.5,
+      "fallsShortChance": 0.5,
+      "description": "50% chance ball carries to keeper, 50% falls short (dot ball)"
     },
     "betterContact": {
       "slipCordonDirections": [30, 60, 300, 330],
-      "baseSpeed": 20,
-      "speedBonus": 1.0,
+      "baseSpeed": 15,
+      "speedBonus": 0.25,
       "speedLimits": {
-        "min": 20,
-        "max": 120
+        "min": 10,
+        "max": 35
       },
       "fieldingResolution": {
         "speedLow": { "caught": 0.50, "runs": 0.40, "boundary": 0.10 },
@@ -110,19 +112,6 @@
         "negative": {
           "divisor": 3
         }
-      }
-    },
-    "directionCalculation": {
-      "controlFactorMultiplier": 0.3,
-      "biasAreas": [45, 90, 135, 225, 270, 315]
-    },
-    "shotSpeedCalculation": {
-      "baseSpeed": 50,
-      "contactQualityMultiplier": 1.2,
-      "shotPowerMultiplier": 2,
-      "speedLimits": {
-        "min": 20,
-        "max": 120
       }
     }
   }

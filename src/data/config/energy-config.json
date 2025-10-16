@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "description": "Energy system configuration for player fatigue and performance degradation in matches",
+  "lastUpdated": "2025-01-10",
+
+  "energyLevels": {
+    "Fresh": {
+      "range": [80, 100],
+      "penalties": {},
+      "description": "No penalties"
+    },
+    "Slightly Tired": {
+      "range": [60, 79],
+      "penalties": {
+        "strength": -1,
+        "speed": -1,
+        "agility": -1,
+        "stamina": -1
+      },
+      "description": "-1 to physical attributes"
+    },
+    "Tired": {
+      "range": [40, 59],
+      "penalties": {
+        "strength": -2,
+        "speed": -2,
+        "agility": -2,
+        "stamina": -2
+      },
+      "description": "-2 to physical attributes"
+    },
+    "Exhausted": {
+      "range": [20, 39],
+      "penalties": {
+        "allAttributes": -1
+      },
+      "description": "-1 to all attributes"
+    },
+    "Gassed": {
+      "range": [0, 19],
+      "penalties": {
+        "allAttributes": -2
+      },
+      "description": "-2 to all attributes"
+    }
+  },
+
+  "depletionRates": {
+    "batting": {
+      "perBallFaced": {
+        "base": -1,
+        "description": "Energy lost per ball faced, scaled by stamina"
+      },
+      "perRunTaken": {
+        "base": -1,
+        "description": "Energy lost per run between wickets, scaled by stamina"
+      }
+    },
+    "bowling": {
+      "over1": {
+        "perBall": -1,
+        "description": "First over, scaled by stamina"
+      },
+      "over2": {
+        "perBall": -1.5,
+        "description": "Second over, scaled by stamina"
+      },
+      "over3": {
+        "perBall": -2,
+        "description": "Third over, scaled by stamina"
+      },
+      "over4": {
+        "perBall": -2.5,
+        "description": "Fourth over, scaled by stamina"
+      }
+    },
+    "fielding": {
+      "perBallFielded": {
+        "base": -1,
+        "description": "Energy lost per ball fielded, scaled by stamina"
+      },
+      "perCatchAttempt": {
+        "base": -1,
+        "description": "Energy lost per catch taken or dropped, scaled by stamina"
+      }
+    },
+    "staminaScaling": {
+      "formula": "actualDepletion = baseDepletion × (1 - 0.01 × staminaAttribute)",
+      "description": "Energy depletion is reduced by 1% per stamina point",
+      "example": "Player with stamina=10 loses 0.9 energy instead of 1.0 per action"
+    }
+  },
+
+  "matchLevelTracking": {
+    "matchStart": {
+      "description": "Energy = current fitness value at match start",
+      "initialization": "energy = player.condition.fitness"
+    },
+    "matchEnd": {
+      "description": "Fitness = energy value at match end",
+      "update": "player.condition.fitness = energy"
+    },
+    "recovery": {
+      "description": "Fitness recovers per rest day based on endurance",
+      "formula": "fitness += endurance (capped at maxFitness)",
+      "cap": "player.attributes.physical.maxFitness"
+    }
+  },
+
+  "fatigueAndInjury": {
+    "fatigueIncrease": {
+      "description": "After each match, fatigue increases based on energy depletion",
+      "probability": "1 - (energyAtMatchEnd / 100)",
+      "change": 1,
+      "example": "If energy=40 at match end, 60% chance fatigue increases by 1"
+    },
+    "fatigueRecovery": {
+      "description": "For every match rested, fatigue reduces",
+      "reduction": "endurance value",
+      "limits": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    "injuryTrigger": {
+      "description": "Injury probability equals fatigue percentage",
+      "probability": "fatigue / 100",
+      "duration": {
+        "min": 10,
+        "max": 90,
+        "description": "Random duration in days"
+      }
+    }
+  },
+
+  "limits": {
+    "energyMin": 0,
+    "energyMax": 100,
+    "fatigueMin": 0,
+    "fatigueMax": 100,
+    "description": "Energy and fatigue cannot exceed 0-100 range"
+  }
+}

@@ -1,0 +1,948 @@
+[TrajectoryCalculator] Empty evaluations debug #1: {
+  "shotType": "grounded",
+  "numPossibleDirections": 0,
+  "possibleDirections": [],
+  "hasFieldingPositions": true,
+  "fieldingPositionsCount": 11,
+  "sampleFielder": {
+    "name": "bowler",
+    "x": 0,
+    "y": -10,
+    "fielder": {
+      "id": "1070665",
+      "name": "Dewald Brevis",
+      "fullName": "Dewald Brevis",
+      "age": 25,
+      "nationality": "IND",
+      "role": "batsman",
+      "battingHand": "right",
+      "bowlingHand": null,
+      "bowlingType": "pace",
+      "bowlingStyle": null,
+      "bowlingStyleAbbrev": null,
+      "teams": [],
+      "currentTeam": null,
+      "attributes": {
+        "batting": {
+          "technique": 15,
+          "timing": 18,
+          "footwork": 12,
+          "placement": 13,
+          "range360": 16,
+          "defensiveShots": 11,
+          "neutralShots": 11,
+          "attackingShots": 18,
+          "vsPace": 17,
+          "vsSpin": 18,
+          "creativity": 12
+        },
+        "bowling": {
+          "accuracy": 4,
+          "bowlingSpeed": 2,
+          "swing": 4,
+          "turn": 1,
+          "flight": 1,
+          "variations": 3,
+          "intelligence": 4,
+          "defensiveBowling": 2,
+          "neutralBowling": 4,
+          "attackingBowling": 3
+        },
+        "physical": {
+          "strength": 19,
+          "speed": 8,
+          "agility": 10,
+          "maxFitness": 13,
+          "endurance": 17,
+          "stamina": 13
+        },
+        "fielding": {
+          "catching": 16,
+          "reflexes": 11,
+          "groundFielding": 2,
+          "throwPower": 3,
+          "throwAccuracy": 7,
+          "keeping": 14,
+          "collecting": 12,
+          "stumping": 15
+        },
+        "mental": {
+          "concentration": 13,
+          "temperament": 13,
+          "aggression": 11,
+          "judgement": 13,
+          "leadership": 5
+        }
+      },
+      "careerStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "seasonStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "condition": {
+        "form": 50,
+        "fitness": 85,
+        "fatigue": 0,
+        "morale": 50,
+        "injury": null,
+        "confidence": 50,
+        "energy": 85,
+        "injuryDuration": null
+      },
+      "contract": {
+        "salary": 1000000,
+        "duration": 1,
+        "retentionStatus": "available"
+      },
+      "rating": 13.8,
+      "playstyleRatings": {
+        "batting": {
+          "Opener - Slogger": 72.2,
+          "Opener - Balanced": 69.16666666666667,
+          "Opener - Anchor": 68.18181818181817,
+          "Top Order - Slogger": 72.41935483870968,
+          "Top Order - Balanced": 70.15151515151516,
+          "Top Order - Anchor": 69.85714285714286,
+          "Middle Order - Slogger": 72.94117647058823,
+          "Middle Order - Balanced": 71.25,
+          "Middle Order - Anchor": 68.67647058823529,
+          "Lower Order - Slogger": 72.91666666666666,
+          "Lower Order - Balanced": 69.79166666666666,
+          "Lower Order - Anchor": 66.45833333333333,
+          "Finisher": 70.95238095238095,
+          "Runner": 66.48648648648648,
+          "Pinch-Hitter": 72.1875,
+          "Wall": 69.375
+        },
+        "bowling": {
+          "Swing Bowler": 26,
+          "Hit-the-Deck Seamer": 26,
+          "Short-Ball Specialist": 28.499999999999996,
+          "Death Specialist": 26.5
+        }
+      },
+      "topPlaystyles": {
+        "batting": [
+          {
+            "name": "Middle Order - Slogger",
+            "rating": 72.94117647058823
+          },
+          {
+            "name": "Lower Order - Slogger",
+            "rating": 72.91666666666666
+          },
+          {
+            "name": "Top Order - Slogger",
+            "rating": 72.41935483870968
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Short-Ball Specialist",
+            "rating": 28.499999999999996
+          },
+          {
+            "name": "Death Specialist",
+            "rating": 26.5
+          },
+          {
+            "name": "Swing Bowler",
+            "rating": 26
+          }
+        ]
+      },
+      "primaryPlaystyle": {
+        "batting": "Middle Order - Slogger",
+        "bowling": null
+      },
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": 2,
+          "Hit-the-Deck Seamer": 3,
+          "Short-Ball Specialist": 5,
+          "Death Specialist": 6,
+          "Classical Spinner": 8,
+          "Flat Spinner": 1,
+          "Mystery Spinner": 7,
+          "Containment Spinner": 4
+        },
+        "defaultBattingTier": "Blitz",
+        "defaultBowlingPlans": {
+          "lineLength": "Short-Pitched",
+          "variation": "Bouncer Barrage"
+        }
+      }
+    }
+  }
+}
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] Empty evaluations debug #2: {
+  "shotType": "grounded",
+  "numPossibleDirections": 0,
+  "possibleDirections": [],
+  "hasFieldingPositions": true,
+  "fieldingPositionsCount": 11,
+  "sampleFielder": {
+    "name": "bowler",
+    "x": 0,
+    "y": -10,
+    "fielder": {
+      "id": "1070665",
+      "name": "Dewald Brevis",
+      "fullName": "Dewald Brevis",
+      "age": 25,
+      "nationality": "IND",
+      "role": "batsman",
+      "battingHand": "right",
+      "bowlingHand": null,
+      "bowlingType": "pace",
+      "bowlingStyle": null,
+      "bowlingStyleAbbrev": null,
+      "teams": [],
+      "currentTeam": null,
+      "attributes": {
+        "batting": {
+          "technique": 15,
+          "timing": 18,
+          "footwork": 12,
+          "placement": 13,
+          "range360": 16,
+          "defensiveShots": 11,
+          "neutralShots": 11,
+          "attackingShots": 18,
+          "vsPace": 17,
+          "vsSpin": 18,
+          "creativity": 12
+        },
+        "bowling": {
+          "accuracy": 4,
+          "bowlingSpeed": 2,
+          "swing": 4,
+          "turn": 1,
+          "flight": 1,
+          "variations": 3,
+          "intelligence": 4,
+          "defensiveBowling": 2,
+          "neutralBowling": 4,
+          "attackingBowling": 3
+        },
+        "physical": {
+          "strength": 19,
+          "speed": 8,
+          "agility": 10,
+          "maxFitness": 13,
+          "endurance": 17,
+          "stamina": 13
+        },
+        "fielding": {
+          "catching": 16,
+          "reflexes": 11,
+          "groundFielding": 2,
+          "throwPower": 3,
+          "throwAccuracy": 7,
+          "keeping": 14,
+          "collecting": 12,
+          "stumping": 15
+        },
+        "mental": {
+          "concentration": 13,
+          "temperament": 13,
+          "aggression": 11,
+          "judgement": 13,
+          "leadership": 5
+        }
+      },
+      "careerStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "seasonStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "condition": {
+        "form": 50,
+        "fitness": 85,
+        "fatigue": 0,
+        "morale": 50,
+        "injury": null,
+        "confidence": 50,
+        "energy": 85,
+        "injuryDuration": null
+      },
+      "contract": {
+        "salary": 1000000,
+        "duration": 1,
+        "retentionStatus": "available"
+      },
+      "rating": 13.8,
+      "playstyleRatings": {
+        "batting": {
+          "Opener - Slogger": 72.2,
+          "Opener - Balanced": 69.16666666666667,
+          "Opener - Anchor": 68.18181818181817,
+          "Top Order - Slogger": 72.41935483870968,
+          "Top Order - Balanced": 70.15151515151516,
+          "Top Order - Anchor": 69.85714285714286,
+          "Middle Order - Slogger": 72.94117647058823,
+          "Middle Order - Balanced": 71.25,
+          "Middle Order - Anchor": 68.67647058823529,
+          "Lower Order - Slogger": 72.91666666666666,
+          "Lower Order - Balanced": 69.79166666666666,
+          "Lower Order - Anchor": 66.45833333333333,
+          "Finisher": 70.95238095238095,
+          "Runner": 66.48648648648648,
+          "Pinch-Hitter": 72.1875,
+          "Wall": 69.375
+        },
+        "bowling": {
+          "Swing Bowler": 26,
+          "Hit-the-Deck Seamer": 26,
+          "Short-Ball Specialist": 28.499999999999996,
+          "Death Specialist": 26.5
+        }
+      },
+      "topPlaystyles": {
+        "batting": [
+          {
+            "name": "Middle Order - Slogger",
+            "rating": 72.94117647058823
+          },
+          {
+            "name": "Lower Order - Slogger",
+            "rating": 72.91666666666666
+          },
+          {
+            "name": "Top Order - Slogger",
+            "rating": 72.41935483870968
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Short-Ball Specialist",
+            "rating": 28.499999999999996
+          },
+          {
+            "name": "Death Specialist",
+            "rating": 26.5
+          },
+          {
+            "name": "Swing Bowler",
+            "rating": 26
+          }
+        ]
+      },
+      "primaryPlaystyle": {
+        "batting": "Middle Order - Slogger",
+        "bowling": null
+      },
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": 2,
+          "Hit-the-Deck Seamer": 3,
+          "Short-Ball Specialist": 5,
+          "Death Specialist": 6,
+          "Classical Spinner": 8,
+          "Flat Spinner": 1,
+          "Mystery Spinner": 7,
+          "Containment Spinner": 4
+        },
+        "defaultBattingTier": "Blitz",
+        "defaultBowlingPlans": {
+          "lineLength": "Short-Pitched",
+          "variation": "Bouncer Barrage"
+        }
+      }
+    }
+  }
+}
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] Empty evaluations debug #3: {
+  "shotType": "aerial",
+  "numPossibleDirections": 0,
+  "possibleDirections": [],
+  "hasFieldingPositions": true,
+  "fieldingPositionsCount": 11,
+  "sampleFielder": {
+    "name": "bowler",
+    "x": 0,
+    "y": -10,
+    "fielder": {
+      "id": "1070665",
+      "name": "Dewald Brevis",
+      "fullName": "Dewald Brevis",
+      "age": 25,
+      "nationality": "IND",
+      "role": "batsman",
+      "battingHand": "right",
+      "bowlingHand": null,
+      "bowlingType": "pace",
+      "bowlingStyle": null,
+      "bowlingStyleAbbrev": null,
+      "teams": [],
+      "currentTeam": null,
+      "attributes": {
+        "batting": {
+          "technique": 15,
+          "timing": 18,
+          "footwork": 12,
+          "placement": 13,
+          "range360": 16,
+          "defensiveShots": 11,
+          "neutralShots": 11,
+          "attackingShots": 18,
+          "vsPace": 17,
+          "vsSpin": 18,
+          "creativity": 12
+        },
+        "bowling": {
+          "accuracy": 4,
+          "bowlingSpeed": 2,
+          "swing": 4,
+          "turn": 1,
+          "flight": 1,
+          "variations": 3,
+          "intelligence": 4,
+          "defensiveBowling": 2,
+          "neutralBowling": 4,
+          "attackingBowling": 3
+        },
+        "physical": {
+          "strength": 19,
+          "speed": 8,
+          "agility": 10,
+          "maxFitness": 13,
+          "endurance": 17,
+          "stamina": 13
+        },
+        "fielding": {
+          "catching": 16,
+          "reflexes": 11,
+          "groundFielding": 2,
+          "throwPower": 3,
+          "throwAccuracy": 7,
+          "keeping": 14,
+          "collecting": 12,
+          "stumping": 15
+        },
+        "mental": {
+          "concentration": 13,
+          "temperament": 13,
+          "aggression": 11,
+          "judgement": 13,
+          "leadership": 5
+        }
+      },
+      "careerStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "seasonStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "condition": {
+        "form": 50,
+        "fitness": 85,
+        "fatigue": 0,
+        "morale": 50,
+        "injury": null,
+        "confidence": 50,
+        "energy": 85,
+        "injuryDuration": null
+      },
+      "contract": {
+        "salary": 1000000,
+        "duration": 1,
+        "retentionStatus": "available"
+      },
+      "rating": 13.8,
+      "playstyleRatings": {
+        "batting": {
+          "Opener - Slogger": 72.2,
+          "Opener - Balanced": 69.16666666666667,
+          "Opener - Anchor": 68.18181818181817,
+          "Top Order - Slogger": 72.41935483870968,
+          "Top Order - Balanced": 70.15151515151516,
+          "Top Order - Anchor": 69.85714285714286,
+          "Middle Order - Slogger": 72.94117647058823,
+          "Middle Order - Balanced": 71.25,
+          "Middle Order - Anchor": 68.67647058823529,
+          "Lower Order - Slogger": 72.91666666666666,
+          "Lower Order - Balanced": 69.79166666666666,
+          "Lower Order - Anchor": 66.45833333333333,
+          "Finisher": 70.95238095238095,
+          "Runner": 66.48648648648648,
+          "Pinch-Hitter": 72.1875,
+          "Wall": 69.375
+        },
+        "bowling": {
+          "Swing Bowler": 26,
+          "Hit-the-Deck Seamer": 26,
+          "Short-Ball Specialist": 28.499999999999996,
+          "Death Specialist": 26.5
+        }
+      },
+      "topPlaystyles": {
+        "batting": [
+          {
+            "name": "Middle Order - Slogger",
+            "rating": 72.94117647058823
+          },
+          {
+            "name": "Lower Order - Slogger",
+            "rating": 72.91666666666666
+          },
+          {
+            "name": "Top Order - Slogger",
+            "rating": 72.41935483870968
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Short-Ball Specialist",
+            "rating": 28.499999999999996
+          },
+          {
+            "name": "Death Specialist",
+            "rating": 26.5
+          },
+          {
+            "name": "Swing Bowler",
+            "rating": 26
+          }
+        ]
+      },
+      "primaryPlaystyle": {
+        "batting": "Middle Order - Slogger",
+        "bowling": null
+      },
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": 2,
+          "Hit-the-Deck Seamer": 3,
+          "Short-Ball Specialist": 5,
+          "Death Specialist": 6,
+          "Classical Spinner": 8,
+          "Flat Spinner": 1,
+          "Mystery Spinner": 7,
+          "Containment Spinner": 4
+        },
+        "defaultBattingTier": "Blitz",
+        "defaultBowlingPlans": {
+          "lineLength": "Short-Pitched",
+          "variation": "Bouncer Barrage"
+        }
+      }
+    }
+  }
+}
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] Empty evaluations debug #4: {
+  "shotType": "grounded",
+  "numPossibleDirections": 0,
+  "possibleDirections": [],
+  "hasFieldingPositions": true,
+  "fieldingPositionsCount": 11,
+  "sampleFielder": {
+    "name": "bowler",
+    "x": 0,
+    "y": -10,
+    "fielder": {
+      "id": "1070665",
+      "name": "Dewald Brevis",
+      "fullName": "Dewald Brevis",
+      "age": 25,
+      "nationality": "IND",
+      "role": "batsman",
+      "battingHand": "right",
+      "bowlingHand": null,
+      "bowlingType": "pace",
+      "bowlingStyle": null,
+      "bowlingStyleAbbrev": null,
+      "teams": [],
+      "currentTeam": null,
+      "attributes": {
+        "batting": {
+          "technique": 15,
+          "timing": 18,
+          "footwork": 12,
+          "placement": 13,
+          "range360": 16,
+          "defensiveShots": 11,
+          "neutralShots": 11,
+          "attackingShots": 18,
+          "vsPace": 17,
+          "vsSpin": 18,
+          "creativity": 12
+        },
+        "bowling": {
+          "accuracy": 4,
+          "bowlingSpeed": 2,
+          "swing": 4,
+          "turn": 1,
+          "flight": 1,
+          "variations": 3,
+          "intelligence": 4,
+          "defensiveBowling": 2,
+          "neutralBowling": 4,
+          "attackingBowling": 3
+        },
+        "physical": {
+          "strength": 19,
+          "speed": 8,
+          "agility": 10,
+          "maxFitness": 13,
+          "endurance": 17,
+          "stamina": 13
+        },
+        "fielding": {
+          "catching": 16,
+          "reflexes": 11,
+          "groundFielding": 2,
+          "throwPower": 3,
+          "throwAccuracy": 7,
+          "keeping": 14,
+          "collecting": 12,
+          "stumping": 15
+        },
+        "mental": {
+          "concentration": 13,
+          "temperament": 13,
+          "aggression": 11,
+          "judgement": 13,
+          "leadership": 5
+        }
+      },
+      "careerStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "seasonStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "condition": {
+        "form": 50,
+        "fitness": 85,
+        "fatigue": 0,
+        "morale": 50,
+        "injury": null,
+        "confidence": 50,
+        "energy": 85,
+        "injuryDuration": null
+      },
+      "contract": {
+        "salary": 1000000,
+        "duration": 1,
+        "retentionStatus": "available"
+      },
+      "rating": 13.8,
+      "playstyleRatings": {
+        "batting": {
+          "Opener - Slogger": 72.2,
+          "Opener - Balanced": 69.16666666666667,
+          "Opener - Anchor": 68.18181818181817,
+          "Top Order - Slogger": 72.41935483870968,
+          "Top Order - Balanced": 70.15151515151516,
+          "Top Order - Anchor": 69.85714285714286,
+          "Middle Order - Slogger": 72.94117647058823,
+          "Middle Order - Balanced": 71.25,
+          "Middle Order - Anchor": 68.67647058823529,
+          "Lower Order - Slogger": 72.91666666666666,
+          "Lower Order - Balanced": 69.79166666666666,
+          "Lower Order - Anchor": 66.45833333333333,
+          "Finisher": 70.95238095238095,
+          "Runner": 66.48648648648648,
+          "Pinch-Hitter": 72.1875,
+          "Wall": 69.375
+        },
+        "bowling": {
+          "Swing Bowler": 26,
+          "Hit-the-Deck Seamer": 26,
+          "Short-Ball Specialist": 28.499999999999996,
+          "Death Specialist": 26.5
+        }
+      },
+      "topPlaystyles": {
+        "batting": [
+          {
+            "name": "Middle Order - Slogger",
+            "rating": 72.94117647058823
+          },
+          {
+            "name": "Lower Order - Slogger",
+            "rating": 72.91666666666666
+          },
+          {
+            "name": "Top Order - Slogger",
+            "rating": 72.41935483870968
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Short-Ball Specialist",
+            "rating": 28.499999999999996
+          },
+          {
+            "name": "Death Specialist",
+            "rating": 26.5
+          },
+          {
+            "name": "Swing Bowler",
+            "rating": 26
+          }
+        ]
+      },
+      "primaryPlaystyle": {
+        "batting": "Middle Order - Slogger",
+        "bowling": null
+      },
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": 2,
+          "Hit-the-Deck Seamer": 3,
+          "Short-Ball Specialist": 5,
+          "Death Specialist": 6,
+          "Classical Spinner": 8,
+          "Flat Spinner": 1,
+          "Mystery Spinner": 7,
+          "Containment Spinner": 4
+        },
+        "defaultBattingTier": "Blitz",
+        "defaultBowlingPlans": {
+          "lineLength": "Short-Pitched",
+          "variation": "Bouncer Barrage"
+        }
+      }
+    }
+  }
+}
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] Empty evaluations debug #5: {
+  "shotType": "grounded",
+  "numPossibleDirections": 0,
+  "possibleDirections": [],
+  "hasFieldingPositions": true,
+  "fieldingPositionsCount": 11,
+  "sampleFielder": {
+    "name": "bowler",
+    "x": 0,
+    "y": -10,
+    "fielder": {
+      "id": "1070665",
+      "name": "Dewald Brevis",
+      "fullName": "Dewald Brevis",
+      "age": 25,
+      "nationality": "IND",
+      "role": "batsman",
+      "battingHand": "right",
+      "bowlingHand": null,
+      "bowlingType": "pace",
+      "bowlingStyle": null,
+      "bowlingStyleAbbrev": null,
+      "teams": [],
+      "currentTeam": null,
+      "attributes": {
+        "batting": {
+          "technique": 15,
+          "timing": 18,
+          "footwork": 12,
+          "placement": 13,
+          "range360": 16,
+          "defensiveShots": 11,
+          "neutralShots": 11,
+          "attackingShots": 18,
+          "vsPace": 17,
+          "vsSpin": 18,
+          "creativity": 12
+        },
+        "bowling": {
+          "accuracy": 4,
+          "bowlingSpeed": 2,
+          "swing": 4,
+          "turn": 1,
+          "flight": 1,
+          "variations": 3,
+          "intelligence": 4,
+          "defensiveBowling": 2,
+          "neutralBowling": 4,
+          "attackingBowling": 3
+        },
+        "physical": {
+          "strength": 19,
+          "speed": 8,
+          "agility": 10,
+          "maxFitness": 13,
+          "endurance": 17,
+          "stamina": 13
+        },
+        "fielding": {
+          "catching": 16,
+          "reflexes": 11,
+          "groundFielding": 2,
+          "throwPower": 3,
+          "throwAccuracy": 7,
+          "keeping": 14,
+          "collecting": 12,
+          "stumping": 15
+        },
+        "mental": {
+          "concentration": 13,
+          "temperament": 13,
+          "aggression": 11,
+          "judgement": 13,
+          "leadership": 5
+        }
+      },
+      "careerStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "seasonStats": {
+        "matches": 0,
+        "innings": 0,
+        "runs": 0,
+        "wickets": 0,
+        "catches": 0,
+        "stumpings": 0
+      },
+      "condition": {
+        "form": 50,
+        "fitness": 85,
+        "fatigue": 0,
+        "morale": 50,
+        "injury": null,
+        "confidence": 50,
+        "energy": 85,
+        "injuryDuration": null
+      },
+      "contract": {
+        "salary": 1000000,
+        "duration": 1,
+        "retentionStatus": "available"
+      },
+      "rating": 13.8,
+      "playstyleRatings": {
+        "batting": {
+          "Opener - Slogger": 72.2,
+          "Opener - Balanced": 69.16666666666667,
+          "Opener - Anchor": 68.18181818181817,
+          "Top Order - Slogger": 72.41935483870968,
+          "Top Order - Balanced": 70.15151515151516,
+          "Top Order - Anchor": 69.85714285714286,
+          "Middle Order - Slogger": 72.94117647058823,
+          "Middle Order - Balanced": 71.25,
+          "Middle Order - Anchor": 68.67647058823529,
+          "Lower Order - Slogger": 72.91666666666666,
+          "Lower Order - Balanced": 69.79166666666666,
+          "Lower Order - Anchor": 66.45833333333333,
+          "Finisher": 70.95238095238095,
+          "Runner": 66.48648648648648,
+          "Pinch-Hitter": 72.1875,
+          "Wall": 69.375
+        },
+        "bowling": {
+          "Swing Bowler": 26,
+          "Hit-the-Deck Seamer": 26,
+          "Short-Ball Specialist": 28.499999999999996,
+          "Death Specialist": 26.5
+        }
+      },
+      "topPlaystyles": {
+        "batting": [
+          {
+            "name": "Middle Order - Slogger",
+            "rating": 72.94117647058823
+          },
+          {
+            "name": "Lower Order - Slogger",
+            "rating": 72.91666666666666
+          },
+          {
+            "name": "Top Order - Slogger",
+            "rating": 72.41935483870968
+          }
+        ],
+        "bowling": [
+          {
+            "name": "Short-Ball Specialist",
+            "rating": 28.499999999999996
+          },
+          {
+            "name": "Death Specialist",
+            "rating": 26.5
+          },
+          {
+            "name": "Swing Bowler",
+            "rating": 26
+          }
+        ]
+      },
+      "primaryPlaystyle": {
+        "batting": "Middle Order - Slogger",
+        "bowling": null
+      },
+      "tactics": {
+        "bowlingStylePreferences": {
+          "Swing Bowler": 2,
+          "Hit-the-Deck Seamer": 3,
+          "Short-Ball Specialist": 5,
+          "Death Specialist": 6,
+          "Classical Spinner": 8,
+          "Flat Spinner": 1,
+          "Mystery Spinner": 7,
+          "Containment Spinner": 4
+        },
+        "defaultBattingTier": "Blitz",
+        "defaultBowlingPlans": {
+          "lineLength": "Short-Pitched",
+          "variation": "Bouncer Barrage"
+        }
+      }
+    }
+  }
+}
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
+[TrajectoryCalculator] No valid direction evaluations found, using random fallback
