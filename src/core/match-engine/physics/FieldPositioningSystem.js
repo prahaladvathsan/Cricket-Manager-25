@@ -35,7 +35,7 @@ class FieldPositioningSystem {
     this.currentFormation = 'neutral';
     this.fieldingPositions = [];
 
-    console.log('✅ FieldPositioningSystem initialized');
+    // console.log('✅ FieldPositioningSystem initialized'); // Suppressed for cleaner output
   }
 
   /**

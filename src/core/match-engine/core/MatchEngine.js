@@ -30,11 +30,13 @@ import accelerationTierManager from '../../tactics/AccelerationTierManager.js';
  */
 
 class MatchEngine {
-  constructor(matchStore, playerStore, teamStore) {
+  constructor(matchStore, playerStore, teamStore, options = {}) {
+    const { silent = false } = options;
+
     this.matchStore = matchStore;
     this.playerStore = playerStore;
     this.teamStore = teamStore;
-    this.ballSimulator = new SimpleBallSimulator();
+    this.ballSimulator = new SimpleBallSimulator({ silent });
 
     // Field formations for testing - will be randomly assigned
     this.fieldFormations = ['attacking', 'neutral', 'defensive'];
@@ -47,7 +49,8 @@ class MatchEngine {
       powerplayOvers: 6,
       maxBowlerOvers: 4,
       simulationSpeed: 'instant', // normal | fast | instant
-      interactiveMode: false // Set to true for interactive matches with user control
+      interactiveMode: false, // Set to true for interactive matches with user control
+      showBallByBall: true // Set to false to hide ball-by-ball commentary
     };
 
     // State
@@ -159,7 +162,9 @@ class MatchEngine {
     // Store fielding positions for later use
     this.fieldingPositions = fieldingPositions;
 
-    console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders`);
+    if (this.config.showBallByBall) {
+      console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders`);
+    }
   }
 
   /**
@@ -226,7 +231,9 @@ class MatchEngine {
       });
     }
 
-    console.log(`Tactical state initialized: Par ${parScore}, TRR ${targetRunRate.toFixed(2)}`);
+    if (this.config.showBallByBall) {
+      console.log(`Tactical state initialized: Par ${parScore}, TRR ${targetRunRate.toFixed(2)}`);
+    }
   }
 
   /**
@@ -379,8 +386,10 @@ class MatchEngine {
     const tacticsInfo = this.formatTacticsInfo(ballResult, freshState);
 
     // Format and display ball result
-    const resultText = this.formatBallResult(ballResult);
-    console.log(`${currentBall.over}.${currentBall.ball + 1}: ${bowler.name} to ${striker.name}, ${resultText}${tacticsInfo}`);
+    if (this.config.showBallByBall) {
+      const resultText = this.formatBallResult(ballResult);
+      console.log(`${currentBall.over}.${currentBall.ball + 1}: ${bowler.name} to ${striker.name}, ${resultText}${tacticsInfo}`);
+    }
 
     // Check if target reached immediately after processing ball result
     if (innings.number === 2 && teams.batting.totalScore >= innings.target) {
@@ -613,7 +622,9 @@ class MatchEngine {
     }
 
     const newBatsman = this.playerStore.getState().getPlayer(newBatsmanId);
-    console.log(`${newBatsman.name} comes to the crease`);
+    if (this.config.showBallByBall) {
+      console.log(`${newBatsman.name} comes to the crease`);
+    }
 
     // Update striker/non-striker based on who got out
     if (ballResult.dismissedPlayer === innings.striker) {
@@ -719,7 +730,9 @@ class MatchEngine {
     this.rotateStrike();
 
     // Display over summary
-    console.log(`--- End of over ${currentBall.over}: ${teams.batting.name} ${teams.batting.totalScore}/${teams.batting.wickets} ---\n`);
+    if (this.config.showBallByBall) {
+      console.log(`--- End of over ${currentBall.over}: ${teams.batting.name} ${teams.batting.totalScore}/${teams.batting.wickets} ---\n`);
+    }
   }
 
   /**
@@ -979,7 +992,9 @@ class MatchEngine {
       }
     });
 
-    console.log('Tactical state finalized: energy, fatigue, and injuries updated');
+    if (this.config.showBallByBall) {
+      console.log('Tactical state finalized: energy, fatigue, and injuries updated');
+    }
   }
 
   /**

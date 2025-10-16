@@ -45,7 +45,7 @@ class FieldingCalculator2D {
     this.fielderMovement = new FielderMovementCalculator();
     this.runningDecision = new RunningDecisionCalculator();
 
-    console.log('✅ FieldingCalculator2D initialized with 2D simulation');
+    // console.log('✅ FieldingCalculator2D initialized with 2D simulation'); // Suppressed for cleaner output
   }
 
   /**

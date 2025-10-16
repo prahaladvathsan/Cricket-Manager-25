@@ -35,7 +35,7 @@ class FielderMovementCalculator {
   constructor() {
     this.baseFielderSpeed = physicsConfig.fielderMovement.baseSpeed;
 
-    console.log(`✅ FielderMovementCalculator initialized with baseSpeed=${this.baseFielderSpeed} m/s`);
+    // console.log(`✅ FielderMovementCalculator initialized with baseSpeed=${this.baseFielderSpeed} m/s`); // Suppressed for cleaner output
   }
 
   /**

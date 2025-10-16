@@ -103,7 +103,7 @@ class ConfigurationManager {
       this.isLoaded = true;
       this.metadata.lastLoaded = Date.now();
 
-      console.log('Configuration loaded successfully:', results);
+      // console.log('Configuration loaded successfully:', results); // Suppressed for cleaner output
 
     } catch (error) {
       console.error('Configuration loading failed:', error);

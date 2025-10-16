@@ -54,7 +54,7 @@ class RunningDecisionCalculator {
       }
     };
 
-    console.log('✅ RunningDecisionCalculator initialized');
+    // console.log('✅ RunningDecisionCalculator initialized'); // Suppressed for cleaner output
   }
 
   /**

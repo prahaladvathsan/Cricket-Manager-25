@@ -107,6 +107,8 @@ src/
 - **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
 - **T20 Tactics System**: 7-stage modifier chain with acceleration tiers, bowling plans, and DLS-based pacing (see [`docs/core-systems/tactics-system.md`])
 - **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`INTERACTIVE_MATCH_COMPLETE.md`])
+- **League System**: Complete WPL simulation with 10 teams, double round-robin fixtures (90 matches), automated squad distribution, standings with NRR calculation, and playoff structure
+- **Match Display System**: Clean scorecard display with optional ball-by-ball commentary toggle for both interactive and league matches
 
 ### 🔄 In Progress (Phase 2-3)
 - **React UI Components**: Match screen, pre-match setup, tactical controls
@@ -116,8 +118,8 @@ src/
 
 ### 📋 Next Priorities (Phase 3-4)
 - **WPL Auction System**: Player bidding and squad building
-- **League Structure**: Season calendar and match scheduling
-- **AI Opponents**: Computer team decision making
+- **League UI**: Visual standings, fixture calendar, match results
+- **AI Tactical Improvements**: Enhanced team selection and in-match decision making
 - **Match UI**: Live ball-by-ball visualization with commentary
 
 ### 🔮 Future Enhancements
@@ -192,6 +194,7 @@ After completing features:
 - **Integration tests**: Full match simulation in `src/test/detailedMatchTest.js`
 - **Interactive tests**: Playable match in `src/test/interactiveMatchTest.js`
 - **Demo tests**: Automated playthrough in `src/test/demoInteractiveMatch.js`
+- **League tests**: Full season simulation in `src/test/leagueTest.js`
 
 ### Interactive Match System Quick Start
 ```bash
@@ -204,8 +207,20 @@ node src/test/interactiveMatchTest.js
 
 See [`INTERACTIVE_MATCH_COMPLETE.md`] for complete guide.
 
+### League System Quick Start
+```bash
+# Run quick test (5 matches)
+node src/test/leagueTest.js
+
+# Run full season (90 matches)
+node src/test/leagueTest.js --full
+
+# Run N matches only
+node src/test/leagueTest.js --matches=20
+```
+
 ---
 
-**Last Updated**: January 2025 - Interactive Match System Complete
+**Last Updated**: January 2025 - League System Complete
 
 For detailed information, see component-specific documentation in the `docs/` folder.

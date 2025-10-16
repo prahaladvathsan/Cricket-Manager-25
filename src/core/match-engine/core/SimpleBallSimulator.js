@@ -28,7 +28,9 @@ import tacticsModifierSystem from '../../tactics/TacticsModifierSystem.js';
  */
 
 class SimpleBallSimulator {
-  constructor() {
+  constructor(options = {}) {
+    const { silent = false } = options;
+
     // Initialize all calculators internally
     this.probabilityEngine = new ProbabilityEngine();
     this.decisionCalculator = new DecisionCalculator();
@@ -41,7 +43,9 @@ class SimpleBallSimulator {
     this.fielderMovement = new FielderMovementCalculator();
     this.fieldingCalculator = new FieldingCalculator2D();
 
-    console.log('✅ SimpleBallSimulator initialized with 4-step calculators, 2D fielding, and tactics system');
+    if (!silent) {
+      console.log('✅ SimpleBallSimulator initialized with 4-step calculators, 2D fielding, and tactics system');
+    }
   }
 
   /**

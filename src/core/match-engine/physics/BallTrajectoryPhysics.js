@@ -63,7 +63,7 @@ class BallTrajectoryPhysics {
     this.groundDeceleration = physicsConfig.ballMovement.groundDeceleration;
     this.minSpeed = physicsConfig.ballMovement.minSpeed;
 
-    console.log('✅ BallTrajectoryPhysics initialized with algebraic calculations and boundary cache');
+    // console.log('✅ BallTrajectoryPhysics initialized with algebraic calculations and boundary cache'); // Suppressed for cleaner output
   }
 
   /**
