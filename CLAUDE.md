@@ -107,7 +107,9 @@ src/
 - **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
 - **T20 Tactics System**: 7-stage modifier chain with acceleration tiers, bowling plans, and DLS-based pacing (see [`docs/core-systems/tactics-system.md`])
 - **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`INTERACTIVE_MATCH_COMPLETE.md`])
-- **League System**: Complete WPL simulation with 10 teams, double round-robin fixtures (90 matches), automated squad distribution, standings with NRR calculation, and playoff structure
+- **League System**: Complete WPL simulation with 10 teams, double round-robin fixtures (90 matches), automated squad distribution, standings with NRR calculation, playoff structure, and championship determination
+- **Playoff Simulation**: Full knockout stage with Qualifier 1, Eliminator, Qualifier 2, and Final matches
+- **Player Leaderboards**: Comprehensive statistics tracking for batting (runs, average, SR, sixes), bowling (wickets, economy, average), and fielding (catches)
 - **Match Display System**: Clean scorecard display with optional ball-by-ball commentary toggle for both interactive and league matches
 
 ### 🔄 In Progress (Phase 2-3)
@@ -115,12 +117,14 @@ src/
 - **Player Browser**: Search and filtering interface
 - **Match Visualization**: UI wrapper for interactive match system
 - **State Integration**: Full Zustand store integration
+- **Player Name Resolution**: Display player names instead of IDs in leaderboards
 
 ### 📋 Next Priorities (Phase 3-4)
 - **WPL Auction System**: Player bidding and squad building
-- **League UI**: Visual standings, fixture calendar, match results
+- **League UI**: Visual standings, fixture calendar, match results, leaderboards
 - **AI Tactical Improvements**: Enhanced team selection and in-match decision making
 - **Match UI**: Live ball-by-ball visualization with commentary
+- **Historical Stats**: Season-by-season comparison and records
 
 ### 🔮 Future Enhancements
 - **Field Position Library**: Exhaustive cricket fielding position names
@@ -217,10 +221,16 @@ node src/test/leagueTest.js --full
 
 # Run N matches only
 node src/test/leagueTest.js --matches=20
+
+# Full season with playoffs and leaderboards
+node src/test/leagueTest.js --full --playoffs --leaderboards
+
+# Test playoffs with current standings
+node src/test/leagueTest.js --matches=10 --force-playoffs --leaderboards
 ```
 
 ---
 
-**Last Updated**: January 2025 - League System Complete
+**Last Updated**: January 2025 - Playoffs and Leaderboards Complete
 
 For detailed information, see component-specific documentation in the `docs/` folder.
