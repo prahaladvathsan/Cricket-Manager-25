@@ -106,18 +106,18 @@ src/
 - **Documentation**: Organized structure with component-specific guides
 - **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
 - **T20 Tactics System**: 7-stage modifier chain with acceleration tiers, bowling plans, and DLS-based pacing (see [`docs/core-systems/tactics-system.md`])
-- **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`INTERACTIVE_MATCH_COMPLETE.md`])
+- **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`docs/development/interactive-match-system.md`])
 - **League System**: Complete WPL simulation with 10 teams, double round-robin fixtures (90 matches), automated squad distribution, standings with NRR calculation, playoff structure, and championship determination
 - **Playoff Simulation**: Full knockout stage with Qualifier 1, Eliminator, Qualifier 2, and Final matches
 - **Player Leaderboards**: Comprehensive statistics tracking for batting (runs, average, SR, sixes), bowling (wickets, economy, average), and fielding (catches)
 - **Match Display System**: Clean scorecard display with optional ball-by-ball commentary toggle for both interactive and league matches
+- **Fielding System**: Complete fielding data capture and display - fielder names shown in dismissals (catches, stumpings, run outs) using compact "F. LastName" format
 
 ### 🔄 In Progress (Phase 2-3)
 - **React UI Components**: Match screen, pre-match setup, tactical controls
 - **Player Browser**: Search and filtering interface
 - **Match Visualization**: UI wrapper for interactive match system
 - **State Integration**: Full Zustand store integration
-- **Player Name Resolution**: Display player names instead of IDs in leaderboards
 
 ### 📋 Next Priorities (Phase 3-4)
 - **WPL Auction System**: Player bidding and squad building
@@ -209,7 +209,7 @@ node src/test/demoInteractiveMatch.js
 node src/test/interactiveMatchTest.js
 ```
 
-See [`INTERACTIVE_MATCH_COMPLETE.md`] for complete guide.
+See [`docs/development/interactive-match-system.md`] for complete guide.
 
 ### League System Quick Start
 ```bash
@@ -231,6 +231,6 @@ node src/test/leagueTest.js --matches=10 --force-playoffs --leaderboards
 
 ---
 
-**Last Updated**: January 2025 - Playoffs and Leaderboards Complete
+**Last Updated**: January 2025 - Fielding System Complete
 
 For detailed information, see component-specific documentation in the `docs/` folder.

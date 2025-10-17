@@ -204,6 +204,7 @@ class SimpleBallSimulator {
         isLegal: true,
         dismissalType: fieldingResult.dismissalType,
         dismissedPlayer: fieldingResult.isWicket ? null : null, // Will be filled by match engine
+        fieldingAction: fieldingResult.fieldingAction, // Include fielding action data
         conditionUpdates: {}
       };
     }

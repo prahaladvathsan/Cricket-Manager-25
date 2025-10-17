@@ -10,6 +10,21 @@ class MatchDisplayFormatter {
   }
 
   /**
+   * Format player name as "F. LastName" for compact display
+   * @param {string} fullName - Full player name
+   * @returns {string} Formatted name with first initial
+   */
+  formatCompactName(fullName) {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(' ');
+    if (parts.length === 1) return fullName; // Single name, return as is
+
+    const firstInitial = parts[0][0];
+    const lastName = parts[parts.length - 1];
+    return `${firstInitial}. ${lastName}`;
+  }
+
+  /**
    * Get player rating display string
    * @param {Object} player - Player object
    * @returns {string} Formatted rating display
@@ -179,9 +194,9 @@ class MatchDisplayFormatter {
     const firstInningsData = ballByBall.filter(ball => ball.innings === 1);
     const secondInningsData = ballByBall.filter(ball => ball.innings === 2);
 
-    console.log('\n' + '='.repeat(100));
-    console.log('📊 MATCH SCORECARD'.padStart(55));
-    console.log('='.repeat(100));
+    console.log('\n' + '='.repeat(115));
+    console.log('📊 MATCH SCORECARD'.padStart(62));
+    console.log('='.repeat(115));
 
     // Display first innings
     this.displayInningsScorecard(battingFirst, bowlingFirst, firstInningsData, 1);
@@ -191,7 +206,7 @@ class MatchDisplayFormatter {
       this.displayInningsScorecard(bowlingFirst, battingFirst, secondInningsData, 2);
     }
 
-    console.log('='.repeat(100));
+    console.log('='.repeat(115));
   }
 
   /**
@@ -203,13 +218,13 @@ class MatchDisplayFormatter {
    */
   displayInningsScorecard(battingTeam, bowlingTeam, inningsData, inningsNum) {
     console.log(`\n${battingTeam.name} Innings`.toUpperCase());
-    console.log('-'.repeat(100));
+    console.log('-'.repeat(115));
 
     // Calculate batting stats
     const battingStats = {};
     inningsData.forEach(ball => {
       if (!battingStats[ball.striker]) {
-        battingStats[ball.striker] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, dismissal: '' };
+        battingStats[ball.striker] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, dismissal: '', bowlerName: '', fielderName: '', dismissalType: '' };
       }
       if (ball.isLegal) {
         battingStats[ball.striker].runs += ball.runs;
@@ -219,13 +234,29 @@ class MatchDisplayFormatter {
       }
       if (ball.isWicket && ball.dismissalType) {
         battingStats[ball.striker].out = true;
-        battingStats[ball.striker].dismissal = ball.dismissalType;
+        battingStats[ball.striker].dismissalType = ball.dismissalType;
+
+        // Get bowler name - try ball.bowlerName first, then look up from store
+        let bowlerName = ball.bowlerName;
+        if (!bowlerName && ball.bowler) {
+          const bowlerPlayer = this.playerStore.getState().getPlayer(ball.bowler);
+          bowlerName = bowlerPlayer ? bowlerPlayer.name : 'Unknown';
+        }
+        battingStats[ball.striker].bowlerName = bowlerName || 'Unknown';
+
+        // Get fielder name - try ball.fielderName first, then look up from store
+        let fielderName = ball.fielderName;
+        if (!fielderName && ball.fielderId) {
+          const fielderPlayer = this.playerStore.getState().getPlayer(ball.fielderId);
+          fielderName = fielderPlayer ? fielderPlayer.name : '';
+        }
+        battingStats[ball.striker].fielderName = fielderName || '';
       }
     });
 
     // Display batting scorecard
-    console.log(`${'BATSMAN'.padEnd(25)} ${'Dismissal'.padEnd(20)} ${'R'.padStart(4)} ${'B'.padStart(4)} ${'4s'.padStart(3)} ${'6s'.padStart(3)} ${'SR'.padStart(6)}`);
-    console.log('-'.repeat(100));
+    console.log(`${'BATSMAN'.padEnd(25)} ${'Dismissal'.padEnd(35)} ${'R'.padStart(4)} ${'B'.padStart(4)} ${'4s'.padStart(3)} ${'6s'.padStart(3)} ${'SR'.padStart(6)}`);
+    console.log('-'.repeat(115));
 
     // Sort batsmen by appearance order
     const sortedBatsmen = Object.keys(battingStats)
@@ -241,8 +272,33 @@ class MatchDisplayFormatter {
 
     sortedBatsmen.forEach(({ player, stats }) => {
       const sr = stats.balls > 0 ? (stats.runs / stats.balls * 100).toFixed(1) : '0.0';
-      const dismissal = stats.out ? stats.dismissal : 'not out';
-      console.log(`${player.name.padEnd(25)} ${dismissal.padEnd(20)} ${stats.runs.toString().padStart(4)} ${stats.balls.toString().padStart(4)} ${stats.fours.toString().padStart(3)} ${stats.sixes.toString().padStart(3)} ${sr.padStart(6)}`);
+
+      // Format dismissal according to cricket scorecard conventions
+      // Use compact names (First Initial. Last Name) to save space
+      let dismissal = 'not out';
+      if (stats.out) {
+        const dismissalType = stats.dismissalType;
+        const bowler = this.formatCompactName(stats.bowlerName);
+        const fielder = this.formatCompactName(stats.fielderName);
+
+        if (dismissalType === 'bowled') {
+          dismissal = `b ${bowler}`;
+        } else if (dismissalType === 'caught') {
+          dismissal = `c ${fielder} b ${bowler}`;
+        } else if (dismissalType === 'caught_behind') {
+          dismissal = `c ${fielder} b ${bowler}`;
+        } else if (dismissalType === 'lbw') {
+          dismissal = `lbw b ${bowler}`;
+        } else if (dismissalType === 'stumped') {
+          dismissal = `st ${fielder} b ${bowler}`;
+        } else if (dismissalType === 'run_out') {
+          dismissal = fielder ? `run out (${fielder})` : 'run out';
+        } else {
+          dismissal = dismissalType; // Fallback
+        }
+      }
+
+      console.log(`${player.name.padEnd(25)} ${dismissal.padEnd(35)} ${stats.runs.toString().padStart(4)} ${stats.balls.toString().padStart(4)} ${stats.fours.toString().padStart(3)} ${stats.sixes.toString().padStart(3)} ${sr.padStart(6)}`);
     });
 
     // Calculate totals
@@ -253,16 +309,16 @@ class MatchDisplayFormatter {
     const totalBalls = legalBalls.length % 6;
     const runRate = legalBalls.length > 0 ? (totalRuns / legalBalls.length * 6).toFixed(2) : '0.00';
 
-    console.log('-'.repeat(100));
-    console.log(`${'TOTAL'.padEnd(25)} ${`${totalWickets}/10`.padEnd(20)} ${totalRuns.toString().padStart(4)} ${''.padStart(4)} ${''.padStart(3)} ${''.padStart(3)} ${''.padStart(6)}`);
+    console.log('-'.repeat(115));
+    console.log(`${'TOTAL'.padEnd(25)} ${`${totalWickets}/10`.padEnd(35)} ${totalRuns.toString().padStart(4)} ${''.padStart(4)} ${''.padStart(3)} ${''.padStart(3)} ${''.padStart(6)}`);
     console.log(`Overs: ${totalOvers}.${totalBalls} | Run Rate: ${runRate}`);
     console.log('');
 
     // Display bowling figures
     console.log(`${bowlingTeam.name} Bowling:`.toUpperCase());
-    console.log('-'.repeat(100));
+    console.log('-'.repeat(115));
     console.log(`${'BOWLER'.padEnd(25)} ${'O'.padStart(5)} ${'M'.padStart(3)} ${'R'.padStart(4)} ${'W'.padStart(3)} ${'Econ'.padStart(6)} ${'Dots'.padStart(5)}`);
-    console.log('-'.repeat(100));
+    console.log('-'.repeat(115));
 
     const bowlingStats = {};
     inningsData.forEach(ball => {
