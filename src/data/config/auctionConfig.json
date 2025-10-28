@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "description": "Configuration for WPL Auction System",
+  "budget": {
+    "total": 10000000,
+    "description": "$10M USD per team"
+  },
+  "squadSize": {
+    "min": 18,
+    "max": 25,
+    "description": "Minimum 18 players, maximum 25 players per squad"
+  },
+  "priceSlabs": {
+    "description": "Base price tiers based on player primary playstyle rating",
+    "slabs": [
+      { "threshold": 80, "basePrice": 200000, "label": "Elite" },
+      { "threshold": 70, "basePrice": 100000, "label": "Premium" },
+      { "threshold": 55, "basePrice": 50000, "label": "Standard" },
+      { "threshold": 40, "basePrice": 20000, "label": "Emerging" },
+      { "threshold": 0, "basePrice": 10000, "label": "Base" }
+    ]
+  },
+  "bidIncrements": {
+    "description": "Bid increment amounts based on current price",
+    "increments": [
+      { "maxPrice": 20000, "increment": 2000 },
+      { "maxPrice": 50000, "increment": 5000 },
+      { "maxPrice": 100000, "increment": 10000 },
+      { "maxPrice": 200000, "increment": 20000 },
+      { "maxPrice": 999999999, "increment": 20000 }
+    ]
+  },
+  "timing": {
+    "bidTimer": 1,
+    "aiBidDelayMin": 0.1,
+    "aiBidDelayMax": 0.5,
+    "description": "Bid timer in seconds, AI bid delay range in seconds"
+  },
+  "marquee": {
+    "threshold": 80,
+    "description": "Players with primary playstyle rating >= 80 are Marquee players (auctioned first)"
+  },
+  "rounds": {
+    "playersPerRound": 10,
+    "description": "Number of players auctioned per round (shuffled within round)"
+  },
+  "aiStrategy": {
+    "description": "AI bidding behavior configuration",
+    "baseValueMultiplier": 1.2,
+    "roleNeedBonus": 25000,
+    "squadGapMultiplier": 1.5,
+    "conservativeMode": {
+      "enabled": true,
+      "reserveForMinSquad": 0.3,
+      "description": "Reserve 30% of budget to ensure minimum squad completion"
+    }
+  },
+  "playstyleScarcity": {
+    "description": "Scarcity multipliers for playstyles - higher value = more valuable due to scarcity",
+    "batting": {
+      "Opener - Balanced": 1.6,
+      "Opener - Slogger": 1.55,
+      "Opener - Anchor": 1.5,
+      "Finisher": 1.7,
+      "Top Order - Slogger": 1.3,
+      "Top Order - Balanced": 1.25,
+      "Top Order - Anchor": 1.2,
+      "Middle Order - Slogger": 1.15,
+      "Middle Order - Balanced": 1.15,
+      "Middle Order - Anchor": 1.2,
+      "Lower Order - Slogger": 1.1,
+      "Lower Order - Balanced": 1.1,
+      "Lower Order - Anchor": 1.1,
+      "Pinch-Hitter": 1.35,
+      "Runner": 1.25,
+      "Wall": 1.15
+    },
+    "bowling": {
+      "Death Specialist": 1.25,
+      "Swing Bowler": 1.15,
+      "Containment Spinner": 1.2,
+      "Mystery Spinner": 1.15,
+      "Classical Spinner": 1.05,
+      "Flat Spinner": 1.05,
+      "Hit-the-Deck Seamer": 1.1,
+      "Short-Ball Specialist": 1.15
+    }
+  },
+  "qualityTiers": {
+    "description": "Rating thresholds for player quality categorization",
+    "elite": 75,
+    "premium": 65,
+    "standard": 50,
+    "emerging": 35
+  },
+  "idealSquadComposition": {
+    "description": "Target numbers for playstyle-specific squad composition",
+    "batting": {
+      "openersNeeded": 3,
+      "topOrderNeeded": 4,
+      "middleOrderNeeded": 4,
+      "finishersNeeded": 2,
+      "lowerOrderNeeded": 2
+    },
+    "bowling": {
+      "deathSpecialistsNeeded": 3,
+      "newBallBowlersNeeded": 3,
+      "middleOversSpinnersNeeded": 3,
+      "paceBowlersNeeded": 5,
+      "spinBowlersNeeded": 3
+    },
+    "quality": {
+      "elitePlayersTarget": 5,
+      "premiumPlayersTarget": 8,
+      "minimumSquadSize": 18
+    }
+  },
+  "playstyleRatingQuotas": {
+    "description": "Total playstyle rating targets for each category - teams aim to accumulate this much rating across players",
+    "batting": {
+      "openers": 400,
+      "topOrder": 370,
+      "middleOrder": 340,
+      "lowerOrder": 310,
+      "specialists": 280
+    },
+    "bowling": {
+      "powerplay": 380,
+      "earlyMiddle": 380,
+      "lateMiddle": 320,
+      "death": 320
+    }
+  },
+  "playstyleCategoryMapping": {
+    "description": "Maps specific playstyles to broader categories",
+    "batting": {
+      "openers": ["Opener - Balanced", "Opener - Slogger", "Opener - Anchor"],
+      "topOrder": ["Top Order - Balanced", "Top Order - Slogger", "Top Order - Anchor"],
+      "middleOrder": ["Middle Order - Balanced", "Middle Order - Slogger", "Middle Order - Anchor"],
+      "lowerOrder": ["Lower Order - Balanced", "Lower Order - Slogger", "Lower Order - Anchor"],
+      "specialists": ["Finisher", "Pinch-Hitter", "Runner", "Wall"]
+    },
+    "bowling": {
+      "powerplay": ["Swing Bowler", "Hit-the-Deck Seamer"],
+      "earlyMiddle": ["Classical Spinner", "Flat Spinner"],
+      "lateMiddle": ["Mystery Spinner", "Containment Spinner"],
+      "death": ["Death Specialist", "Short-Ball Specialist"]
+    }
+  },
+  "budgetAllocation": {
+    "description": "Ideal budget allocation percentages for different positions (teams adjust dynamically)",
+    "topOrderBatting": 0.25,
+    "middleOrderBatting": 0.12,
+    "deathBatting": 0.10,
+    "deathBowling": 0.20,
+    "newBallBowling": 0.15,
+    "spinBowling": 0.10,
+    "allRounders": 0.05,
+    "flexibility": 0.03
+  },
+  "lateAuctionBehavior": {
+    "description": "How teams behave when auction is nearly complete to avoid wasting budget",
+    "aggressivePhaseStart": 0.75,
+    "desperationPhaseStart": 0.9,
+    "targetBudgetUtilization": 0.92
+  }
+}

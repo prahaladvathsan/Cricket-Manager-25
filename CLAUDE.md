@@ -67,8 +67,8 @@ src/
 - [Player System](docs/core-systems/player-system.md) - Attributes and progression
 - [Playstyle System](docs/core-systems/playstyle-system.md) - Dynamic attribute modifiers
 - [Tactics System](docs/core-systems/tactics-system.md) - T20 tactical control (acceleration tiers, bowling plans, DLS targets)
-- [League System](docs/core-systems/league-system.md) - WPL structure (planned)
-- [Auction System](docs/core-systems/auction-system.md) - Player trading (planned)
+- [League System](docs/core-systems/league-system.md) - WPL structure and scheduling
+- [Auction System](docs/core-systems/auction-system.md) - Playstyle-based player auction
 - [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management (planned)
 
 ### 🎨 Frontend & UI
@@ -113,20 +113,29 @@ src/
 - **Match Display System**: Clean scorecard display with optional ball-by-ball commentary toggle for both interactive and league matches
 - **Fielding System**: Complete fielding data capture and display - fielder names shown in dismissals (catches, stumpings, run outs) using compact "F. LastName" format
 
-### 🔄 In Progress (Phase 2-3)
-- **React UI Components**: Match screen, pre-match setup, tactical controls
-- **Player Browser**: Search and filtering interface
-- **Match Visualization**: UI wrapper for interactive match system
-- **State Integration**: Full Zustand store integration
+### ✅ Completed (Phase 3)
+- **Auction System**: Complete season-start player bidding with playstyle-based AI valuation
+  - Playstyle rating quota system: 9 categories (5 batting + 4 bowling) with 3,100 total rating target
+  - Fit score calculation: MAX of category contributions (all-rounders get dual credit)
+  - Budget-to-gap multiplier: Dynamic bid adjustment based on remaining budget vs quota gaps
+  - Fast mode: Highest-bidder logic with valid bid increment flooring
+  - Interactive mode: User controls one team with AI recommendations
+  - AI-only mode: Fully automated auction simulation
+  - Deterministic bidding: Teams bid if price < market value (no probability)
 
-### 📋 Next Priorities (Phase 3-4)
-- **WPL Auction System**: Player bidding and squad building
+### 📋 Next Priorities (Phase 4)
+- **Transfer System**: Mid-season player trading (planned)
 - **League UI**: Visual standings, fixture calendar, match results, leaderboards
 - **AI Tactical Improvements**: Enhanced team selection and in-match decision making
 - **Match UI**: Live ball-by-ball visualization with commentary
 - **Historical Stats**: Season-by-season comparison and records
 
 ### 🔮 Future Enhancements
+- **React UI Components**: Match screen, pre-match setup, tactical controls
+- **Player Browser**: Search and filtering interface
+- **Match Visualization**: UI wrapper for interactive match system
+- **State Integration**: Full Zustand store integration
+- **Extras System**: Detailed extras tracking and analysis
 - **Field Position Library**: Exhaustive cricket fielding position names
 - **Environmental Factors**: Weather, pitch conditions, pressure situations
 - **Player Development**: Attribute growth and form fluctuations
@@ -231,6 +240,6 @@ node src/test/leagueTest.js --matches=10 --force-playoffs --leaderboards
 
 ---
 
-**Last Updated**: January 2025 - Fielding System Complete
+**Last Updated**: January 2025 - Auction System Complete (Playstyle-Based Valuation)
 
 For detailed information, see component-specific documentation in the `docs/` folder.
