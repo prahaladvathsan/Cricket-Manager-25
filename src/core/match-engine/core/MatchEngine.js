@@ -113,7 +113,7 @@ class MatchEngine {
 
     // Select opening bowler (first bowler in squad)
     const bowlingSquad = teams.bowling.squad;
-    const openingBowler = this.selectOpeningBowler(bowlingSquad);
+    const openingBowler = this.selectNextBowler();
 
     // Update match state
     matchState.setOpeningBatsmen(striker, nonStriker);
@@ -164,6 +164,45 @@ class MatchEngine {
 
     if (this.config.showBallByBall) {
       console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders`);
+    }
+  }
+
+  /**
+   * Update fielding positions when bowler changes
+   * Swaps the previous bowler back to their fielding position and new bowler to bowling position
+   * @param {string} previousBowlerId - ID of previous bowler
+   * @param {string} newBowlerId - ID of new bowler
+   */
+  updateFieldingPositionsForBowlerChange(previousBowlerId, newBowlerId) {
+    if (!this.fieldingPositions || this.fieldingPositions.length === 0) {
+      return; // No positions to update
+    }
+
+    // Find the positions of both bowlers in the fielding array
+    let previousBowlerIndex = -1;
+    let newBowlerIndex = -1;
+
+    for (let i = 0; i < this.fieldingPositions.length; i++) {
+      const fielder = this.fieldingPositions[i].fielder;
+      if (fielder && fielder.id === previousBowlerId) {
+        previousBowlerIndex = i;
+      }
+      if (fielder && fielder.id === newBowlerId) {
+        newBowlerIndex = i;
+      }
+    }
+
+    // Swap the fielders in the positions array
+    if (previousBowlerIndex !== -1 && newBowlerIndex !== -1) {
+      const temp = this.fieldingPositions[previousBowlerIndex].fielder;
+      this.fieldingPositions[previousBowlerIndex].fielder = this.fieldingPositions[newBowlerIndex].fielder;
+      this.fieldingPositions[newBowlerIndex].fielder = temp;
+
+      if (this.config.showBallByBall) {
+        const prevBowler = this.playerStore.getState().getPlayer(previousBowlerId);
+        const newBowler = this.playerStore.getState().getPlayer(newBowlerId);
+        console.log(`Fielding swap: ${prevBowler?.name} returns to field, ${newBowler?.name} takes the ball`);
+      }
     }
   }
 
@@ -372,10 +411,35 @@ class MatchEngine {
     // Add batsman and bowler info to ball result for tracking
     ballResult.batsmanId = striker.id;
     ballResult.bowlerId = bowler.id;
+    ballResult.strikerName = striker.name;
+    ballResult.nonStrikerName = nonStriker.name;
+    ballResult.bowlerName = bowler.name;
 
     // Set dismissed player if wicket (always the striker in current implementation)
     if (ballResult.isWicket) {
       ballResult.dismissedPlayer = striker.id;
+      ballResult.dismissedPlayerName = striker.name;
+
+      // Add fielder information for catches and stumpings
+      if (ballResult.dismissalType === 'caught' && ballResult.fieldingAction?.fielder) {
+        // Aerial catch from 2D fielding system - has fielding action
+        const fielderObj = ballResult.fieldingAction.fielder.fielder || ballResult.fieldingAction.fielder;
+        ballResult.fielderId = fielderObj.id;
+        ballResult.fielderName = fielderObj.name;
+      } else if (ballResult.dismissalType === 'caught_behind') {
+        // Caught behind from trajectory calculator - credit wicketkeeper
+        ballResult.fielderId = wicketKeeper.id;
+        ballResult.fielderName = wicketKeeper.name;
+      } else if (ballResult.dismissalType === 'stumped') {
+        // Stumping is by wicket keeper
+        ballResult.fielderId = wicketKeeper.id;
+        ballResult.fielderName = wicketKeeper.name;
+      } else if (ballResult.dismissalType === 'run_out' && ballResult.fieldingAction?.fielder) {
+        // Run out with fielding action data
+        const fielderObj = ballResult.fieldingAction.fielder.fielder || ballResult.fieldingAction.fielder;
+        ballResult.fielderId = fielderObj.id;
+        ballResult.fielderName = fielderObj.name;
+      }
     }
 
     // Process ball result
@@ -676,7 +740,7 @@ class MatchEngine {
    */
   async handleStartOfOver() {
     const matchState = this.matchStore.getState();
-    const { teams, currentBall, tacticsState } = matchState;
+    const { teams, currentBall, tacticsState, innings } = matchState;
 
     // Auto-select acceleration tiers if in auto mode
     if (tacticsState?.accelerationMode === 'auto') {
@@ -702,10 +766,16 @@ class MatchEngine {
       tacticsState.currentAcceleration.nonStriker = newTier;
     }
 
+    // Store previous bowler before selecting new one
+    const previousBowler = innings.bowler;
+
     // Select new bowler (can't bowl consecutive overs)
     const newBowler = this.selectNextBowler();
     if (newBowler) {
       matchState.setCurrentBowler(newBowler);
+
+      // Update fielding positions: swap previous bowler back to field, new bowler to bowling position
+      this.updateFieldingPositionsForBowlerChange(previousBowler, newBowler);
     }
 
     // Call interactive callback if in interactive mode

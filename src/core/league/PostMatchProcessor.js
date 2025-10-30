@@ -9,8 +9,10 @@ import path from 'path';
 import StandingsCalculator from './StandingsCalculator.js';
 
 class PostMatchProcessor {
-  constructor(leagueStore) {
+  constructor(leagueStore, teamStore = null, playerStore = null) {
     this.leagueStore = leagueStore;
+    this.teamStore = teamStore;
+    this.playerStore = playerStore;
     this.standingsCalculator = new StandingsCalculator();
     this.matchLogDir = 'match_logs/league';
   }
@@ -34,6 +36,11 @@ class PostMatchProcessor {
     const currentStandings = this.leagueStore.getState().standings;
     const updatedStandings = this.standingsCalculator.updateStandings(currentStandings, result);
     this.leagueStore.getState().updateStandings(updatedStandings);
+
+    // Update player stats (team-specific and career)
+    if (this.teamStore && this.playerStore) {
+      this.updatePlayerStats(matchConfig, matchState);
+    }
 
     // Save match log
     this.saveMatchLog(result, matchState);
@@ -237,6 +244,112 @@ class PostMatchProcessor {
       dots: ballByBall.filter(b => b.runs === 0 && b.isLegal).length,
       extras: ballByBall.filter(b => !b.isLegal).length
     };
+
+    return stats;
+  }
+
+  /**
+   * Update player stats in teamStore and playerStore
+   * @param {Object} matchConfig - Match configuration
+   * @param {Object} matchState - Match state with ball-by-ball data
+   */
+  updatePlayerStats(matchConfig, matchState) {
+    const { ballByBall } = matchState;
+    const homeTeamId = matchConfig.homeTeam.id;
+    const awayTeamId = matchConfig.awayTeam.id;
+
+    // Extract player stats from ball-by-ball data
+    const playerStats = this.extractPlayerStatsFromBalls(ballByBall);
+
+    // Update stats for both teams
+    [homeTeamId, awayTeamId].forEach(teamId => {
+      const teamPlayerStats = playerStats[teamId];
+
+      if (!teamPlayerStats) return;
+
+      Object.entries(teamPlayerStats).forEach(([playerId, stats]) => {
+        // Update team-specific stats in teamStore
+        this.teamStore.getState().updatePlayerStats(teamId, playerId, stats);
+
+        // Update career stats in playerStore
+        this.playerStore.getState().updateCareerStats(playerId, stats);
+      });
+
+      // Recalculate team aggregate stats
+      this.teamStore.getState().recalculateTeamStats(teamId);
+    });
+  }
+
+  /**
+   * Extract player stats from ball-by-ball data
+   * @param {Array} ballByBall - Ball-by-ball records
+   * @returns {Object} Player stats by team and player ID
+   */
+  extractPlayerStatsFromBalls(ballByBall) {
+    const stats = {};
+
+    // Initialize tracking for dismissals
+    const dismissals = new Set();
+
+    ballByBall.forEach(ball => {
+      if (!ball.isLegal) return; // Skip extras that aren't legal deliveries
+
+      const battingTeam = ball.battingTeam;
+      const bowlingTeam = ball.bowlingTeam;
+      const batsmanId = ball.batsman;
+      const bowlerId = ball.bowler;
+
+      // Initialize team stats if needed
+      if (!stats[battingTeam]) stats[battingTeam] = {};
+      if (!stats[bowlingTeam]) stats[bowlingTeam] = {};
+
+      // Initialize batsman stats if needed
+      if (!stats[battingTeam][batsmanId]) {
+        stats[battingTeam][batsmanId] = {
+          runs: 0,
+          ballsFaced: 0,
+          dismissed: false,
+          wickets: 0,
+          ballsBowled: 0,
+          runsConceded: 0
+        };
+      }
+
+      // Initialize bowler stats if needed
+      if (!stats[bowlingTeam][bowlerId]) {
+        stats[bowlingTeam][bowlerId] = {
+          runs: 0,
+          ballsFaced: 0,
+          dismissed: false,
+          wickets: 0,
+          ballsBowled: 0,
+          runsConceded: 0
+        };
+      }
+
+      // Update batting stats
+      const batsmanStats = stats[battingTeam][batsmanId];
+      batsmanStats.ballsFaced += 1;
+      batsmanStats.runs += (ball.runsScored || 0);
+
+      // Track dismissal (only count once per player)
+      if (ball.isWicket && ball.dismissedPlayer === batsmanId) {
+        const dismissalKey = `${battingTeam}-${batsmanId}`;
+        if (!dismissals.has(dismissalKey)) {
+          batsmanStats.dismissed = true;
+          dismissals.add(dismissalKey);
+        }
+      }
+
+      // Update bowling stats
+      const bowlerStats = stats[bowlingTeam][bowlerId];
+      bowlerStats.ballsBowled += 1;
+      bowlerStats.runsConceded += (ball.runs || 0); // Total runs including extras
+
+      if (ball.isWicket) {
+        bowlerStats.wickets += 1;
+      }
+    });
 
     return stats;
   }

@@ -1,0 +1,420 @@
+/**
+ * @file financeStore.js
+ * @description Zustand store for financial management - wraps FinanceEngine
+ * @module stores/financeStore
+ */
+
+import { create } from 'zustand';
+import FinanceEngine from '../core/finance/FinanceEngine.js';
+
+/**
+ * @typedef {Object} FinanceState
+ * @property {FinanceEngine} engine - The FinanceEngine instance
+ * @property {string|null} seasonId - Current season ID
+ * @property {Map} teamFinances - Map of team finances (teamId -> finance object)
+ * @property {Array} transactionHistory - All financial transactions
+ * @property {boolean} initialized - Whether finances are initialized for current season
+ */
+
+const useFinanceStore = create((set, get) => ({
+  // Core State
+  engine: new FinanceEngine(),
+  seasonId: null,
+  initialized: false,
+  lastUpdate: null,
+
+  // Cached State (for React reactivity)
+  teamFinances: new Map(),
+  transactionHistory: [],
+
+  // ============================================
+  // INITIALIZATION & SEASON MANAGEMENT
+  // ============================================
+
+  /**
+   * Initialize finances for a new season
+   * @param {Array} teams - Array of team objects
+   * @param {string} seasonId - Season identifier
+   * @param {Object} previousSeasonStandings - Previous season final standings
+   * @returns {Object} Financial summary
+   */
+  initializeSeason: (teams, seasonId, previousSeasonStandings = null) => {
+    const state = get();
+    const summary = state.engine.initializeSeasonFinances(teams, seasonId, previousSeasonStandings);
+
+    set({
+      seasonId,
+      initialized: true,
+      teamFinances: new Map(state.engine.teamFinances),
+      transactionHistory: [...state.engine.transactionHistory],
+      lastUpdate: Date.now()
+    });
+
+    return summary;
+  },
+
+  /**
+   * Reset finance state (for new game or season restart)
+   */
+  resetFinances: () => {
+    set({
+      engine: new FinanceEngine(),
+      seasonId: null,
+      initialized: false,
+      teamFinances: new Map(),
+      transactionHistory: [],
+      lastUpdate: null
+    });
+  },
+
+  // ============================================
+  // EXPENSES
+  // ============================================
+
+  /**
+   * Process auction spending for a team
+   * @param {string} teamId - Team ID
+   * @param {number} amount - Amount spent
+   * @param {Array} playersPurchased - Players purchased
+   * @returns {boolean} Success status
+   */
+  processAuctionSpending: (teamId, amount, playersPurchased = []) => {
+    const state = get();
+    const success = state.engine.processAuctionSpending(teamId, amount, playersPurchased);
+
+    if (success) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return success;
+  },
+
+  /**
+   * Process a transfer purchase
+   * @param {string} buyerTeamId - Buying team
+   * @param {string} sellerTeamId - Selling team
+   * @param {Object} player - Player object
+   * @param {number} transferFee - Transfer fee
+   * @returns {boolean} Success status
+   */
+  processTransferPurchase: (buyerTeamId, sellerTeamId, player, transferFee) => {
+    const state = get();
+    const success = state.engine.processTransferPurchase(buyerTeamId, sellerTeamId, player, transferFee);
+
+    if (success) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return success;
+  },
+
+  // ============================================
+  // REVENUES
+  // ============================================
+
+  /**
+   * Award match win prize money
+   * @param {string} teamId - Winning team ID
+   * @returns {number} Prize amount
+   */
+  awardMatchWinPrize: (teamId) => {
+    const state = get();
+    const prize = state.engine.awardMatchWinPrize(teamId);
+
+    if (prize > 0) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return prize;
+  },
+
+  /**
+   * Update match result for a team (performance tracking)
+   * @param {string} teamId - Team ID
+   * @param {boolean} won - Did team win?
+   * @param {boolean} isHomeMatch - Was it a home match?
+   * @param {number} currentStanding - Current league position
+   */
+  updateMatchResult: (teamId, won, isHomeMatch = false, currentStanding = null) => {
+    const state = get();
+    state.engine.updateMatchResult(teamId, won, isHomeMatch, currentStanding);
+
+    set({
+      teamFinances: new Map(state.engine.teamFinances),
+      lastUpdate: Date.now()
+    });
+  },
+
+  /**
+   * Calculate and award ticket revenue for a home match
+   * @param {string} teamId - Home team ID
+   * @returns {number} Ticket revenue
+   */
+  calculateTicketRevenue: (teamId) => {
+    const state = get();
+    const revenue = state.engine.calculateTicketRevenue(teamId);
+
+    if (revenue > 0) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return revenue;
+  },
+
+  /**
+   * Calculate and award broadcast revenue for a match
+   * @param {string} teamId - Team ID
+   * @returns {number} Broadcast revenue
+   */
+  calculateBroadcastRevenue: (teamId) => {
+    const state = get();
+    const revenue = state.engine.calculateBroadcastRevenue(teamId);
+
+    if (revenue > 0) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return revenue;
+  },
+
+  /**
+   * Distribute end-of-season prize money
+   * @param {Array} finalStandings - Array of {teamId, position}
+   * @returns {Object} Prize distribution
+   */
+  distributeSeasonEndPrizes: (finalStandings) => {
+    const state = get();
+    const distribution = state.engine.distributeSeasonEndPrizes(finalStandings);
+
+    set({
+      teamFinances: new Map(state.engine.teamFinances),
+      transactionHistory: [...state.engine.transactionHistory],
+      lastUpdate: Date.now()
+    });
+
+    return distribution;
+  },
+
+  // ============================================
+  // QUERIES & GETTERS
+  // ============================================
+
+  /**
+   * Get current budget for a team
+   * @param {string} teamId - Team ID
+   * @returns {number} Current budget
+   */
+  getTeamBudget: (teamId) => {
+    const state = get();
+    return state.engine.getTeamBudget(teamId);
+  },
+
+  /**
+   * Get complete financial details for a team
+   * @param {string} teamId - Team ID
+   * @returns {Object|null} Finance object
+   */
+  getTeamFinances: (teamId) => {
+    const state = get();
+    return state.engine.getTeamFinances(teamId);
+  },
+
+  /**
+   * Get all team finances as an array
+   * @returns {Array} Array of finance objects
+   */
+  getAllTeamFinances: () => {
+    const state = get();
+    return state.engine.getAllTeamFinances();
+  },
+
+  /**
+   * Get financial summary for all teams
+   * @returns {Object} Summary object
+   */
+  getFinancialSummary: () => {
+    const state = get();
+    return state.engine.getFinancialSummary();
+  },
+
+  /**
+   * Get transaction history for a team
+   * @param {string} teamId - Team ID
+   * @returns {Array} Transactions
+   */
+  getTeamTransactionHistory: (teamId) => {
+    const state = get();
+    return state.engine.getTeamTransactionHistory(teamId);
+  },
+
+  /**
+   * Get transactions by type
+   * @param {string} type - Transaction type
+   * @returns {Array} Transactions
+   */
+  getTransactionsByType: (type) => {
+    const state = get();
+    return state.engine.getTransactionsByType(type);
+  },
+
+  /**
+   * Validate if team can afford an expense
+   * @param {string} teamId - Team ID
+   * @param {number} amount - Expense amount
+   * @returns {Object} Validation result
+   */
+  validateBudget: (teamId, amount) => {
+    const state = get();
+    return state.engine.validateBudget(teamId, amount);
+  },
+
+  /**
+   * Generate detailed financial report for a team
+   * @param {string} teamId - Team ID
+   * @returns {Object|null} Financial report
+   */
+  generateTeamReport: (teamId) => {
+    const state = get();
+    return state.engine.generateTeamReport(teamId);
+  },
+
+  // ============================================
+  // BATCH OPERATIONS (for league integration)
+  // ============================================
+
+  /**
+   * Process match financials for both teams
+   * @param {Object} matchResult - Match result object
+   * @param {Array} currentStandings - Current league standings
+   */
+  processMatchFinancials: (matchResult, currentStandings) => {
+    const state = get();
+
+    // Get team standings
+    const homeStanding = currentStandings.findIndex(s => s.clubId === matchResult.homeTeam) + 1;
+    const awayStanding = currentStandings.findIndex(s => s.clubId === matchResult.awayTeam) + 1;
+
+    // Home team processing
+    const homeWon = matchResult.winner === matchResult.homeTeam;
+    state.engine.updateMatchResult(matchResult.homeTeam, homeWon, true, homeStanding);
+    state.engine.calculateTicketRevenue(matchResult.homeTeam);
+    state.engine.calculateBroadcastRevenue(matchResult.homeTeam);
+
+    if (homeWon) {
+      state.engine.awardMatchWinPrize(matchResult.homeTeam);
+    }
+
+    // Away team processing
+    const awayWon = matchResult.winner === matchResult.awayTeam;
+    state.engine.updateMatchResult(matchResult.awayTeam, awayWon, false, awayStanding);
+    state.engine.calculateBroadcastRevenue(matchResult.awayTeam);
+
+    if (awayWon) {
+      state.engine.awardMatchWinPrize(matchResult.awayTeam);
+    }
+
+    // Update store state
+    set({
+      teamFinances: new Map(state.engine.teamFinances),
+      transactionHistory: [...state.engine.transactionHistory],
+      lastUpdate: Date.now()
+    });
+  },
+
+  /**
+   * Process auction results for all teams
+   * @param {Array} auctionResults - Array of {teamId, spending, players}
+   */
+  processAuctionResults: (auctionResults) => {
+    const state = get();
+    let anySuccess = false;
+
+    auctionResults.forEach(({ teamId, spending, players }) => {
+      const success = state.engine.processAuctionSpending(teamId, spending, players);
+      if (success) anySuccess = true;
+    });
+
+    if (anySuccess) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+  },
+
+  // ============================================
+  // UTILITIES
+  // ============================================
+
+  /**
+   * Get league-wide financial statistics
+   * @returns {Object} Statistics
+   */
+  getLeagueFinancialStats: () => {
+    const state = get();
+    const allFinances = state.engine.getAllTeamFinances();
+
+    return {
+      totalBudget: allFinances.reduce((sum, f) => sum + f.currentBudget, 0),
+      avgBudget: allFinances.reduce((sum, f) => sum + f.currentBudget, 0) / allFinances.length,
+      totalRevenue: allFinances.reduce((sum, f) => sum + f.totalRevenue, 0),
+      totalExpenses: allFinances.reduce((sum, f) => sum + f.totalExpenses, 0),
+      richestTeam: allFinances.reduce((max, f) =>
+        f.currentBudget > max.currentBudget ? f : max, allFinances[0]),
+      poorestTeam: allFinances.reduce((min, f) =>
+        f.currentBudget < min.currentBudget ? f : min, allFinances[0]),
+      totalTransactions: state.engine.transactionHistory.length
+    };
+  },
+
+  /**
+   * Get teams sorted by budget
+   * @param {boolean} ascending - Sort ascending or descending
+   * @returns {Array} Sorted teams
+   */
+  getTeamsByBudget: (ascending = false) => {
+    const state = get();
+    const finances = state.engine.getAllTeamFinances();
+
+    return finances.sort((a, b) =>
+      ascending
+        ? a.currentBudget - b.currentBudget
+        : b.currentBudget - a.currentBudget
+    );
+  },
+
+  /**
+   * Check if any team is below minimum reserve
+   * @returns {Array} Teams below reserve
+   */
+  getTeamsBelowReserve: () => {
+    const state = get();
+    const finances = state.engine.getAllTeamFinances();
+    const minReserve = state.engine.config.budgetLimits.minimumReserve.amount;
+
+    return finances.filter(f => f.currentBudget < minReserve);
+  }
+}));
+
+export default useFinanceStore;

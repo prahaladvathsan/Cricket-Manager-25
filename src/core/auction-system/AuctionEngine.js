@@ -506,6 +506,32 @@ class AuctionEngine {
   }
 
   /**
+   * Get auction spending results for all teams (for finance integration)
+   * @returns {Array} Array of {teamId, spending, players}
+   */
+  getAuctionResults() {
+    return this.teams.map(team => ({
+      teamId: team.id,
+      teamName: team.name,
+      spending: team.totalSpent,
+      budgetRemaining: team.budgetRemaining,
+      players: team.squad
+    }));
+  }
+
+  /**
+   * Get auction prices for all sold players (for transfer system)
+   * @returns {Object} Map of playerId -> price
+   */
+  getAuctionPrices() {
+    const prices = {};
+    this.auctionedPlayers.forEach(result => {
+      prices[result.player.id] = result.finalPrice;
+    });
+    return prices;
+  }
+
+  /**
    * Shuffle array in place (Fisher-Yates algorithm)
    * @param {Array} array - Array to shuffle
    */

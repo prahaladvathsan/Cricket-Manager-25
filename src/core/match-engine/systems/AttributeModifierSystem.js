@@ -335,8 +335,8 @@ class AttributeModifierSystem {
    * @returns {Object} Modified player object (or { player, opponent } if opponent was modified)
    */
   applyBattingModifiers(striker, matchContext, opponentPlayer = null) {
-    // Get active batting playstyle (from player's primary playstyle)
-    const activePlaystyle = striker.primaryPlaystyle?.batting || striker.primaryPlaystyle;
+    // Get active batting playstyle (use selectedPlaystyle if available, fallback to primaryPlaystyle)
+    const activePlaystyle = striker.selectedPlaystyle?.batting || striker.primaryPlaystyle?.batting || striker.primaryPlaystyle;
 
     if (!activePlaystyle) {
       return opponentPlayer ? { player: striker, opponent: opponentPlayer } : striker;
@@ -356,8 +356,8 @@ class AttributeModifierSystem {
    * @returns {Object} Modified player object (or { player, opponent } if opponent was modified)
    */
   applyBowlingModifiers(bowler, matchContext, opponentPlayer = null) {
-    // Get active bowling playstyle (from player's primary playstyle)
-    const activePlaystyle = bowler.primaryPlaystyle?.bowling || bowler.primaryPlaystyle;
+    // Get active bowling playstyle (use selectedPlaystyle if available, fallback to primaryPlaystyle)
+    const activePlaystyle = bowler.selectedPlaystyle?.bowling || bowler.primaryPlaystyle?.bowling || bowler.primaryPlaystyle;
 
     if (!activePlaystyle) {
       return opponentPlayer ? { player: bowler, opponent: opponentPlayer } : bowler;

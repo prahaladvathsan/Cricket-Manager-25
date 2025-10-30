@@ -1,0 +1,143 @@
+{
+  "description": "Financial configuration for Cricket Manager - revenues, expenses, and prize money",
+
+  "initialBudgets": {
+    "seasonStart": 10000000,
+    "description": "$10M USD per team at season start (separate from auction budget)"
+  },
+
+  "prizeMoneyPerWin": {
+    "amount": 50000,
+    "description": "$50K bonus for each match victory during league stage"
+  },
+
+  "seasonEndPrizes": {
+    "description": "Prize money distributed based on final league standings",
+    "prizes": {
+      "1": {
+        "position": "Champion",
+        "amount": 2000000,
+        "description": "$2M for winning the championship"
+      },
+      "2": {
+        "position": "Runner-up",
+        "amount": 1000000,
+        "description": "$1M for finishing second"
+      },
+      "3": {
+        "position": "3rd Place",
+        "amount": 750000,
+        "description": "$750K for finishing third"
+      },
+      "4": {
+        "position": "4th Place",
+        "amount": 500000,
+        "description": "$500K for finishing fourth"
+      },
+      "5": {
+        "position": "5th-10th Place",
+        "amount": 250000,
+        "description": "$250K for finishing 5th through 10th"
+      }
+    }
+  },
+
+  "revenueStreams": {
+    "description": "Revenue sources for teams - basic formulas that scale with performance",
+
+    "sponsorship": {
+      "description": "Annual sponsorship deals based on previous season standing (or initial for first season)",
+      "timing": "paid_at_season_start",
+      "basedOn": "previous_season_standing",
+      "amounts": {
+        "1": 1000000,
+        "2": 950000,
+        "3": 900000,
+        "4": 850000,
+        "5": 800000,
+        "6": 700000,
+        "7": 600000,
+        "8": 550000,
+        "9": 500000,
+        "10": 400000
+      },
+      "description_amounts": "Higher standing = better sponsorship deals. 1st: $1M, 10th: $400K"
+    },
+
+    "matchTickets": {
+      "description": "Ticket revenue per home match - increases with better performance",
+      "baseRevenue": 20000,
+      "performanceBonus": {
+        "perWin": 2000,
+        "perLoss": -500,
+        "description": "Base $20K per home match. +$2K per win, -$500 per loss in last 5 matches"
+      },
+      "calculation": "baseRevenue + (recentWins * perWin) + (recentLosses * perLoss)",
+      "timing": "paid_after_each_home_match"
+    },
+
+    "broadcastRights": {
+      "description": "Broadcast revenue share - increases with viewership (tied to performance)",
+      "baseRevenue": 30000,
+      "performanceMultiplier": {
+        "top4": 1.5,
+        "top7": 1.2,
+        "bottom3": 0.8,
+        "description": "Base $30K per match. Top 4 teams get 1.5x, top 7 get 1.2x, bottom 3 get 0.8x"
+      },
+      "calculation": "baseRevenue * performanceMultiplier (based on current standing)",
+      "timing": "paid_after_each_match"
+    }
+  },
+
+  "transferFees": {
+    "description": "Transfer-related fees and costs",
+
+    "listingFee": {
+      "amount": 0,
+      "description": "No fee to list players for sale (may add 1-2% in future)"
+    },
+
+    "transferTax": {
+      "buyerTax": 0,
+      "sellerTax": 0,
+      "description": "No transfer taxes in current implementation (may add 5-10% in future)"
+    },
+
+    "minimumBidIncrement": {
+      "percentage": 5,
+      "minimum": 10000,
+      "description": "Bids must be at least 5% higher than current offer, minimum $10K increment"
+    }
+  },
+
+  "budgetLimits": {
+    "description": "Budget constraints and warnings",
+
+    "minimumReserve": {
+      "amount": 500000,
+      "description": "Teams should maintain at least $500K reserve (warning only, not enforced)"
+    },
+
+    "negativeBudgetAllowed": false,
+    "description_negative": "Teams cannot spend beyond their available budget"
+  },
+
+  "revenueCalculationTiming": {
+    "description": "When revenues are calculated and distributed",
+
+    "sponsorship": "season_start",
+    "matchTickets": "after_each_home_match",
+    "broadcastRights": "after_each_match",
+    "prizeMoneyPerWin": "immediately_after_match",
+    "seasonEndPrizes": "after_playoffs_complete"
+  },
+
+  "notes": [
+    "All amounts in USD",
+    "Revenue formulas are basic placeholders - can be enhanced with more complex calculations",
+    "Performance-based revenues use simple multipliers for MVP phase",
+    "No recurring wage costs - player acquisition is one-time cost",
+    "Transfer system uses this config for budget validation and fee calculations"
+  ]
+}

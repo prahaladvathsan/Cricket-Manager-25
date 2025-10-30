@@ -19,6 +19,10 @@ const useTeamStore = create((set, get) => ({
   userTeamId: null,
   squadLists: {},
 
+  // Performance Stats (reset on transfer)
+  playerStats: {}, // teamId -> { playerId -> stats }
+  teamStats: {}, // teamId -> aggregated team stats
+
   // Actions
   /**
    * Initialize teams from data
@@ -110,7 +114,158 @@ const useTeamStore = create((set, get) => ({
       ...state.teams,
       [teamId]: { ...state.teams[teamId], captainId: playerId }
     }
-  }))
+  })),
+
+  /**
+   * Initialize player stats for a team
+   * @param {string} teamId - Team ID
+   */
+  initializeTeamStats: (teamId) => set((state) => ({
+    playerStats: {
+      ...state.playerStats,
+      [teamId]: {}
+    },
+    teamStats: {
+      ...state.teamStats,
+      [teamId]: {
+        matches: 0,
+        battingAverage: 0,
+        strikeRate: 0,
+        economy: 0,
+        bowlingAverage: 0
+      }
+    }
+  })),
+
+  /**
+   * Update player stats after a match
+   * @param {string} teamId - Team ID
+   * @param {string} playerId - Player ID
+   * @param {Object} matchStats - Stats from match
+   */
+  updatePlayerStats: (teamId, playerId, matchStats) => set((state) => {
+    const teamPlayerStats = state.playerStats[teamId] || {};
+    const currentStats = teamPlayerStats[playerId] || {
+      matches: 0,
+      runs: 0,
+      ballsFaced: 0,
+      battingAverage: 0,
+      strikeRate: 0,
+      wickets: 0,
+      ballsBowled: 0,
+      runsConceded: 0,
+      economy: 0,
+      bowlingAverage: 0
+    };
+
+    // Accumulate stats
+    const newMatches = currentStats.matches + 1;
+    const newRuns = currentStats.runs + (matchStats.runs || 0);
+    const newBallsFaced = currentStats.ballsFaced + (matchStats.ballsFaced || 0);
+    const newWickets = currentStats.wickets + (matchStats.wickets || 0);
+    const newBallsBowled = currentStats.ballsBowled + (matchStats.ballsBowled || 0);
+    const newRunsConceded = currentStats.runsConceded + (matchStats.runsConceded || 0);
+
+    // Calculate derived stats
+    const dismissals = matchStats.dismissed ? 1 : 0;
+    const totalDismissals = (currentStats.runs > 0 ? Math.floor(currentStats.runs / Math.max(1, currentStats.battingAverage)) : 0) + dismissals;
+
+    const newBattingAverage = totalDismissals > 0 ? newRuns / totalDismissals : newRuns;
+    const newStrikeRate = newBallsFaced > 0 ? (newRuns / newBallsFaced) * 100 : 0;
+    const newEconomy = newBallsBowled > 0 ? (newRunsConceded / newBallsBowled) * 6 : 0;
+    const newBowlingAverage = newWickets > 0 ? newRunsConceded / newWickets : 0;
+
+    return {
+      playerStats: {
+        ...state.playerStats,
+        [teamId]: {
+          ...teamPlayerStats,
+          [playerId]: {
+            matches: newMatches,
+            runs: newRuns,
+            ballsFaced: newBallsFaced,
+            battingAverage: newBattingAverage,
+            strikeRate: newStrikeRate,
+            wickets: newWickets,
+            ballsBowled: newBallsBowled,
+            runsConceded: newRunsConceded,
+            economy: newEconomy,
+            bowlingAverage: newBowlingAverage
+          }
+        }
+      }
+    };
+  }),
+
+  /**
+   * Recalculate team aggregate stats
+   * @param {string} teamId - Team ID
+   */
+  recalculateTeamStats: (teamId) => set((state) => {
+    const teamPlayerStats = state.playerStats[teamId] || {};
+    const playerStatsArray = Object.values(teamPlayerStats);
+
+    if (playerStatsArray.length === 0) {
+      return state;
+    }
+
+    // Calculate averages across all players
+    const avgBattingAverage = playerStatsArray.reduce((sum, p) => sum + (p.battingAverage || 0), 0) / playerStatsArray.length;
+    const avgStrikeRate = playerStatsArray.reduce((sum, p) => sum + (p.strikeRate || 0), 0) / playerStatsArray.length;
+    const avgEconomy = playerStatsArray.reduce((sum, p) => sum + (p.economy || 0), 0) / playerStatsArray.length;
+    const avgBowlingAverage = playerStatsArray.reduce((sum, p) => sum + (p.bowlingAverage || 0), 0) / playerStatsArray.length;
+
+    return {
+      teamStats: {
+        ...state.teamStats,
+        [teamId]: {
+          matches: Math.max(...playerStatsArray.map(p => p.matches)),
+          battingAverage: avgBattingAverage,
+          strikeRate: avgStrikeRate,
+          economy: avgEconomy,
+          bowlingAverage: avgBowlingAverage
+        }
+      }
+    };
+  }),
+
+  /**
+   * Reset player stats when they transfer teams
+   * @param {string} playerId - Player ID
+   * @param {string} oldTeamId - Old team ID
+   */
+  resetPlayerStats: (playerId, oldTeamId) => set((state) => {
+    const teamPlayerStats = state.playerStats[oldTeamId] || {};
+    const { [playerId]: removed, ...remaining } = teamPlayerStats;
+
+    return {
+      playerStats: {
+        ...state.playerStats,
+        [oldTeamId]: remaining
+      }
+    };
+  }),
+
+  /**
+   * Get player stats for a team
+   * @param {string} teamId - Team ID
+   * @param {string} playerId - Player ID
+   * @returns {Object|null} Player stats or null
+   */
+  getPlayerStats: (teamId, playerId) => {
+    const state = get();
+    return state.playerStats[teamId]?.[playerId] || null;
+  },
+
+  /**
+   * Get team aggregate stats
+   * @param {string} teamId - Team ID
+   * @returns {Object|null} Team stats or null
+   */
+  getTeamStats: (teamId) => {
+    const state = get();
+    return state.teamStats[teamId] || null;
+  }
 }));
 
 export default useTeamStore;

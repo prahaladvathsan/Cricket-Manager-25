@@ -8,11 +8,12 @@
       "age": "number - Current age in years",
       "nationality": "string - ISO country code (e.g., IND, AUS, ENG)",
       "role": "string - batsman | bowler | all-rounder | wicket-keeper",
-      "battingHand": "string - right | left",
+      "battingHand": "string - right | left | null",
       "bowlingHand": "string - right | left | null (for non-bowlers)",
       "bowlingType": "string - pace | spin | null",
       "bowlingStyle": "string - Full bowling style description (e.g., Right-arm fast-medium, Slow left-arm orthodox) | null",
       "bowlingStyleAbbrev": "string - Abbreviated bowling style (e.g., RFM, SLA, LBG) | null",
+      "primaryBattingPosition": "number 1-11 | null - Preferred batting order position if known",
       "teams": "array - Array of team IDs player has been part of (historical)",
       "currentTeam": "string - Current team ID or null if unassigned",
       "attributes": {

@@ -140,43 +140,18 @@ class TeamSelectionManager {
       }
     }
 
-    // Log final composition for debugging
-    const composition = this.getSquadComposition(team);
-    console.log(`[DEBUG] Team composition: ${composition.bowlers} bowlers + ${composition.allRounders} all-rounders = ${composition.bowlingOptions} bowling options (target: ${TARGET_BOWLING_OPTIONS}, min: ${MIN_BOWLING_OPTIONS})`);
+    // Initialize selectedPlaystyle for all players (will be refined in optimizeBattingOrder)
+    // For now, just set to primary playstyles
+    team.forEach(player => {
+      if (!player.selectedPlaystyle) {
+        player.selectedPlaystyle = {
+          batting: player.primaryPlaystyle?.batting || null,
+          bowling: player.primaryPlaystyle?.bowling || null
+        };
+      }
+    });
 
     return team;
-  }
-
-  /**
-   * Classify players by role based on attributes
-   * Modifies players in-place by assigning role and bowlingType
-   * @param {Array} players - Players to classify
-   */
-  classifyPlayers(players) {
-    players.forEach(player => {
-      const battingAttrs = player.attributes.batting;
-      const bowlingAttrs = player.attributes.bowling;
-
-      const battingAvg = Object.values(battingAttrs).reduce((a, b) => a + b, 0) / Object.keys(battingAttrs).length;
-      const bowlingAvg = Object.values(bowlingAttrs).reduce((a, b) => a + b, 0) / Object.keys(bowlingAttrs).length;
-
-      // Assign bowlingType if not already set
-      if (!player.bowlingType) {
-        if (bowlingAttrs.turn > 10 || bowlingAttrs.variations > 10) {
-          player.bowlingType = 'spin';
-        } else {
-          player.bowlingType = 'pace';
-        }
-      }
-
-      // Assign role based on attribute averages
-      if (battingAvg >= 10 && bowlingAvg >= 10) {
-        player.role = 'all-rounder';
-      } else if (bowlingAvg > battingAvg && bowlingAvg >= 8) {
-        player.role = 'bowler';
-      }
-      // Note: batsman and wicket-keeper roles should be pre-assigned in database
-    });
   }
 
   /**
@@ -231,92 +206,135 @@ class TeamSelectionManager {
   }
 
   /**
-   * Optimize batting order based on playstyles and roles
-   * Places aggressive openers first, anchors in middle, finishers at end
+   * Optimize batting order based on playstyles
+   * Assigns optimal playstyle for each position and returns ordered team with selected playstyles
+   * Order: 2 Openers, 2 Top Order, 2 Middle Order, 2 Lower Order, then rest sorted by primary batting playstyle rating
    * @param {Array} team - Team players to order
-   * @returns {Array} Optimized batting order
+   * @returns {Array} Optimized batting order with selectedPlaystyle property added to each player
    */
   optimizeBattingOrder(team) {
-    // Separate players by batting role type
-    const batsmen = team.filter(p => ['batsman', 'all-rounder', 'wicket-keeper'].includes(p.role));
-    const bowlers = team.filter(p => p.role === 'bowler');
-
-    // Categorize batsmen by playstyle (using primaryPlaystyle instead of playstyles)
-    const openers = [];
-    const anchors = [];
-    const finishers = [];
-    const others = [];
-
-    batsmen.forEach(player => {
-      const playstyle = player.primaryPlaystyle?.batting || '';
-
-      // Openers: Aggressive top-order batsmen
-      if (playstyle && (playstyle.includes('Opener') || playstyle.includes('Slogger') || playstyle.includes('Pinch-Hitter'))) {
-        openers.push(player);
-      }
-      // Anchors: Balanced and accumulator types for middle order
-      else if (playstyle && (playstyle.includes('Balanced') || playstyle.includes('Anchor') || playstyle.includes('Builder') || playstyle.includes('Wall'))) {
-        anchors.push(player);
-      }
-      // Finishers: Aggressive middle-order and power hitters
-      else if (playstyle && (playstyle.includes('Finisher') || playstyle.includes('Big Hitter') || playstyle.includes('Power Striker'))) {
-        finishers.push(player);
-      }
-      else {
-        // This includes players with no/null playstyle (like some all-rounders)
-        others.push(player);
-      }
-    });
-
-    // Sort each category by rating
-    const sortByRating = (a, b) => b.rating - a.rating;
-    openers.sort(sortByRating);
-    anchors.sort(sortByRating);
-    finishers.sort(sortByRating);
-    others.sort(sortByRating);
-
-    // Build batting order - use Set to prevent duplicates
     const order = [];
-    const added = new Set();
+    const remaining = [...team];
 
-    // Helper to add players without duplicates (use object reference instead of ID for Set)
-    const addPlayers = (players, maxCount = Infinity) => {
-      let count = 0;
-      for (const player of players) {
-        if (count >= maxCount) break;
-        // Check if player is already in order array directly (more reliable than ID check)
-        if (!order.includes(player)) {
-          order.push(player);
-          count++;
+    /**
+     * Find best player for a specific playstyle category from remaining players
+     * @param {Array} players - Available players
+     * @param {string} playstyleCategory - Category to match (e.g., 'Opener', 'Top Order')
+     * @param {number} count - Number of players needed
+     * @returns {Array} Selected players with selectedPlaystyle set
+     */
+    const selectByPlaystyle = (players, playstyleCategory, count) => {
+      const selected = [];
+
+      for (let i = 0; i < count && players.length > 0; i++) {
+        // First, try to find players whose primary playstyle matches the category
+        const primaryMatches = players.filter(p => {
+          const primary = p.primaryPlaystyle?.batting || '';
+          return primary.includes(playstyleCategory);
+        });
+
+        if (primaryMatches.length > 0) {
+          // Sort by rating and pick the best
+          primaryMatches.sort((a, b) => b.rating - a.rating);
+          const chosen = primaryMatches[0];
+          chosen.selectedPlaystyle = {
+            batting: chosen.primaryPlaystyle.batting,
+            bowling: chosen.primaryPlaystyle?.bowling || null
+          };
+          selected.push(chosen);
+          players.splice(players.indexOf(chosen), 1);
+        } else {
+          // No primary match, find player with highest playstyle rating for this category
+          const scoredPlayers = players.map(p => {
+            const playstyleRatings = p.playstyleRatings?.batting || {};
+
+            // Find the highest rated playstyle that matches the category
+            let bestRating = 0;
+            let bestPlaystyleName = null;
+
+            Object.entries(playstyleRatings).forEach(([name, rating]) => {
+              if (name.includes(playstyleCategory) && rating > bestRating) {
+                bestRating = rating;
+                bestPlaystyleName = name;
+              }
+            });
+
+            return {
+              player: p,
+              playstyleRating: bestRating,
+              playstyleName: bestPlaystyleName
+            };
+          });
+
+          // Sort by playstyle rating for this category
+          scoredPlayers.sort((a, b) => b.playstyleRating - a.playstyleRating);
+
+          if (scoredPlayers.length > 0 && scoredPlayers[0].playstyleRating > 0) {
+            const chosen = scoredPlayers[0].player;
+            chosen.selectedPlaystyle = {
+              batting: scoredPlayers[0].playstyleName,
+              bowling: chosen.primaryPlaystyle?.bowling || null
+            };
+            selected.push(chosen);
+            players.splice(players.indexOf(chosen), 1);
+          } else {
+            // Fallback: no suitable playstyle rating, use best remaining player by rating
+            players.sort((a, b) => b.rating - a.rating);
+            if (players.length > 0) {
+              const chosen = players[0];
+              chosen.selectedPlaystyle = {
+                batting: chosen.primaryPlaystyle?.batting || null,
+                bowling: chosen.primaryPlaystyle?.bowling || null
+              };
+              selected.push(chosen);
+              players.splice(0, 1);
+            }
+          }
         }
       }
+
+      return selected;
     };
 
-    // Positions 1-2: Best openers
-    addPlayers(openers, 2);
+    // Position 1-2: Openers
+    const openers = selectByPlaystyle(remaining, 'Opener', 2);
+    order.push(...openers);
 
-    // If not enough openers, fill with best remaining batsmen
-    if (order.length < 2) {
-      const remaining = [...anchors, ...finishers, ...others].sort(sortByRating);
-      addPlayers(remaining, 2 - order.length);
-    }
+    // Position 3-4: Top Order
+    const topOrder = selectByPlaystyle(remaining, 'Top Order', 2);
+    order.push(...topOrder);
 
-    // Positions 3-5: Remaining openers, then anchors (but not limiting anchors to 3)
-    addPlayers(openers, Infinity); // Add any remaining openers
+    // Position 5-6: Middle Order
+    const middleOrder = selectByPlaystyle(remaining, 'Middle Order', 2);
+    order.push(...middleOrder);
 
-    // Add ALL remaining batsmen (anchors, finishers, others) in priority order
-    // This ensures we use all batsmen before moving to bowlers
-    addPlayers(anchors, Infinity);
-    addPlayers(finishers, Infinity);
-    addPlayers(others, Infinity);
+    // Position 7-8: Lower Order
+    const lowerOrder = selectByPlaystyle(remaining, 'Lower Order', 2);
+    order.push(...lowerOrder);
 
-    // Add bowlers at the end (tail) - only add what's needed to reach team size
-    addPlayers(bowlers.sort(sortByRating), Infinity);
+    // Positions 9-11: Fill with remaining players sorted by their primary batting playstyle rating
+    remaining.forEach(player => {
+      const primary = player.primaryPlaystyle?.batting;
+      const primaryRating = primary ? (player.playstyleRatings?.batting?.[primary] || 0) : 0;
+      player._sortRating = primaryRating;
+    });
+
+    remaining.sort((a, b) => b._sortRating - a._sortRating);
+
+    remaining.forEach(player => {
+      player.selectedPlaystyle = {
+        batting: player.primaryPlaystyle?.batting || null,
+        bowling: player.primaryPlaystyle?.bowling || null
+      };
+      order.push(player);
+      delete player._sortRating; // Clean up temporary property
+    });
 
     // Ensure we return exactly the team size
     if (order.length !== team.length) {
       console.error(`[ERROR] Batting order size mismatch! Expected ${team.length}, got ${order.length}`);
     }
+
     return order;
   }
 

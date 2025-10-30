@@ -22,10 +22,13 @@ const useLeagueStore = create((set, get) => ({
   seasonId: null,
   seasonName: '',
   currentMatchday: 0,
+  currentWeek: 0,
   stage: 'league', // league | playoffs | completed
+  useMatchWeeks: false,
 
   // Fixtures & Results
   fixtures: [], // All scheduled matches
+  matchWeeks: [], // Match week schedule (if using match weeks)
   results: [], // Completed match results
 
   // Standings
@@ -53,7 +56,7 @@ const useLeagueStore = create((set, get) => ({
    * @param {Object} config - League configuration
    */
   initializeSeason: (config) => set(() => {
-    const { seasonId, seasonName, clubs, fixtures } = config;
+    const { seasonId, seasonName, clubs, fixtures, matchWeeks = null, useMatchWeeks = false } = config;
 
     // Initialize standings for each club
     const standings = clubs.map(club => ({
@@ -82,8 +85,11 @@ const useLeagueStore = create((set, get) => ({
       seasonId,
       seasonName,
       currentMatchday: 0,
+      currentWeek: 0,
       stage: 'league',
+      useMatchWeeks,
       fixtures,
+      matchWeeks: matchWeeks || [],
       results: [],
       standings,
       clubs: clubsMap,
@@ -248,14 +254,32 @@ const useLeagueStore = create((set, get) => ({
   },
 
   /**
+   * Advance to next week
+   */
+  advanceWeek: () => set((state) => ({
+    currentWeek: state.currentWeek + 1
+  })),
+
+  /**
+   * Set current week
+   * @param {number} week - Week number
+   */
+  setWeek: (week) => set(() => ({
+    currentWeek: week
+  })),
+
+  /**
    * Reset league state
    */
   resetLeague: () => set({
     seasonId: null,
     seasonName: '',
     currentMatchday: 0,
+    currentWeek: 0,
     stage: 'league',
+    useMatchWeeks: false,
     fixtures: [],
+    matchWeeks: [],
     results: [],
     standings: [],
     clubs: {},

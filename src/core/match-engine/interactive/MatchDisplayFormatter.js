@@ -311,6 +311,40 @@ class MatchDisplayFormatter {
 
     console.log('-'.repeat(115));
     console.log(`${'TOTAL'.padEnd(25)} ${`${totalWickets}/10`.padEnd(35)} ${totalRuns.toString().padStart(4)} ${''.padStart(4)} ${''.padStart(3)} ${''.padStart(3)} ${''.padStart(6)}`);
+
+    // Calculate fall of wickets
+    const fallOfWickets = [];
+    let runningScore = 0;
+    let runningBalls = 0;
+
+    inningsData.forEach(ball => {
+      if (ball.isLegal) {
+        runningScore += ball.runs;
+        runningBalls += 1;
+      }
+
+      if (ball.isWicket) {
+        const batsmanPlayer = this.playerStore.getState().getPlayer(ball.striker);
+        const overs = Math.floor(runningBalls / 6);
+        const balls = runningBalls % 6;
+
+        fallOfWickets.push({
+          wicketNum: fallOfWickets.length + 1,
+          score: runningScore,
+          batsman: batsmanPlayer ? batsmanPlayer.name : 'Unknown',
+          overs: `${overs}.${balls}`
+        });
+      }
+    });
+
+    // Display fall of wickets
+    if (fallOfWickets.length > 0) {
+      const fowText = fallOfWickets
+        .map(fow => `${fow.wicketNum}-${fow.score} (${fow.batsman}, ${fow.overs} ov)`)
+        .join(', ');
+      console.log(`Fall of wickets: ${fowText}`);
+    }
+
     console.log(`Overs: ${totalOvers}.${totalBalls} | Run Rate: ${runRate}`);
     console.log('');
 

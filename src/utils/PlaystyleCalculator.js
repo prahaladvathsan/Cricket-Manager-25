@@ -81,28 +81,28 @@ class PlaystyleCalculator {
 
       let posRating = 0;
       if (primaryBatPos >= 1 && primaryBatPos <= 2) {
-        if (playstyleName.includes('opener')) {
+        if (playstyleName.toLowerCase().includes('opener')) {
           posRating = 20;
         }
       }
       else if (primaryBatPos >= 3 && primaryBatPos <= 4) {
-        if (playstyleName.includes('top-order')) {
+        if (playstyleName.toLowerCase().includes('top order')) {
           posRating = 20;
         }
       }
       else if (primaryBatPos >= 5 && primaryBatPos <= 6) {
-        if (playstyleName.includes('middle-order')) {
+        if (playstyleName.toLowerCase().includes('middle order')) {
           posRating = 20;
         }
       }
       else if (primaryBatPos >= 7 && primaryBatPos <= 8) {
-        if (playstyleName.includes('lower-order')) {
+        if (playstyleName.toLowerCase().includes('lower order')) {
           posRating = 20;
         }
       }
       else if (primaryBatPos >= 9 && primaryBatPos <= 11) {
-        if (playstyleName === 'Runner' || playstyleName === 'Pinch-Hitter' || playstyleName === 'Wall') {
-          posRating = 10;
+        if (playstyleName.toLowerCase().includes('runner') || playstyleName.toLowerCase().includes('pinch-hitter') || playstyleName.toLowerCase().includes('wall')) {
+          posRating = 20;
         }
       }
 
