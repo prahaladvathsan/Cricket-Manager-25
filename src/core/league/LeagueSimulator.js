@@ -32,7 +32,7 @@ class LeagueSimulator {
     this.matchOrchestrator = new MatchOrchestrator(playerStore, teamStore, matchStore, leagueStore, teamStore, playerStore);
     this.playoffSimulator = new PlayoffSimulator(this.matchOrchestrator, leagueStore);
     this.standingsCalculator = new StandingsCalculator();
-    this.leaderboards = new LeaderboardsCalculator(teamStore); // V2: Pass teamStore for collation
+    this.leaderboards = new LeaderboardsCalculator(teamStore, playerStore, leagueStore); // V3: Pass teamStore, playerStore, and leagueStore
   }
 
   /**
@@ -228,6 +228,15 @@ class LeagueSimulator {
 
     // Step 5: Initialize team stats and player career stats (V2)
     console.log('📊 Step 5: Initializing player statistics tracking...');
+
+    // Initialize playerStore with all players from all clubs
+    const allPlayers = [];
+    clubsWithSquads.forEach(club => {
+      if (club.squad) {
+        allPlayers.push(...club.squad);
+      }
+    });
+    this.playerStore.getState().initializePlayers(allPlayers);
 
     // Initialize team stats for each team
     clubsWithSquads.forEach(club => {

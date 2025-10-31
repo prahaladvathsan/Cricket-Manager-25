@@ -149,6 +149,7 @@ const useTeamStore = create((set, get) => ({
       matches: 0,
       runs: 0,
       ballsFaced: 0,
+      dismissed: 0,
       battingAverage: 0,
       strikeRate: 0,
       wickets: 0,
@@ -162,15 +163,13 @@ const useTeamStore = create((set, get) => ({
     const newMatches = currentStats.matches + 1;
     const newRuns = currentStats.runs + (matchStats.runs || 0);
     const newBallsFaced = currentStats.ballsFaced + (matchStats.ballsFaced || 0);
+    const newDismissed = currentStats.dismissed + (matchStats.dismissed ? 1 : 0);
     const newWickets = currentStats.wickets + (matchStats.wickets || 0);
     const newBallsBowled = currentStats.ballsBowled + (matchStats.ballsBowled || 0);
     const newRunsConceded = currentStats.runsConceded + (matchStats.runsConceded || 0);
 
     // Calculate derived stats
-    const dismissals = matchStats.dismissed ? 1 : 0;
-    const totalDismissals = (currentStats.runs > 0 ? Math.floor(currentStats.runs / Math.max(1, currentStats.battingAverage)) : 0) + dismissals;
-
-    const newBattingAverage = totalDismissals > 0 ? newRuns / totalDismissals : newRuns;
+    const newBattingAverage = newDismissed > 0 ? newRuns / newDismissed : newRuns;
     const newStrikeRate = newBallsFaced > 0 ? (newRuns / newBallsFaced) * 100 : 0;
     const newEconomy = newBallsBowled > 0 ? (newRunsConceded / newBallsBowled) * 6 : 0;
     const newBowlingAverage = newWickets > 0 ? newRunsConceded / newWickets : 0;
@@ -184,6 +183,7 @@ const useTeamStore = create((set, get) => ({
             matches: newMatches,
             runs: newRuns,
             ballsFaced: newBallsFaced,
+            dismissed: newDismissed,
             battingAverage: newBattingAverage,
             strikeRate: newStrikeRate,
             wickets: newWickets,

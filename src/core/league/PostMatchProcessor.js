@@ -259,13 +259,15 @@ class PostMatchProcessor {
     const awayTeamId = matchConfig.awayTeam.id;
 
     // Extract player stats from ball-by-ball data
-    const playerStats = this.extractPlayerStatsFromBalls(ballByBall);
+    const playerStats = this.extractPlayerStatsFromBalls(ballByBall, matchConfig);
 
     // Update stats for both teams
     [homeTeamId, awayTeamId].forEach(teamId => {
       const teamPlayerStats = playerStats[teamId];
 
-      if (!teamPlayerStats) return;
+      if (!teamPlayerStats) {
+        return;
+      }
 
       Object.entries(teamPlayerStats).forEach(([playerId, stats]) => {
         // Update team-specific stats in teamStore
@@ -283,10 +285,26 @@ class PostMatchProcessor {
   /**
    * Extract player stats from ball-by-ball data
    * @param {Array} ballByBall - Ball-by-ball records
+   * @param {Object} matchConfig - Match configuration with team info
    * @returns {Object} Player stats by team and player ID
    */
-  extractPlayerStatsFromBalls(ballByBall) {
+  extractPlayerStatsFromBalls(ballByBall, matchConfig) {
     const stats = {};
+
+    // Get team IDs and squads
+    const homeTeamId = matchConfig.homeTeam.id;
+    const awayTeamId = matchConfig.awayTeam.id;
+    const homeSquad = matchConfig.homeTeam.players || [];
+    const awaySquad = matchConfig.awayTeam.players || [];
+
+    // Create player-to-team mapping
+    const playerTeamMap = {};
+    homeSquad.forEach(p => playerTeamMap[p.id] = homeTeamId);
+    awaySquad.forEach(p => playerTeamMap[p.id] = awayTeamId);
+
+    // Determine which team batted first
+    const battingFirstTeam = matchConfig.battingTeam?.id || homeTeamId;
+    const bowlingFirstTeam = battingFirstTeam === homeTeamId ? awayTeamId : homeTeamId;
 
     // Initialize tracking for dismissals
     const dismissals = new Set();
@@ -294,10 +312,17 @@ class PostMatchProcessor {
     ballByBall.forEach(ball => {
       if (!ball.isLegal) return; // Skip extras that aren't legal deliveries
 
-      const battingTeam = ball.battingTeam;
-      const bowlingTeam = ball.bowlingTeam;
-      const batsmanId = ball.batsman;
-      const bowlerId = ball.bowler;
+      const batsmanId = ball.batsmanId || ball.batsman || ball.striker || ball.batter || ball.strikerId;
+      const bowlerId = ball.bowlerId || ball.bowler;
+
+      // Determine teams from innings number and player-team mapping
+      const battingTeam = playerTeamMap[batsmanId];
+      const bowlingTeam = playerTeamMap[bowlerId];
+
+      if (!battingTeam || !bowlingTeam) {
+        // Skip if we can't determine teams
+        return;
+      }
 
       // Initialize team stats if needed
       if (!stats[battingTeam]) stats[battingTeam] = {};
@@ -330,10 +355,11 @@ class PostMatchProcessor {
       // Update batting stats
       const batsmanStats = stats[battingTeam][batsmanId];
       batsmanStats.ballsFaced += 1;
-      batsmanStats.runs += (ball.runsScored || 0);
+      batsmanStats.runs += (ball.runs || 0);
 
-      // Track dismissal (only count once per player)
-      if (ball.isWicket && ball.dismissedPlayer === batsmanId) {
+      // Track dismissal (only count once per player per match)
+      // The striker/batsman is always the one dismissed when isWicket is true
+      if (ball.isWicket) {
         const dismissalKey = `${battingTeam}-${batsmanId}`;
         if (!dismissals.has(dismissalKey)) {
           batsmanStats.dismissed = true;

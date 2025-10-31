@@ -6,8 +6,10 @@
  */
 
 class LeaderboardsCalculator {
-  constructor(teamStore) {
+  constructor(teamStore, playerStore = null, leagueStore = null) {
     this.teamStore = teamStore;
+    this.playerStore = playerStore; // V2: For looking up player names
+    this.leagueStore = leagueStore; // V3: For looking up team names
   }
 
   /**
@@ -22,20 +24,48 @@ class LeaderboardsCalculator {
     }
 
     const state = this.teamStore.getState();
-    const teams = Object.keys(state.teams);
 
-    teams.forEach(teamId => {
-      const teamPlayerStats = state.playerStats[teamId] || {};
+    // Iterate through playerStats directly instead of teams
+    // (teams only contains the last two teams from the most recent match)
+    const playerStats = state.playerStats || {};
 
+    Object.entries(playerStats).forEach(([teamId, teamPlayerStats]) => {
       Object.entries(teamPlayerStats).forEach(([playerId, stats]) => {
-        // Get player name from players in state
-        const squadList = state.squadLists[teamId] || [];
-        const player = squadList.find(p => p.id === playerId);
+        // Get player name - try playerStore first, then squad
+        let playerName = playerId; // Default to ID if not found
+
+        if (this.playerStore) {
+          // Try playerStore lookup first (most reliable)
+          const player = this.playerStore.getState().getPlayer(playerId);
+          if (player?.name) {
+            playerName = player.name;
+          }
+        }
+
+        // Fall back to squad list if playerStore didn't work
+        if (playerName === playerId) {
+          const squadList = state.squadLists?.[teamId] || [];
+          const squadPlayer = squadList.find(p => p.id === playerId);
+          if (squadPlayer?.name) {
+            playerName = squadPlayer.name;
+          }
+        }
+
+        // Get team name from leagueStore
+        let teamName = teamId; // Default to team ID
+        if (this.leagueStore) {
+          const clubs = this.leagueStore.getState().clubs || {};
+          const club = clubs[teamId];
+          if (club?.name) {
+            teamName = club.name;
+          }
+        }
 
         allPlayerStats.push({
           playerId,
-          playerName: player?.name || playerId,
+          playerName,
           teamId,
+          teamName,
           ...stats
         });
       });
@@ -66,6 +96,7 @@ class LeaderboardsCalculator {
         playerId: p.playerId,
         playerName: p.playerName,
         teamId: p.teamId,
+        teamName: p.teamName,
         matches: p.matches || 0,
         runs: p.runs || 0,
         average: parseFloat((p.battingAverage || 0).toFixed(2)),
@@ -95,6 +126,7 @@ class LeaderboardsCalculator {
         playerId: p.playerId,
         playerName: p.playerName,
         teamId: p.teamId,
+        teamName: p.teamName,
         matches: p.matches || 0,
         wickets: p.wickets || 0,
         economy: parseFloat((p.economy || 0).toFixed(2)),
@@ -103,7 +135,7 @@ class LeaderboardsCalculator {
   }
 
   /**
-   * Get best batting average (min 3 matches)
+   * Get best batting average
    * @param {number} limit - Number of players to return
    * @returns {Array} Players with best average
    */
@@ -111,7 +143,7 @@ class LeaderboardsCalculator {
     const allStats = this.getAllPlayerStats();
 
     return allStats
-      .filter(p => p.matches >= 3 && p.battingAverage > 0)
+      .filter(p => p.battingAverage > 0)
       .sort((a, b) => b.battingAverage - a.battingAverage)
       .slice(0, limit)
       .map((p, index) => ({
@@ -119,6 +151,7 @@ class LeaderboardsCalculator {
         playerId: p.playerId,
         playerName: p.playerName,
         teamId: p.teamId,
+        teamName: p.teamName,
         matches: p.matches || 0,
         runs: p.runs || 0,
         average: parseFloat((p.battingAverage || 0).toFixed(2)),
@@ -127,7 +160,7 @@ class LeaderboardsCalculator {
   }
 
   /**
-   * Get best bowling economy (min 3 matches)
+   * Get best bowling economy
    * @param {number} limit - Number of players to return
    * @returns {Array} Players with best economy
    */
@@ -135,7 +168,7 @@ class LeaderboardsCalculator {
     const allStats = this.getAllPlayerStats();
 
     return allStats
-      .filter(p => p.matches >= 3 && p.economy > 0)
+      .filter(p => p.economy > 0)
       .sort((a, b) => a.economy - b.economy)
       .slice(0, limit)
       .map((p, index) => ({
@@ -143,6 +176,7 @@ class LeaderboardsCalculator {
         playerId: p.playerId,
         playerName: p.playerName,
         teamId: p.teamId,
+        teamName: p.teamName,
         matches: p.matches || 0,
         wickets: p.wickets || 0,
         economy: parseFloat((p.economy || 0).toFixed(2)),
@@ -151,7 +185,7 @@ class LeaderboardsCalculator {
   }
 
   /**
-   * Get best batting strike rate (min 3 matches, min 100 runs)
+   * Get best batting strike rate
    * @param {number} limit - Number of players to return
    * @returns {Array} Players with best strike rate
    */
@@ -159,7 +193,7 @@ class LeaderboardsCalculator {
     const allStats = this.getAllPlayerStats();
 
     return allStats
-      .filter(p => p.matches >= 3 && p.runs >= 100 && p.strikeRate > 0)
+      .filter(p => p.strikeRate > 0)
       .sort((a, b) => b.strikeRate - a.strikeRate)
       .slice(0, limit)
       .map((p, index) => ({
@@ -167,6 +201,7 @@ class LeaderboardsCalculator {
         playerId: p.playerId,
         playerName: p.playerName,
         teamId: p.teamId,
+        teamName: p.teamName,
         matches: p.matches || 0,
         runs: p.runs || 0,
         average: parseFloat((p.battingAverage || 0).toFixed(2)),
@@ -210,7 +245,7 @@ class LeaderboardsCalculator {
       console.log(
         `${p.rank.toString().padEnd(6)}` +
         `${p.playerName.substring(0, 24).padEnd(26)}` +
-        `${(p.teamId || '').substring(0, 12).padEnd(13)}` +
+        `${(p.teamName || p.teamId || '').substring(0, 12).padEnd(13)}` +
         `${p.matches.toString().padEnd(9)}` +
         `${p.runs.toString().padEnd(7)}` +
         `${p.average.toFixed(1).padEnd(7)}` +
@@ -228,7 +263,7 @@ class LeaderboardsCalculator {
       console.log(
         `${p.rank.toString().padEnd(6)}` +
         `${p.playerName.substring(0, 24).padEnd(26)}` +
-        `${(p.teamId || '').substring(0, 12).padEnd(13)}` +
+        `${(p.teamName || p.teamId || '').substring(0, 12).padEnd(13)}` +
         `${p.matches.toString().padEnd(9)}` +
         `${p.wickets.toString().padEnd(6)}` +
         `${p.economy.toFixed(2).padEnd(7)}` +
@@ -237,7 +272,7 @@ class LeaderboardsCalculator {
     });
 
     // Best Batting Average
-    console.log('\n📈 BEST BATTING AVERAGE (Min 3 matches)');
+    console.log('\n📈 BEST BATTING AVERAGE');
     console.log('─'.repeat(80));
     const bestAverage = this.getBestBattingAverage(limit);
     console.log('Rank  Player                    Team         Matches  Runs   Avg    SR');
@@ -246,7 +281,7 @@ class LeaderboardsCalculator {
       console.log(
         `${p.rank.toString().padEnd(6)}` +
         `${p.playerName.substring(0, 24).padEnd(26)}` +
-        `${(p.teamId || '').substring(0, 12).padEnd(13)}` +
+        `${(p.teamName || p.teamId || '').substring(0, 12).padEnd(13)}` +
         `${p.matches.toString().padEnd(9)}` +
         `${p.runs.toString().padEnd(7)}` +
         `${p.average.toFixed(2).padEnd(7)}` +
@@ -255,7 +290,7 @@ class LeaderboardsCalculator {
     });
 
     // Best Economy
-    console.log('\n🎯 BEST BOWLING ECONOMY (Min 3 matches)');
+    console.log('\n🎯 BEST BOWLING ECONOMY');
     console.log('─'.repeat(80));
     const bestEconomy = this.getBestBowlingEconomy(limit);
     console.log('Rank  Player                    Team         Matches  Wkts  Econ   Avg');
@@ -264,7 +299,7 @@ class LeaderboardsCalculator {
       console.log(
         `${p.rank.toString().padEnd(6)}` +
         `${p.playerName.substring(0, 24).padEnd(26)}` +
-        `${(p.teamId || '').substring(0, 12).padEnd(13)}` +
+        `${(p.teamName || p.teamId || '').substring(0, 12).padEnd(13)}` +
         `${p.matches.toString().padEnd(9)}` +
         `${p.wickets.toString().padEnd(6)}` +
         `${p.economy.toFixed(2).padEnd(7)}` +
@@ -273,7 +308,7 @@ class LeaderboardsCalculator {
     });
 
     // Best Strike Rate
-    console.log('\n💥 BEST STRIKE RATE (Min 3 matches, 100+ runs)');
+    console.log('\n💥 BEST STRIKE RATE');
     console.log('─'.repeat(80));
     const bestSR = this.getBestStrikeRate(limit);
     console.log('Rank  Player                    Team         Matches  Runs   Avg    SR');
@@ -282,7 +317,7 @@ class LeaderboardsCalculator {
       console.log(
         `${p.rank.toString().padEnd(6)}` +
         `${p.playerName.substring(0, 24).padEnd(26)}` +
-        `${(p.teamId || '').substring(0, 12).padEnd(13)}` +
+        `${(p.teamName || p.teamId || '').substring(0, 12).padEnd(13)}` +
         `${p.matches.toString().padEnd(9)}` +
         `${p.runs.toString().padEnd(7)}` +
         `${p.average.toFixed(1).padEnd(7)}` +

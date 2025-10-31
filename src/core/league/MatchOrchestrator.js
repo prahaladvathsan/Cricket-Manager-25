@@ -10,14 +10,15 @@ import MatchEngine from '../match-engine/core/MatchEngine.js';
 import MatchDisplayFormatter from '../match-engine/interactive/MatchDisplayFormatter.js';
 
 class MatchOrchestrator {
-  constructor(playerStore, teamStore, matchStore, leagueStore) {
+  constructor(playerStore, teamStore, matchStore, leagueStore, teamStoreForStats = null, playerStoreForStats = null) {
     this.playerStore = playerStore;
     this.teamStore = teamStore;
     this.matchStore = matchStore;
     this.leagueStore = leagueStore;
 
     this.preMatchSetup = new PreMatchSetup();
-    this.postMatchProcessor = new PostMatchProcessor(leagueStore);
+    // V2: Pass teamStore and playerStore to PostMatchProcessor for stats tracking
+    this.postMatchProcessor = new PostMatchProcessor(leagueStore, teamStoreForStats || teamStore, playerStoreForStats || playerStore);
     this.displayFormatter = new MatchDisplayFormatter(playerStore);
   }
 
@@ -76,9 +77,8 @@ class MatchOrchestrator {
     matchEngine.config.interactiveMode = false; // Fully automated
     matchEngine.config.showBallByBall = false; // Hide ball-by-ball commentary for league simulation
 
-    // Initialize stores with player data
-    const allPlayers = [...matchConfig.homeTeam.players, ...matchConfig.awayTeam.players];
-    this.playerStore.getState().initializePlayers(allPlayers);
+    // Note: playerStore is already initialized at league level with all players
+    // No need to reinitialize here (would overwrite with only current match players)
 
     // Initialize team store with team data
     this.teamStore.getState().initializeTeams({
