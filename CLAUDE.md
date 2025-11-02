@@ -25,11 +25,12 @@ npm run lint:fix     # Fix ESLint issues automatically
 
 ## Tech Stack
 
-- **Frontend**: React 18 + Vite + Tailwind CSS
+- **Frontend**: React 18 + Vite + Tailwind CSS + Lucide React (icons)
 - **State Management**: Zustand stores
 - **Data Processing**: External cricket-data-processor module
 - **Persistence**: LocalStorage (MVP phase)
 - **Language**: JavaScript with JSDoc
+- **Design**: Football Manager-inspired data-dense UI with dark theme
 
 ## Architecture Overview
 
@@ -72,10 +73,19 @@ src/
 - [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management (planned)
 
 ### 🎨 Frontend & UI
+- [Design System](docs/frontend/design-system.md) - Master design guide (colors, typography, components)
 - [State Management](docs/frontend/state-management.md) - Zustand stores guide
+- [Integration Patterns](docs/frontend/integration-patterns.md) - UI-to-store connection patterns
+- [Game Progression](docs/frontend/game-progression.md) - Continue button and event system
 - [Component Library](docs/frontend/component-library.md) - React components
-- [UI Design System](docs/frontend/ui-design-system.md) - Tailwind themes
 - [Navigation](docs/frontend/routing-navigation.md) - App navigation
+
+**Layout Specifications**:
+- [Dashboard Layout](docs/frontend/layouts/dashboard-layout.md) - Main dashboard widgets
+- [Match View Layout](docs/frontend/layouts/match-view-layout.md) - Live match screen with 2D pitch
+- [League View Layout](docs/frontend/layouts/league-view-layout.md) - Standings and fixtures
+- [Squad View Layout](docs/frontend/layouts/squad-view-layout.md) - Team management
+- [Auction View Layout](docs/frontend/layouts/auction-view-layout.md) - Player auction interface
 
 ### 📊 Data & Configuration
 - [Player Attributes](docs/data/player-attributes.md) - Attribute system (1-20 scale)
@@ -85,6 +95,7 @@ src/
 
 ### 🛠️ Development
 - [Setup Guide](docs/development/setup-guide.md) - Detailed setup instructions
+- [Phase 5 Roadmap](docs/development/phase-5-roadmap.md) - Next development priorities
 - [Testing](docs/development/testing.md) - Testing strategies
 - [Contributing](docs/development/contributing.md) - Development guidelines
 
@@ -123,12 +134,42 @@ src/
   - AI-only mode: Fully automated auction simulation
   - Deterministic bidding: Teams bid if price < market value (no probability)
 
-### 📋 Next Priorities (Phase 4)
-- **Transfer System**: Mid-season player trading (planned)
-- **League UI**: Visual standings, fixture calendar, match results, leaderboards
-- **AI Tactical Improvements**: Enhanced team selection and in-match decision making
-- **Match UI**: Live ball-by-ball visualization with commentary
-- **Historical Stats**: Season-by-season comparison and records
+### ✅ Completed (Phase 4 - Frontend UI)
+- **Design System**: Football Manager-inspired data-dense UI (see [`docs/frontend/design-system.md`])
+  - Tailwind config with Cricket Green/Trophy Gold palette, 14px base font, Lucide React icons
+  - Component patterns: icon headers, compact cards, progress bars, form indicators
+  - Claude Code skill for design consistency (`.claude/skills/ui-design-system.md`)
+- **Core UI Pages**: Dashboard (6 widgets), League (standings/fixtures/results/leaderboards), Squad (overview/team-info/stats)
+- **Layout System**: Header with Continue button, collapsible Sidebar with Lucide icons, responsive Layout wrapper
+- **Game Progression**: GameController + GameEventModal for phase-based progression (preseason → league → playoffs)
+- **Integration Patterns**: UI-to-store connection guide (see [`docs/frontend/integration-patterns.md`])
+- **Browser Compatibility**: Fixed Node.js imports in PlaystyleCalculator.js for browser use
+
+### ✅ Completed (Phase 5 - Navigation & Core UI Pages)
+- **Navigation Integration**: React Router fully integrated with GameEventModal actions
+- **Auction UI**: Complete interactive bidding interface with AuctionEngine integration
+  - Efficient bidding race logic: Pre-calculate max bids once, filter and race (no recalculation every second)
+  - Real-time updates: Live price, timer countdown (10s), squad displays
+  - Player cards: Top 3 batting/bowling playstyles with ratings
+  - Sold/unsold confirmation screens with "Next Player" control
+  - Three tabs: Live Auction, Team Squads, Auction Log
+  - State management with refs to prevent stale state in async callbacks
+  - AI bidding with random delays (1-5s from config)
+  - Pass button uses fast mode logic to instantly resolve auction
+  - Bid/Pass controls with increment validation and budget checks
+- **Match View UI**: Live match interface with MatchEngine integration
+  - Real-time score display and match controls
+  - Three tabs: Live Match, Scorecard, Commentary
+  - Play Ball, Skip Over, and Auto-Simulate options
+  - Current batsmen and bowler displays
+
+### 📋 Next Priorities (Phase 5 Continued)
+- **State Persistence**: LocalStorage integration for save/load functionality
+- **Match View Enhancement**: Add live ball-by-ball updates from MatchEngine
+- **Scorecard Integration**: Display detailed batting/bowling statistics
+- **2D Pitch Visualization**: Visual field positioning and ball trajectory
+- **Transfers Page**: Mid-season player trading interface
+- **Board Page**: Team objectives and season targets
 
 ### 🔮 Future Enhancements
 - **React UI Components**: Match screen, pre-match setup, tactical controls
@@ -179,6 +220,11 @@ See [`cricket-data-processor/README.md`] for processing pipeline details.
 
 ### World Premier League Teams
 10 teams representing major cricket cities: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles.
+
+### UI Design System
+Football Manager-inspired data-dense interface with dark theme (Cricket Green #2D5F3F, Trophy Gold #D4AF37). Uses Lucide React icons, 14px base font, and compact spacing for professional appearance.
+
+See [`docs/frontend/design-system.md`] for complete color palette, typography, and component specifications.
 
 ## Important Notes
 
@@ -240,6 +286,6 @@ node src/test/leagueTest.js --matches=10 --force-playoffs --leaderboards
 
 ---
 
-**Last Updated**: January 2025 - Auction System Complete (Playstyle-Based Valuation)
+**Last Updated**: January 2025 - Phase 4 Complete (Core UI + Game Progression System)
 
 For detailed information, see component-specific documentation in the `docs/` folder.

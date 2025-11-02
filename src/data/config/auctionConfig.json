@@ -31,9 +31,9 @@
     ]
   },
   "timing": {
-    "bidTimer": 1,
-    "aiBidDelayMin": 0.1,
-    "aiBidDelayMax": 0.5,
+    "bidTimer": 10,
+    "aiBidDelayMin": 1,
+    "aiBidDelayMax": 5,
     "description": "Bid timer in seconds, AI bid delay range in seconds"
   },
   "marquee": {

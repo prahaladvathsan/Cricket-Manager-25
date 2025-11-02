@@ -446,7 +446,119 @@ This ensures economically accurate auction simulation - the highest bidder(s) wi
 **Integration:**
 - `src/core/league/LeagueSimulator.js` (runAuction method)
 
+## React UI Implementation
+
+### Auction Component (`src/components/auction/Auction.jsx`)
+
+The React UI provides a real-time interactive auction experience with Football Manager-inspired design.
+
+#### Efficient AI Bidding Race Logic
+
+**Pre-calculation Strategy:**
+```javascript
+// ONCE per player (at auction start):
+for each team:
+  decision = ai.shouldBid(player, basePrice, team, progress)
+  if (decision.shouldBid):
+    willingBidders.push({ team, maxBid: decision.maxBid })
+
+// After EACH bid (user or AI):
+activeBidders = willingBidders.filter(b =>
+  b.maxBid >= currentPrice + increment &&
+  b.team.id !== currentHighestBidder.id &&
+  !b.team.isUserControlled
+)
+
+// Assign random delay to ALL active bidders (they race!)
+for each activeBidder:
+  delay = random(1-5 seconds)  // from config
+  setTimeout(() => {
+    if (auctionStillActive && priceUnchanged) {
+      placeBid(team, currentPrice + increment)
+    }
+  }, delay)
+
+// First one to execute wins, others are cancelled
+```
+
+**Benefits:**
+- ✅ AI evaluation happens ONCE per player (no recalculation every second)
+- ✅ Multiple teams "thinking" simultaneously (realistic bidding war)
+- ✅ Automatic filtering as price increases (teams drop out when price exceeds maxBid)
+- ✅ Fair random delays (any team could bid first)
+- ✅ Clean cancellation (losing bids are invalidated)
+
+#### UI Features
+
+**Live Auction View:**
+- Player card with name, role, age, nationality
+- Top 3 batting and bowling playstyles with ratings
+- Current bid price (updates in real-time)
+- Countdown timer (10 seconds from config)
+- Visual timer progress bar (red when < 3 seconds)
+- Bid/Pass buttons for user (disabled when insufficient funds)
+- Highest bidder indicator
+
+**Sold/Unsold Confirmation:**
+- Full-screen sold animation (green gavel icon)
+- Player details and final price
+- Team assignment (highlighted if user team)
+- Unsold screen (red gavel) for players with no bids
+- "Next Player" button to continue auction
+
+**Team Squads Tab:**
+- Live squad display for all 10 teams
+- Budget remaining and squad size (X/25)
+- Player cards with sold prices
+- User team highlighted
+
+**Auction Log Tab:**
+- Color-coded event log (player intro, bids, sold/unsold)
+- Scrollable history of entire auction
+
+#### State Management with Refs
+
+To avoid React stale state issues in async callbacks:
+```javascript
+// State for UI display
+const [currentPrice, setCurrentPrice] = useState(0);
+const [highestBidder, setHighestBidder] = useState(null);
+
+// Refs for always-current values in callbacks
+const currentPriceRef = useRef(0);
+const highestBidderRef = useRef(null);
+const isAuctioningRef = useRef(false);
+const willingBiddersRef = useRef([]);
+const pendingBidsRef = useRef([]);
+
+// Always update both state AND ref together
+setCurrentPrice(newPrice);
+currentPriceRef.current = newPrice;
+```
+
+This ensures callbacks always read the latest values, preventing race conditions.
+
+#### Timer Management
+
+**10-Second Countdown:**
+- Resets to 10s after each bid
+- Ticks down every second
+- Auction finalizes when timer reaches 0
+- Visual feedback (red pulsing at < 3 seconds)
+
+**Pass Button:**
+- Clears timer immediately
+- Uses fast mode logic to find highest bidder
+- Shows sold/unsold confirmation screen
+
 ## Implementation History
+
+### January 2025 - React UI + Efficient Bidding Race
+- **React auction UI:** Interactive bidding with Football Manager-inspired design
+- **Efficient AI bidding:** Pre-calculate max bids once, then filter and race (no recalculation every second)
+- **State management with refs:** Prevent stale state in async callbacks
+- **Real-time updates:** Live price, timer, squad displays
+- **Sold/unsold screens:** Confirmation after each player with "Next Player" control
 
 ### January 2025 - Valuation System Redesign
 - **Playstyle-based quota system:** Replaced role-based needs with 9 playstyle rating quotas (5 batting + 4 bowling)
