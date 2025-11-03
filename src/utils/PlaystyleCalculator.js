@@ -4,16 +4,8 @@
  * @module utils/PlaystyleCalculator
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load playstyle weightings configuration
-const weightingsPath = path.join(__dirname, '../data/config/playstyle-weightings.json');
-const playstyleWeightings = JSON.parse(fs.readFileSync(weightingsPath, 'utf8'));
+// Load playstyle weightings configuration using ES6 import (browser-compatible)
+import playstyleWeightings from '../data/config/playstyle-weightings.json';
 
 /**
  * PlaystyleCalculator class for calculating playstyle ratings

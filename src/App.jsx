@@ -4,73 +4,124 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './components/layout/Dashboard';
 import Squad from './components/team/Squad';
 import Matches from './components/match/Matches';
+import Match from './components/match/Match';
+import Auction from './components/auction/Auction';
 import League from './components/layout/League';
 import Transfers from './components/layout/Transfers';
 import Board from './components/layout/Board';
 import TeamSelectionModal from './components/shared/TeamSelectionModal';
+import ErrorBoundary from './components/shared/ErrorBoundary';
+import StartMenu from './components/menu/StartMenu';
+import LoadGame from './components/menu/LoadGame';
+import PlayerBrowser from './components/menu/PlayerBrowser';
+import Credits from './components/menu/Credits';
 import useTeamStore from './stores/teamStore';
+import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
-import { loadGame } from './utils/storage';
 
 function App() {
   const [showTeamSelection, setShowTeamSelection] = useState(false);
-  const [gameInitialized, setGameInitialized] = useState(false);
-  const { userTeamId, initializeTeams, setUserTeam } = useTeamStore();
-  const { settings } = useGameStore();
-  
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const { initializeTeams } = useTeamStore();
+  const { initializePlayers } = usePlayerStore();
+
   useEffect(() => {
-    const initializeGame = async () => {
-      // Load teams data
-      const teamsModule = await import('./data/teams/wpl-teams.json');
-      initializeTeams(teamsModule.default);
+    // Load game data on mount (needed for all routes)
+    const loadGameData = async () => {
+      console.log('🎮 Loading game data...');
 
-      // Try to load saved game state
-      const savedGame = loadGame('auto_save');
-      if (savedGame && savedGame.userTeamId) {
-        setUserTeam(savedGame.userTeamId);
-      }
+      try {
+        // Load teams data
+        const teamsModule = await import('./data/teams/wpl-teams.json');
+        initializeTeams(teamsModule.default);
+        console.log('✅ Teams loaded');
 
-      setGameInitialized(true);
-      
-      // Check if user has selected a team after initialization
-      if (!savedGame?.userTeamId && !userTeamId) {
-        setShowTeamSelection(true);
+        // Load master player database
+        const playersModule = await import('./data/players/master_player_database.json');
+        initializePlayers(playersModule.default.players);
+        console.log('✅ Players loaded:', playersModule.default.players.length);
+
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('❌ Error loading game data:', error);
       }
     };
 
-    initializeGame();
-  }, [initializeTeams, setUserTeam, userTeamId]);
+    loadGameData();
+  }, [initializeTeams, initializePlayers]);
 
   const handleTeamSelectionClose = () => {
     setShowTeamSelection(false);
   };
 
-  return (
-    <Router>
-      <div className="h-full">
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/squad" element={<Squad />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="/league" element={<League />} />
-            <Route path="/transfers" element={<Transfers />} />
-            <Route path="/board" element={<Board />} />
-          </Routes>
-        </Layout>
-        
-        <TeamSelectionModal 
-          isOpen={showTeamSelection}
-          onClose={handleTeamSelectionClose}
-        />
+  // Show loading screen while data loads
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-cricket-dark flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-primary mx-auto mb-4"></div>
+          <p className="text-cricket-text-primary text-xl font-semibold">Loading Cricket Manager...</p>
+          <p className="text-cricket-text-secondary text-sm mt-2">Initializing database...</p>
+        </div>
       </div>
-    </Router>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          {/* Start Menu (Root) */}
+          <Route path="/" element={<StartMenu />} />
+
+          {/* Menu Routes (No Layout) */}
+          <Route path="/load-game" element={<LoadGame />} />
+          <Route path="/player-browser" element={<PlayerBrowser />} />
+          <Route path="/credits" element={<Credits />} />
+
+          {/* Team Selection (Transition to Game) */}
+          <Route
+            path="/team-selection"
+            element={
+              <div className="min-h-screen bg-cricket-dark flex items-center justify-center p-4">
+                <TeamSelectionModal
+                  isOpen={true}
+                  onClose={() => window.location.href = '/game/dashboard'}
+                />
+              </div>
+            }
+          />
+
+          {/* Game Routes (With Layout) */}
+          <Route
+            path="/game/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="squad" element={<Squad />} />
+                  <Route path="matches" element={<Matches />} />
+                  <Route path="match" element={<Match />} />
+                  <Route path="auction" element={<Auction />} />
+                  <Route path="league" element={<League />} />
+                  <Route path="transfers" element={<Transfers />} />
+                  <Route path="board" element={<Board />} />
+                  <Route path="*" element={<Navigate to="/game/dashboard" replace />} />
+                </Routes>
+              </Layout>
+            }
+          />
+
+          {/* Catch all - redirect to start menu */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

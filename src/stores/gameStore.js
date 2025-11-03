@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * @typedef {Object} GameState
@@ -16,7 +17,9 @@ import { create } from 'zustand';
  * @property {Object} settings - Game settings and preferences
  */
 
-const useGameStore = create((set, get) => ({
+const useGameStore = create(
+  persist(
+    (set, get) => ({
   // Game State
   currentSeason: 1,
   currentPhase: 'preseason',
@@ -75,6 +78,12 @@ const useGameStore = create((set, get) => ({
     currentWeek: 1,
     isSimulating: false
   }))
-}));
+    }),
+    {
+      name: 'cm25-game-store',
+      version: 1
+    }
+  )
+);
 
 export default useGameStore;

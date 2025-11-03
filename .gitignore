@@ -111,10 +111,6 @@ src/data/players/player_data.xlsx
 # Development files
 consolidated_dev_guide.md
 comprehensive_ball_flowchart.mermaid
-scripts/
-
-# Test files (development only)
-src/test/
 
 # Claude settings (local only)
 .claude/settings.local.json~$*.xlsx

@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * @typedef {Object} MatchState
@@ -18,7 +19,9 @@ import { create } from 'zustand';
  * @property {Array} commentary - Match commentary
  */
 
-const useMatchStore = create((set, get) => ({
+const useMatchStore = create(
+  persist(
+    (set, get) => ({
   // Match Identification & Status
   matchId: null,
   status: 'scheduled', // scheduled | live | innings_break | completed
@@ -219,7 +222,7 @@ const useMatchStore = create((set, get) => ({
         ...state.innings,
         striker,
         nonStriker,
-        battedPlayers: battedArray
+        battedPlayers: Array.from(battedPlayers)
       },
       currentBall: {
         ...state.currentBall,
@@ -475,6 +478,23 @@ const useMatchStore = create((set, get) => ({
         ((innings.target - teams.batting.totalScore) / (currentBall.matchSituation.ballsLeft / 6)) : null
     };
   }
-}));
+    }),
+    {
+      name: 'cm25-match-store',
+      version: 1,
+      // Only persist active matches (live or innings_break), skip completed/scheduled
+      partialize: (state) => {
+        if (state.status === 'live' || state.status === 'innings_break') {
+          return state;
+        }
+        // Don't persist if match is not active
+        return {
+          matchId: null,
+          status: 'scheduled'
+        };
+      }
+    }
+  )
+);
 
 export default useMatchStore;

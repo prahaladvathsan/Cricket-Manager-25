@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * @typedef {Object} UIStore
@@ -14,7 +15,9 @@ import { create } from 'zustand';
  * @property {Object} navigation - Navigation state
  */
 
-const useUIStore = create((set, get) => ({
+const useUIStore = create(
+  persist(
+    (set, get) => ({
   // Current View State
   currentView: 'dashboard',
   activeSubView: null,
@@ -157,6 +160,16 @@ const useUIStore = create((set, get) => ({
     // TODO: Implement notification system
     console.log('Notification:', notification);
   }
-}));
+    }),
+    {
+      name: 'cm25-ui-store',
+      version: 1,
+      // Only persist preferences, not transient navigation/modal state
+      partialize: (state) => ({
+        preferences: state.preferences
+      })
+    }
+  )
+);
 
 export default useUIStore;

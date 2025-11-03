@@ -5,6 +5,16 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  Target,
+  Trophy,
+  ArrowRightLeft,
+  Building2,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import useUIStore from '../../stores/uiStore';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
@@ -18,12 +28,12 @@ const Sidebar = ({ currentPath }) => {
   const userTeam = getUserTeam();
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/squad', label: 'Squad', icon: '👥' },
-    { path: '/matches', label: 'Matches', icon: '🏏' },
-    { path: '/league', label: 'League', icon: '🏆' },
-    { path: '/transfers', label: 'Transfers', icon: '💰' },
-    { path: '/board', label: 'Board', icon: '🏢' }
+    { path: '/game/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/game/squad', label: 'Squad', icon: Users },
+    { path: '/game/matches', label: 'Matches', icon: Target },
+    { path: '/game/league', label: 'League', icon: Trophy },
+    { path: '/game/transfers', label: 'Transfers', icon: ArrowRightLeft },
+    { path: '/game/board', label: 'Board', icon: Building2 }
   ];
 
   return (
@@ -31,57 +41,59 @@ const Sidebar = ({ currentPath }) => {
       sidebarCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-3 border-b border-gray-700">
         <div className="flex items-center justify-between">
           {!sidebarCollapsed && (
             <div>
-              <h1 className="text-xl font-bold text-cricket-text-primary">Cricket Manager</h1>
-              <p className="text-sm text-cricket-text-secondary">WPL Edition</p>
+              <h1 className="text-base font-bold text-cricket-text-primary">Cricket Manager 25</h1>
             </div>
           )}
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded hover:bg-cricket-primary transition-colors"
+            className="p-1.5 rounded hover:bg-cricket-primary transition-colors text-text-secondary hover:text-white"
           >
-            {sidebarCollapsed ? '→' : '←'}
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="p-4">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                className={`flex items-center p-3 rounded transition-colors ${
-                  currentPath === item.path
-                    ? 'bg-cricket-primary text-white'
-                    : 'text-cricket-text-secondary hover:text-cricket-text-primary hover:bg-cricket-primary/20'
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                {!sidebarCollapsed && (
-                  <span className="ml-3">{item.label}</span>
-                )}
-              </Link>
-            </li>
-          ))}
+      <nav className="p-3">
+        <ul className="space-y-1.5">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center p-2 rounded transition-colors text-sm ${
+                    currentPath === item.path
+                      ? 'bg-cricket-primary text-white'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-cricket-primary/20'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {!sidebarCollapsed && (
+                    <span className="ml-2.5">{item.label}</span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
       {/* Footer */}
       {!sidebarCollapsed && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="text-xs text-cricket-text-secondary space-y-1">
+        <div className="absolute bottom-3 left-3 right-3">
+          <div className="text-xxs text-cricket-text-secondary space-y-0.5">
             {userTeam && (
-              <div className="flex items-center space-x-2 mb-2">
-                <div 
-                  className="w-3 h-3 rounded-full border"
+              <div className="flex items-center space-x-1.5 mb-1.5">
+                <div
+                  className="w-2.5 h-2.5 rounded-full border"
                   style={{ backgroundColor: userTeam.colors.primary, borderColor: userTeam.colors.secondary }}
                 />
-                <span className="font-medium text-cricket-text-primary">{userTeam.shortName}</span>
+                <span className="font-medium text-cricket-text-primary text-xs">{userTeam.shortName}</span>
               </div>
             )}
             <p>Season {currentSeason} • Week {currentWeek}</p>

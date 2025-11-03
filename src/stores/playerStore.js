@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 
 /**
@@ -14,7 +15,9 @@ import playstyleCalculator from '../utils/PlaystyleCalculator.js';
  * @property {Object} filters - Current player filtering options
  */
 
-const usePlayerStore = create((set, get) => ({
+const usePlayerStore = create(
+  persist(
+    (set, get) => ({
   // Player Data
   players: {},
   availablePlayers: [],
@@ -580,6 +583,19 @@ const usePlayerStore = create((set, get) => ({
 
     return player.primaryPlaystyle;
   }
-}));
+    }),
+    {
+      name: 'cm25-player-store',
+      version: 1,
+      // Exclude filters from persistence (UI state only)
+      partialize: (state) => ({
+        players: state.players,
+        availablePlayers: state.availablePlayers,
+        careerStats: state.careerStats,
+        currentSeasonId: state.currentSeasonId
+      })
+    }
+  )
+);
 
 export default usePlayerStore;

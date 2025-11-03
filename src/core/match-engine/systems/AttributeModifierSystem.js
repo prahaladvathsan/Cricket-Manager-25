@@ -4,16 +4,7 @@
  * @module core/match-engine/AttributeModifierSystem
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load playstyle modifiers configuration
-const modifiersPath = path.join(__dirname, '../../../data/config/playstyle-modifiers.json');
-const playstyleModifiers = JSON.parse(fs.readFileSync(modifiersPath, 'utf8'));
+import playstyleModifiers from '../../../data/config/playstyle-modifiers.json' with { type: "json" };
 
 /**
  * AttributeModifierSystem class for applying playstyle modifiers

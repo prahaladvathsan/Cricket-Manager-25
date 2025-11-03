@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * @typedef {Object} TeamStore
@@ -13,7 +14,9 @@ import { create } from 'zustand';
  * @property {Object.<string, string[]>} squadLists - Current squad for each team
  */
 
-const useTeamStore = create((set, get) => ({
+const useTeamStore = create(
+  persist(
+    (set, get) => ({
   // Team Data
   teams: {},
   userTeamId: null,
@@ -266,6 +269,12 @@ const useTeamStore = create((set, get) => ({
     const state = get();
     return state.teamStats[teamId] || null;
   }
-}));
+    }),
+    {
+      name: 'cm25-team-store',
+      version: 1
+    }
+  )
+);
 
 export default useTeamStore;

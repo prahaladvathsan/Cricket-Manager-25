@@ -4,15 +4,9 @@
  * @module core/match-engine/TrajectoryCalculator
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const mentalityConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/mentality-config.json'), 'utf8'));
-const trajectoryConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/trajectory-config.json'), 'utf8'));
-const shotAnglesConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/shot_angles_config.json'), 'utf8'));
+import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
+import trajectoryConfig from '../../../data/config/trajectory-config.json' with { type: "json" };
+import shotAnglesConfig from '../../../data/config/shot_angles_config.json' with { type: "json" };
 
 /**
  * @typedef {Object} TrajectoryResult

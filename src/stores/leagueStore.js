@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * @typedef {Object} LeagueState
@@ -17,7 +18,9 @@ import { create } from 'zustand';
  * @property {Object} clubs - Club data indexed by ID
  */
 
-const useLeagueStore = create((set, get) => ({
+const useLeagueStore = create(
+  persist(
+    (set, get) => ({
   // Season Information
   seasonId: null,
   seasonName: '',
@@ -293,6 +296,12 @@ const useLeagueStore = create((set, get) => ({
     playoffResults: [],
     champion: null
   })
-}));
+    }),
+    {
+      name: 'cm25-league-store',
+      version: 1
+    }
+  )
+);
 
 export default useLeagueStore;

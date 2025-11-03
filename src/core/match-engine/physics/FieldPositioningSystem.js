@@ -4,13 +4,7 @@
  * @module core/match-engine/FieldPositioningSystem
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const fieldConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/field-positioning-config.json'), 'utf8'));
+import fieldConfig from '../../../data/config/field-positioning-config.json' with { type: "json" };
 
 /**
  * @typedef {Object} FielderPosition

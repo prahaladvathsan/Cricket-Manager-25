@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import FinanceEngine from '../core/finance/FinanceEngine.js';
 
 /**
@@ -16,7 +17,9 @@ import FinanceEngine from '../core/finance/FinanceEngine.js';
  * @property {boolean} initialized - Whether finances are initialized for current season
  */
 
-const useFinanceStore = create((set, get) => ({
+const useFinanceStore = create(
+  persist(
+    (set, get) => ({
   // Core State
   engine: new FinanceEngine(),
   seasonId: null,
@@ -236,6 +239,17 @@ const useFinanceStore = create((set, get) => ({
    */
   getTeamFinances: (teamId) => {
     const state = get();
+    // Safety check: ensure engine exists and has the method
+    if (!state.engine || typeof state.engine.getTeamFinances !== 'function') {
+      console.warn('FinanceEngine not properly initialized, reinitializing...');
+      const newEngine = new FinanceEngine();
+      if (state.teamFinances && state.teamFinances.size > 0) {
+        newEngine.teamFinances = state.teamFinances;
+        newEngine.transactionHistory = state.transactionHistory || [];
+      }
+      set({ engine: newEngine });
+      return newEngine.getTeamFinances(teamId);
+    }
     return state.engine.getTeamFinances(teamId);
   },
 
@@ -415,6 +429,47 @@ const useFinanceStore = create((set, get) => ({
 
     return finances.filter(f => f.currentBudget < minReserve);
   }
-}));
+    }),
+    {
+      name: 'cm25-finance-store',
+      version: 1,
+      storage: createJSONStorage(() => localStorage, {
+        // Custom serialization to handle Map and FinanceEngine
+        serialize: (state) => {
+          const { engine, ...rest } = state.state;
+          // Convert Map to plain object for serialization
+          const serializedState = {
+            ...rest,
+            teamFinancesArray: Array.from(rest.teamFinances.entries())
+          };
+          delete serializedState.teamFinances;
+          return JSON.stringify({ state: serializedState, version: state.version });
+        },
+        deserialize: (str) => {
+          const { state: serializedState, version } = JSON.parse(str);
+          // Recreate Map from array
+          const teamFinancesMap = new Map(serializedState.teamFinancesArray || []);
+          delete serializedState.teamFinancesArray;
+
+          // Recreate FinanceEngine and restore its state
+          const engine = new FinanceEngine();
+          if (teamFinancesMap.size > 0) {
+            engine.teamFinances = teamFinancesMap;
+            engine.transactionHistory = serializedState.transactionHistory || [];
+          }
+
+          return {
+            state: {
+              ...serializedState,
+              engine,
+              teamFinances: teamFinancesMap
+            },
+            version
+          };
+        }
+      })
+    }
+  )
+);
 
 export default useFinanceStore;

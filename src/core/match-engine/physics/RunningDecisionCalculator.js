@@ -4,14 +4,8 @@
  * @module core/match-engine/RunningDecisionCalculator
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const runningConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/running-config.json'), 'utf8'));
-const mentalityConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/mentality-config.json'), 'utf8'));
+import runningConfig from '../../../data/config/running-config.json' with { type: "json" };
+import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
 
 /**
  * @typedef {Object} RunningDecision

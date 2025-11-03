@@ -4,13 +4,7 @@
  * @module core/match-engine/FielderMovementCalculator
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const physicsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/physics-config.json'), 'utf8'));
+import physicsConfig from '../../../data/config/physics-config.json' with { type: "json" };
 
 /**
  * @typedef {Object} FielderInterception

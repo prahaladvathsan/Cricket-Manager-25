@@ -4,14 +4,8 @@
  * @module core/match-engine/ContactCalculator
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import ProbabilityEngine from '../systems/ProbabilityEngine.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const mentalityConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../data/config/mentality-config.json'), 'utf8'));
+import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
 
 /**
  * @typedef {Object} ContactResult

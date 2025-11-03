@@ -18,7 +18,7 @@
       'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    @apply bg-cricket-background text-cricket-text-primary;
+    @apply bg-bg-primary text-text-primary;
   }
 
   #root {
@@ -28,27 +28,31 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-cricket-primary hover:bg-cricket-secondary text-white px-4 py-2 rounded transition-colors;
+    @apply bg-cricket-primary hover:bg-cricket-primary-light text-white font-medium px-6 py-3 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-cricket-surface hover:bg-cricket-primary text-cricket-text-primary px-4 py-2 rounded border border-cricket-primary transition-colors;
+    @apply bg-bg-tertiary hover:bg-bg-hover text-text-primary border border-border-primary font-medium px-6 py-3 rounded-md transition-colors;
+  }
+
+  .btn-danger {
+    @apply bg-status-loss hover:bg-red-600 text-white font-medium px-6 py-3 rounded-md transition-colors;
   }
 
   .card {
-    @apply bg-cricket-surface rounded-lg shadow-lg border border-gray-700;
+    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md hover:border-border-accent transition-colors;
   }
 
   .input-field {
-    @apply bg-cricket-surface border border-gray-600 rounded px-3 py-2 text-cricket-text-primary focus:border-cricket-primary focus:outline-none;
+    @apply bg-bg-secondary border border-border-primary rounded px-3 py-2 text-text-primary focus:border-cricket-accent focus:outline-none transition-colors;
   }
 
   .nav-link {
-    @apply text-cricket-text-secondary hover:text-cricket-text-primary transition-colors px-3 py-2 rounded;
+    @apply text-text-secondary hover:text-text-primary transition-colors px-3 py-2 rounded;
   }
 
   .nav-link.active {
-    @apply text-cricket-text-primary bg-cricket-primary;
+    @apply text-text-primary bg-cricket-primary;
   }
 }
 

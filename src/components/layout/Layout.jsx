@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
       }`}>
         <Header />
         
-        <main className="flex-1 overflow-auto p-6 bg-cricket-background">
+        <main className="flex-1 overflow-auto p-6 bg-bg-primary">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

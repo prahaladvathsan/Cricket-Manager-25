@@ -1,291 +1,157 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Project-specific guidance for Claude Code when working with Cricket Manager 25.
+
+## Quick Commands
+
+```bash
+# Development
+npm install          # Install dependencies
+npm run dev          # Start dev server (http://localhost:3000)
+npm run build        # Build for production
+npm run lint:fix     # Fix ESLint issues
+
+# Testing
+node src/test/demoInteractiveMatch.js                      # Run demo match
+node src/test/leagueTest.js --full --playoffs              # Run full season
+node src/test/diagnosticBallTest.js                        # Test match engine outcomes
+```
 
 ## Project Overview
 
-Cricket Manager is a cricket management simulation game inspired by Football Manager, focusing on the World Premier League (WPL) format. This is a React-based single-page application with realistic player progression, deep tactical gameplay, and ball-by-ball match simulation.
-
-**World Premier League**: A fictional T20 cricket league featuring 10 teams from major cricket-playing nations, avoiding copyright issues while maintaining authentic cricket management experience.
-
-## Quick Start
-
-### Setup
-```bash
-npm install          # Install dependencies
-npm run dev          # Start development server (http://localhost:3000)
-```
-
-### Key Commands
-```bash
-npm run build        # Build for production
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues automatically
-```
+Cricket Manager is a T20 cricket management simulation game (Football Manager for cricket) built with React 18. Features:
+- **World Premier League**: Fictional 10-team T20 league (Mumbai, London, Melbourne, etc.)
+- **Ball-by-ball simulation**: ~50k+ balls/second with physics-based fielding
+- **545 players**: Real-world stats converted to 1-20 attribute scale
+- **Deep tactics**: 24 playstyles, 5 acceleration tiers, 14 bowling plans
+- **Current phase**: Frontend UI development (Phase 5)
 
 ## Tech Stack
 
-- **Frontend**: React 18 + Vite + Tailwind CSS + Lucide React (icons)
-- **State Management**: Zustand stores
-- **Data Processing**: External cricket-data-processor module
-- **Persistence**: LocalStorage (MVP phase)
-- **Language**: JavaScript with JSDoc
-- **Design**: Football Manager-inspired data-dense UI with dark theme
+- **Frontend**: React 18 + Vite + React Router + Tailwind CSS + Lucide React icons
+- **State**: Zustand stores
+- **Persistence**: LocalStorage (no backend)
+- **Design**: Football Manager-inspired data-dense UI (Cricket Green #2D5F3F, Trophy Gold #D4AF37, 14px base font)
+- **Language**: JavaScript with JSDoc (no TypeScript)
 
 ## Architecture Overview
 
-### Core Systems
-- **Match Engine**: SimpleBallSimulator with 4-step simulation + 2D physics-based fielding (Decision → Contact → Trajectory → 2D Fielding) [`docs/core-systems/match-engine.md`]
-- **Player System**: Attribute-based player modeling (1-20 scale) [`docs/data/player-attributes.md`]
-- **Playstyle System**: Dynamic attribute modifiers based on match context (24 playstyles: 16 batting + 8 bowling) [`docs/core-systems/playstyle-system.md`]
-- **Tactics System**: T20 tactical control with acceleration tiers and bowling plans (7-stage modifier chain) [`docs/core-systems/tactics-system.md`]
-- **State Management**: Zustand stores for game state [`docs/frontend/state-management.md`]
-- **League System**: WPL structure and scheduling [`docs/core-systems/league-system.md`]
-
-### Directory Structure
 ```
 src/
-├── core/                    # Core game systems
-│   └── match-engine/       # Ball-by-ball simulation
+├── core/
+│   └── match-engine/       # SimpleBallSimulator (4-step: Decision → Contact → Trajectory → 2D Fielding)
 ├── stores/                 # Zustand state management
-├── components/             # React UI components
-├── data/                   # Static game data
-└── utils/                  # Utility functions
+├── components/             # React UI (Dashboard, League, Squad, Match, Auction)
+├── data/
+│   ├── config/            # JSON probability configs (NEVER hardcode probabilities)
+│   └── players/           # 545-player database
+└── test/                  # CLI test scripts
 ```
 
-**Note**: Data processing pipeline moved to external `cricket-data-processor` module (adjacent to this repository).
+**Core Systems**:
+- **Match Engine**: `SimpleBallSimulator` - 7-stage modifier chain (Playstyle → Tactics → Mentality → Matchups → Confidence → Energy → Context)
+- **Playstyle System**: 24 dynamic modifiers (16 batting + 8 bowling)
+- **League System**: 10 teams, 90 matches, playoffs with NRR calculation
+- **Auction System**: Playstyle-based player bidding with quota system
 
-## Documentation Index
+See `docs/architecture/system-overview.md` for detailed architecture.
 
-### 🏗️ Architecture & Design
-- [System Overview](docs/architecture/system-overview.md) - High-level architecture
-- [Data Flow](docs/architecture/data-flow.md) - How data moves through the system
-- [Design Patterns](docs/architecture/design-patterns.md) - Code conventions
+## Active Development Tracking (Anti-Amnesia System)
 
-### ⚙️ Core Systems
-- [Match Engine](docs/core-systems/match-engine.md) - Ball-by-ball simulation architecture
-- [Match Engine Tuning](docs/core-systems/match-engine-tuning.md) - Outcome probability tuning
-- [Player System](docs/core-systems/player-system.md) - Attributes and progression
-- [Playstyle System](docs/core-systems/playstyle-system.md) - Dynamic attribute modifiers
-- [Tactics System](docs/core-systems/tactics-system.md) - T20 tactical control (acceleration tiers, bowling plans, DLS targets)
-- [League System](docs/core-systems/league-system.md) - WPL structure and scheduling
-- [Auction System](docs/core-systems/auction-system.md) - Playstyle-based player auction
-- [AI Opponents](docs/core-systems/ai-opponents.md) - Computer team management (planned)
+**For ALL non-trivial features (>30 minutes or multiple files)**:
 
-### 🎨 Frontend & UI
-- [Design System](docs/frontend/design-system.md) - Master design guide (colors, typography, components)
-- [State Management](docs/frontend/state-management.md) - Zustand stores guide
-- [Integration Patterns](docs/frontend/integration-patterns.md) - UI-to-store connection patterns
-- [Game Progression](docs/frontend/game-progression.md) - Continue button and event system
-- [Component Library](docs/frontend/component-library.md) - React components
-- [Navigation](docs/frontend/routing-navigation.md) - App navigation
+1. **Create tracking folder**: `docs/dev/active/[feature-name]/`
+2. **Use three-file system**:
+   - `plan.md` - Approved implementation strategy (single source of truth)
+   - `context.md` - Living context: files changed, decisions made, current state (update continuously)
+   - `tasks.md` - Granular checklist with completion tracking
 
-**Layout Specifications**:
-- [Dashboard Layout](docs/frontend/layouts/dashboard-layout.md) - Main dashboard widgets
-- [Match View Layout](docs/frontend/layouts/match-view-layout.md) - Live match screen with 2D pitch
-- [League View Layout](docs/frontend/layouts/league-view-layout.md) - Standings and fixtures
-- [Squad View Layout](docs/frontend/layouts/squad-view-layout.md) - Team management
-- [Auction View Layout](docs/frontend/layouts/auction-view-layout.md) - Player auction interface
+3. **Update before context runs low** (>150k tokens):
+   - Update `context.md` with current state
+   - Update `tasks.md` with remaining work
+   - Document next 3 immediate steps
 
-### 📊 Data & Configuration
-- [Player Attributes](docs/data/player-attributes.md) - Attribute system (1-20 scale)
-- [Statistical Calculations](docs/data/statistical-calculations.md) - Raw stats processing
-- [Data Processing](docs/data/data-processing.md) - External processor guide
-- [Game Balance](docs/data/game-balance.md) - Balance configuration
+4. **On completion**: Move to `docs/dev/implementation-notes/[feature-name]/`
 
-### 🛠️ Development
-- [Setup Guide](docs/development/setup-guide.md) - Detailed setup instructions
-- [Phase 5 Roadmap](docs/development/phase-5-roadmap.md) - Next development priorities
-- [Testing](docs/development/testing.md) - Testing strategies
-- [Contributing](docs/development/contributing.md) - Development guidelines
+**Before starting ANY task**: Check `docs/dev/active/` for existing work. Read all three files before proceeding.
 
-### 📚 API Reference
-- [Stores API](docs/api/stores-api.md) - Store methods and usage
-- [Match Engine API](docs/api/match-engine-api.md) - Engine interfaces
-- [Component Props](docs/api/component-props.md) - Component interfaces
+See `docs/dev/active/README.md` for templates and `docs/dev/development-workflow.md` for full workflow.
 
-## Current Development Status
+## Repo-Specific Rules
 
-### ✅ Completed (Phase 1-2)
-- **Project Structure**: React 18 + Vite + Zustand state management
-- **Player System**: Master database with 545 players, playstyle ratings, attribute system (1-20 scale)
-- **Match Engine**: SimpleBallSimulator with 4-step calculation + 2D algebraic fielding (~50k+ balls/sec)
-- **Match Engine Tuning**: Preliminary outcome probability tuning complete (see [`docs/core-systems/match-engine-tuning.md`])
-- **Data Processing**: External cricket-data-processor module with GMA filtering
-- **Squad Management**: Team selection and persistence
-- **Configuration System**: All probabilities externalized to JSON config files
-- **Documentation**: Organized structure with component-specific guides
-- **Bowling Playstyle Revamp**: Pace/spin segregation with 8 specialized playstyles (4 pace + 4 spin)
-- **T20 Tactics System**: 7-stage modifier chain with acceleration tiers, bowling plans, and DLS-based pacing (see [`docs/core-systems/tactics-system.md`])
-- **Interactive Match System**: Fully playable command-line match with complete user control over team selection, tactics, and in-match decisions (see [`docs/development/interactive-match-system.md`])
-- **League System**: Complete WPL simulation with 10 teams, double round-robin fixtures (90 matches), automated squad distribution, standings with NRR calculation, playoff structure, and championship determination
-- **Playoff Simulation**: Full knockout stage with Qualifier 1, Eliminator, Qualifier 2, and Final matches
-- **Player Leaderboards**: Comprehensive statistics tracking for batting (runs, average, SR, sixes), bowling (wickets, economy, average), and fielding (catches)
-- **Match Display System**: Clean scorecard display with optional ball-by-ball commentary toggle for both interactive and league matches
-- **Fielding System**: Complete fielding data capture and display - fielder names shown in dismissals (catches, stumpings, run outs) using compact "F. LastName" format
+### Configuration-Driven Development
+- **ALL probabilities** must be in `src/data/config/*.json` files
+- **NEVER hardcode probabilities** in code - import from configs
+- Test outcomes with `node src/test/diagnosticBallTest.js`
 
-### ✅ Completed (Phase 3)
-- **Auction System**: Complete season-start player bidding with playstyle-based AI valuation
-  - Playstyle rating quota system: 9 categories (5 batting + 4 bowling) with 3,100 total rating target
-  - Fit score calculation: MAX of category contributions (all-rounders get dual credit)
-  - Budget-to-gap multiplier: Dynamic bid adjustment based on remaining budget vs quota gaps
-  - Fast mode: Highest-bidder logic with valid bid increment flooring
-  - Interactive mode: User controls one team with AI recommendations
-  - AI-only mode: Fully automated auction simulation
-  - Deterministic bidding: Teams bid if price < market value (no probability)
+### Data Processing
+- Player database processing is **external** (`cricket-data-processor` module adjacent to this repo)
+- Do NOT modify player data pipeline in this repo
+- See `cricket-data-processor/README.md` for data processing
 
-### ✅ Completed (Phase 4 - Frontend UI)
-- **Design System**: Football Manager-inspired data-dense UI (see [`docs/frontend/design-system.md`])
-  - Tailwind config with Cricket Green/Trophy Gold palette, 14px base font, Lucide React icons
-  - Component patterns: icon headers, compact cards, progress bars, form indicators
-  - Claude Code skill for design consistency (`.claude/skills/ui-design-system.md`)
-- **Core UI Pages**: Dashboard (6 widgets), League (standings/fixtures/results/leaderboards), Squad (overview/team-info/stats)
-- **Layout System**: Header with Continue button, collapsible Sidebar with Lucide icons, responsive Layout wrapper
-- **Game Progression**: GameController + GameEventModal for phase-based progression (preseason → league → playoffs)
-- **Integration Patterns**: UI-to-store connection guide (see [`docs/frontend/integration-patterns.md`])
-- **Browser Compatibility**: Fixed Node.js imports in PlaystyleCalculator.js for browser use
+### Key Cricket Concepts
+- **Player attributes**: 1-20 scale (technique, timing, accuracy, speed, etc.)
+- **Playstyle ratings**: 0-100 scale for 24 playstyles
+- **Match Engine**: 4-step algebraic calculation (not Monte Carlo)
+  - Decision: Shot selection based on attributes
+  - Contact: Quality of bat-ball contact
+  - Trajectory: Ball flight path (2D physics)
+  - Fielding: 2D algebraic catch/boundary logic
+- **WPL Teams**: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles
 
-### ✅ Completed (Phase 5 - Navigation & Core UI Pages)
-- **Navigation Integration**: React Router fully integrated with GameEventModal actions
-- **Auction UI**: Complete interactive bidding interface with AuctionEngine integration
-  - Efficient bidding race logic: Pre-calculate max bids once, filter and race (no recalculation every second)
-  - Real-time updates: Live price, timer countdown (10s), squad displays
-  - Player cards: Top 3 batting/bowling playstyles with ratings
-  - Sold/unsold confirmation screens with "Next Player" control
-  - Three tabs: Live Auction, Team Squads, Auction Log
-  - State management with refs to prevent stale state in async callbacks
-  - AI bidding with random delays (1-5s from config)
-  - Pass button uses fast mode logic to instantly resolve auction
-  - Bid/Pass controls with increment validation and budget checks
-- **Match View UI**: Live match interface with MatchEngine integration
-  - Real-time score display and match controls
-  - Three tabs: Live Match, Scorecard, Commentary
-  - Play Ball, Skip Over, and Auto-Simulate options
-  - Current batsmen and bowler displays
+### UI Design Patterns
+- **Football Manager aesthetic**: Data-dense tables, compact cards, 14px base font
+- **Color palette**: Cricket Green (#2D5F3F), Trophy Gold (#D4AF37), dark theme
+- **Icons**: Lucide React only
+- **Spacing**: Compact (p-2, p-3, gap-2) for professional look
+- See `docs/frontend/design-system.md` for complete specs
 
-### 📋 Next Priorities (Phase 5 Continued)
-- **State Persistence**: LocalStorage integration for save/load functionality
-- **Match View Enhancement**: Add live ball-by-ball updates from MatchEngine
-- **Scorecard Integration**: Display detailed batting/bowling statistics
-- **2D Pitch Visualization**: Visual field positioning and ball trajectory
-- **Transfers Page**: Mid-season player trading interface
-- **Board Page**: Team objectives and season targets
+### Browser Compatibility
+- **No Node.js imports in browser code** (e.g., `fs`, `path`)
+- PlaystyleCalculator.js already fixed for browser use
+- All game logic must run client-side
 
-### 🔮 Future Enhancements
-- **React UI Components**: Match screen, pre-match setup, tactical controls
-- **Player Browser**: Search and filtering interface
-- **Match Visualization**: UI wrapper for interactive match system
-- **State Integration**: Full Zustand store integration
-- **Extras System**: Detailed extras tracking and analysis
-- **Field Position Library**: Exhaustive cricket fielding position names
-- **Environmental Factors**: Weather, pitch conditions, pressure situations
-- **Player Development**: Attribute growth and form fluctuations
-- **User Field Tactics**: Manual field setting and in-match tactical changes
+## Documentation
 
-## Data Processing
+**Quick Links**:
+- [Developer Guide](docs/dev/README.md) - Complete dev documentation index
+- [Roadmap & Status](ROADMAP.md) - Current development status and next priorities
+- [Design System](docs/frontend/design-system.md) - UI specifications
+- [Match Engine](docs/core-systems/match-engine.md) - Simulation architecture
+- [Active Tracking Templates](docs/dev/active/README.md) - Task management templates
 
-Player data is processed using the external **cricket-data-processor** module (adjacent to this repository):
-- **Input**: Raw T20 ball-by-ball CSV data
-- **Processing**: GMA filtering, statistical calculations, attribute conversion
-- **Output**: Enhanced player database JSON for Cricket Manager
+**Full documentation index**: See `docs/README.md`
 
-See [`cricket-data-processor/README.md`] for processing pipeline details.
+## Testing Quick Reference
 
-## Key Concepts
+```bash
+# Match Engine
+node src/test/diagnosticBallTest.js              # Test outcome probabilities
+node src/test/detailedMatchTest.js               # Full match simulation
+node src/test/demoInteractiveMatch.js            # Automated demo match
 
-### Player Attributes (1-20 Scale)
-- **Batting**: technique, timing, placement, range360, shot types
-- **Bowling**: accuracy, speed, swing, variations, intelligence
-- **Physical**: strength, speed, agility, fitness, stamina
-- **Mental**: concentration, temperament, aggression, leadership
-- **Condition**: form, fitness, fatigue, morale (0-100 scale)
+# League System
+node src/test/leagueTest.js                      # Quick test (5 matches)
+node src/test/leagueTest.js --full               # Full season (90 matches)
+node src/test/leagueTest.js --full --playoffs    # Season + playoffs
 
-### Match Engine
-**SimpleBallSimulator**: 4-step algebraic calculation (Decision → Contact → Trajectory → 2D Fielding)
+# Auction System
+node src/test/demoAuction.js                     # Test auction logic
+```
 
-**Key Features**:
-- All cricket dismissals: bowled, lbw, stumped, caught_behind, caught, run_out
-- Shot types: missed, edged_behind, grounded, aerial
-- 7-stage modifier chain: Playstyle → Tactics → Mentality → Matchups → Confidence → Energy → Context
-- 24 playstyles (16 batting + 8 bowling) + 5 acceleration tiers + 14 bowling plans
-- Performance: ~50,000+ balls/second
-
-**Usage**: `import SimpleBallSimulator from '../core/match-engine/SimpleBallSimulator.js'`
-
-**Documentation**:
-- Technical details: [`docs/core-systems/match-engine.md`]
-- Outcome tuning: [`docs/core-systems/match-engine-tuning.md`]
-- Playstyle system: [`docs/core-systems/playstyle-system.md`]
-- Tactics system: [`docs/core-systems/tactics-system.md`]
-
-### World Premier League Teams
-10 teams representing major cricket cities: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles.
-
-### UI Design System
-Football Manager-inspired data-dense interface with dark theme (Cricket Green #2D5F3F, Trophy Gold #D4AF37). Uses Lucide React icons, 14px base font, and compact spacing for professional appearance.
-
-See [`docs/frontend/design-system.md`] for complete color palette, typography, and component specifications.
+See `docs/dev/testing.md` for testing guidelines.
 
 ## Important Notes
 
-- **Client-side only** - no backend required for MVP (LocalStorage persistence)
-- **No Python dependencies** - data processing is external module
-- **Configuration-driven** - all probabilities in `src/data/config/*.json` files
-- **Performance optimized** - algebraic calculations, ~50k balls/sec
-- **Deterministic** - seeded randomization for reproducible results
-
-## Development Guidelines
-
-### Configuration-First Approach
-- **All probabilities** must be in `src/data/config/*.json` files
-- **No hardcoded values** - import from config files
-- **Test-driven tuning** - use `src/test/diagnosticBallTest.js` to validate outcomes
-
-### Documentation Updates
-After completing features:
-1. Update "Current Development Status" in CLAUDE.md
-2. Create/update component docs in `docs/` folder
-3. Keep CLAUDE.md light - move details to specific doc files
-
-### Testing
-- **Unit tests**: Component-specific functionality
-- **Diagnostic tests**: `src/test/diagnosticBallTest.js` for match engine outcomes
-- **Integration tests**: Full match simulation in `src/test/detailedMatchTest.js`
-- **Interactive tests**: Playable match in `src/test/interactiveMatchTest.js`
-- **Demo tests**: Automated playthrough in `src/test/demoInteractiveMatch.js`
-- **League tests**: Full season simulation in `src/test/leagueTest.js`
-
-### Interactive Match System Quick Start
-```bash
-# Run automated demo (no user input required)
-node src/test/demoInteractiveMatch.js
-
-# Play full interactive match (you control everything)
-node src/test/interactiveMatchTest.js
-```
-
-See [`docs/development/interactive-match-system.md`] for complete guide.
-
-### League System Quick Start
-```bash
-# Run quick test (5 matches)
-node src/test/leagueTest.js
-
-# Run full season (90 matches)
-node src/test/leagueTest.js --full
-
-# Run N matches only
-node src/test/leagueTest.js --matches=20
-
-# Full season with playoffs and leaderboards
-node src/test/leagueTest.js --full --playoffs --leaderboards
-
-# Test playoffs with current standings
-node src/test/leagueTest.js --matches=10 --force-playoffs --leaderboards
-```
+- **Client-side only** - No backend, uses LocalStorage
+- **No Python dependencies** - Data processing is separate
+- **Performance critical** - Match engine must maintain ~50k+ balls/second
+- **Deterministic** - Seeded randomization for reproducible results
+- **Git workflow** - Main branch is `main`, feature branches for non-trivial work
 
 ---
 
-**Last Updated**: January 2025 - Phase 4 Complete (Core UI + Game Progression System)
+**Current Phase**: Phase 5 - Frontend UI (Match View, State Persistence, 2D Visualization)
+**Last Updated**: January 2025
 
-For detailed information, see component-specific documentation in the `docs/` folder.
+For detailed status and roadmap, see `ROADMAP.md`.

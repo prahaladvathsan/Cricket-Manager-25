@@ -4,7 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Cricket management simulation game inspired by Football Manager, focusing on IPL format",
-  "keywords": ["cricket", "simulation", "game", "ipl", "management"],
+  "keywords": [
+    "cricket",
+    "simulation",
+    "game",
+    "ipl",
+    "management"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,11 +20,12 @@
     "build-player-db": "node scripts/build-final-player-database.js"
   },
   "dependencies": {
+    "lucide-react": "^0.552.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.1",
-    "zustand": "^4.4.7",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",

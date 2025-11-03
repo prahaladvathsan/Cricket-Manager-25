@@ -20,7 +20,11 @@
       "Bash(git branch:*)",
       "Bash(git stash:*)",
       "Bash(git commit:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(tree /F /A \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\")",
+      "Bash(npm run dev:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ],
     "deny": []
   }
