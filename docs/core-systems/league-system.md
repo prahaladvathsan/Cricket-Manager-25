@@ -591,13 +591,452 @@ league.simulateLeague(null, (result, current, total) => {
 });
 ```
 
+## Match Progression System (v2.0)
+
+### Overview
+
+The League System now includes a complete match progression system that enables linear fixture advancement with intelligent routing between user-controlled interactive matches and AI vs AI quick-simulated matches.
+
+**New Features:**
+- Linear fixture progression via `currentFixtureIndex`
+- Smart match routing (user vs AI detection)
+- Quick simulation integration for AI matches
+- Season progress tracking
+- Deep linking support for matches
+
+### Linear Progression Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              LEAGUE FIXTURE PROGRESSION                 │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        ▼
+        ┌───────────────────────────────┐
+        │   currentFixtureIndex: 0      │
+        │   fixtures: [90 fixtures]     │
+        │   results: []                 │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │   getNextFixture()            │
+        │   Returns: fixtures[index]    │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │   isUserTeamMatch(fixture)    │
+        │   Check if user is playing    │
+        └───────────┬───────────────────┘
+                    │
+        ┌───────────┴────────────┐
+        │                        │
+        ▼                        ▼
+┌──────────────┐        ┌──────────────┐
+│ User Match   │        │ AI Match     │
+│ Navigate to  │        │ Quick-Sim    │
+│ Match.jsx    │        │ Background   │
+└──────┬───────┘        └──────┬───────┘
+        │                        │
+        └────────────┬───────────┘
+                     │
+                     ▼
+        ┌───────────────────────────────┐
+        │   recordResult(result)        │
+        │   Update standings            │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │   advanceToNextMatch()        │
+        │   Increment index             │
+        └───────────────────────────────┘
+```
+
+### New Store Methods
+
+#### getNextFixture()
+
+Returns the next unplayed fixture based on `currentFixtureIndex`.
+
+```javascript
+const nextFixture = getNextFixture();
+
+// Returns fixture object or null if season complete
+{
+  id: 'fixture_001',
+  homeTeam: 'mumbai_thunders',
+  awayTeam: 'london_lions',
+  venue: 'Wankhede Stadium',
+  matchday: 1
+}
+```
+
+**Implementation:**
+```javascript
+getNextFixture: () => {
+  const state = get();
+
+  if (state.currentFixtureIndex >= state.fixtures.length) {
+    // Check for playoff fixtures
+    if (state.stage === 'league' && state.playoffFixtures.length > 0) {
+      return state.playoffFixtures[0];
+    }
+    return null; // Season complete
+  }
+
+  return state.fixtures[state.currentFixtureIndex];
+}
+```
+
+#### getFixtureById(fixtureId)
+
+Retrieves a specific fixture by ID for deep linking support.
+
+```javascript
+const fixture = getFixtureById('fixture_001');
+
+// Searches both league and playoff fixtures
+// Returns fixture object or null
+```
+
+**Use Case:**
+```javascript
+// Match.jsx - Load match from URL parameter
+const { matchId } = useParams();
+const fixture = getFixtureById(matchId) || getNextFixture();
+```
+
+#### isUserTeamMatch(fixture, userTeamId)
+
+Checks if the user's team is involved in a fixture.
+
+```javascript
+const isUserMatch = isUserTeamMatch(nextFixture, userTeam?.id);
+
+if (isUserMatch) {
+  // Navigate to interactive match
+  navigate(`/game/match/${nextFixture.id}`);
+} else {
+  // Quick-simulate AI vs AI
+  await quickSimMatch(matchConfig, ...);
+}
+```
+
+**Implementation:**
+```javascript
+isUserTeamMatch: (fixture, userTeamId) => {
+  if (!fixture || !userTeamId) return false;
+  return fixture.homeTeam === userTeamId || fixture.awayTeam === userTeamId;
+}
+```
+
+#### advanceToNextMatch()
+
+Increments fixture index and matchday counter after match completion.
+
+```javascript
+const nextFixture = advanceToNextMatch();
+
+// Updates:
+// - currentFixtureIndex += 1
+// - currentMatchday += 1
+// Returns next fixture or null
+```
+
+**Usage:**
+```javascript
+// After recording result
+recordResult(matchResult);
+advanceToNextMatch();
+```
+
+#### getSeasonProgress()
+
+Returns detailed season progress statistics.
+
+```javascript
+const progress = getSeasonProgress();
+
+// Returns:
+{
+  currentFixture: 15,
+  totalFixtures: 90,
+  completed: 15,
+  remaining: 75,
+  progressPercent: 17,  // Rounded integer
+  currentWeek: 3,
+  stage: 'league'
+}
+```
+
+**UI Integration:**
+```jsx
+<div className="progress-bar">
+  <div style={{ width: `${progress.progressPercent}%` }} />
+</div>
+<span>{progress.completed}/{progress.totalFixtures}</span>
+```
+
+#### recordMatchComplete(matchId, result)
+
+Convenience method that records result, updates standings, and advances.
+
+```javascript
+const nextFixture = recordMatchComplete(matchId, matchResult);
+
+// Equivalent to:
+// recordResult(matchResult);
+// updateStandings(matchResult);
+// advanceToNextMatch();
+```
+
+**Note:** Most components use separate calls for finer control.
+
+### Fixture Progression Flow
+
+**Complete Flow:**
+```javascript
+// 1. Get next fixture
+const nextFixture = getNextFixture();
+
+// 2. Load teams
+const homeTeam = getClub(nextFixture.homeTeam);
+const awayTeam = getClub(nextFixture.awayTeam);
+
+// 3. Check if user is playing
+const isUserMatch = isUserTeamMatch(nextFixture, userTeam?.id);
+
+// 4A. User match - navigate to interactive view
+if (isUserMatch) {
+  navigate(`/game/match/${nextFixture.id}`);
+}
+
+// 4B. AI match - quick simulate
+else {
+  const matchConfig = {
+    id: nextFixture.id,
+    homeTeam,
+    awayTeam,
+    venue: nextFixture.venue,
+    tossWinner: Math.random() < 0.5 ? homeTeam.id : awayTeam.id,
+    tossDecision: Math.random() < 0.5 ? 'bat' : 'bowl'
+  };
+
+  const result = await quickSimMatch(matchConfig, ...);
+
+  // 5. Record result
+  recordResult(result);
+
+  // 6. Advance to next match
+  advanceToNextMatch();
+}
+```
+
+### Season Completion Detection
+
+**Check for Season End:**
+```javascript
+const nextFixture = getNextFixture();
+
+if (!nextFixture && stage === 'league') {
+  // League stage complete
+  // Generate playoff fixtures
+  setStage('playoffs');
+  setPlayoffFixtures(generatePlayoffs());
+} else if (!nextFixture && stage === 'playoffs') {
+  // Season complete
+  setStage('completed');
+}
+```
+
+**UI Display:**
+```jsx
+{!nextFixture && stage === 'completed' && (
+  <div className="season-complete">
+    <Trophy className="w-16 h-16 text-trophy-gold" />
+    <h2>Season Complete!</h2>
+    <p>View final standings and champion</p>
+  </div>
+)}
+```
+
+### Integration with Components
+
+#### Dashboard.jsx
+
+```javascript
+// Get next fixture and user team
+const nextFixture = getNextFixture();
+const userTeam = getUserTeam();
+const isUserMatch = nextFixture ? isUserTeamMatch(nextFixture, userTeam?.id) : false;
+
+// Continue button
+<button onClick={handleContinue}>
+  {isUserMatch ? 'Play Match' : 'Continue'}
+</button>
+
+// Handle click
+const handleContinue = async () => {
+  if (isUserMatch) {
+    navigate(`/game/match/${nextFixture.id}`);
+  } else {
+    const result = await quickSimMatch(...);
+    recordResult(result);
+    advanceToNextMatch();
+  }
+};
+```
+
+#### League.jsx (SeasonProgress component)
+
+```javascript
+const progress = getSeasonProgress();
+const nextFixture = getNextFixture();
+
+// Progress bar
+<div className="w-full h-2 bg-bg-tertiary rounded-full">
+  <div
+    className="h-full bg-cricket-accent"
+    style={{ width: `${progress.progressPercent}%` }}
+  />
+</div>
+
+// Next fixture display
+{nextFixture && (
+  <div>
+    <p>{homeTeam.name} vs {awayTeam.name}</p>
+    <button onClick={handlePlayMatch}>
+      {isUserMatch ? 'Play Match' : 'Quick Simulate'}
+    </button>
+  </div>
+)}
+```
+
+#### Match.jsx
+
+```javascript
+// Load fixture from URL or next available
+const { matchId } = useParams();
+const fixture = getFixtureById(matchId) || getNextFixture();
+
+// On match complete
+const handleContinue = () => {
+  navigate('/game/league');
+  // League view will handle result recording
+};
+```
+
+### State Persistence
+
+The leagueStore uses Zustand persistence middleware:
+
+```javascript
+persist(
+  (set, get) => ({ ... }),
+  {
+    name: 'cm25-league-store',
+    version: 2
+  }
+)
+```
+
+**Persisted State:**
+- `currentFixtureIndex` - Resume from last match
+- `fixtures` - All season fixtures
+- `results` - Completed match results
+- `standings` - Current league table
+- `stage` - 'league', 'playoffs', 'completed'
+
+**Use Cases:**
+- Page refresh doesn't lose progress
+- Close browser and resume later
+- Switch between tabs/components
+- Debug and reload during development
+
+### Performance Considerations
+
+**Fixture Lookup:**
+```javascript
+// O(1) - Direct array access
+const nextFixture = fixtures[currentFixtureIndex];
+
+// O(n) - Search by ID (only when needed)
+const fixture = fixtures.find(f => f.id === matchId);
+```
+
+**Optimization:**
+```javascript
+// Cache team lookups in component
+const homeTeam = useMemo(() => getClub(fixture.homeTeam), [fixture]);
+const awayTeam = useMemo(() => getClub(fixture.awayTeam), [fixture]);
+```
+
+### Error Handling
+
+**Missing Fixture:**
+```javascript
+const nextFixture = getNextFixture();
+
+if (!nextFixture) {
+  console.warn('No fixture available');
+  // Season complete or error
+}
+```
+
+**Invalid Fixture ID:**
+```javascript
+const fixture = getFixtureById(matchId);
+
+if (!fixture) {
+  console.warn(`Fixture ${matchId} not found`);
+  // Fallback to next fixture
+  fixture = getNextFixture();
+}
+```
+
+**Missing Team Data:**
+```javascript
+const homeTeam = getClub(fixture.homeTeam);
+
+if (!homeTeam) {
+  throw new Error('Team data not found for match');
+}
+```
+
+### Testing
+
+**Test Fixture Progression:**
+```bash
+node src/test/leagueTest.js --full
+
+# Verify:
+# - All 90 fixtures processed sequentially
+# - currentFixtureIndex increments correctly
+# - Season completes after fixture 89
+```
+
+**Test User Match Detection:**
+```javascript
+const fixture = { homeTeam: 'user_team', awayTeam: 'ai_team' };
+expect(isUserTeamMatch(fixture, 'user_team')).toBe(true);
+
+const aiFixture = { homeTeam: 'ai_team_1', awayTeam: 'ai_team_2' };
+expect(isUserTeamMatch(aiFixture, 'user_team')).toBe(false);
+```
+
 ## Related Documentation
 
+- [Match Progression System](../features/match-progression-system.md) - Complete progression flow
+- [Quick Simulation](../features/quick-simulation.md) - AI match simulation
+- [Match View Component](../components/match-view.md) - Interactive match UI
 - [Match Engine](./match-engine.md) - Ball-by-ball simulation
 - [Tactics System](./tactics-system.md) - In-match tactical decisions
 - [Player System](./player-system.md) - Player attributes and selection
 - [State Management](../frontend/state-management.md) - Zustand stores
+- [Stores API](../api/stores-api.md) - Complete store reference
 
 ---
 
-**Last Updated:** January 2025 - League System v1.0
+**Last Updated:** January 2025 - League System v2.0 (Match Progression Update)

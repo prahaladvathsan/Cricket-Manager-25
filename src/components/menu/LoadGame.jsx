@@ -23,6 +23,8 @@ import useFinanceStore from '../../stores/financeStore';
 import useMatchStore from '../../stores/matchStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useUIStore from '../../stores/uiStore';
+import useInboxStore from '../../stores/inboxStore';
+import useNavigationStore from '../../stores/navigationStore';
 import GameController from '../../core/game/GameController';
 
 const LoadGame = () => {
@@ -39,7 +41,9 @@ const LoadGame = () => {
     financeStore: useFinanceStore,
     matchStore: useMatchStore,
     auctionStore: useAuctionStore,
-    uiStore: useUIStore
+    uiStore: useUIStore,
+    inboxStore: useInboxStore,
+    navigationStore: useNavigationStore
   };
 
   useEffect(() => {
@@ -100,8 +104,8 @@ const LoadGame = () => {
             case 'new_season':
             case 'idle':
             default:
-              // For all other states, go to dashboard
-              navigate('/game/dashboard');
+              // For all other states, go to home
+              navigate('/game/home');
               break;
           }
         }, 500);

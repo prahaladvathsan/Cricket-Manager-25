@@ -13,23 +13,29 @@ import {
   ArrowRightLeft,
   Building2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Clipboard
 } from 'lucide-react';
 import useUIStore from '../../stores/uiStore';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
+import useInboxStore from '../../stores/inboxStore';
 
 const Sidebar = ({ currentPath }) => {
   const { preferences, toggleSidebar } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
   const { currentSeason, currentWeek, currentPhase } = useGameStore();
-  
+  const { unreadCount } = useInboxStore();
+
   const userTeam = getUserTeam();
 
   const navItems = [
-    { path: '/game/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/game/home', label: 'Home', icon: LayoutDashboard },
+    { path: '/game/inbox', label: 'Inbox', icon: Mail, badge: unreadCount },
     { path: '/game/squad', label: 'Squad', icon: Users },
+    { path: '/game/tactics', label: 'Tactics', icon: Clipboard },
     { path: '/game/matches', label: 'Matches', icon: Target },
     { path: '/game/league', label: 'League', icon: Trophy },
     { path: '/game/transfers', label: 'Transfers', icon: ArrowRightLeft },
@@ -62,19 +68,30 @@ const Sidebar = ({ currentPath }) => {
         <ul className="space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const hasBadge = item.badge && item.badge > 0;
             return (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center p-2 rounded transition-colors text-sm ${
+                  className={`flex items-center justify-between p-2 rounded transition-colors text-sm ${
                     currentPath === item.path
                       ? 'bg-cricket-primary text-white'
                       : 'text-text-secondary hover:text-text-primary hover:bg-cricket-primary/20'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  {!sidebarCollapsed && (
-                    <span className="ml-2.5">{item.label}</span>
+                  <div className="flex items-center">
+                    <Icon className="w-4 h-4" />
+                    {!sidebarCollapsed && (
+                      <span className="ml-2.5">{item.label}</span>
+                    )}
+                  </div>
+                  {hasBadge && !sidebarCollapsed && (
+                    <span className="ml-auto bg-cricket-accent text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                      {item.badge}
+                    </span>
+                  )}
+                  {hasBadge && sidebarCollapsed && (
+                    <span className="absolute top-1 right-1 bg-cricket-accent text-white text-xxs font-bold rounded-full w-2 h-2"></span>
                   )}
                 </Link>
               </li>

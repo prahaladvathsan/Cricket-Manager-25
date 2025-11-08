@@ -3,15 +3,24 @@
  * @description Main layout component with navigation
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import useUIStore from '../../stores/uiStore';
+import useNavigationStore from '../../stores/navigationStore';
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const { preferences } = useUIStore();
+  const { pushRoute } = useNavigationStore();
+
+  // Track navigation history for in-game routes only
+  useEffect(() => {
+    if (location.pathname.startsWith('/game/')) {
+      pushRoute(location.pathname);
+    }
+  }, [location.pathname, pushRoute]);
 
   return (
     <div className="h-full flex">

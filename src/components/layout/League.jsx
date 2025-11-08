@@ -8,15 +8,22 @@ import {
   Trophy,
   Calendar,
   History,
-  Award
+  Award,
+  List,
+  CalendarDays
 } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
+import SeasonProgress from '../league/SeasonProgress';
+import PlayerCardModal from '../shared/PlayerCardModal';
 
 const League = () => {
   const [activeTab, setActiveTab] = useState('standings');
   const [leaderboardCategory, setLeaderboardCategory] = useState('batting');
+  const [fixturesView, setFixturesView] = useState('list'); // 'list' or 'calendar'
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [showPlayerModal, setShowPlayerModal] = useState(false);
 
   // Get league data
   const { seasonName, standings, fixtures, results, clubs, stage, champion } = useLeagueStore();
@@ -33,11 +40,81 @@ const League = () => {
     });
   }, [standings]);
 
-  // Get upcoming fixtures (next 10)
-  const upcomingFixtures = useMemo(() => {
-    return fixtures
-      .filter(f => f.status === 'upcoming' || !f.status)
-      .slice(0, 10);
+  // Group fixtures by month for calendar view
+  const fixturesByMonth = useMemo(() => {
+    const grouped = {};
+
+    fixtures.forEach(fixture => {
+      if (!fixture.date) return;
+
+      const date = new Date(fixture.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = {
+          monthName: date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          fixtures: {}
+        };
+      }
+
+      const dateKey = date.toISOString().split('T')[0];
+      if (!grouped[monthKey].fixtures[dateKey]) {
+        grouped[monthKey].fixtures[dateKey] = [];
+      }
+      grouped[monthKey].fixtures[dateKey].push(fixture);
+    });
+
+    return grouped;
+  }, [fixtures]);
+
+  // Generate calendar grid for a month
+  const generateCalendarGrid = (year, month, monthFixtures) => {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    const daysInMonth = lastDay.getDate();
+
+    const grid = [];
+    let week = [];
+
+    // Fill leading empty days
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      week.push(null);
+    }
+
+    // Fill month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateKey = date.toISOString().split('T')[0];
+      const dayFixtures = monthFixtures[dateKey] || [];
+
+      week.push({
+        day,
+        date: dateKey,
+        fixtures: dayFixtures,
+        isToday: false // Can enhance later
+      });
+
+      if (week.length === 7) {
+        grid.push(week);
+        week = [];
+      }
+    }
+
+    // Fill trailing empty days
+    if (week.length > 0) {
+      while (week.length < 7) {
+        week.push(null);
+      }
+      grid.push(week);
+    }
+
+    return grid;
+  };
+
+  // Get all fixtures sorted by matchday
+  const allFixtures = useMemo(() => {
+    return [...fixtures].sort((a, b) => (a.matchday || 0) - (b.matchday || 0));
   }, [fixtures]);
 
   // Get recent results (last 10)
@@ -91,141 +168,311 @@ const League = () => {
 
   // Tab content components
   const StandingsTable = () => (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
-        <Trophy className="w-4 h-4 text-cricket-accent" />
-        <h3 className="text-lg font-semibold text-text-primary">
-          League Standings
-        </h3>
-        {stage !== 'league' && (
-          <span className="ml-auto px-2 py-0.5 bg-bg-tertiary rounded text-xs uppercase tracking-wider text-text-secondary">
-            {stage}
-          </span>
-        )}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Season Progress (Right Sidebar) */}
+      <div className="lg:col-span-1 order-first lg:order-last">
+        <SeasonProgress />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-primary text-text-secondary text-xs">
-              <th className="text-left py-2 px-2 font-medium">#</th>
-              <th className="text-left py-2 px-3 font-medium">Team</th>
-              <th className="text-center py-2 px-2 font-medium">P</th>
-              <th className="text-center py-2 px-2 font-medium">W</th>
-              <th className="text-center py-2 px-2 font-medium">L</th>
-              <th className="text-center py-2 px-2 font-medium">NRR</th>
-              <th className="text-center py-2 px-2 font-medium">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedStandings.map((team, idx) => {
-              const isPlayoffSpot = idx < 4;
-              return (
-                <tr
-                  key={team.clubId}
-                  className={`border-b border-border-secondary hover:bg-bg-secondary transition-colors ${
-                    isPlayoffSpot ? 'bg-bg-tertiary/30' : ''
-                  }`}
-                >
-                  <td className="py-2 px-2 text-text-secondary font-mono text-xs">
-                    {idx + 1}
-                  </td>
-                  <td className="py-2 px-3 text-text-primary font-medium">
-                    {team.clubName}
-                  </td>
-                  <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                    {team.played}
-                  </td>
-                  <td className="py-2 px-2 text-center text-text-positive font-mono text-xs">
-                    {team.won}
-                  </td>
-                  <td className="py-2 px-2 text-center text-text-negative font-mono text-xs">
-                    {team.lost}
-                  </td>
-                  <td className={`py-2 px-2 text-center font-mono text-xs ${
-                    team.netRunRate >= 0 ? 'text-text-positive' : 'text-text-negative'
-                  }`}>
-                    {team.netRunRate >= 0 ? '+' : ''}{team.netRunRate.toFixed(3)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
-                    {team.points}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {stage === 'league' && (
-        <div className="mt-3 pt-3 border-t border-border-primary text-xs text-text-secondary">
-          <span className="inline-block w-3 h-3 bg-bg-tertiary/30 rounded mr-2"></span>
-          Top 4 teams qualify for playoffs
-        </div>
-      )}
-
-      {champion && (
-        <div className="mt-4 p-3 bg-cricket-primary/10 border border-cricket-accent rounded">
-          <div className="flex items-center gap-2 text-cricket-accent">
-            <Trophy className="w-5 h-5" />
-            <span className="font-semibold text-base">
-              Season {currentSeason} Champion: {champion.name}
-            </span>
+      {/* Standings Table (Main Content) */}
+      <div className="lg:col-span-2">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+            <Trophy className="w-4 h-4 text-cricket-accent" />
+            <h3 className="text-lg font-semibold text-text-primary">
+              League Standings
+            </h3>
+            {stage !== 'league' && (
+              <span className="ml-auto px-2 py-0.5 bg-bg-tertiary rounded text-xs uppercase tracking-wider text-text-secondary">
+                {stage}
+              </span>
+            )}
           </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border-primary text-text-secondary text-xs">
+                  <th className="text-left py-2 px-2 font-medium">#</th>
+                  <th className="text-left py-2 px-3 font-medium">Team</th>
+                  <th className="text-center py-2 px-2 font-medium">P</th>
+                  <th className="text-center py-2 px-2 font-medium">W</th>
+                  <th className="text-center py-2 px-2 font-medium">L</th>
+                  <th className="text-center py-2 px-2 font-medium">NRR</th>
+                  <th className="text-center py-2 px-2 font-medium">Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedStandings.map((team, idx) => {
+                  const isPlayoffSpot = idx < 4;
+                  return (
+                    <tr
+                      key={team.clubId}
+                      className={`border-b border-border-secondary hover:bg-bg-secondary transition-colors ${
+                        isPlayoffSpot ? 'bg-bg-tertiary/30' : ''
+                      }`}
+                    >
+                      <td className="py-2 px-2 text-text-secondary font-mono text-xs">
+                        {idx + 1}
+                      </td>
+                      <td className="py-2 px-3 text-text-primary font-medium">
+                        {team.clubName}
+                      </td>
+                      <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
+                        {team.played}
+                      </td>
+                      <td className="py-2 px-2 text-center text-text-positive font-mono text-xs">
+                        {team.won}
+                      </td>
+                      <td className="py-2 px-2 text-center text-text-negative font-mono text-xs">
+                        {team.lost}
+                      </td>
+                      <td className={`py-2 px-2 text-center font-mono text-xs ${
+                        team.netRunRate >= 0 ? 'text-text-positive' : 'text-text-negative'
+                      }`}>
+                        {team.netRunRate >= 0 ? '+' : ''}{team.netRunRate.toFixed(3)}
+                      </td>
+                      <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
+                        {team.points}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {stage === 'league' && (
+            <div className="mt-3 pt-3 border-t border-border-primary text-xs text-text-secondary">
+              <span className="inline-block w-3 h-3 bg-bg-tertiary/30 rounded mr-2"></span>
+              Top 4 teams qualify for playoffs
+            </div>
+          )}
+
+          {champion && (
+            <div className="mt-4 p-3 bg-cricket-primary/10 border border-cricket-accent rounded">
+              <div className="flex items-center gap-2 text-cricket-accent">
+                <Trophy className="w-5 h-5" />
+                <span className="font-semibold text-base">
+                  Season {currentSeason} Champion: {champion.name}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 
   const FixturesView = () => (
     <div className="card p-4">
-      <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
-        <Calendar className="w-4 h-4 text-cricket-accent" />
-        <h3 className="text-lg font-semibold text-text-primary">
-          Upcoming Fixtures
-        </h3>
+      <div className="flex items-center justify-between mb-4 border-b border-border-primary pb-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-cricket-accent" />
+          <h3 className="text-lg font-semibold text-text-primary">
+            Fixture Schedule
+          </h3>
+          <span className="text-xs text-text-secondary">({allFixtures.length} matches)</span>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex gap-1 bg-bg-tertiary rounded p-1">
+          <button
+            onClick={() => setFixturesView('list')}
+            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
+              fixturesView === 'list'
+                ? 'bg-cricket-primary text-white'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <List className="w-3 h-3" />
+            List
+          </button>
+          <button
+            onClick={() => setFixturesView('calendar')}
+            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
+              fixturesView === 'calendar'
+                ? 'bg-cricket-primary text-white'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <CalendarDays className="w-3 h-3" />
+            Calendar
+          </button>
+        </div>
       </div>
 
-      {upcomingFixtures.length > 0 ? (
-        <div className="space-y-2">
-          {upcomingFixtures.map((fixture, idx) => (
-            <div
-              key={idx}
-              className="p-3 border border-border-primary rounded hover:bg-bg-secondary transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-text-primary font-medium text-sm">
-                      {clubs[fixture.homeTeam]?.name || fixture.homeTeam}
-                    </span>
-                    <span className="text-text-secondary text-xs">vs</span>
-                    <span className="text-text-primary font-medium text-sm">
-                      {clubs[fixture.awayTeam]?.name || fixture.awayTeam}
-                    </span>
+      {allFixtures.length > 0 ? (
+        <>
+          {/* List View */}
+          {fixturesView === 'list' && (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {allFixtures.map((fixture, idx) => {
+                const isCompleted = fixture.status === 'completed';
+                const isScheduled = fixture.status === 'scheduled' || !fixture.status;
+
+                return (
+                  <div
+                    key={idx}
+                    className={`p-3 border rounded transition-colors ${
+                      isCompleted
+                        ? 'border-border-secondary bg-bg-tertiary/50'
+                        : 'border-border-primary hover:bg-bg-secondary'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded">
+                            MD {fixture.matchday}
+                          </span>
+                          {fixture.date && (
+                            <span className="text-xs text-text-secondary">
+                              {fixture.date}
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="text-xs text-cricket-accent font-medium">
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-text-primary font-medium text-sm">
+                            {clubs[fixture.homeTeam]?.shortName || fixture.homeTeamName || fixture.homeTeam}
+                          </span>
+                          <span className="text-text-secondary text-xs font-bold">vs</span>
+                          <span className="text-text-primary font-medium text-sm">
+                            {clubs[fixture.awayTeam]?.shortName || fixture.awayTeamName || fixture.awayTeam}
+                          </span>
+                        </div>
+                        {fixture.venue && (
+                          <div className="text-xs text-text-secondary mt-1">
+                            {fixture.venue}
+                          </div>
+                        )}
+                      </div>
+                      {isScheduled && (
+                        <button className="btn-secondary text-xs py-1 px-3">
+                          View
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
-                    {fixture.venue && <span>{fixture.venue}</span>}
-                    {fixture.date && <span>•</span>}
-                    {fixture.date && <span>{fixture.date}</span>}
-                    {fixture.matchday && (
-                      <>
-                        <span>•</span>
-                        <span>Match {fixture.matchday}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <button className="btn-secondary text-xs py-1 px-3">
-                  View
-                </button>
-              </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Calendar View */}
+          {fixturesView === 'calendar' && (
+            <div className="space-y-6 max-h-[600px] overflow-y-auto">
+              {Object.keys(fixturesByMonth)
+                .sort()
+                .map(monthKey => {
+                  const monthData = fixturesByMonth[monthKey];
+                  const [year, month] = monthKey.split('-').map(Number);
+                  const calendarGrid = generateCalendarGrid(year, month - 1, monthData.fixtures);
+
+                  return (
+                    <div key={monthKey} className="border border-border-primary rounded-lg overflow-hidden">
+                      {/* Month Header */}
+                      <div className="bg-bg-tertiary px-4 py-2 border-b border-border-primary">
+                        <h4 className="text-base font-semibold text-text-primary">
+                          {monthData.monthName}
+                        </h4>
+                      </div>
+
+                      {/* Calendar Grid */}
+                      <div className="p-3">
+                        {/* Day of Week Headers */}
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                            <div
+                              key={day}
+                              className="text-center text-xs font-semibold text-text-secondary py-1"
+                            >
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Calendar Days */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {calendarGrid.map((week, weekIdx) =>
+                            week.map((dayData, dayIdx) => {
+                              if (!dayData) {
+                                return (
+                                  <div
+                                    key={`empty-${weekIdx}-${dayIdx}`}
+                                    className="h-16 bg-bg-tertiary/20 rounded"
+                                  />
+                                );
+                              }
+
+                              const hasFixtures = dayData.fixtures.length > 0;
+
+                              return (
+                                <div
+                                  key={dayData.date}
+                                  className={`h-16 border rounded transition-colors ${
+                                    hasFixtures
+                                      ? 'border-cricket-accent/30 bg-cricket-accent/5 hover:bg-cricket-accent/10'
+                                      : 'border-border-primary bg-bg-secondary'
+                                  }`}
+                                >
+                                  <div className="p-1 h-full flex flex-col">
+                                    {/* Day Number */}
+                                    <div className={`text-xs font-semibold mb-0.5 ${
+                                      hasFixtures ? 'text-cricket-accent' : 'text-text-secondary'
+                                    }`}>
+                                      {dayData.day}
+                                    </div>
+
+                                    {/* Fixtures */}
+                                    {hasFixtures && (
+                                      <div className="flex-1 space-y-0.5 overflow-hidden">
+                                        {dayData.fixtures.map((fixture, idx) => {
+                                          const isCompleted = fixture.status === 'completed';
+
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className={`text-xxs px-1 py-0.5 rounded truncate leading-tight ${
+                                                isCompleted
+                                                  ? 'bg-bg-tertiary text-text-secondary'
+                                                  : 'bg-cricket-primary/20 text-cricket-accent'
+                                              }`}
+                                              title={`${clubs[fixture.homeTeam]?.shortName || 'TBD'} vs ${clubs[fixture.awayTeam]?.shortName || 'TBD'}`}
+                                            >
+                                              {clubs[fixture.homeTeam]?.shortName?.slice(0, 3) || 'TBD'} v {clubs[fixture.awayTeam]?.shortName?.slice(0, 3) || 'TBD'}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {Object.keys(fixturesByMonth).length === 0 && (
+                <p className="text-text-secondary text-center py-8 text-sm">
+                  No fixtures with dates available
+                </p>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <p className="text-text-secondary text-center py-8 text-sm">
-          No upcoming fixtures
+          No fixtures scheduled
         </p>
       )}
     </div>
@@ -379,8 +626,16 @@ const League = () => {
                     <td className="py-2 px-2 text-text-secondary font-mono text-xs">
                       {idx + 1}
                     </td>
-                    <td className="py-2 px-3 text-text-primary font-medium">
-                      {player.name}
+                    <td className="py-2 px-3">
+                      <span
+                        className="text-cricket-accent hover:underline cursor-pointer font-medium"
+                        onClick={() => {
+                          setSelectedPlayerId(player.id);
+                          setShowPlayerModal(true);
+                        }}
+                      >
+                        {player.name}
+                      </span>
                     </td>
                     <td className="py-2 px-2 text-text-secondary text-xs">
                       {clubs[player.currentTeam]?.shortName || clubs[player.currentTeam]?.name || player.currentTeam}
@@ -510,6 +765,16 @@ const League = () => {
         {activeTab === 'results' && <ResultsView />}
         {activeTab === 'leaderboards' && <LeaderboardsView />}
       </div>
+
+      {/* Player Card Modal */}
+      <PlayerCardModal
+        isOpen={showPlayerModal}
+        onClose={() => {
+          setShowPlayerModal(false);
+          setSelectedPlayerId(null);
+        }}
+        playerId={selectedPlayerId}
+      />
     </div>
   );
 };

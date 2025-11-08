@@ -68,6 +68,8 @@ class SaveGameManager {
       const matchState = stores.matchStore.getState();
       const auctionState = stores.auctionStore?.getState();
       const uiState = stores.uiStore.getState();
+      const inboxState = stores.inboxStore?.getState();
+      const navigationState = stores.navigationStore?.getState();
 
       console.log('🎮 Auction state:', auctionState ? auctionState.auctionState : 'No auction store');
       console.log('🎮 Finance teamFinances type:', financeState.teamFinances?.constructor?.name || typeof financeState.teamFinances);
@@ -85,6 +87,8 @@ class SaveGameManager {
           currentPhase: gameState.currentPhase,
           currentWeek: gameState.currentWeek,
           currentDate: gameState.currentDate,
+          gameDay: gameState.gameDay || 1,
+          calendarEvents: gameState.calendarEvents || [],
           settings: gameState.settings
         },
 
@@ -98,15 +102,24 @@ class SaveGameManager {
               Array.isArray(playerIds) ? playerIds : []
             ])
           ),
+          teamTactics: teamState.teamTactics || {},
           playerStats: teamState.playerStats,
           teamStats: teamState.teamStats
         },
 
         // Don't save full player database (545 players = too large!)
         // Players are static data loaded from JSON, no need to save
+        // BUT we do need to save team assignments (currentTeam field)
         playerState: {
           careerStats: playerState.careerStats,
-          currentSeasonId: playerState.currentSeasonId
+          currentSeasonId: playerState.currentSeasonId,
+          // Save player team assignments as a simple mapping
+          playerTeamAssignments: Object.entries(playerState.players)
+            .filter(([_, player]) => player.currentTeam)
+            .reduce((acc, [playerId, player]) => {
+              acc[playerId] = player.currentTeam;
+              return acc;
+            }, {})
         },
 
         leagueState: {
@@ -151,6 +164,16 @@ class SaveGameManager {
           currentRound: auctionState.currentRound,
           currentPlayerIndex: auctionState.currentPlayerIndex,
           soldPlayers: auctionState.soldPlayers
+        } : null,
+
+        inboxState: inboxState ? {
+          messages: inboxState.messages || [],
+          unreadCount: inboxState.unreadCount || 0
+        } : null,
+
+        navigationState: navigationState ? {
+          // Only save last 5 routes to minimize save size
+          history: (navigationState.history || []).slice(-5)
         } : null,
 
         // Metadata for display
@@ -204,6 +227,8 @@ class SaveGameManager {
         currentPhase: saveData.gameState.currentPhase,
         currentWeek: saveData.gameState.currentWeek,
         currentDate: saveData.gameState.currentDate,
+        gameDay: saveData.gameState.gameDay || 1,
+        calendarEvents: saveData.gameState.calendarEvents || [],
         settings: saveData.gameState.settings,
         isSimulating: false
       });
@@ -213,12 +238,47 @@ class SaveGameManager {
         teams: saveData.teamState.teams,
         userTeamId: saveData.teamState.userTeamId,
         squadLists: saveData.teamState.squadLists,
+        teamTactics: saveData.teamState.teamTactics || {},
         playerStats: saveData.teamState.playerStats,
         teamStats: saveData.teamState.teamStats
       });
 
-      // Player Store (players are loaded from static JSON, don't restore)
+      // Player Store - restore team assignments and available players
+      const playerTeamAssignments = saveData.playerState.playerTeamAssignments || {};
+      const players = stores.playerStore.getState().players;
+
+      // Update currentTeam for each player based on saved assignments
+      const updatedPlayers = { ...players };
+      const assignedPlayerIds = new Set();
+
+      Object.entries(playerTeamAssignments).forEach(([playerId, teamId]) => {
+        if (updatedPlayers[playerId]) {
+          updatedPlayers[playerId] = {
+            ...updatedPlayers[playerId],
+            currentTeam: teamId
+          };
+          assignedPlayerIds.add(playerId);
+        }
+      });
+
+      // Clear currentTeam for players not in assignments (they should be available)
+      Object.keys(updatedPlayers).forEach(playerId => {
+        if (!assignedPlayerIds.has(playerId) && updatedPlayers[playerId].currentTeam) {
+          updatedPlayers[playerId] = {
+            ...updatedPlayers[playerId],
+            currentTeam: null
+          };
+        }
+      });
+
+      // Update available players list
+      const availablePlayers = Object.keys(updatedPlayers).filter(
+        playerId => !updatedPlayers[playerId].currentTeam
+      );
+
       stores.playerStore.setState({
+        players: updatedPlayers,
+        availablePlayers,
         careerStats: saveData.playerState.careerStats || {},
         currentSeasonId: saveData.playerState.currentSeasonId
       });
@@ -271,6 +331,21 @@ class SaveGameManager {
           currentRound: saveData.auctionState.currentRound,
           currentPlayerIndex: saveData.auctionState.currentPlayerIndex,
           soldPlayers: saveData.auctionState.soldPlayers
+        });
+      }
+
+      // Inbox Store (if exists in save)
+      if (saveData.inboxState && stores.inboxStore) {
+        stores.inboxStore.setState({
+          messages: saveData.inboxState.messages || [],
+          unreadCount: saveData.inboxState.unreadCount || 0
+        });
+      }
+
+      // Navigation Store (if exists in save)
+      if (saveData.navigationState && stores.navigationStore) {
+        stores.navigationStore.setState({
+          history: saveData.navigationState.history || []
         });
       }
 

@@ -56,7 +56,14 @@ src/
 
 See `docs/architecture/system-overview.md` for detailed architecture.
 
-## Active Development Tracking (Anti-Amnesia System)
+## Development Documentation Structure
+
+**Three-folder system** (`docs/dev/`):
+- **`/active`** - Features currently in development
+- **`/planned`** - Features planned for future development
+- **`/completed`** - Completed features and reference documentation
+
+### Active Development Tracking (Anti-Amnesia System)
 
 **For ALL non-trivial features (>30 minutes or multiple files)**:
 
@@ -71,11 +78,16 @@ See `docs/architecture/system-overview.md` for detailed architecture.
    - Update `tasks.md` with remaining work
    - Document next 3 immediate steps
 
-4. **On completion**: Move to `docs/dev/implementation-notes/[feature-name]/`
+4. **On completion**: Move to `docs/dev/completed/[feature-name]/`
 
-**Before starting ANY task**: Check `docs/dev/active/` for existing work. Read all three files before proceeding.
+5. **For future features**: Create plan in `docs/dev/planned/[feature-name]/`
 
-See `docs/dev/active/README.md` for templates and `docs/dev/development-workflow.md` for full workflow.
+**Before starting ANY task**:
+- Check `docs/dev/active/` for existing work
+- Check `docs/dev/planned/` for approved plans
+- Read all three files before proceeding
+
+See `docs/dev/active/README.md` for templates and `docs/dev/completed/development-workflow.md` for full workflow.
 
 ## Repo-Specific Rules
 

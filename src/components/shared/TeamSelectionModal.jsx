@@ -6,13 +6,23 @@
 import React, { useState, useEffect } from 'react';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
+import useLeagueStore from '../../stores/leagueStore';
+import useNavigationStore from '../../stores/navigationStore';
+import useAuctionStore from '../../stores/auctionStore';
+import useInboxStore from '../../stores/inboxStore';
+import MessageGenerator from '../../utils/MessageGenerator';
 import { saveGame } from '../../utils/storage';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 
 const TeamSelectionModal = ({ isOpen, onClose }) => {
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const { teams, initializeTeams, setUserTeam } = useTeamStore();
+  const { resetForNewGame, scheduleEvent } = useGameStore();
   const gameState = useGameStore();
+  const { clearHistory } = useNavigationStore();
+  const { addMessage, clearAllMessages } = useInboxStore();
+  const leagueStore = useLeagueStore();
+  const auctionStore = useAuctionStore();
 
   useEffect(() => {
     // Initialize teams data if not already loaded
@@ -27,8 +37,38 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
 
   const handleConfirm = () => {
     if (selectedTeamId) {
+      // Reset all game state for fresh start
+      resetForNewGame();
+      clearHistory();
+      clearAllMessages();
+
+      // Reset league store (clear any old fixtures, standings, etc.)
+      if (leagueStore.resetLeague) {
+        leagueStore.resetLeague();
+      }
+
+      // Reset auction store
+      if (auctionStore.resetAuction) {
+        auctionStore.resetAuction();
+      }
+
+      // Set the selected team
       setUserTeam(selectedTeamId);
-      
+
+      // Schedule auction event for day 7 (one week from start)
+      scheduleEvent(7, 'auction', {
+        seasonId: gameState.currentSeason,
+        phase: 'preseason'
+      });
+
+      // Generate welcome messages
+      const selectedTeam = teams[selectedTeamId];
+      if (selectedTeam) {
+        addMessage(MessageGenerator.generateWelcomeMessage(selectedTeam, gameState.currentSeason));
+        addMessage(MessageGenerator.generateExpectationsMessage(selectedTeam, gameState.currentSeason));
+        addMessage(MessageGenerator.generateTutorialMessage());
+      }
+
       // Auto-save the selection
       const saveData = {
         ...gameState,
@@ -36,7 +76,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
         teams: teams
       };
       saveGame('auto_save', saveData);
-      
+
       onClose();
     }
   };

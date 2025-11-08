@@ -4,56 +4,84 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Play, Pause, SkipForward, Target, TrendingUp, Trophy,
-  Users, Activity, ChevronRight, FastForward
+  Play, Pause, SkipForward, FastForward, Trophy, ChevronRight, X, AlertCircle
 } from 'lucide-react';
 import useMatchStore from '../../stores/matchStore';
 import usePlayerStore from '../../stores/playerStore';
 import useTeamStore from '../../stores/teamStore';
+import useLeagueStore from '../../stores/leagueStore';
 import MatchEngine from '../../core/match-engine/core/MatchEngine';
+import MatchScorecard from './MatchScorecard';
+import CommentaryFeed from './CommentaryFeed';
+import TacticsPanel from './TacticsPanel';
+import PreMatchModal from './PreMatchModal';
 
 const Match = () => {
-  const location = useLocation();
+  const { matchId } = useParams();
   const navigate = useNavigate();
-  const matchData = location.state?.matchData;
 
-  // Subscribe to matchStore updates properly (component will re-render on changes)
+  // Subscribe to matchStore updates
   const teams = useMatchStore((state) => state.teams);
   const innings = useMatchStore((state) => state.innings);
   const currentBall = useMatchStore((state) => state.currentBall);
   const ballByBall = useMatchStore((state) => state.ballByBall);
-  const tacticsState = useMatchStore((state) => state.tacticsState);
   const matchStatus = useMatchStore((state) => state.status);
-  const matchStoreId = useMatchStore((state) => state.matchId);
 
   // Store actions
   const initializeMatchStore = useMatchStore((state) => state.initializeMatch);
   const resetMatchStore = useMatchStore((state) => state.resetMatch);
 
-  // Get player and team functions
-  const getPlayer = usePlayerStore((state) => state.getPlayer);
-  const getTeam = useTeamStore((state) => state.getTeam);
+  // League store
+  const getFixtureById = useLeagueStore((state) => state.getFixtureById);
+  const getNextFixture = useLeagueStore((state) => state.getNextFixture);
+  const getClub = useLeagueStore((state) => state.getClub);
+
+  // Team store
+  const userTeam = useTeamStore((state) => state.userTeam);
 
   // Component local state
   const [matchEngine, setMatchEngine] = useState(null);
   const [matchState, setMatchState] = useState('not_started');
   const [isSimulating, setIsSimulating] = useState(false);
-  const [commentary, setCommentary] = useState([]);
-  const [activeTab, setActiveTab] = useState('live');
+  const [showPreMatchModal, setShowPreMatchModal] = useState(true);
+  const [matchData, setMatchData] = useState(null);
+  const [tossResult, setTossResult] = useState(null);
+  const [simError, setSimError] = useState(null);
   const autoSimulateRef = useRef(null);
 
   useEffect(() => {
-    // If no match data is provided, redirect back to dashboard
-    if (!matchData) {
-      console.warn('No match data provided, redirecting to dashboard');
-      navigate('/game/dashboard');
+    // Load match data from league store using matchId parameter
+    let fixture = null;
+
+    // Try to get fixture by ID if matchId is provided
+    if (matchId) {
+      fixture = getFixtureById(matchId);
+    }
+
+    // Fallback to next fixture if matchId not found
+    if (!fixture) {
+      fixture = getNextFixture();
+    }
+
+    if (!fixture) {
+      console.warn('No fixture found, redirecting to league');
+      navigate('/game/league');
       return;
     }
 
-    // Initialize match
-    initializeMatch();
+    const homeTeam = getClub(fixture.homeTeam);
+    const awayTeam = getClub(fixture.awayTeam);
+
+    setMatchData({
+      id: fixture.id,
+      homeTeam,
+      awayTeam,
+      venue: fixture.venue || homeTeam.homeGround,
+      weather: fixture.weather || 'Clear',
+      matchday: fixture.matchday
+    });
 
     return () => {
       // Cleanup
@@ -61,21 +89,31 @@ const Match = () => {
         clearInterval(autoSimulateRef.current);
       }
     };
-  }, [matchData, navigate]);
+  }, [matchId, getFixtureById, getNextFixture, getClub, navigate]);
 
-  // Initialize match
-  const initializeMatch = () => {
+  // Initialize match after pre-match modal
+  const handleStartMatch = async (toss) => {
+    if (!matchData) return;
+
     try {
+      setTossResult(toss);
+      setShowPreMatchModal(false);
+
+      // Determine batting team based on toss
+      const battingFirst = toss.decision === 'bat' ? toss.winner.id :
+                          (toss.winner.id === matchData.homeTeam.id ? matchData.awayTeam.id : matchData.homeTeam.id);
+
       // Initialize matchStore with match configuration
       initializeMatchStore({
-        homeTeam: matchData.homeTeam,
-        awayTeam: matchData.awayTeam,
+        homeTeam: matchData.homeTeam.id,
+        awayTeam: matchData.awayTeam.id,
         venue: matchData.venue,
-        tossWinner: matchData.homeTeam.id,
-        tossDecision: 'bat'
+        tossWinner: toss.winner.id,
+        tossDecision: toss.decision,
+        battingFirst
       });
 
-      // Create match engine - pass the hooks themselves
+      // Create match engine
       const engine = new MatchEngine(
         useMatchStore,
         usePlayerStore,
@@ -83,433 +121,376 @@ const Match = () => {
         { silent: false }
       );
 
+      // Configure for interactive mode
       engine.config.interactiveMode = true;
       engine.config.showBallByBall = true;
+      engine.config.simulationSpeed = 'instant'; // No delays in interactive mode
 
       setMatchEngine(engine);
-      addCommentary('Match initialized. Ready to start!', 'info');
-    } catch (error) {
-      console.error('Error initializing match:', error);
-      addCommentary('Error initializing match: ' + error.message, 'error');
-    }
-  };
 
-  // Start match
-  const handleStartMatch = async () => {
-    if (!matchEngine || !matchData) return;
+      // Initialize match (set up opening players, etc.)
+      await engine.startMatch({
+        ...matchData,
+        tossWinner: toss.winner.id,
+        tossDecision: toss.decision
+      });
 
-    try {
+      // Pause immediately after initialization (don't auto-simulate)
+      engine.isPaused = true;
+
       setMatchState('in_progress');
-      addCommentary(`Match starting: ${matchData.homeTeam?.name} vs ${matchData.awayTeam?.name}`, 'match_start');
-
-      await matchEngine.startMatch(matchData);
-
-      setMatchState('completed');
-      addCommentary('Match completed!', 'match_end');
     } catch (error) {
-      console.error('Error during match:', error);
-      addCommentary('Match error: ' + error.message, 'error');
-      setMatchState('completed');
+      console.error('Error starting match:', error);
+      setMatchState('error');
     }
   };
 
   // Simulate single ball
   const handlePlayBall = async () => {
-    if (!matchEngine || matchState !== 'in_progress') return;
+    if (!matchEngine || matchState !== 'in_progress' || isSimulating) return;
+
+    // Clear previous errors
+    setSimError(null);
 
     try {
       setIsSimulating(true);
-      // Match engine will update store which triggers re-render
-      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Simulate one ball
+      await matchEngine.simulateBall();
+
+      // Check if innings/match is complete
+      if (matchEngine.isMatchComplete()) {
+        setMatchState('completed');
+      } else if (matchEngine.isInningsComplete() && !matchEngine.isMatchComplete()) {
+        // Start second innings automatically
+        await matchEngine.startSecondInnings();
+      }
+
       setIsSimulating(false);
     } catch (error) {
       console.error('Error simulating ball:', error);
-      addCommentary('Error: ' + error.message, 'error');
+      setSimError(error.message || 'Failed to simulate ball. Try reloading the match.');
       setIsSimulating(false);
     }
   };
 
   // Skip entire over
   const handleSkipOver = async () => {
-    if (!matchEngine || matchState !== 'in_progress') return;
+    if (!matchEngine || matchState !== 'in_progress' || isSimulating) return;
+
+    // Clear previous errors
+    setSimError(null);
 
     try {
       setIsSimulating(true);
-      addCommentary('Skipping to end of over...', 'info');
 
-      const ballsRemaining = 6 - currentBall.ball;
+      const ballsRemaining = 6 - (currentBall?.ball || 0);
+
       for (let i = 0; i < ballsRemaining; i++) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        if (matchEngine.isInningsComplete() || matchEngine.isMatchComplete()) {
+          break;
+        }
+
+        await matchEngine.simulateBall();
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for visual feedback
+      }
+
+      // Check if innings/match is complete
+      if (matchEngine.isMatchComplete()) {
+        setMatchState('completed');
+      } else if (matchEngine.isInningsComplete() && !matchEngine.isMatchComplete()) {
+        // Start second innings automatically
+        await matchEngine.startSecondInnings();
       }
 
       setIsSimulating(false);
-      addCommentary('Over completed', 'info');
     } catch (error) {
       console.error('Error skipping over:', error);
+      setSimError(error.message || 'Failed to skip over. Try reloading the match.');
       setIsSimulating(false);
     }
   };
 
   // Auto-simulate entire match
-  const handleAutoSimulate = () => {
-    if (!matchEngine || matchState !== 'in_progress') {
-      if (matchState === 'not_started') {
-        handleStartMatch();
-      }
-      return;
-    }
+  const handleAutoSimulate = async () => {
+    if (!matchEngine || matchState !== 'in_progress' || isSimulating) return;
 
-    addCommentary('Auto-simulating match...', 'info');
+    // Clear previous errors
+    setSimError(null);
+
     setIsSimulating(true);
+
+    try {
+      // Unpause the engine and let it run
+      matchEngine.isPaused = false;
+
+      // Simulate balls rapidly until match complete
+      while (!matchEngine.isMatchComplete() && !matchEngine.isPaused) {
+        await matchEngine.simulateBall();
+
+        // Check if innings complete
+        if (matchEngine.isInningsComplete() && !matchEngine.isMatchComplete()) {
+          await matchEngine.startSecondInnings();
+        }
+
+        // Small delay to allow UI updates (can be removed for even faster simulation)
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      setMatchState('completed');
+      setIsSimulating(false);
+    } catch (error) {
+      console.error('Error auto-simulating:', error);
+      setSimError(error.message || 'Failed to auto-simulate match. Try reloading.');
+      matchEngine.isPaused = true;
+      setIsSimulating(false);
+    }
   };
 
-  // Add commentary message
-  const addCommentary = (message, type = 'ball') => {
-    setCommentary(prev => [
-      {
-        message,
-        type,
-        timestamp: new Date().toLocaleTimeString(),
-        over: currentBall?.over || 0,
-        ball: currentBall?.ball || 0
-      },
-      ...prev
-    ].slice(0, 100));
+  // Pause simulation
+  const handlePause = () => {
+    if (matchEngine) {
+      matchEngine.isPaused = true;
+    }
+    setIsSimulating(false);
+  };
+
+  // Handle match completion
+  const handleContinue = () => {
+    // Navigate back to league/dashboard
+    navigate('/game/league');
   };
 
   // Format score display
-  const formatScore = (team) => {
-    if (!team) return '0/0';
-    return `${team.totalScore || 0}/${team.wickets || 0}`;
+  const formatScore = (teamData) => {
+    if (!teamData) return '0/0';
+    return `${teamData.totalScore || 0}/${teamData.wickets || 0}`;
   };
 
   // Format overs
-  const formatOvers = () => {
-    if (!currentBall) return '0.0';
-    return `${currentBall.over}.${currentBall.ball}`;
+  const formatOvers = (overs, balls) => {
+    if (!overs && !balls) return '0.0';
+    return `${overs || 0}.${balls || 0}`;
   };
 
-  // Get current batsmen
-  const getCurrentBatsmen = () => {
-    if (!innings || !innings.striker) return [];
-    const striker = getPlayer(innings.striker);
-    const nonStriker = getPlayer(innings.nonStriker);
-    return [striker, nonStriker].filter(Boolean);
+  // Determine if user team is batting
+  const isUserTeamBatting = () => {
+    if (!userTeam || !innings) return false;
+    return innings.battingTeam === userTeam.id;
   };
 
-  // Get current bowler
-  const getCurrentBowler = () => {
-    if (!innings || !innings.bowler) return null;
-    return getPlayer(innings.bowler);
-  };
+  // Determine current innings number
+  const currentInnings = innings?.number || 1;
 
   if (!matchData) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-accent mx-auto mb-4"></div>
+          <p className="text-text-secondary">Loading match...</p>
+        </div>
+      </div>
+    );
   }
 
-  const tabs = [
-    { id: 'live', label: 'Live Match', icon: Activity },
-    { id: 'scorecard', label: 'Scorecard', icon: Users },
-    { id: 'commentary', label: 'Commentary', icon: TrendingUp }
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Match Header */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-cricket-text-primary flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-cricket-accent" />
-              {matchData.homeTeam?.name} vs {matchData.awayTeam?.name}
-            </h1>
-            <p className="text-sm text-cricket-text-secondary mt-1">
-              T20 Match • {matchData.venue || 'Unknown Venue'}
-            </p>
-          </div>
-          {matchState === 'in_progress' && (
+    <>
+      {/* Pre-Match Modal */}
+      {showPreMatchModal && (
+        <PreMatchModal
+          isOpen={showPreMatchModal}
+          onClose={() => navigate('/game/league')}
+          matchData={matchData}
+          onStartMatch={handleStartMatch}
+        />
+      )}
+
+      <div className="space-y-4">
+        {/* Match Header */}
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-cricket-accent" />
+                {matchData.homeTeam?.name} vs {matchData.awayTeam?.name}
+              </h1>
+              <p className="text-xs text-text-secondary mt-1">
+                T20 Match • {matchData.venue} • Matchday {matchData.matchday}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded animate-pulse">
-                LIVE
+              {matchState === 'in_progress' && (
+                <span className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded animate-pulse">
+                  LIVE
+                </span>
+              )}
+              {matchState === 'completed' && (
+                <button onClick={handleContinue} className="btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
+                  <ChevronRight className="w-4 h-4" />
+                  Continue
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/game/league')}
+                className="p-1 hover:bg-bg-tertiary rounded transition-colors"
+                title="Exit match"
+              >
+                <X className="w-4 h-4 text-text-secondary" />
+              </button>
+            </div>
+          </div>
+
+          {/* Score Display */}
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className={`text-center p-3 rounded ${
+              innings?.battingTeam === matchData.homeTeam?.id
+                ? 'bg-cricket-primary/10 border-2 border-cricket-accent'
+                : 'bg-bg-tertiary'
+            }`}>
+              <div className="text-sm font-semibold text-text-primary">
+                {matchData.homeTeam?.name}
+              </div>
+              <div className="text-3xl font-bold text-cricket-accent mt-1">
+                {innings?.battingTeam === matchData.homeTeam?.id
+                  ? formatScore(teams?.batting)
+                  : formatScore(teams?.bowling)}
+              </div>
+              <div className="text-xs text-text-secondary mt-1">
+                {innings?.battingTeam === matchData.homeTeam?.id
+                  ? formatOvers(innings?.overs, innings?.balls) + ' overs'
+                  : ''}
+              </div>
+            </div>
+            <div className={`text-center p-3 rounded ${
+              innings?.battingTeam === matchData.awayTeam?.id
+                ? 'bg-cricket-primary/10 border-2 border-cricket-accent'
+                : 'bg-bg-tertiary'
+            }`}>
+              <div className="text-sm font-semibold text-text-primary">
+                {matchData.awayTeam?.name}
+              </div>
+              <div className="text-3xl font-bold text-cricket-accent mt-1">
+                {innings?.battingTeam === matchData.awayTeam?.id
+                  ? formatScore(teams?.batting)
+                  : formatScore(teams?.bowling)}
+              </div>
+              <div className="text-xs text-text-secondary mt-1">
+                {innings?.battingTeam === matchData.awayTeam?.id
+                  ? formatOvers(innings?.overs, innings?.balls) + ' overs'
+                  : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Target Display (2nd Innings) */}
+          {innings?.number === 2 && innings?.target && (
+            <div className="p-2 bg-bg-tertiary rounded text-center text-sm">
+              <span className="text-text-secondary">Target: </span>
+              <span className="font-bold text-cricket-accent">{innings.target}</span>
+              <span className="text-text-secondary ml-3">Required Rate: </span>
+              <span className="font-bold">
+                {((innings.target - (teams?.batting?.totalScore || 0)) /
+                  ((120 - ((innings?.overs || 0) * 6 + (innings?.balls || 0))) / 6)).toFixed(2)}
               </span>
             </div>
           )}
-          {matchState === 'completed' && (
-            <button onClick={() => navigate('/game/dashboard')} className="btn-primary">
-              <ChevronRight className="w-5 h-5 inline mr-2" />
-              Continue
-            </button>
-          )}
         </div>
 
-        {/* Score Display */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className={`text-center p-4 rounded ${innings?.battingTeam === matchData.homeTeam?.id ? 'bg-cricket-primary/20 border-2 border-cricket-primary' : 'bg-cricket-secondary'}`}>
-            <div className="text-xl font-bold text-cricket-text-primary">
-              {matchData.homeTeam?.name}
+        {/* Error Alert */}
+        {simError && (
+          <div className="card p-3 bg-red-500/10 border border-red-500/30">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-red-500 mb-1">Simulation Error</h3>
+                <p className="text-sm text-red-400">{simError}</p>
+              </div>
+              <button
+                onClick={() => setSimError(null)}
+                className="p-1 hover:bg-red-500/20 rounded transition-colors"
+              >
+                <X className="w-4 h-4 text-red-400" />
+              </button>
             </div>
-            <div className="text-4xl font-bold text-cricket-accent mt-2">
-              {innings?.battingTeam === matchData.homeTeam?.id ? formatScore(teams.batting) : formatScore(teams.bowling)}
-            </div>
-            <div className="text-sm text-cricket-text-secondary mt-1">
-              {innings?.battingTeam === matchData.homeTeam?.id ? formatOvers() : ''} overs
-            </div>
-          </div>
-          <div className={`text-center p-4 rounded ${innings?.battingTeam === matchData.awayTeam?.id ? 'bg-cricket-primary/20 border-2 border-cricket-primary' : 'bg-cricket-secondary'}`}>
-            <div className="text-xl font-bold text-cricket-text-primary">
-              {matchData.awayTeam?.name}
-            </div>
-            <div className="text-4xl font-bold text-cricket-accent mt-2">
-              {innings?.battingTeam === matchData.awayTeam?.id ? formatScore(teams.batting) : formatScore(teams.bowling)}
-            </div>
-            <div className="text-sm text-cricket-text-secondary mt-1">
-              {innings?.battingTeam === matchData.awayTeam?.id ? formatOvers() : ''} overs
-            </div>
-          </div>
-        </div>
-
-        {/* Target Display (2nd Innings) */}
-        {innings?.number === 2 && innings?.target && (
-          <div className="mt-4 p-3 bg-cricket-secondary rounded text-center">
-            <span className="text-cricket-text-secondary">Target: </span>
-            <span className="text-lg font-bold text-cricket-accent">{innings.target}</span>
-            <span className="text-cricket-text-secondary ml-4">Required Rate: </span>
-            <span className="text-lg font-bold">
-              {((innings.target - teams.batting.totalScore) / ((120 - (currentBall.over * 6 + currentBall.ball)) / 6)).toFixed(2)}
-            </span>
           </div>
         )}
-      </div>
 
-      {/* Match Controls */}
-      {matchState !== 'completed' && (
-        <div className="card p-6">
-          <div className="flex items-center justify-center gap-4">
-            {matchState === 'not_started' ? (
+        {/* Match Controls */}
+        {matchState === 'in_progress' && (
+          <div className="card p-3">
+            <div className="flex items-center justify-center gap-3">
               <button
-                onClick={handleStartMatch}
-                className="btn-primary flex items-center gap-2 text-lg px-8 py-3"
+                onClick={handlePlayBall}
+                disabled={isSimulating}
+                className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
               >
-                <Play className="w-6 h-6" />
-                Start Match
+                <Play className="w-4 h-4" />
+                Play Ball
               </button>
-            ) : (
-              <>
-                <button
-                  onClick={handlePlayBall}
-                  disabled={isSimulating || matchState !== 'in_progress'}
-                  className="btn-secondary flex items-center gap-2"
-                >
-                  <Play className="w-5 h-5" />
-                  Play Ball
-                </button>
-                <button
-                  onClick={handleSkipOver}
-                  disabled={isSimulating || matchState !== 'in_progress'}
-                  className="btn-secondary flex items-center gap-2"
-                >
-                  <SkipForward className="w-5 h-5" />
-                  Skip Over
-                </button>
+              <button
+                onClick={handleSkipOver}
+                disabled={isSimulating}
+                className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
+              >
+                <SkipForward className="w-4 h-4" />
+                Skip Over
+              </button>
+              {!isSimulating ? (
                 <button
                   onClick={handleAutoSimulate}
-                  disabled={isSimulating}
-                  className="btn-primary flex items-center gap-2"
+                  className="btn-primary flex items-center gap-2 text-sm py-1.5 px-3"
                 >
-                  <FastForward className="w-5 h-5" />
+                  <FastForward className="w-4 h-4" />
                   Auto-Simulate
                 </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="border-b border-gray-700">
-        <nav className="flex space-x-8">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'border-cricket-primary text-cricket-primary'
-                    : 'border-transparent text-cricket-text-secondary hover:text-cricket-text-primary'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'live' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Current Batsmen */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-cricket-accent" />
-              Current Batsmen
-            </h2>
-            <div className="space-y-3">
-              {getCurrentBatsmen().map((batsman, idx) => (
-                <div key={idx} className="p-3 bg-cricket-secondary rounded flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{batsman?.name || 'Unknown'}</div>
-                    <div className="text-xs text-cricket-text-secondary">
-                      {idx === 0 ? 'Striker' : 'Non-Striker'}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">0 <span className="text-sm text-cricket-text-secondary">(0)</span></div>
-                    <div className="text-xs text-cricket-text-secondary">Runs (Balls)</div>
-                  </div>
-                </div>
-              ))}
-              {getCurrentBatsmen().length === 0 && (
-                <div className="text-center text-cricket-text-secondary py-4">
-                  No batsmen yet
-                </div>
+              ) : (
+                <button
+                  onClick={handlePause}
+                  className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
+                >
+                  <Pause className="w-4 h-4" />
+                  Pause
+                </button>
               )}
             </div>
           </div>
+        )}
 
-          {/* Current Bowler */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-cricket-accent" />
-              Current Bowler
-            </h2>
-            {getCurrentBowler() ? (
-              <div className="p-4 bg-cricket-secondary rounded">
-                <div className="font-semibold text-lg mb-3">{getCurrentBowler().name}</div>
-                <div className="grid grid-cols-4 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <div className="text-xs text-cricket-text-secondary">Overs</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <div className="text-xs text-cricket-text-secondary">Runs</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0</div>
-                    <div className="text-xs text-cricket-text-secondary">Wickets</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">0.00</div>
-                    <div className="text-xs text-cricket-text-secondary">Economy</div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-cricket-text-secondary py-8">
-                No bowler selected yet
-              </div>
-            )}
-          </div>
-
-          {/* Match Stats */}
-          <div className="card p-6 lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-cricket-accent" />
-              Match Stats
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 bg-cricket-secondary rounded text-center">
-                <div className="text-sm text-cricket-text-secondary">Run Rate</div>
-                <div className="text-2xl font-bold">
-                  {teams.batting ? (teams.batting.totalScore / ((currentBall.over * 6 + currentBall.ball) / 6 || 1)).toFixed(2) : '0.00'}
-                </div>
-              </div>
-              <div className="p-3 bg-cricket-secondary rounded text-center">
-                <div className="text-sm text-cricket-text-secondary">Boundaries</div>
-                <div className="text-2xl font-bold">0</div>
-              </div>
-              <div className="p-3 bg-cricket-secondary rounded text-center">
-                <div className="text-sm text-cricket-text-secondary">Dot Balls</div>
-                <div className="text-2xl font-bold">0</div>
-              </div>
-              <div className="p-3 bg-cricket-secondary rounded text-center">
-                <div className="text-sm text-cricket-text-secondary">Extras</div>
-                <div className="text-2xl font-bold">0</div>
-              </div>
+        {/* 3-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Column: Scorecard (5 columns) */}
+          <div className="lg:col-span-5">
+            <div className="card p-4">
+              <MatchScorecard
+                matchData={matchData}
+                innings={innings}
+                currentInnings={currentInnings}
+              />
             </div>
           </div>
 
-          {/* 2D Pitch Visualization Placeholder */}
-          <div className="card p-6 lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Target className="w-5 h-5 text-cricket-accent" />
-              Pitch View
-            </h2>
-            <div className="bg-cricket-pitch aspect-[2/1] rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <Target className="w-12 h-12 text-cricket-text-secondary mx-auto mb-2 opacity-50" />
-                <p className="text-cricket-text-secondary">2D Pitch Visualization Coming Soon</p>
-              </div>
+          {/* Center Column: Commentary (4 columns) */}
+          <div className="lg:col-span-4">
+            <div className="card p-4">
+              <CommentaryFeed
+                ballByBall={ballByBall}
+                autoScroll={true}
+              />
             </div>
           </div>
-        </div>
-      )}
 
-      {activeTab === 'scorecard' && (
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold mb-4">Scorecard</h2>
-          <div className="text-center text-cricket-text-secondary py-12">
-            Full scorecard coming soon
-          </div>
+          {/* Right Column: Tactics Panel (3 columns) - Only for user team */}
+          {userTeam && (
+            <div className="lg:col-span-3">
+              <TacticsPanel
+                userTeamId={userTeam.id}
+                isUserTeamBatting={isUserTeamBatting()}
+              />
+            </div>
+          )}
         </div>
-      )}
-
-      {activeTab === 'commentary' && (
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold mb-4">Ball-by-Ball Commentary</h2>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {commentary.map((entry, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded text-sm ${
-                  entry.type === 'match_start' ? 'bg-blue-900/30 border border-blue-700' :
-                  entry.type === 'match_end' ? 'bg-green-900/30 border border-green-700' :
-                  entry.type === 'wicket' ? 'bg-red-900/30 border border-red-700' :
-                  entry.type === 'boundary' ? 'bg-green-900/20 border border-green-700' :
-                  entry.type === 'error' ? 'bg-red-900/50 border border-red-700' :
-                  'bg-cricket-secondary'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <span className="font-mono text-xs text-cricket-text-secondary mr-2">
-                      {entry.timestamp}
-                    </span>
-                    {entry.over > 0 && (
-                      <span className="font-mono text-xs text-cricket-accent mr-2">
-                        {entry.over}.{entry.ball}
-                      </span>
-                    )}
-                    <span>{entry.message}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {commentary.length === 0 && (
-              <div className="text-center text-cricket-text-secondary py-12">
-                <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No commentary yet</p>
-                <p className="text-sm mt-2">Start the match to see ball-by-ball updates</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 

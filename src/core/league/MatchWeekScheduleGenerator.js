@@ -1,95 +1,105 @@
 /**
  * @file MatchWeekScheduleGenerator.js
- * @description Generates match-week based league schedule for WPL
- * Each match week is a weekend with 5 matches, each team plays once per week
+ * @description Generates weekday-based league schedule for WPL
+ * Schedule: 1 match per weekday (Mon-Fri), weekends free
  */
 
 class MatchWeekScheduleGenerator {
   /**
-   * Generate complete league schedule with match weeks
+   * Generate complete league schedule with matches spread across weekdays
    * @param {Array} clubs - All league clubs
-   * @param {Date} seasonStartDate - Season start date (should be a Saturday)
-   * @returns {Object} Schedule with fixtures and match week information
+   * @param {Date} seasonStartDate - Season start date
+   * @returns {Object} Schedule with fixtures and match information
    */
-  generateMatchWeekSchedule(clubs, seasonStartDate = new Date('2025-02-01')) {
+  generateMatchWeekSchedule(clubs, seasonStartDate = new Date()) {
     if (clubs.length !== 10) {
       throw new Error('Match week schedule requires exactly 10 teams');
     }
 
-    // Ensure start date is a Saturday
-    const startDate = new Date(seasonStartDate);
-    const dayOfWeek = startDate.getDay();
-    if (dayOfWeek !== 6) { // 6 = Saturday
-      // Adjust to next Saturday
-      const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
-      startDate.setDate(startDate.getDate() + daysUntilSaturday);
-    }
+    // Start from the next Monday after the given date
+    const startDate = this.getNextMonday(new Date(seasonStartDate));
 
-    console.log(`\n📅 Season starts on: ${this.formatDate(startDate)} (Saturday)`);
+    console.log(`\n📅 Season starts on: ${this.formatDate(startDate)} (Monday)`);
 
     const fixtures = [];
-    const matchWeeks = [];
     let matchId = 1;
-    let weekNumber = 1;
+    let currentDate = new Date(startDate);
 
     // Generate double round-robin schedule
-    // Using circle method for round-robin scheduling
     const schedule = this.generateRoundRobinSchedule(clubs);
 
-    // Each round has 9 matchdays (since we have 10 teams)
-    // Each matchday has 5 matches
-    // Total: 18 matchdays (9 per round) = 18 match weeks
-
+    // Each matchday has 5 matches (10 teams = 5 matches)
+    // Schedule them across one week (Mon-Fri), one match per day
     schedule.forEach((matchday, matchdayIndex) => {
-      // Calculate date for this match week (every Saturday)
-      const weekDate = new Date(startDate);
-      weekDate.setDate(startDate.getDate() + (weekNumber - 1) * 7);
+      matchday.forEach((match, matchIndex) => {
+        // Skip weekends - only schedule on weekdays (Mon=1 to Fri=5)
+        while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
 
-      const weekFixtures = [];
-
-      matchday.forEach(match => {
         const fixture = {
           matchId: `match_${matchId}`,
           matchday: matchdayIndex + 1,
-          matchWeek: weekNumber,
           homeTeam: match.home.id,
           homeTeamName: match.home.name,
           awayTeam: match.away.id,
           awayTeamName: match.away.name,
-          venue: match.home.homeVenue,
+          venue: match.home.homeVenue || `${match.home.name} Stadium`,
           status: 'scheduled',
           round: matchdayIndex < 9 ? 1 : 2,
-          date: this.formatDate(weekDate),
-          dateObj: new Date(weekDate)
+          date: this.formatDate(currentDate),
+          dateObj: new Date(currentDate)
         };
 
         fixtures.push(fixture);
-        weekFixtures.push(fixture);
         matchId++;
+
+        // Move to next day for next match
+        currentDate.setDate(currentDate.getDate() + 1);
       });
 
-      matchWeeks.push({
-        weekNumber,
-        date: this.formatDate(weekDate),
-        dateObj: new Date(weekDate),
-        matchdayNumber: matchdayIndex + 1,
-        fixtures: weekFixtures,
-        matchCount: weekFixtures.length
-      });
-
-      weekNumber++;
+      // After 5 matches (Mon-Fri), skip the weekend
+      while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
     });
 
-    console.log(`✅ Generated ${fixtures.length} fixtures across ${matchWeeks.length} match weeks`);
-    console.log(`   Season runs from ${this.formatDate(startDate)} to ${this.formatDate(matchWeeks[matchWeeks.length - 1].dateObj)}`);
+    const lastFixture = fixtures[fixtures.length - 1];
+    console.log(`✅ Generated ${fixtures.length} fixtures across 18 matchdays`);
+    console.log(`   Season runs from ${this.formatDate(startDate)} to ${this.formatDate(lastFixture.dateObj)}`);
+    console.log(`   Schedule: 1 match per weekday (Mon-Fri), weekends free`);
 
     return {
       fixtures,
-      matchWeeks,
       seasonStart: startDate,
-      seasonEnd: matchWeeks[matchWeeks.length - 1].dateObj,
-      totalWeeks: matchWeeks.length
+      seasonEnd: lastFixture.dateObj,
+      totalMatchdays: schedule.length,
+      totalMatches: fixtures.length
     };
+  }
+
+  /**
+   * Get the next Monday from a given date
+   * @param {Date} date - Starting date
+   * @returns {Date} Next Monday
+   */
+  getNextMonday(date) {
+    const result = new Date(date);
+    const dayOfWeek = result.getDay();
+
+    if (dayOfWeek === 1) {
+      // Already Monday, use it
+      return result;
+    } else if (dayOfWeek === 0) {
+      // Sunday, add 1 day to get Monday
+      result.setDate(result.getDate() + 1);
+    } else {
+      // Tuesday-Saturday, add days to get to next Monday
+      const daysUntilMonday = (8 - dayOfWeek) % 7;
+      result.setDate(result.getDate() + daysUntilMonday);
+    }
+
+    return result;
   }
 
   /**
@@ -137,18 +147,19 @@ class MatchWeekScheduleGenerator {
   }
 
   /**
-   * Generate playoff schedule (2-week format)
+   * Generate playoff schedule
    * @param {Date} leagueEndDate - End date of league stage
    * @param {Array} qualifiedTeams - Top 4 teams [1st, 2nd, 3rd, 4th]
    * @returns {Object} Playoff schedule with dates
    */
   generatePlayoffSchedule(leagueEndDate, qualifiedTeams) {
-    const playoffStart = new Date(leagueEndDate);
-    playoffStart.setDate(playoffStart.getDate() + 7); // Next Saturday
+    // Start playoffs on next Monday after league ends
+    const playoffStart = this.getNextMonday(new Date(leagueEndDate));
+    playoffStart.setDate(playoffStart.getDate() + 7); // One week buffer
 
     const playoff1Date = new Date(playoffStart);
     const playoff2Date = new Date(playoffStart);
-    playoff2Date.setDate(playoff2Date.getDate() + 7); // Following Saturday
+    playoff2Date.setDate(playoff2Date.getDate() + 7); // Following week
 
     const playoffs = {
       week1: {
@@ -188,7 +199,6 @@ class MatchWeekScheduleGenerator {
             type: 'Qualifier 2',
             description: 'Loser of Q1 vs Winner of Eliminator - Winner to Final',
             date: this.formatDate(playoff2Date),
-            // Teams TBD based on week 1 results
             homeTeam: null,
             awayTeam: null
           },
@@ -197,7 +207,6 @@ class MatchWeekScheduleGenerator {
             type: 'Final',
             description: 'Winner of Q1 vs Winner of Q2 - CHAMPION',
             date: this.formatDate(playoff2Date),
-            // Teams TBD based on earlier results
             homeTeam: null,
             awayTeam: null
           }
@@ -209,50 +218,39 @@ class MatchWeekScheduleGenerator {
   }
 
   /**
-   * Validate match week schedule
-   * @param {Array} matchWeeks - Generated match weeks
+   * Validate schedule
+   * @param {Array} fixtures - Generated fixtures
    * @param {Array} clubs - All league clubs
    * @returns {Object} Validation result
    */
-  validateMatchWeekSchedule(matchWeeks, clubs) {
+  validateSchedule(fixtures, clubs) {
     const issues = [];
-    const gamesPerTeamPerWeek = {};
     const totalGamesPerTeam = {};
+    const matchesPerDay = {};
 
     // Initialize counters
     clubs.forEach(club => {
       totalGamesPerTeam[club.id] = 0;
     });
 
-    // Check each match week
-    matchWeeks.forEach((week, index) => {
-      const weekTeams = {};
+    // Check each fixture
+    fixtures.forEach(fixture => {
+      // Count games per team
+      totalGamesPerTeam[fixture.homeTeam]++;
+      totalGamesPerTeam[fixture.awayTeam]++;
 
-      week.fixtures.forEach(fixture => {
-        // Count games per team this week
-        weekTeams[fixture.homeTeam] = (weekTeams[fixture.homeTeam] || 0) + 1;
-        weekTeams[fixture.awayTeam] = (weekTeams[fixture.awayTeam] || 0) + 1;
+      // Count matches per day
+      const dateKey = fixture.date;
+      matchesPerDay[dateKey] = (matchesPerDay[dateKey] || 0) + 1;
 
-        // Count total games per team
-        totalGamesPerTeam[fixture.homeTeam]++;
-        totalGamesPerTeam[fixture.awayTeam]++;
-      });
-
-      // Validate: Each team should play exactly once per week
-      Object.entries(weekTeams).forEach(([teamId, count]) => {
-        if (count !== 1) {
-          const club = clubs.find(c => c.id === teamId);
-          issues.push(`Week ${index + 1}: ${club?.name || teamId} plays ${count} times (should be 1)`);
-        }
-      });
-
-      // Validate: Should be exactly 5 matches per week (10 teams = 5 matches)
-      if (week.fixtures.length !== 5) {
-        issues.push(`Week ${index + 1}: ${week.fixtures.length} matches (should be 5)`);
+      // Check if match is on weekend
+      const dayOfWeek = fixture.dateObj.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        issues.push(`Match ${fixture.matchId} scheduled on weekend (${fixture.date})`);
       }
     });
 
-    // Validate total games per team (should be 18: play each of 9 other teams twice)
+    // Validate: Each team should play 18 matches total (9 opponents × 2 rounds)
     Object.entries(totalGamesPerTeam).forEach(([teamId, count]) => {
       if (count !== 18) {
         const club = clubs.find(c => c.id === teamId);
@@ -260,13 +258,20 @@ class MatchWeekScheduleGenerator {
       }
     });
 
+    // Validate: Should be only 1 match per day
+    Object.entries(matchesPerDay).forEach(([date, count]) => {
+      if (count !== 1) {
+        issues.push(`${date}: ${count} matches (should be 1)`);
+      }
+    });
+
     return {
       valid: issues.length === 0,
       issues,
       stats: {
-        totalWeeks: matchWeeks.length,
-        totalMatches: matchWeeks.reduce((sum, week) => sum + week.fixtures.length, 0),
-        gamesPerTeam: totalGamesPerTeam
+        totalMatches: fixtures.length,
+        gamesPerTeam: totalGamesPerTeam,
+        matchesPerDay: Object.keys(matchesPerDay).length
       }
     };
   }
@@ -284,29 +289,6 @@ class MatchWeekScheduleGenerator {
       day: 'numeric'
     };
     return date.toLocaleDateString('en-US', options);
-  }
-
-  /**
-   * Get fixtures for a specific match week
-   * @param {Array} matchWeeks - All match weeks
-   * @param {number} weekNumber - Week number
-   * @returns {Object|null} Match week object
-   */
-  getMatchWeek(matchWeeks, weekNumber) {
-    return matchWeeks.find(week => week.weekNumber === weekNumber) || null;
-  }
-
-  /**
-   * Get match weeks in a range
-   * @param {Array} matchWeeks - All match weeks
-   * @param {number} startWeek - Start week number
-   * @param {number} endWeek - End week number
-   * @returns {Array} Match weeks in range
-   */
-  getMatchWeekRange(matchWeeks, startWeek, endWeek) {
-    return matchWeeks.filter(week =>
-      week.weekNumber >= startWeek && week.weekNumber <= endWeek
-    );
   }
 }
 

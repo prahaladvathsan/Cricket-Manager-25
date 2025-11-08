@@ -3,15 +3,29 @@
  * @description Team squad management page
  */
 
-import React, { useState } from 'react';
-import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import PlayerCard from '../shared/PlayerCard';
+import SetTacticsModal from '../tactics/SetTacticsModal';
+import PlayerCardModal from '../shared/PlayerCardModal';
+import { getPrimaryBattingRating, getPrimaryBowlingRating, formatRating } from '../../utils/ratingHelper';
 
 const Squad = () => {
   const [selectedTab, setSelectedTab] = useState('squad');
   const [collapsedCategories, setCollapsedCategories] = useState({});
+  const [showTacticsModal, setShowTacticsModal] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [showPlayerModal, setShowPlayerModal] = useState(false);
+
+  // Table state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [nationalityFilter, setNationalityFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+
   const { getUserTeam } = useTeamStore();
   const { getPlayersByTeam } = usePlayerStore();
 
@@ -25,7 +39,99 @@ const Squad = () => {
       [categoryName]: !prev[categoryName]
     }));
   };
-  
+
+  // Handle table sorting
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Get unique nationalities for filter
+  const availableNationalities = useMemo(() => {
+    const nationalities = [...new Set(squadPlayers.map(p => p.nationality))].sort();
+    return nationalities;
+  }, [squadPlayers]);
+
+  // Filtered and sorted players
+  const filteredSortedPlayers = useMemo(() => {
+    let result = [...squadPlayers];
+
+    // Apply filters
+    if (searchTerm) {
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (roleFilter !== 'all') {
+      result = result.filter(p => p.role === roleFilter);
+    }
+
+    if (nationalityFilter !== 'all') {
+      result = result.filter(p => p.nationality === nationalityFilter);
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortBy) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'age':
+          aVal = a.age || 0;
+          bVal = b.age || 0;
+          break;
+        case 'nationality':
+          aVal = a.nationality || '';
+          bVal = b.nationality || '';
+          break;
+        case 'role':
+          aVal = a.role || '';
+          bVal = b.role || '';
+          break;
+        case 'battingHand':
+          aVal = a.battingHand || '';
+          bVal = b.battingHand || '';
+          break;
+        case 'bowlingStyle':
+          aVal = a.bowlingStyle || '';
+          bVal = b.bowlingStyle || '';
+          break;
+        case 'battingPlaystyle':
+          aVal = getPrimaryBattingRating(a);
+          bVal = getPrimaryBattingRating(b);
+          break;
+        case 'bowlingPlaystyle':
+          aVal = getPrimaryBowlingRating(a);
+          bVal = getPrimaryBowlingRating(b);
+          break;
+        case 'value':
+          aVal = a.auctionValue || 0;
+          bVal = b.auctionValue || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc'
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      } else {
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+    });
+
+    return result;
+  }, [squadPlayers, searchTerm, roleFilter, nationalityFilter, sortBy, sortDirection]);
+
   // Calculate squad statistics
   const squadStats = {
     totalPlayers: squadPlayers.length,
@@ -35,61 +141,6 @@ const Squad = () => {
     allRounders: squadPlayers.filter(p => p.role === 'all-rounder').length,
     wicketKeepers: squadPlayers.filter(p => p.role === 'wicket-keeper').length
   };
-
-  // Categorize players by playstyle for squad display
-  const categorizePlayersByPlaystyle = () => {
-    const categories = {
-      'Openers': [],
-      'Top Order': [],
-      'Middle Order': [],
-      'Lower Order': [],
-      'All-Rounders': [],
-      'Fast Bowlers': [],
-      'Spin Bowlers': [],
-      'Wicket-Keepers': []
-    };
-
-    squadPlayers.forEach(player => {
-      // Wicket-keepers
-      if (player.role === 'wicket-keeper') {
-        categories['Wicket-Keepers'].push(player);
-      }
-      // All-rounders
-      else if (player.role === 'all-rounder') {
-        categories['All-Rounders'].push(player);
-      }
-      // Bowlers
-      else if (player.role === 'bowler') {
-        const primaryBowling = player.primaryPlaystyle?.bowling?.toLowerCase() || '';
-        if (primaryBowling.includes('pace') || primaryBowling.includes('fast') || primaryBowling.includes('seam')) {
-          categories['Fast Bowlers'].push(player);
-        } else {
-          categories['Spin Bowlers'].push(player);
-        }
-      }
-      // Batsmen - categorize by primary batting playstyle
-      else if (player.role === 'batsman') {
-        const primaryBatting = player.primaryPlaystyle?.batting?.toLowerCase() || '';
-
-        if (primaryBatting.includes('opener') || primaryBatting.includes('aggressor')) {
-          categories['Openers'].push(player);
-        } else if (primaryBatting.includes('anchor') || primaryBatting.includes('power')) {
-          categories['Top Order'].push(player);
-        } else if (primaryBatting.includes('finisher') || primaryBatting.includes('accumulator')) {
-          categories['Middle Order'].push(player);
-        } else {
-          categories['Lower Order'].push(player);
-        }
-      }
-    });
-
-    // Return only non-empty categories
-    return Object.entries(categories)
-      .filter(([_, players]) => players.length > 0)
-      .map(([name, players]) => ({ name, players }));
-  };
-
-  const playerCategories = categorizePlayersByPlaystyle();
 
   const tabs = [
     { id: 'squad', label: 'Squad Overview', icon: Users },
@@ -107,6 +158,14 @@ const Squad = () => {
       </div>
     );
   }
+
+  // Sort indicator component
+  const SortIndicator = ({ column }) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    }
+    return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
 
   const renderSquadOverview = () => (
     <div className="space-y-4">
@@ -138,7 +197,54 @@ const Squad = () => {
         </div>
       </div>
 
-      {/* Squad List - Categorized by Playstyle */}
+      {/* Filters */}
+      <div className="card p-3">
+        <div className="flex flex-wrap gap-2">
+          {/* Search */}
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Search players..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+            />
+          </div>
+
+          {/* Role Filter */}
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+          >
+            <option value="all">All Roles</option>
+            <option value="batsman">Batsman</option>
+            <option value="bowler">Bowler</option>
+            <option value="all-rounder">All-Rounder</option>
+            <option value="wicket-keeper">Wicket-Keeper</option>
+          </select>
+
+          {/* Nationality Filter */}
+          <select
+            value={nationalityFilter}
+            onChange={(e) => setNationalityFilter(e.target.value)}
+            className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+          >
+            <option value="all">All Nationalities</option>
+            {availableNationalities.map(nat => (
+              <option key={nat} value={nat}>{nat}</option>
+            ))}
+          </select>
+
+          {/* Results count */}
+          <div className="flex items-center px-3 text-xs text-text-secondary">
+            Showing {filteredSortedPlayers.length} of {squadPlayers.length} players
+          </div>
+        </div>
+      </div>
+
+      {/* Squad Table */}
       {squadPlayers.length === 0 ? (
         <div className="card p-8 text-center">
           <Users className="w-16 h-16 mx-auto mb-4 text-text-tertiary" />
@@ -149,43 +255,121 @@ const Squad = () => {
           <button className="btn-primary">Go to Transfers</button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {playerCategories.map((category) => (
-            <div key={category.name} className="card p-4">
-              {/* Category Header */}
-              <button
-                onClick={() => toggleCategory(category.name)}
-                className="flex items-center justify-between w-full mb-3 pb-2 border-b border-border-primary hover:border-cricket-accent transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-cricket-accent" />
-                  <h3 className="text-base font-semibold text-text-primary">{category.name}</h3>
-                  <span className="text-xs text-text-secondary bg-bg-tertiary px-2 py-0.5 rounded">
-                    {category.players.length}
-                  </span>
-                </div>
-                {collapsedCategories[category.name] ? (
-                  <ChevronRight className="w-4 h-4 text-text-secondary" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-text-secondary" />
-                )}
-              </button>
-
-              {/* Category Players */}
-              {!collapsedCategories[category.name] && (
-                <div className="space-y-2">
-                  {category.players.map((player) => (
-                    <PlayerCard
-                      key={player.id}
-                      player={player}
-                      variant="compact"
-                      onClick={() => console.log('View player details:', player.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="card overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border-primary">
+                <th
+                  onClick={() => handleSort('name')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Player <SortIndicator column="name" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('age')}
+                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Age <SortIndicator column="age" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('nationality')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Nation <SortIndicator column="nationality" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('role')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Role <SortIndicator column="role" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('battingHand')}
+                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Bat <SortIndicator column="battingHand" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('bowlingStyle')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Bowling <SortIndicator column="bowlingStyle" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('battingPlaystyle')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Batting Playstyle <SortIndicator column="battingPlaystyle" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('bowlingPlaystyle')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Bowling Playstyle <SortIndicator column="bowlingPlaystyle" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('value')}
+                  className="px-3 py-2 text-right font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Value <SortIndicator column="value" />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSortedPlayers.map((player, idx) => (
+                <tr
+                  key={player.id}
+                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors cursor-pointer ${
+                    idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
+                  }`}
+                  onClick={() => {
+                    setSelectedPlayerId(player.id);
+                    setShowPlayerModal(true);
+                  }}
+                >
+                  <td className="px-3 py-2 font-medium text-cricket-accent hover:underline">{player.name}</td>
+                  <td className="px-3 py-2 text-center text-text-secondary">{player.age || '-'}</td>
+                  <td className="px-3 py-2 text-text-secondary">{player.nationality || '-'}</td>
+                  <td className="px-3 py-2 text-text-secondary capitalize">{player.role || '-'}</td>
+                  <td className="px-3 py-2 text-center text-text-secondary uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</td>
+                  <td className="px-3 py-2 text-text-secondary text-xs">{player.bowlingStyle || '-'}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col">
+                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.batting || '-'}</span>
+                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBattingRating(player))}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col">
+                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.bowling || '-'}</span>
+                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBowlingRating(player))}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-trophy-gold">
+                    ₹{player.auctionValue ? player.auctionValue.toFixed(1) : '0.0'} Cr
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -289,7 +473,12 @@ const Squad = () => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <button className="btn-secondary">Set Tactics</button>
+          <button
+            className="btn-secondary"
+            onClick={() => setShowTacticsModal(true)}
+          >
+            Set Tactics
+          </button>
           <button className="btn-primary">Manage Squad</button>
         </div>
       </div>
@@ -323,6 +512,23 @@ const Squad = () => {
       {selectedTab === 'squad' && renderSquadOverview()}
       {selectedTab === 'team-info' && renderTeamInfo()}
       {selectedTab === 'statistics' && renderStatistics()}
+
+      {/* Set Tactics Modal */}
+      <SetTacticsModal
+        isOpen={showTacticsModal}
+        onClose={() => setShowTacticsModal(false)}
+        teamId={userTeam?.id}
+      />
+
+      {/* Player Card Modal */}
+      <PlayerCardModal
+        isOpen={showPlayerModal}
+        onClose={() => {
+          setShowPlayerModal(false);
+          setSelectedPlayerId(null);
+        }}
+        playerId={selectedPlayerId}
+      />
     </div>
   );
 };

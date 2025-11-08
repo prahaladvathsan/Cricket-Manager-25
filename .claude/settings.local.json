@@ -24,7 +24,17 @@
       "Bash(tree /F /A \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\")",
       "Bash(npm run dev:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(powershell -Command \"Test-Path $env:USERPROFILE\\.claude\\bash-command-log.txt\")",
+      "Bash(powershell -Command \"Get-ChildItem $env:USERPROFILE\\.claude\")",
+      "Bash(powershell -Command \"Get-ChildItem \"\"$env:USERPROFILE\\.claude\"\"\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\Users\\praha\\.claude''\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\Users\\praha\\.claude\\bash-command-log.txt'' | Select-Object -Last 20\")",
+      "Bash(powershell -Command \"(Get-Content ''C:\\Users\\praha\\.claude\\bash-command-log.txt'' | Measure-Object -Line).Lines\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\Users\\praha\\.claude\\bash-command-log.txt'' | Select-Object -First 1\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\Users\\praha\\.claude\\hooks''\")",
+      "Bash(powershell -Command \"Test-Path ''$env:USERPROFILE\\.claude\\file-operations-log.txt''\")",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

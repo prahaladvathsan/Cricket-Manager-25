@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './components/layout/Dashboard';
+import Home from './components/layout/Home';
 import Squad from './components/team/Squad';
 import Matches from './components/match/Matches';
 import Match from './components/match/Match';
@@ -14,6 +14,8 @@ import Auction from './components/auction/Auction';
 import League from './components/layout/League';
 import Transfers from './components/layout/Transfers';
 import Board from './components/layout/Board';
+import Inbox from './components/inbox/Inbox';
+import TacticsPage from './components/tactics/TacticsPage';
 import TeamSelectionModal from './components/shared/TeamSelectionModal';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import StartMenu from './components/menu/StartMenu';
@@ -91,7 +93,7 @@ function App() {
               <div className="min-h-screen bg-cricket-dark flex items-center justify-center p-4">
                 <TeamSelectionModal
                   isOpen={true}
-                  onClose={() => window.location.href = '/game/dashboard'}
+                  onClose={() => window.location.href = '/game/home'}
                 />
               </div>
             }
@@ -103,18 +105,19 @@ function App() {
             element={
               <Layout>
                 <Routes>
-                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="home" element={<Home />} />
+                  <Route path="inbox" element={<Inbox />} />
                   <Route path="squad" element={<Squad />} />
+                  <Route path="tactics" element={<TacticsPage />} />
                   <Route path="matches" element={<Matches />} />
-                  <Route path="match" element={<Match />} />
+                  <Route path="match/:matchId" element={<Match />} />
                   <Route path="auction" element={<Auction />} />
                   <Route path="league" element={<League />} />
                   <Route path="transfers" element={<Transfers />} />
                   <Route path="board" element={<Board />} />
-                  <Route path="*" element={<Navigate to="/game/dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="/game/home" replace />} />
                 </Routes>
-              </Layout>
-            }
+              </Layout>            }
           />
 
           {/* Catch all - redirect to start menu */}

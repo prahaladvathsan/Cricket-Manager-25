@@ -1,9 +1,9 @@
 /**
- * @file Dashboard.jsx
- * @description Main dashboard with season overview using new design system
+ * @file Home.jsx
+ * @description Home page with season overview and game progression
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -14,28 +14,58 @@ import {
   Target,
   MapPin,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Play,
+  FastForward,
+  AlertCircle,
+  X as CloseIcon
 } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
 import usePlayerStore from '../../stores/playerStore';
 import useFinanceStore from '../../stores/financeStore';
-import useGameController from '../../hooks/useGameController';
+import useMatchStore from '../../stores/matchStore';
+import useAuctionStore from '../../stores/auctionStore';
+import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
+import MatchResultModal from '../shared/MatchResultModal';
+import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 
-const Dashboard = () => {
+const Home = () => {
   const navigate = useNavigate();
-  const { currentSeason, currentPhase, currentWeek } = useGameStore();
-  const { getUserTeam } = useTeamStore();
+  const {
+    currentSeason,
+    currentPhase,
+    currentWeek,
+    gameDay,
+    currentDate,
+    scheduleEvents,
+    advancePhase,
+    clearEvents,
+    advanceDay,
+    getCurrentEvent,
+    isWeekend
+  } = useGameStore();
+  const { getUserTeam, initializeAllTeamsTactics } = useTeamStore();
   const userTeam = getUserTeam();
+  const { auctionState } = useAuctionStore();
 
-  // Get game controller
-  const { nextEvent } = useGameController();
+  // Component state
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [matchResult, setMatchResult] = useState(null);
+  const [simError, setSimError] = useState(null);
 
   // Get league data
   const standings = useLeagueStore(state => state.standings);
-  const fixtures = useLeagueStore(state => state.fixtures);
   const results = useLeagueStore(state => state.results);
+  const fixtures = useLeagueStore(state => state.fixtures);
+  const getNextFixture = useLeagueStore(state => state.getNextFixture);
+  const isUserTeamMatch = useLeagueStore(state => state.isUserTeamMatch);
+  const getClub = useLeagueStore(state => state.getClub);
+  const recordResult = useLeagueStore(state => state.recordResult);
+  const recalculateStandings = useLeagueStore(state => state.recalculateStandings);
+  const advanceToNextMatch = useLeagueStore(state => state.advanceToNextMatch);
+  const initializeSeason = useLeagueStore(state => state.initializeSeason);
 
   // Get squad data
   const squad = usePlayerStore(state =>
@@ -47,11 +77,22 @@ const Dashboard = () => {
     userTeam ? state.getTeamFinances(userTeam.id) : null
   );
 
-  // Find next match
-  const nextMatch = fixtures.find(f =>
-    (f.homeTeam === userTeam?.id || f.awayTeam === userTeam?.id) &&
-    f.status === 'upcoming'
+  // Get current event (could be today's match or upcoming)
+  const todayEvent = getCurrentEvent();
+
+  // Find next match for user team specifically
+  const nextUserFixture = fixtures.find(fixture =>
+    fixture.status === 'scheduled' &&
+    userTeam &&
+    (fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id)
   );
+
+  const nextFixture = nextUserFixture;
+  const isUserMatch = true; // Always true since we're filtering for user team
+
+  // Get team details for next fixture
+  const homeTeam = nextFixture ? getClub(nextFixture.homeTeam) : null;
+  const awayTeam = nextFixture ? getClub(nextFixture.awayTeam) : null;
 
   // Get user team standing
   const userStanding = standings.find(s => s.clubId === userTeam?.id);
@@ -61,76 +102,154 @@ const Dashboard = () => {
     .filter(r => r.homeTeam === userTeam?.id || r.awayTeam === userTeam?.id)
     .slice(-5);
 
-  // Handle Continue button based on next event
-  const handleContinue = () => {
-    if (!nextEvent) return;
+  // Initialize league after auction completes
+  useEffect(() => {
+    // Check if league needs initialization
+    const needsInitialization =
+      auctionState === 'completed' &&
+      currentPhase === 'preseason' &&
+      fixtures.length === 0;
 
-    switch (nextEvent.type) {
-      case 'team_selection':
-        navigate('/team-selection');
-        break;
-      case 'auction':
-        navigate('/game/auction');
-        break;
-      case 'match':
-      case 'playoff_match':
-        // Navigate to match with data
-        navigate('/game/match', { state: { matchData: nextEvent.data } });
-        break;
-      case 'season_start':
-      case 'league_end':
-      case 'season_end':
-        // Show modal or navigate to season summary
-        console.log(nextEvent.message);
-        break;
-      default:
-        console.log('No action for event:', nextEvent.type);
+    if (needsInitialization) {
+      console.log('🏏 Initializing league after auction completion...');
+
+      try {
+        // Get all teams from teamStore
+        const allTeams = Object.values(useTeamStore.getState().teams);
+
+        if (allTeams.length !== 10) {
+          console.error('Cannot initialize league: Expected 10 teams, got', allTeams.length);
+          return;
+        }
+
+        // Convert teams to clubs format for fixture generator
+        const clubs = allTeams.map(team => ({
+          id: team.id,
+          name: team.name,
+          shortName: team.shortName,
+          homeVenue: team.homeGround || `${team.name} Stadium`,
+          homeGround: team.homeGround || `${team.name} Stadium`
+        }));
+
+        // Generate fixtures using MatchWeekScheduleGenerator
+        const scheduleGenerator = new MatchWeekScheduleGenerator();
+        const seasonStartDate = new Date(currentDate);
+        const { fixtures: generatedFixtures } = scheduleGenerator.generateMatchWeekSchedule(
+          clubs,
+          seasonStartDate
+        );
+
+        console.log(`✅ Generated ${generatedFixtures.length} fixtures`);
+
+        // Initialize league season
+        initializeSeason({
+          seasonId: `season_${currentSeason}`,
+          seasonName: `Season ${currentSeason}`,
+          clubs: clubs,
+          fixtures: generatedFixtures,
+          useMatchWeeks: false
+        });
+
+        // Schedule match events in calendar
+        clearEvents(); // Clear any existing events
+
+        // Calculate game start date (day 1) from current date and game day
+        const currentGameDate = new Date(currentDate);
+        const gameStartDate = new Date(currentGameDate);
+        gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
+
+        // Calculate game days for each fixture based on their dates
+        const matchEvents = generatedFixtures.map(fixture => {
+          const matchDate = new Date(fixture.dateObj);
+          // Calculate game day number: days since game start + 1
+          const daysSinceStart = Math.ceil((matchDate - gameStartDate) / (1000 * 60 * 60 * 24));
+          const matchGameDay = daysSinceStart + 1;
+
+          return {
+            day: matchGameDay,
+            type: 'match',
+            data: fixture
+          };
+        });
+
+        scheduleEvents(matchEvents);
+        console.log(`📅 Scheduled ${matchEvents.length} match events in calendar`);
+
+        // Initialize tactics for all teams
+        console.log('🎯 Initializing tactics for all teams...');
+        initializeAllTeamsTactics();
+
+        // Advance phase to league
+        advancePhase('league');
+
+        console.log('✅ League initialization complete!');
+      } catch (error) {
+        console.error('Error initializing league:', error);
+        setSimError('Failed to initialize league. Please try again or contact support.');
+      }
     }
+  }, [auctionState, currentPhase, fixtures.length]); // Dependencies
+
+  // Handle result modal close
+  const handleResultModalClose = () => {
+    setShowResultModal(false);
+    setMatchResult(null);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header - More compact */}
-      <div className="flex items-center justify-between border-b border-border-primary pb-3">
-        <h1 className="text-3xl font-semibold text-text-primary">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <div className="text-text-secondary text-sm flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span>Season {currentSeason} • Week {currentWeek}</span>
-            <span className="px-2 py-0.5 bg-bg-tertiary rounded text-xs uppercase tracking-wider">
-              {currentPhase}
-            </span>
-          </div>
-          {userTeam && nextEvent && nextEvent.type !== 'idle' && (
-            <button
-              onClick={handleContinue}
-              className="btn-primary flex items-center gap-2"
-            >
-              <ChevronRight className="w-4 h-4" />
-              {nextEvent.message}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Team Selection - Show if no team */}
-      {!userTeam && (
-        <div className="card p-8">
-          <h2 className="text-2xl font-semibold text-text-primary mb-4">
-            Welcome to Cricket Manager
-          </h2>
-          <p className="text-text-secondary mb-6 text-lg">
-            Choose your team to begin your World Premier League management journey.
-          </p>
-          <button className="btn-primary">
-            Select Team
-          </button>
-        </div>
+    <>
+      {/* Match Result Modal - No longer used for AI matches (handled by Header) */}
+      {showResultModal && matchResult && (
+        <MatchResultModal
+          isOpen={showResultModal}
+          onClose={handleResultModalClose}
+          matchResult={matchResult}
+        />
       )}
 
-      {/* Dashboard Grid - Show if team selected */}
-      {userTeam && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="space-y-4">
+        {/* Header - More compact */}
+        <div className="flex items-center justify-between border-b border-border-primary pb-3">
+          <h1 className="text-3xl font-semibold text-text-primary">Home</h1>
+        </div>
+
+        {/* Error Alert */}
+        {simError && (
+          <div className="card p-4 bg-red-500/10 border border-red-500/30">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-red-500 mb-1">Simulation Error</h3>
+                <p className="text-sm text-red-400">{simError}</p>
+              </div>
+              <button
+                onClick={() => setSimError(null)}
+                className="p-1 hover:bg-red-500/20 rounded transition-colors flex-shrink-0"
+              >
+                <CloseIcon className="w-4 h-4 text-red-400" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Team Selection - Show if no team */}
+        {!userTeam && (
+          <div className="card p-8">
+            <h2 className="text-2xl font-semibold text-text-primary mb-4">
+              Welcome to Cricket Manager
+            </h2>
+            <p className="text-text-secondary mb-6 text-lg">
+              Choose your team to begin your World Premier League management journey.
+            </p>
+            <button className="btn-primary">
+              Select Team
+            </button>
+          </div>
+        )}
+
+        {/* Dashboard Grid - Show if team selected */}
+        {userTeam && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Next Match Card - Spans 2 columns */}
           <div className="card p-4 md:col-span-2">
             <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
@@ -139,30 +258,36 @@ const Dashboard = () => {
                 Next Match
               </h3>
             </div>
-            {nextMatch ? (
+            {nextFixture && homeTeam && awayTeam ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-center gap-6 py-2">
                   <div className="text-text-primary font-semibold">
-                    {nextMatch.homeTeam === userTeam.id ? userTeam.name : 'Opponent'}
+                    {homeTeam.name}
                   </div>
                   <div className="text-text-secondary text-lg font-bold">VS</div>
                   <div className="text-text-primary font-semibold">
-                    {nextMatch.awayTeam === userTeam.id ? userTeam.name : 'Opponent'}
+                    {awayTeam.name}
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-4 text-xs text-text-secondary">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    <span>{nextMatch.venue}</span>
+                    <span>{nextFixture.venue || homeTeam.homeGround}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{nextMatch.date}</span>
-                  </div>
+                  {nextFixture.matchday && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Matchday {nextFixture.matchday}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <button className="btn-primary flex-1 text-sm py-2">View Match</button>
-                  <button className="btn-secondary flex-1 text-sm py-2">Set Tactics</button>
+                <div className="pt-2">
+                  <button
+                    onClick={() => navigate('/game/squad')}
+                    className="btn-secondary w-full text-sm py-2"
+                  >
+                    Set Tactics
+                  </button>
                 </div>
               </div>
             ) : (
@@ -352,8 +477,9 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
-export default Dashboard;
+export default Home;

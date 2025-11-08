@@ -22,122 +22,163 @@ const Component = () => {
 
 **Purpose**: Manages season progression, calendar, and global game settings.
 
+**Location**: `src/stores/gameStore.js` (persisted: `cm25-game-store` v2)
+
 ### State Properties
 
 ```typescript
 interface GameState {
   currentSeason: number;
-  currentDate: string;
-  gameSpeed: 'slow' | 'normal' | 'fast';
-  isGameActive: boolean;
+  currentPhase: 'preseason' | 'league' | 'playoffs' | 'offseason';
+  currentWeek: number;
+  currentDate: string;         // ISO date string
+  gameDay: number;             // Integer counter starting at 1
+  calendarEvents: Array<CalendarEvent>;
+  isSimulating: boolean;
   settings: {
-    autoSave: boolean;
+    difficulty: 'easy' | 'normal' | 'hard';
     simulationSpeed: 'instant' | 'fast' | 'normal';
-    showDetailedStats: boolean;
-    soundEnabled: boolean;
+    currency: string;
+    nameProtection: boolean;
+    autosave: boolean;
   };
-  calendar: {
-    fixtures: Array<MatchFixture>;
-    events: Array<CalendarEvent>;
-  };
+}
+
+interface CalendarEvent {
+  day: number;      // Game day number
+  type: string;     // 'match' | 'auction' | 'rest' | custom
+  data: Object;     // Event-specific data (fixture, etc.)
 }
 ```
 
 ### Actions
 
-#### `startNewSeason()`
-Initialize a new season.
+#### `advanceDay()`
+Progress game by one day (v2).
 
 ```javascript
-const { startNewSeason } = useGameStore();
+const { advanceDay } = useGameStore();
 
-// Usage
-await startNewSeason();
+// Usage - called by Header Continue button
+const result = advanceDay();
+
+// Returns:
+{
+  type: 'match' | 'rest' | null,
+  data: { matchId, homeTeam, awayTeam },
+  isWeekend: boolean,
+  gameDay: number,
+  date: Date
+}
 ```
 
-**Parameters**: None
-**Returns**: `Promise<void>`
-**Side Effects**: Resets season data, generates new fixtures
+**Returns**: `Object` - Event info for new day
+**Side Effects**:
+- Increments gameDay
+- Updates currentDate
+- Auto-advances week on Sunday→Monday transition
+- Detects scheduled events
 
-#### `advanceDate(days: number)`
-Progress the game calendar.
+**Integration**:
+```javascript
+// Header.jsx
+const handleContinue = () => {
+  const { type, data, gameDay } = advanceDay();
+
+  if (type === 'match') {
+    navigate(`/game/match/${data.matchId}`);
+  } else if (type === 'auction') {
+    navigate('/game/auction');
+  }
+  // else: continue to next day
+};
+```
+
+#### `advanceWeek()` / `advancePhase(newPhase: string)`
+Progress week or season phase.
 
 ```javascript
-const { advanceDate } = useGameStore();
+const { advanceWeek, advancePhase } = useGameStore();
+
+advanceWeek();
+advancePhase('playoffs');
+```
+
+#### `scheduleEvent(day: number, type: string, data: Object)`
+Schedule calendar event.
+
+```javascript
+const { scheduleEvent } = useGameStore();
 
 // Usage
-advanceDate(1); // Advance by 1 day
-advanceDate(7); // Advance by 1 week
+scheduleEvent(5, 'match', { matchId: 'fixture_001', homeTeam: 'MUM', awayTeam: 'LON' });
+scheduleEvent(10, 'auction', {});
 ```
 
 **Parameters**:
-- `days` (number): Number of days to advance
+- `day` (number): Game day number
+- `type` (string): Event type
+- `data` (object): Event data
 
-**Returns**: `void`
-**Side Effects**: Updates current date, processes calendar events
+#### `scheduleEvents(events: Array<CalendarEvent>)`
+Bulk schedule events.
 
-#### `updateSettings(settings: Partial<GameSettings>)`
+```javascript
+const { scheduleEvents } = useGameStore();
+
+// Usage - schedule full season fixtures
+const fixtures = leagueStore.fixtures.map((fixture, i) => ({
+  day: i + 10,  // Start at day 10
+  type: 'match',
+  data: { matchId: fixture.id, homeTeam: fixture.homeTeam, awayTeam: fixture.awayTeam }
+}));
+
+scheduleEvents(fixtures);
+```
+
+#### `getCurrentEvent()` / `isWeekend()`
+Get current day info.
+
+```javascript
+const { getCurrentEvent, isWeekend } = useGameStore();
+
+const event = getCurrentEvent(); // Event for current gameDay or null
+const weekend = isWeekend();     // true if Sat/Sun
+```
+
+#### `updateSettings(newSettings: Object)`
 Update game preferences.
 
 ```javascript
 const { updateSettings } = useGameStore();
 
-// Usage
 updateSettings({
-  autoSave: true,
+  autosave: true,
   simulationSpeed: 'fast'
 });
 ```
 
-**Parameters**:
-- `settings` (object): Partial settings object
-
-**Returns**: `void`
-
-#### `pauseGame()` / `resumeGame()`
-Control game state.
+#### `resetForNewSeason()` / `resetForNewGame()`
+Reset state.
 
 ```javascript
-const { pauseGame, resumeGame, isGameActive } = useGameStore();
+const { resetForNewSeason, resetForNewGame } = useGameStore();
 
-// Usage
-if (isGameActive) {
-  pauseGame();
-} else {
-  resumeGame();
-}
+// New season (keep settings)
+resetForNewSeason(); // Increments currentSeason, resets gameDay, clears events
+
+// Brand new game (full reset)
+resetForNewGame();
 ```
 
-**Returns**: `void`
+### Persistence
 
-### Getters
+Version 2 persists:
+- Season state (currentSeason, currentPhase, currentWeek)
+- Calendar state (gameDay, currentDate, calendarEvents)
+- Settings
 
-#### `getCurrentDate()`
-Get formatted current date.
-
-```javascript
-const getCurrentDate = useGameStore(state => state.getCurrentDate);
-
-// Usage
-const dateString = getCurrentDate(); // "2024-03-15"
-```
-
-**Returns**: `string` - ISO date string
-
-#### `getUpcomingMatches(days: number)`
-Get matches in next N days.
-
-```javascript
-const getUpcomingMatches = useGameStore(state => state.getUpcomingMatches);
-
-// Usage
-const nextMatches = getUpcomingMatches(7);
-```
-
-**Parameters**:
-- `days` (number): Days to look ahead
-
-**Returns**: `Array<MatchFixture>`
+**Migration**: Version bump handles old saves gracefully
 
 ---
 
@@ -777,3 +818,631 @@ const useAsyncAction = () => {
   return { performAction, loading, error };
 };
 ```
+
+---
+
+## leagueStore API
+
+**Purpose**: Manages league fixtures, match results, standings, and season progression.
+
+### State Properties
+
+```typescript
+interface LeagueState {
+  // Season info
+  seasonId: string | null;
+  seasonName: string;
+  currentMatchday: number;
+  currentWeek: number;
+  currentFixtureIndex: number;  // Linear progression pointer
+  stage: 'league' | 'playoffs' | 'completed';
+  useMatchWeeks: boolean;
+
+  // Fixtures & Results
+  fixtures: Array<Fixture>;
+  matchWeeks: Array<MatchWeek>;
+  results: Array<MatchResult>;
+
+  // Standings
+  standings: Array<Standing>;
+
+  // Clubs
+  clubs: Record<string, Club>;
+
+  // Statistics
+  stats: {
+    totalMatches: number;
+    completedMatches: number;
+    highestScore: { score: number; team: string; matchId: string };
+    lowestScore: { score: number; team: string; matchId: string };
+  };
+
+  // Playoffs
+  playoffFixtures: Array<Fixture>;
+  playoffResults: Array<MatchResult>;
+  champion: Champion | null;
+}
+```
+
+### Actions
+
+#### `initializeSeason(config: SeasonConfig)`
+Initialize a new league season.
+
+```javascript
+const { initializeSeason } = useLeagueStore();
+
+// Usage
+initializeSeason({
+  seasonId: 'wpl_2025_s1',
+  seasonName: 'WPL 2025 Season 1',
+  clubs: wplClubs,           // Array of 10 clubs
+  fixtures: generatedFixtures, // Array of 90 fixtures
+  matchWeeks: null,          // Optional match week schedule
+  useMatchWeeks: false       // Use linear progression
+});
+```
+
+**Parameters:**
+- `config.seasonId` (string): Unique season identifier
+- `config.seasonName` (string): Display name
+- `config.clubs` (Array<Club>): All league clubs
+- `config.fixtures` (Array<Fixture>): Pre-generated fixtures
+- `config.matchWeeks` (Array<MatchWeek>, optional): Match week groupings
+- `config.useMatchWeeks` (boolean, optional): Enable match week mode
+
+**Returns**: `void`
+**Side Effects**:
+- Initializes standings for all clubs
+- Resets match progression to start
+- Clears previous season data
+
+#### `recordResult(result: MatchResult)`
+Record a completed match result.
+
+```javascript
+const { recordResult } = useLeagueStore();
+
+// Usage
+recordResult({
+  matchId: 'fixture_001',
+  winner: winnerClub,
+  loser: loserClub,
+  winMargin: 25,
+  winType: 'runs',
+  homeTeam: { ...homeClub, score: 180, wickets: 7, overs: '20.0' },
+  awayTeam: { ...awayClub, score: 155, wickets: 10, overs: '19.2' },
+  playerOfMatch: { name: 'V. Kohli', performance: '78 (45)' },
+  topScorer: { name: 'V. Kohli', runs: 78, balls: 45 },
+  topBowler: { name: 'J. Bumrah', wickets: 3, runs: 28 },
+  innings1: innings1Data,
+  innings2: innings2Data
+});
+```
+
+**Parameters:**
+- `result` (object): Match result from MatchEngine or QuickSimMatch
+
+**Returns**: `void`
+**Side Effects**: Updates stats (highest/lowest scores, completed matches)
+
+#### `updateStandings(newStandings: Array<Standing>)`
+Replace current standings with updated version.
+
+```javascript
+const { updateStandings } = useLeagueStore();
+
+// Usage
+const updatedStandings = calculateNewStandings(currentStandings, matchResult);
+updateStandings(updatedStandings);
+```
+
+**Returns**: `void`
+
+#### `advanceMatchday()`
+Increment current matchday counter.
+
+```javascript
+const { advanceMatchday } = useLeagueStore();
+
+// Usage
+advanceMatchday();
+```
+
+**Returns**: `void`
+
+#### `setStage(stage: string)`
+Set league stage.
+
+```javascript
+const { setStage } = useLeagueStore();
+
+// Usage
+setStage('playoffs');  // 'league' | 'playoffs' | 'completed'
+```
+
+**Returns**: `void`
+
+### Getters
+
+#### `getClub(clubId: string)`
+Get club data by ID.
+
+```javascript
+const getClub = useLeagueStore(state => state.getClub);
+
+// Usage
+const club = getClub('mumbai_thunders');
+```
+
+**Returns**: `Club | null`
+
+#### `getNextFixture()`
+Get next unplayed fixture based on currentFixtureIndex.
+
+```javascript
+const getNextFixture = useLeagueStore(state => state.getNextFixture);
+
+// Usage
+const nextFixture = getNextFixture();
+// Returns: { id, homeTeam, awayTeam, venue, matchday } or null
+```
+
+**Returns**: `Fixture | null`
+**Logic**: Returns `fixtures[currentFixtureIndex]` or playoff fixture if league complete
+
+**Example:**
+```javascript
+const nextFixture = getNextFixture();
+
+if (!nextFixture) {
+  console.log('Season complete');
+} else {
+  console.log(`Next: ${nextFixture.homeTeam} vs ${nextFixture.awayTeam}`);
+}
+```
+
+#### `getFixtureById(fixtureId: string)`
+Retrieve specific fixture by ID (for deep linking).
+
+```javascript
+const getFixtureById = useLeagueStore(state => state.getFixtureById);
+
+// Usage
+const fixture = getFixtureById('fixture_001');
+```
+
+**Returns**: `Fixture | null`
+**Search Order**: League fixtures → Playoff fixtures
+
+**Use Case:**
+```javascript
+// Match.jsx - Load from URL parameter
+const { matchId } = useParams();
+const fixture = getFixtureById(matchId) || getNextFixture();
+```
+
+#### `isUserTeamMatch(fixture: Fixture, userTeamId: string)`
+Check if user team is involved in fixture.
+
+```javascript
+const isUserTeamMatch = useLeagueStore(state => state.isUserTeamMatch);
+
+// Usage
+const isUserMatch = isUserTeamMatch(nextFixture, userTeam?.id);
+
+if (isUserMatch) {
+  navigate(`/game/match/${nextFixture.id}`);
+} else {
+  await quickSimMatch(matchConfig);
+}
+```
+
+**Returns**: `boolean`
+
+#### `advanceToNextMatch()`
+Increment fixture index and matchday after match completion.
+
+```javascript
+const advanceToNextMatch = useLeagueStore(state => state.advanceToNextMatch);
+
+// Usage
+recordResult(matchResult);
+const nextFixture = advanceToNextMatch();
+```
+
+**Returns**: `Fixture | null` (next fixture after advancing)
+**Side Effects**: Increments `currentFixtureIndex` and `currentMatchday`
+
+#### `getSeasonProgress()`
+Get detailed season completion statistics.
+
+```javascript
+const getSeasonProgress = useLeagueStore(state => state.getSeasonProgress);
+
+// Usage
+const progress = getSeasonProgress();
+```
+
+**Returns:**
+```typescript
+{
+  currentFixture: number;      // Current index
+  totalFixtures: number;       // Total matches
+  completed: number;           // Matches played
+  remaining: number;           // Matches left
+  progressPercent: number;     // Rounded percentage (0-100)
+  currentWeek: number;         // Current week
+  stage: string;               // 'league' | 'playoffs' | 'completed'
+}
+```
+
+**Example:**
+```jsx
+const progress = getSeasonProgress();
+
+<div className="progress-bar">
+  <div style={{ width: `${progress.progressPercent}%` }} />
+</div>
+<span>{progress.completed}/{progress.totalFixtures} matches</span>
+```
+
+#### `getCurrentStandings()`
+Get standings sorted by points and NRR.
+
+```javascript
+const getCurrentStandings = useLeagueStore(state => state.getCurrentStandings);
+
+// Usage
+const standings = getCurrentStandings();
+```
+
+**Returns**: `Array<Standing>`
+**Sorting**: Points (desc) → NRR (desc) → Wins (desc)
+
+#### `getMatchdayFixtures(matchday: number)`
+Get all fixtures for specific matchday.
+
+```javascript
+const getMatchdayFixtures = useLeagueStore(state => state.getMatchdayFixtures);
+
+// Usage
+const matchday1 = getMatchdayFixtures(1);
+```
+
+**Returns**: `Array<Fixture>`
+
+#### `getClubResults(clubId: string)`
+Get all match results for a club.
+
+```javascript
+const getClubResults = useLeagueStore(state => state.getClubResults);
+
+// Usage
+const results = getClubResults('mumbai_thunders');
+```
+
+**Returns**: `Array<MatchResult>`
+
+### Match Progression Example
+
+```javascript
+const MatchProgression = () => {
+  const getNextFixture = useLeagueStore(state => state.getNextFixture);
+  const isUserTeamMatch = useLeagueStore(state => state.isUserTeamMatch);
+  const getClub = useLeagueStore(state => state.getClub);
+  const recordResult = useLeagueStore(state => state.recordResult);
+  const advanceToNextMatch = useLeagueStore(state => state.advanceToNextMatch);
+  const { userTeam } = useTeamStore();
+  const navigate = useNavigate();
+
+  const handleContinue = async () => {
+    const nextFixture = getNextFixture();
+
+    if (!nextFixture) {
+      console.log('Season complete');
+      return;
+    }
+
+    const isUserMatch = isUserTeamMatch(nextFixture, userTeam?.id);
+
+    if (isUserMatch) {
+      // Navigate to interactive match
+      navigate(`/game/match/${nextFixture.id}`);
+    } else {
+      // Quick-simulate AI vs AI match
+      const matchConfig = {
+        id: nextFixture.id,
+        homeTeam: getClub(nextFixture.homeTeam),
+        awayTeam: getClub(nextFixture.awayTeam),
+        venue: nextFixture.venue,
+        tossWinner: Math.random() < 0.5 ? nextFixture.homeTeam : nextFixture.awayTeam,
+        tossDecision: Math.random() < 0.5 ? 'bat' : 'bowl'
+      };
+
+      const result = await quickSimMatch(matchConfig, useMatchStore, usePlayerStore, useTeamStore);
+
+      // Record result and advance
+      recordResult(result);
+      advanceToNextMatch();
+    }
+  };
+
+  return <button onClick={handleContinue}>Continue</button>;
+};
+```
+
+### Persistence
+
+leagueStore uses Zustand's `persist` middleware:
+
+```javascript
+persist(
+  (set, get) => ({ ... }),
+  {
+    name: 'cm25-league-store',
+    version: 2
+  }
+)
+```
+
+**Persisted State:**
+- All fixtures and results
+- Current progression index
+- Standings
+- Season stage
+- Club data
+
+**Benefits:**
+- Survives page refresh
+- Resume season after closing browser
+- Debug-friendly (inspect localStorage)
+
+---
+
+## navigationStore API
+
+**Purpose**: Manages route history for back button navigation.
+
+**Location**: `src/stores/navigationStore.js` (no persistence)
+
+### State Properties
+
+```typescript
+interface NavigationState {
+  history: Array<string>;  // Route paths
+  maxHistory: number;      // 20 routes max
+}
+```
+
+### Actions
+
+#### `pushRoute(path: string)`
+Add route to history.
+
+```javascript
+const { pushRoute } = useNavigationStore();
+
+// Usage - called automatically by Layout component
+pushRoute('/game/squad');
+```
+
+**Behavior**:
+- Skips duplicate consecutive routes
+- Limits to last 20 routes
+- Used by Layout's route tracking
+
+#### `goBack()`
+Return to previous route.
+
+```javascript
+const { goBack } = useNavigationStore();
+
+// Usage - Header back button
+const previousRoute = goBack();
+if (previousRoute) {
+  navigate(previousRoute);
+}
+```
+
+**Returns**: `string | null` (previous route or null)
+**Side Effects**: Removes current route from history
+
+#### `canGoBack()`
+Check if history exists.
+
+```javascript
+const canGoBack = useNavigationStore(state => state.canGoBack);
+
+// Usage
+if (canGoBack()) {
+  // Show back button
+}
+```
+
+**Returns**: `boolean`
+
+#### `clearHistory()`
+Reset navigation history.
+
+```javascript
+const { clearHistory } = useNavigationStore();
+
+// Usage - logout or new game
+clearHistory();
+```
+
+#### `getCurrentRoute()`
+Get current route path.
+
+```javascript
+const getCurrentRoute = useNavigationStore(state => state.getCurrentRoute);
+
+// Usage
+const current = getCurrentRoute(); // "/game/squad"
+```
+
+**Returns**: `string | null`
+
+### Integration
+
+Auto-tracked in `Layout.jsx`:
+```javascript
+useEffect(() => {
+  const isGameRoute = location.pathname.startsWith('/game');
+  if (isGameRoute) {
+    pushRoute(location.pathname);
+  }
+}, [location.pathname]);
+```
+
+Only tracks in-game routes (not menu routes).
+
+---
+
+## inboxStore API
+
+**Purpose**: Manages in-game messages and notifications.
+
+**Location**: `src/stores/inboxStore.js` (persisted: `cm25-inbox-store`)
+
+### State Properties
+
+```typescript
+interface InboxState {
+  messages: Array<Message>;
+  unreadCount: number;
+}
+
+interface Message {
+  id: string;              // "msg_{timestamp}_{random}"
+  type: string;            // welcome | expectations | tutorial | auction_summary | match_reminder | match_result
+  subject: string;
+  body: string;            // Can include markdown
+  sender: string;
+  date: string;            // ISO string
+  read: boolean;
+  metadata: Object;        // Type-specific data (links, matchId, etc.)
+}
+```
+
+### Actions
+
+#### `addMessage(messageData: Object)`
+Add new message to inbox.
+
+```javascript
+const { addMessage } = useInboxStore();
+
+// Usage
+addMessage({
+  type: 'welcome',
+  subject: 'Welcome to Mumbai Thunders!',
+  body: 'Dear Manager...',
+  sender: 'Board of Directors',
+  metadata: { team: 'MUM', season: 1 }
+});
+```
+
+**Parameters**:
+- `type` (string): Message type
+- `subject` (string): Subject line
+- `body` (string): Body content
+- `sender` (string, optional): Defaults to 'Team Management'
+- `date` (string, optional): Defaults to now
+- `metadata` (object, optional): Additional data
+
+**Returns**: `string` (message ID)
+**Side Effects**: Increments unreadCount
+
+#### `markAsRead(messageId: string)` / `markAsUnread(messageId: string)`
+Toggle read status.
+
+```javascript
+const { markAsRead, markAsUnread } = useInboxStore();
+
+// Usage
+markAsRead('msg_1234567890_abc');
+```
+
+**Side Effects**: Updates unreadCount
+
+#### `deleteMessage(messageId: string)`
+Remove message.
+
+```javascript
+const { deleteMessage } = useInboxStore();
+
+// Usage
+deleteMessage('msg_1234567890_abc');
+```
+
+**Side Effects**: Updates unreadCount if message was unread
+
+#### `markAllAsRead()`
+Mark all messages as read.
+
+```javascript
+const { markAllAsRead } = useInboxStore();
+
+// Usage
+markAllAsRead();
+```
+
+**Side Effects**: Sets unreadCount to 0
+
+### Getters
+
+#### `getMessage(messageId: string)`
+Get specific message.
+
+```javascript
+const getMessage = useInboxStore(state => state.getMessage);
+
+const message = getMessage('msg_1234567890_abc');
+```
+
+**Returns**: `Message | undefined`
+
+#### `getMessagesByType(type: string)`
+Filter messages by type.
+
+```javascript
+const getMessagesByType = useInboxStore(state => state.getMessagesByType);
+
+const welcomeMessages = getMessagesByType('welcome');
+```
+
+**Returns**: `Array<Message>`
+
+#### `getUnreadMessages()`
+Get all unread messages.
+
+```javascript
+const getUnreadMessages = useInboxStore(state => state.getUnreadMessages);
+
+const unread = getUnreadMessages();
+```
+
+**Returns**: `Array<Message>`
+
+### Message Generation
+
+Use `MessageGenerator` utility (see `docs/core-systems/messaging-system.md`):
+
+```javascript
+import MessageGenerator from '../utils/MessageGenerator';
+
+// Generate and add message
+const welcomeMsg = MessageGenerator.generateWelcomeMessage(team, season);
+addMessage(welcomeMsg);
+```
+
+### Persistence
+
+Persisted via Zustand middleware:
+- Survives page refresh
+- Includes all messages and unreadCount
+- Version: 1
+
+---

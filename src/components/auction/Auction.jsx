@@ -10,15 +10,22 @@ import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
 import useAuctionStore from '../../stores/auctionStore';
+import useLeagueStore from '../../stores/leagueStore';
+import useInboxStore from '../../stores/inboxStore';
 import AuctionEngine from '../../core/auction-system/AuctionEngine';
 import PlayerValuation from '../../core/auction-system/PlayerValuation';
 import PlayerCard from '../shared/PlayerCard';
+import PlayerCardModal from '../shared/PlayerCardModal';
+import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
+import MessageGenerator from '../../utils/MessageGenerator';
 
 const Auction = () => {
   const navigate = useNavigate();
-  const { teams, userTeamId, getUserTeam, addPlayerToSquad } = useTeamStore();
+  const { teams, userTeamId, getUserTeam, addPlayerToSquad, initializeAllTeamsTactics } = useTeamStore();
   const { players, assignPlayerToTeam } = usePlayerStore();
-  const { currentSeason } = useGameStore();
+  const { currentSeason, currentDate, gameDay, scheduleEvents, advancePhase, clearEvents } = useGameStore();
+  const { initializeSeason } = useLeagueStore();
+  const { addMessage } = useInboxStore();
   const savedAuction = useAuctionStore();
   const { setUserMaxBid, clearUserMaxBid, getUserMaxBid, userMaxBid, userMaxBidPlayerId } = useAuctionStore();
 
@@ -42,6 +49,8 @@ const Auction = () => {
   const [isAuctioning, setIsAuctioning] = useState(false);
   const [maxBidInput, setMaxBidInput] = useState(''); // Input field for max bid
   const [isSkipping, setIsSkipping] = useState(false); // Track if skip operation is in progress
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [skipProgress, setSkipProgress] = useState({ current: 0, total: 0, type: '' }); // Skip progress
 
   const timerRef = useRef(null);
@@ -119,6 +128,11 @@ const Auction = () => {
       } else {
         console.error('❌ No player found at current position');
       }
+    } else if (savedAuction.auctionState === 'completed') {
+      // If the auction was completed in a previous session, reset it for a new auction
+      console.log('🔄 Auction was completed previously, resetting for new auction...');
+      savedAuction.resetAuction();
+      setAuctionState('not_started');
     } else {
       console.log('No saved auction to restore, auctionState:', savedAuction.auctionState);
     }
@@ -785,13 +799,115 @@ const Auction = () => {
 
       startPlayerAuction(auctionEngine, rounds[nextRound][0], nextRound, 0);
     } else {
-      // Auction complete
+      // Auction complete - automatically initialize league
       setAuctionState('completed');
       setCurrentPlayer(null);
-      addToLog('Auction completed!', 'success');
+      addToLog('Auction completed! Initializing league...', 'success');
 
       // Mark auction as completed in store
       savedAuction.completeAuction();
+
+      // Clear auction event from calendar immediately
+      clearEvents();
+
+      // Auto-initialize league after brief delay
+      setTimeout(() => {
+        initializeLeague();
+      }, 1500);
+    }
+  };
+
+  // Initialize league after auction completion
+  const initializeLeague = () => {
+    console.log('🏏 Initializing league after auction completion...');
+
+    try {
+      // Step 1: Get all teams from auction engine
+      const clubs = auctionEngine.teams.map(team => ({
+        id: team.id,
+        name: team.name,
+        shortName: team.shortName || team.name.substring(0, 3).toUpperCase(),
+        homeVenue: team.homeGround || `${team.name} Stadium`,
+        homeGround: team.homeGround || `${team.name} Stadium`,
+        colors: team.colors || { primary: '#2D5F3F', secondary: '#D4AF37' }
+      }));
+
+      // Step 2: Generate league fixtures
+      const scheduleGenerator = new MatchWeekScheduleGenerator();
+      const { fixtures, seasonStart, seasonEnd } = scheduleGenerator.generateMatchWeekSchedule(
+        clubs,
+        new Date(currentDate)
+      );
+
+      console.log(`✅ Generated ${fixtures.length} fixtures`);
+
+      // Step 3: Initialize league season
+      initializeSeason({
+        seasonId: `season_${currentSeason}`,
+        seasonName: `Season ${currentSeason}`,
+        clubs,
+        fixtures,
+        useMatchWeeks: false
+      });
+
+      // Step 4: Initialize tactics for all teams
+      initializeAllTeamsTactics();
+
+      // Step 5: Schedule match events in calendar
+      clearEvents(); // Clear all existing events (including auction event)
+
+      // Calculate game start date (day 1) from current date and game day
+      const currentGameDate = new Date(currentDate);
+      const gameStartDate = new Date(currentGameDate);
+      gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
+
+      // Calculate game days for each fixture based on their dates
+      const matchEvents = fixtures.map(fixture => {
+        const matchDate = new Date(fixture.dateObj);
+        // Calculate game day number: days since game start + 1
+        const daysSinceStart = Math.ceil((matchDate - gameStartDate) / (1000 * 60 * 60 * 24));
+        const matchGameDay = daysSinceStart + 1;
+
+        return {
+          day: matchGameDay,
+          type: 'match',
+          data: fixture
+        };
+      });
+
+      scheduleEvents(matchEvents);
+      console.log(`📅 Scheduled ${matchEvents.length} match events starting from game day ${matchEvents[0]?.day}`);
+
+      // Step 6: Advance game phase to league
+      advancePhase('league');
+
+      // Step 7: Generate inbox messages
+      console.log('📧 Generating welcome messages...');
+
+      // Welcome message
+      addMessage(MessageGenerator.generateWelcomeMessage(userTeam, currentSeason));
+
+      // Season expectations
+      addMessage(MessageGenerator.generateExpectationsMessage(userTeam, currentSeason));
+
+      // Tutorial message
+      addMessage(MessageGenerator.generateTutorialMessage());
+
+      // Auction summary
+      const userSquad = auctionEngine.teams.find(t => t.id === userTeamId)?.squad || [];
+      const finances = {
+        totalSpent: auctionEngine.teams.find(t => t.id === userTeamId)?.totalSpent || 0,
+        budgetRemaining: auctionEngine.teams.find(t => t.id === userTeamId)?.budgetRemaining || 0
+      };
+      addMessage(MessageGenerator.generateAuctionSummaryMessage(userSquad, finances));
+
+      console.log('✅ League initialization complete!');
+
+      // Navigate to home
+      navigate('/game/home');
+    } catch (error) {
+      console.error('❌ Error initializing league:', error);
+      alert(`Failed to initialize league: ${error.message}`);
     }
   };
 
@@ -811,8 +927,16 @@ const Auction = () => {
       // Auction complete
       setAuctionState('completed');
       setCurrentPlayer(null);
-      addToLog('Auction completed!', 'success');
+      addToLog('Auction completed! Initializing league...', 'success');
       savedAuction.completeAuction();
+
+      // Clear auction event from calendar immediately
+      clearEvents();
+
+      // Auto-initialize league after brief delay
+      setTimeout(() => {
+        initializeLeague();
+      }, 1500);
     }
   };
 
@@ -869,12 +993,6 @@ const Auction = () => {
           >
             <Play className="w-5 h-5" />
             {Object.keys(players).length === 0 ? 'Loading Players...' : 'Start Auction'}
-          </button>
-        )}
-        {auctionState === 'completed' && (
-          <button onClick={() => navigate('/game/dashboard')} className="btn-primary flex items-center gap-2">
-            <ChevronRight className="w-5 h-5" />
-            Continue to Dashboard
           </button>
         )}
       </div>
@@ -992,16 +1110,28 @@ const Auction = () => {
           )}
 
           {auctionState === 'not_started' ? (
-            <div className="card p-12 text-center">
-              <Gavel className="w-16 h-16 text-cricket-text-secondary mx-auto mb-4 opacity-50" />
-              <h2 className="text-2xl font-semibold mb-2">Ready to Start Auction?</h2>
-              <p className="text-cricket-text-secondary mb-6">
-                Build your squad by bidding on the world's best cricket players
+            /* Not Started - Show Instructions */
+            <div className="card p-8 text-center">
+              <Gavel className="w-16 h-16 text-cricket-accent mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2 text-text-primary">Ready to Start Auction</h2>
+              <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-6">
+                Click the "Start Auction" button above to begin the player auction for Season {currentSeason}.
+                All teams will bid for players to build their squads.
               </p>
-              <button onClick={handleStartAuction} className="btn-primary text-lg px-8 py-3">
-                <Play className="w-5 h-5 inline mr-2" />
-                Start Auction
-              </button>
+              <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
+                <div className="p-3 bg-bg-secondary rounded">
+                  <div className="text-cricket-accent font-bold text-lg mb-1">25</div>
+                  <div className="text-text-secondary">Players per Squad</div>
+                </div>
+                <div className="p-3 bg-bg-secondary rounded">
+                  <div className="text-cricket-accent font-bold text-lg mb-1">10</div>
+                  <div className="text-text-secondary">Teams Competing</div>
+                </div>
+                <div className="p-3 bg-bg-secondary rounded">
+                  <div className="text-cricket-accent font-bold text-lg mb-1">5</div>
+                  <div className="text-text-secondary">Auction Rounds</div>
+                </div>
+              </div>
             </div>
           ) : showSoldScreen && soldDetails ? (
             /* Sold/Unsold Confirmation Screen */
@@ -1020,6 +1150,10 @@ const Auction = () => {
                       variant="compact"
                       soldPrice={soldDetails.price}
                       className="mb-4"
+                      onClick={() => {
+                        setSelectedPlayerId(soldDetails.player.id);
+                        setShowPlayerModal(true);
+                      }}
                     />
 
                     {/* Team Assignment */}
@@ -1066,6 +1200,10 @@ const Auction = () => {
                       player={soldDetails.player}
                       variant="compact"
                       className="mb-4"
+                      onClick={() => {
+                        setSelectedPlayerId(soldDetails.player.id);
+                        setShowPlayerModal(true);
+                      }}
                     />
 
                     <div className="p-4 bg-cricket-secondary rounded-lg border-2 border-red-500">
@@ -1095,6 +1233,10 @@ const Auction = () => {
                   <PlayerCard
                     player={currentPlayer}
                     variant="auction"
+                    onClick={() => {
+                      setSelectedPlayerId(currentPlayer.id);
+                      setShowPlayerModal(true);
+                    }}
                   />
                 </div>
 
@@ -1360,15 +1502,9 @@ const Auction = () => {
                 </div>
               </div>
 
-              {/* Continue Button */}
-              <div className="text-center">
-                <button
-                  onClick={() => navigate('/game/dashboard')}
-                  className="btn-primary text-lg px-12 py-4 flex items-center gap-3 mx-auto"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                  Continue to Dashboard
-                </button>
+              {/* League initialization happens automatically */}
+              <div className="text-center text-text-secondary text-sm mt-4">
+                League will be initialized automatically. Please wait...
               </div>
             </div>
           )}
@@ -1482,6 +1618,16 @@ const Auction = () => {
           </div>
         </div>
       )}
+
+      {/* Player Card Modal */}
+      <PlayerCardModal
+        isOpen={showPlayerModal}
+        onClose={() => {
+          setShowPlayerModal(false);
+          setSelectedPlayerId(null);
+        }}
+        playerId={selectedPlayerId}
+      />
     </div>
   );
 };

@@ -14,6 +14,8 @@ import useFinanceStore from '../../stores/financeStore';
 import useMatchStore from '../../stores/matchStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useUIStore from '../../stores/uiStore';
+import useInboxStore from '../../stores/inboxStore';
+import useNavigationStore from '../../stores/navigationStore';
 
 const SaveGameModal = ({ isOpen, onClose }) => {
   const [saves, setSaves] = useState([]);
@@ -30,7 +32,9 @@ const SaveGameModal = ({ isOpen, onClose }) => {
     financeStore: useFinanceStore,
     matchStore: useMatchStore,
     auctionStore: useAuctionStore,
-    uiStore: useUIStore
+    uiStore: useUIStore,
+    inboxStore: useInboxStore,
+    navigationStore: useNavigationStore
   };
 
   useEffect(() => {
