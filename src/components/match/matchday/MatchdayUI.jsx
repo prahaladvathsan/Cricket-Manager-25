@@ -241,7 +241,12 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
 
         // Check if match is complete
         if (matchEngine.isMatchComplete()) {
-          console.log('🏏 Match completed! Triggering completion handler');
+          console.log('🏏 Match completed! Updating status to completed');
+
+          // Update match status to completed
+          useMatchStore.getState().completeMatch('Match finished');
+
+          console.log('🏏 Triggering completion handler');
           if (onMatchComplete) {
             onMatchComplete();
           }
@@ -505,6 +510,15 @@ export default function MatchdayUI() {
   // Match data from navigation state
   const navMatchData = location.state?.matchData;
 
+  // Auto-trigger completion when status changes to 'completed'
+  useEffect(() => {
+    if (status === 'completed' && !hasProcessedResult && !showResultModal) {
+      console.log('🎯 Status changed to completed, auto-showing modal');
+      // Don't call handleMatchComplete here to avoid dependency issues
+      // The Continue button will trigger it
+    }
+  }, [status]);
+
   // Initialize match on mount (only once)
   useEffect(() => {
     let isMounted = true;
@@ -652,6 +666,13 @@ export default function MatchdayUI() {
       const currentMatchState = useMatchStore.getState();
       const homeTeam = navMatchData.homeTeam;
       const awayTeam = navMatchData.awayTeam;
+
+      // Set season ID for career stats tracking
+      const currentSeasonId = useLeagueStore.getState().seasonId;
+      if (currentSeasonId) {
+        usePlayerStore.getState().setCurrentSeasonId(currentSeasonId);
+        console.log('✅ Season ID set for career stats:', currentSeasonId);
+      }
 
       // Determine winner from match state
       const winner = currentMatchState.winner;
@@ -816,8 +837,7 @@ export default function MatchdayUI() {
       processMatchResult();
     }
 
-    // Navigate to home and show modal
-    navigate('/game/home');
+    // Show modal (don't navigate yet)
     setShowResultModal(true);
   };
 
@@ -826,7 +846,9 @@ export default function MatchdayUI() {
    */
   const handleResultModalClose = () => {
     setShowResultModal(false);
-    // Advance day after viewing result
+    // Navigate to home after viewing result
+    navigate('/game/home');
+    // Advance day
     advanceDay();
   };
 
