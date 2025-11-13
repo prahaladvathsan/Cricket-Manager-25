@@ -54,12 +54,17 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
         <div className="p-4">
           <div className="space-y-3">
             {/* First Innings */}
-            <div className="border border-border-primary rounded overflow-hidden">
+            <div
+              className="border border-border-primary rounded overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${innings1.teamColors?.primary || '#2D5F3F'}15, ${innings1.teamColors?.secondary || '#D4AF37'}10)`
+              }}
+            >
               {/* Innings Header */}
               <div
                 className="flex items-center justify-between px-3 py-2 border-b border-border-primary"
                 style={{
-                  background: `linear-gradient(to right, ${innings1.teamColors?.primary || '#2D5F3F'}20, transparent)`
+                  background: `linear-gradient(to right, ${innings1.teamColors?.primary || '#2D5F3F'}40, ${innings1.teamColors?.secondary || '#D4AF37'}20)`
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -85,7 +90,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               </div>
 
               {/* Batting and Bowling Stats */}
-              <div className="grid grid-cols-2 divide-x divide-border-primary bg-bg-tertiary/50">
+              <div className="grid grid-cols-2 divide-x divide-border-primary">
                 {/* Top Batsmen */}
                 <div className="p-2">
                   {innings1.topBatsmen && innings1.topBatsmen.length > 0 ? (
@@ -133,12 +138,17 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
             </div>
 
             {/* Second Innings */}
-            <div className="border border-border-primary rounded overflow-hidden">
+            <div
+              className="border border-border-primary rounded overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${innings2.teamColors?.primary || '#2D5F3F'}15, ${innings2.teamColors?.secondary || '#D4AF37'}10)`
+              }}
+            >
               {/* Innings Header */}
               <div
                 className="flex items-center justify-between px-3 py-2 border-b border-border-primary"
                 style={{
-                  background: `linear-gradient(to right, ${innings2.teamColors?.primary || '#2D5F3F'}20, transparent)`
+                  background: `linear-gradient(to right, ${innings2.teamColors?.primary || '#2D5F3F'}40, ${innings2.teamColors?.secondary || '#D4AF37'}20)`
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -164,7 +174,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               </div>
 
               {/* Batting and Bowling Stats */}
-              <div className="grid grid-cols-2 divide-x divide-border-primary bg-bg-tertiary/50">
+              <div className="grid grid-cols-2 divide-x divide-border-primary">
                 {/* Top Batsmen */}
                 <div className="p-2">
                   {innings2.topBatsmen && innings2.topBatsmen.length > 0 ? (
