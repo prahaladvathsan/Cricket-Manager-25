@@ -1141,46 +1141,179 @@ const Auction = () => {
               </div>
             </div>
           ) : auctionState === 'completed' ? (
-            /* Auction Complete - Show Summary and Continue Button */
-            <div className="card p-8 text-center">
-              <div className="mb-6">
+            /* Auction Complete - Show Detailed Summary and Continue Button */
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="card p-6 text-center">
                 <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                   <Trophy className="w-12 h-12 text-green-500" />
                 </div>
                 <h2 className="text-3xl font-bold text-green-500 mb-2">Auction Complete!</h2>
-                <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+                <p className="text-lg text-text-secondary">
                   All squads have been finalized. League fixtures have been scheduled.
-                  Click Continue to begin the season!
                 </p>
               </div>
 
-              {userTeamData && (
-                <div className="max-w-md mx-auto mb-6 p-4 bg-bg-secondary rounded-lg">
-                  <div className="text-sm text-text-secondary mb-2">Your Squad</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-2xl font-bold text-cricket-accent">
-                        {userTeamData.squad.length}
+              {/* Auction Statistics */}
+              {auctionEngine && (() => {
+                // Calculate statistics
+                const allSales = auctionEngine.teams.flatMap(team =>
+                  team.squad.map(player => ({
+                    name: player.name,
+                    team: team.name,
+                    price: player.soldPrice,
+                    isUserTeam: team.isUserControlled
+                  }))
+                );
+
+                const topBuys = [...allSales]
+                  .sort((a, b) => b.price - a.price)
+                  .slice(0, 5);
+
+                const avgPrice = allSales.length > 0
+                  ? allSales.reduce((sum, sale) => sum + sale.price, 0) / allSales.length
+                  : 0;
+
+                const teamSpending = auctionEngine.teams
+                  .map(team => ({
+                    name: team.name,
+                    spent: team.totalSpent,
+                    remaining: team.budgetRemaining,
+                    players: team.squad.length,
+                    isUserTeam: team.isUserControlled
+                  }))
+                  .sort((a, b) => b.spent - a.spent);
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Top Buys */}
+                    <div className="card p-4">
+                      <h3 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <Award className="w-5 h-5 text-cricket-accent" />
+                        Top 5 Most Expensive Buys
+                      </h3>
+                      <div className="space-y-2">
+                        {topBuys.map((sale, idx) => (
+                          <div key={idx} className={`flex items-center justify-between p-2 rounded ${
+                            sale.isUserTeam ? 'bg-cricket-primary/10 border border-cricket-primary' : 'bg-bg-secondary'
+                          }`}>
+                            <div className="flex-1">
+                              <div className="text-sm font-semibold text-text-primary">{sale.name}</div>
+                              <div className="text-xs text-text-secondary">{sale.team}</div>
+                            </div>
+                            <div className="text-lg font-bold text-cricket-accent">
+                              {valuation.formatPrice(sale.price)}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="text-xs text-text-secondary">Players Signed</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-text-primary">
-                        {valuation.formatPrice(userTeamData.budgetRemaining)}
+
+                    {/* Auction Overview */}
+                    <div className="space-y-4">
+                      {/* Stats */}
+                      <div className="card p-4">
+                        <h3 className="text-lg font-bold text-text-primary mb-3">Auction Overview</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-3 bg-bg-secondary rounded">
+                            <div className="text-xs text-text-secondary mb-1">Total Players Sold</div>
+                            <div className="text-2xl font-bold text-cricket-accent">{allSales.length}</div>
+                          </div>
+                          <div className="p-3 bg-bg-secondary rounded">
+                            <div className="text-xs text-text-secondary mb-1">Average Price</div>
+                            <div className="text-2xl font-bold text-cricket-accent">
+                              {valuation.formatPrice(avgPrice)}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-text-secondary">Budget Remaining</div>
+
+                      {/* Your Squad Summary */}
+                      {userTeamData && (
+                        <div className="card p-4 bg-cricket-primary/10 border-2 border-cricket-primary">
+                          <h3 className="text-lg font-bold text-text-primary mb-3">Your Squad Summary</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-text-secondary mb-1">Players Signed</div>
+                              <div className="text-2xl font-bold text-cricket-accent">
+                                {userTeamData.squad.length}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-text-secondary mb-1">Total Spent</div>
+                              <div className="text-2xl font-bold text-text-primary">
+                                {valuation.formatPrice(userTeamData.totalSpent)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-text-secondary mb-1">Budget Remaining</div>
+                              <div className="text-2xl font-bold text-green-500">
+                                {valuation.formatPrice(userTeamData.budgetRemaining)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-text-secondary mb-1">Avg. Price/Player</div>
+                              <div className="text-2xl font-bold text-text-primary">
+                                {valuation.formatPrice(userTeamData.squad.length > 0 ? userTeamData.totalSpent / userTeamData.squad.length : 0)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Team Spending Table */}
+                    <div className="card p-4 lg:col-span-2">
+                      <h3 className="text-lg font-bold text-text-primary mb-3">Team Spending Breakdown</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border-primary">
+                              <th className="text-left py-2 px-3 text-text-secondary font-semibold">Team</th>
+                              <th className="text-right py-2 px-3 text-text-secondary font-semibold">Players</th>
+                              <th className="text-right py-2 px-3 text-text-secondary font-semibold">Total Spent</th>
+                              <th className="text-right py-2 px-3 text-text-secondary font-semibold">Remaining</th>
+                              <th className="text-right py-2 px-3 text-text-secondary font-semibold">Avg/Player</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {teamSpending.map((team, idx) => (
+                              <tr key={idx} className={`border-b border-border-primary/50 ${
+                                team.isUserTeam ? 'bg-cricket-primary/10' : ''
+                              }`}>
+                                <td className="py-2 px-3 font-semibold text-text-primary">
+                                  {team.isUserTeam && '⭐ '}{team.name}
+                                </td>
+                                <td className="text-right py-2 px-3 text-text-primary">{team.players}</td>
+                                <td className="text-right py-2 px-3 font-mono text-cricket-accent">
+                                  {valuation.formatPrice(team.spent)}
+                                </td>
+                                <td className="text-right py-2 px-3 font-mono text-text-primary">
+                                  {valuation.formatPrice(team.remaining)}
+                                </td>
+                                <td className="text-right py-2 px-3 font-mono text-text-secondary">
+                                  {valuation.formatPrice(team.players > 0 ? team.spent / team.players : 0)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
-              <button
-                onClick={() => navigate('/game/home')}
-                className="btn-primary text-lg px-8 py-3 flex items-center gap-2 mx-auto"
-              >
-                <span>Continue to Season</span>
-                <ChevronRight className="w-5 h-5" />
-              </button>
+              {/* Continue Button */}
+              <div className="card p-4 text-center">
+                <button
+                  onClick={() => navigate('/game/home')}
+                  className="btn-primary text-lg px-8 py-3 flex items-center gap-2 mx-auto"
+                >
+                  <span>Continue to Season</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           ) : showSoldScreen && soldDetails ? (
             /* Sold/Unsold Confirmation Screen */
