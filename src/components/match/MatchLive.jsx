@@ -75,6 +75,15 @@ const MatchLive = () => {
     console.log('🔄 matchState changed to:', matchState);
   }, [matchState]);
 
+  // Watch matchStore.status for completion
+  useEffect(() => {
+    console.log('👀 matchStore.status:', matchStore.status);
+    if (matchStore.status === 'completed' && matchState !== 'completed') {
+      console.log('✅ matchStore status is completed, updating matchState!');
+      setMatchState('completed');
+    }
+  }, [matchStore.status]);
+
   const initializeMatch = async () => {
     try {
       console.log('🏏 Initializing match with MatchEngine...');

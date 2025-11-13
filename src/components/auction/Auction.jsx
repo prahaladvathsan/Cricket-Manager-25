@@ -16,6 +16,7 @@ import AuctionEngine from '../../core/auction-system/AuctionEngine';
 import PlayerValuation from '../../core/auction-system/PlayerValuation';
 import PlayerCard from '../shared/PlayerCard';
 import PlayerCardModal from '../shared/PlayerCardModal';
+import PlayerName from '../shared/PlayerName';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
 
@@ -702,10 +703,16 @@ const Auction = () => {
     setSkipProgress({ current: 0, total: 0, type: '' });
 
     // Complete auction
-    addToLog('Auction completed!', 'info');
+    addToLog('Auction completed! Initializing league...', 'success');
     setCurrentPlayer(null);
     setAuctionState('completed');
     savedAuction.completeAuction();
+
+    // Initialize league immediately (same as normal completion)
+    clearEvents();
+    setTimeout(() => {
+      initializeLeague();
+    }, 500);
   };
 
   // Finalize player auction
@@ -813,7 +820,7 @@ const Auction = () => {
       // Auto-initialize league after brief delay
       setTimeout(() => {
         initializeLeague();
-      }, 1500);
+      }, 500);
     }
   };
 
@@ -1054,7 +1061,7 @@ const Auction = () => {
 
       {/* Tab Content */}
       {activeTab === 'auction' && (
-        <div className="space-y-4 relative">
+        <div className="space-y-2 relative">
           {/* Skip Overlay - Covers Auction Tab Only */}
           {isSkipping && (
             <div className="absolute inset-0 z-50 bg-bg-primary flex items-center justify-center rounded-lg">
@@ -1289,7 +1296,7 @@ const Auction = () => {
               </div>
 
               {/* Bidding Controls - Below Player Info */}
-              <div className="card p-4">
+              <div className="card p-2">
                 {isAuctioning && (
                   <>
                     {highestBidder?.id !== userTeamId ? (
@@ -1416,7 +1423,9 @@ const Auction = () => {
                       <div key={idx} className="p-4 bg-bg-tertiary rounded-lg border border-border-primary">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-text-primary truncate">{player.name}</div>
+                            <div className="font-bold truncate">
+                              <PlayerName playerId={player.id} player={player} className="font-bold" />
+                            </div>
                             <div className="text-xs text-text-secondary">{player.role}</div>
                           </div>
                           <div className="text-xs font-bold text-cricket-accent bg-cricket-primary/20 px-2 py-1 rounded">
@@ -1440,7 +1449,7 @@ const Auction = () => {
                   <Users className="w-6 h-6" />
                   Final Team Squads & Budgets
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {auctionEngine?.teams.map(team => (
                     <div
                       key={team.id}
@@ -1512,7 +1521,7 @@ const Auction = () => {
       )}
 
       {activeTab === 'squads' && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {auctionEngine?.teams.map(team => {
             // Categorize players by role
             const playersByRole = {
@@ -1530,7 +1539,7 @@ const Auction = () => {
             };
 
             return (
-              <div key={team.id} className="card p-4">
+              <div key={team.id} className="card p-2">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className={`text-lg font-semibold ${team.id === userTeamId ? 'text-cricket-accent' : ''}`}>
                     {team.name} {team.id === userTeamId && '(You)'}
@@ -1560,7 +1569,9 @@ const Auction = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                             {players.map((player, idx) => (
                               <div key={idx} className="text-sm p-2 bg-cricket-secondary rounded border border-border-primary">
-                                <div className="font-semibold truncate">{player.name}</div>
+                                <div className="font-semibold truncate">
+                                  <PlayerName playerId={player.id} player={player} className="font-semibold text-sm" />
+                                </div>
                                 <div className="text-xs text-cricket-text-secondary truncate">
                                   {player.primaryPlaystyle?.batting && (
                                     <span>{player.primaryPlaystyle.batting}</span>
@@ -1593,7 +1604,7 @@ const Auction = () => {
       )}
 
       {activeTab === 'log' && (
-        <div className="card p-4">
+        <div className="card p-2">
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {auctionLog.map((entry, idx) => (
               <div
