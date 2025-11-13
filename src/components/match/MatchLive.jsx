@@ -35,6 +35,7 @@ const MatchLive = () => {
 
   // Store state
   const matchStore = useMatchStore();
+  const matchStoreStatus = useMatchStore(state => state.status); // Subscribe to status changes
   const playerStore = usePlayerStore();
   const teamStore = useTeamStore();
   const { getClub, recordResult, recalculateStandings, advanceToNextMatch } = useLeagueStore();
@@ -77,12 +78,12 @@ const MatchLive = () => {
 
   // Watch matchStore.status for completion
   useEffect(() => {
-    console.log('👀 matchStore.status:', matchStore.status);
-    if (matchStore.status === 'completed' && matchState !== 'completed') {
+    console.log('👀 matchStoreStatus:', matchStoreStatus);
+    if (matchStoreStatus === 'completed' && matchState !== 'completed') {
       console.log('✅ matchStore status is completed, updating matchState!');
       setMatchState('completed');
     }
-  }, [matchStore.status]);
+  }, [matchStoreStatus, matchState]);
 
   const initializeMatch = async () => {
     try {

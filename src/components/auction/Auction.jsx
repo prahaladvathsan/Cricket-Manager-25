@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward } from 'lucide-react';
+import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -910,8 +910,8 @@ const Auction = () => {
 
       console.log('✅ League initialization complete!');
 
-      // Navigate to home
-      navigate('/game/home');
+      // Don't auto-navigate - let user click Continue button
+      // navigate('/game/home'); // REMOVED: User should click Continue
     } catch (error) {
       console.error('❌ Error initializing league:', error);
       alert(`Failed to initialize league: ${error.message}`);
@@ -1139,6 +1139,48 @@ const Auction = () => {
                   <div className="text-text-secondary">Auction Rounds</div>
                 </div>
               </div>
+            </div>
+          ) : auctionState === 'completed' ? (
+            /* Auction Complete - Show Summary and Continue Button */
+            <div className="card p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="w-12 h-12 text-green-500" />
+                </div>
+                <h2 className="text-3xl font-bold text-green-500 mb-2">Auction Complete!</h2>
+                <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+                  All squads have been finalized. League fixtures have been scheduled.
+                  Click Continue to begin the season!
+                </p>
+              </div>
+
+              {userTeamData && (
+                <div className="max-w-md mx-auto mb-6 p-4 bg-bg-secondary rounded-lg">
+                  <div className="text-sm text-text-secondary mb-2">Your Squad</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-2xl font-bold text-cricket-accent">
+                        {userTeamData.squad.length}
+                      </div>
+                      <div className="text-xs text-text-secondary">Players Signed</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-text-primary">
+                        {valuation.formatPrice(userTeamData.budgetRemaining)}
+                      </div>
+                      <div className="text-xs text-text-secondary">Budget Remaining</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => navigate('/game/home')}
+                className="btn-primary text-lg px-8 py-3 flex items-center gap-2 mx-auto"
+              >
+                <span>Continue to Season</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           ) : showSoldScreen && soldDetails ? (
             /* Sold/Unsold Confirmation Screen */
