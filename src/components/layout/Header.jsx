@@ -15,7 +15,7 @@ import useNavigationStore from '../../stores/navigationStore';
 import useInboxStore from '../../stores/inboxStore';
 import useAuctionStore from '../../stores/auctionStore';
 import SaveGameModal from '../shared/SaveGameModal';
-import MatchResultModal from '../match/MatchResultModal';
+import MatchResultModal from '../shared/MatchResultModal';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import MessageGenerator from '../../utils/MessageGenerator';
 
@@ -122,8 +122,45 @@ const Header = () => {
           recalculateStandings();
           advanceToNextMatch();
 
+          // Transform result for new modal format
+          const firstBattingTeam = result.innings1.battingTeam === homeTeam.id ? homeTeam : awayTeam;
+          const secondBattingTeam = result.innings2.battingTeam === homeTeam.id ? homeTeam : awayTeam;
+
+          const modalResult = {
+            venue: fixture.venue || homeTeam.homeGround,
+            matchType: 'World Premier League T20',
+            innings1: {
+              teamId: firstBattingTeam.id,
+              teamName: firstBattingTeam.name,
+              teamColors: firstBattingTeam.colors,
+              totalScore: result.innings1.totalScore || 0,
+              wickets: result.innings1.wickets || 0,
+              overs: result.innings1.overs || 20,
+              balls: result.innings1.balls || 0,
+              topBatsmen: [], // quickSim doesn't provide detailed stats
+              topBowlers: []
+            },
+            innings2: {
+              teamId: secondBattingTeam.id,
+              teamName: secondBattingTeam.name,
+              teamColors: secondBattingTeam.colors,
+              totalScore: result.innings2.totalScore || 0,
+              wickets: result.innings2.wickets || 0,
+              overs: result.innings2.overs || 20,
+              balls: result.innings2.balls || 0,
+              topBatsmen: [],
+              topBowlers: []
+            },
+            winner: result.winner,
+            margin: result.margin.replace('by ', ''),
+            playerOfMatch: result.playerOfMatch ? {
+              id: result.playerOfMatch.id || result.playerOfMatch.name,
+              performance: result.playerOfMatch.performance
+            } : null
+          };
+
           // Show result modal
-          setMatchResult(result);
+          setMatchResult(modalResult);
           setShowResultModal(true);
 
           // Don't advance day yet - wait for user to close modal
@@ -286,7 +323,7 @@ const Header = () => {
       <MatchResultModal
         isOpen={showResultModal}
         onClose={handleResultModalClose}
-        result={matchResult}
+        matchResult={matchResult}
       />
     </>
   );

@@ -26,7 +26,7 @@ import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
 import StatsHub from './StatsHub/StatsHub';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
-import MatchResultModal from '../MatchResultModal';
+import MatchResultModal from '../../shared/MatchResultModal';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
 
 /**
@@ -739,6 +739,56 @@ export default function MatchdayUI() {
       const topScorer = findTopScorer(playerStats, matchConfig);
       const topBowler = findTopBowler(playerStats, matchConfig);
 
+      // Helper function to get top batsmen for an innings
+      const getTopBatsmen = (inningsNum, limit = 4) => {
+        const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
+        const batsmenStats = {};
+
+        inningsBalls.forEach(ball => {
+          if (!batsmenStats[ball.batsmanId]) {
+            batsmenStats[ball.batsmanId] = { runs: 0, balls: 0 };
+          }
+          batsmenStats[ball.batsmanId].runs += ball.runs || 0;
+          if (ball.isLegal) {
+            batsmenStats[ball.batsmanId].balls++;
+          }
+        });
+
+        return Object.entries(batsmenStats)
+          .map(([id, stats]) => ({ id, ...stats }))
+          .sort((a, b) => b.runs - a.runs)
+          .slice(0, limit);
+      };
+
+      // Helper function to get top bowlers for an innings
+      const getTopBowlers = (inningsNum, limit = 3) => {
+        const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
+        const bowlerStats = {};
+
+        inningsBalls.forEach(ball => {
+          if (!bowlerStats[ball.bowlerId]) {
+            bowlerStats[ball.bowlerId] = { runs: 0, wickets: 0, balls: 0 };
+          }
+          bowlerStats[ball.bowlerId].runs += ball.runs || 0;
+          if (ball.isWicket) {
+            bowlerStats[ball.bowlerId].wickets++;
+          }
+          if (ball.isLegal) {
+            bowlerStats[ball.bowlerId].balls++;
+          }
+        });
+
+        return Object.entries(bowlerStats)
+          .map(([id, stats]) => ({
+            id,
+            wickets: stats.wickets,
+            runs: stats.runs,
+            overs: `${Math.floor(stats.balls / 6)}-${stats.runs}`
+          }))
+          .sort((a, b) => b.wickets - a.wickets || a.runs - b.runs)
+          .slice(0, limit);
+      };
+
       // Determine win margin and type
       let winMargin, winType;
       const winnerTeam = winner === homeTeam.id ? homeTeam : awayTeam;
@@ -776,30 +826,45 @@ export default function MatchdayUI() {
       recalculateStandings();
       advanceToNextMatch();
 
-      // Create result object for modal (simpler format for match/MatchResultModal)
+      // Determine which team batted first
+      const firstBattingTeamId = innings1.battingTeam;
+      const secondBattingTeamId = innings2.battingTeam;
+
+      const firstBattingTeam = firstBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
+      const secondBattingTeam = secondBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
+
+      // Create result object for modal (broadcast summary format)
       const modalResult = {
-        homeTeam: {
-          id: homeTeam.id,
-          name: homeTeam.name,
-          colors: getClub(homeTeam.id)?.colors
-        },
-        awayTeam: {
-          id: awayTeam.id,
-          name: awayTeam.name,
-          colors: getClub(awayTeam.id)?.colors
-        },
+        venue: navMatchData.venue || homeTeam.homeGround,
+        matchType: 'World Premier League T20',
         innings1: {
-          ...innings1,
+          teamId: firstBattingTeam.id,
+          teamName: firstBattingTeam.name,
+          teamColors: getClub(firstBattingTeam.id)?.colors,
+          totalScore: innings1.totalScore,
+          wickets: innings1.wickets,
           overs: innings1.overs,
-          balls: innings1.balls || 0
+          balls: innings1.balls || 0,
+          topBatsmen: getTopBatsmen(1),
+          topBowlers: getTopBowlers(1)
         },
         innings2: {
-          ...innings2,
+          teamId: secondBattingTeam.id,
+          teamName: secondBattingTeam.name,
+          teamColors: getClub(secondBattingTeam.id)?.colors,
+          totalScore: innings2.totalScore,
+          wickets: innings2.wickets,
           overs: innings2.overs,
-          balls: innings2.balls || 0
+          balls: innings2.balls || 0,
+          topBatsmen: getTopBatsmen(2),
+          topBowlers: getTopBowlers(2)
         },
         winner: winner,
-        margin: `${winMargin} ${winType}`
+        margin: `${winMargin} ${winType}`,
+        playerOfMatch: playerOfMatch ? {
+          id: playerOfMatch.id,
+          performance: playerOfMatch.performance
+        } : null
       };
 
       setMatchResult(modalResult);
@@ -966,7 +1031,7 @@ export default function MatchdayUI() {
       <MatchResultModal
         isOpen={showResultModal}
         onClose={handleResultModalClose}
-        result={matchResult}
+        matchResult={matchResult}
       />
     </div>
   );

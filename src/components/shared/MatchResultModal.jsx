@@ -1,208 +1,251 @@
 /**
  * @file MatchResultModal.jsx
- * @description Modal for displaying match results after simulation
+ * @description Broadcast-style match summary modal
  */
 
 import React from 'react';
-import { X, Trophy, Target, Award, TrendingUp, ArrowRight } from 'lucide-react';
+import { X, Trophy } from 'lucide-react';
+import PlayerName from './PlayerName';
 
-const MatchResultModal = ({ isOpen, onClose, matchResult, onContinue }) => {
+const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
   if (!isOpen || !matchResult) return null;
 
   const {
+    venue,
+    matchType,
+    innings1,
+    innings2,
     winner,
-    loser,
-    winMargin,
-    winType, // 'runs' or 'wickets'
-    homeTeam,
-    awayTeam,
-    playerOfMatch,
-    topScorer,
-    topBowler
+    margin,
+    playerOfMatch
   } = matchResult;
 
-  const isUserTeamWinner = winner.isUserTeam;
+  // Get winner team name
+  const winnerTeam = innings1.teamId === winner ? innings1.teamName : innings2.teamName;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl w-full max-w-2xl">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-b from-bg-secondary to-bg-primary border border-border-primary rounded-lg shadow-2xl w-full max-w-4xl">
         {/* Header */}
-        <div className={`flex items-center justify-between p-4 border-b ${
-          isUserTeamWinner ? 'bg-green-500/10 border-green-500/30' : 'bg-bg-tertiary border-border-primary'
-        }`}>
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded ${
-              isUserTeamWinner ? 'bg-green-500/20' : 'bg-bg-tertiary'
-            }`}>
-              <Trophy className={`w-5 h-5 ${
-                isUserTeamWinner ? 'text-green-400' : 'text-cricket-accent'
-              }`} />
-            </div>
-            <h2 className="text-xl font-semibold text-text-primary">
-              Match Result
-            </h2>
-          </div>
+        <div className="relative p-6 border-b border-border-primary">
           <button
             onClick={onClose}
-            className="p-1 hover:bg-bg-tertiary rounded transition-colors"
+            className="absolute top-4 right-4 p-2 hover:bg-bg-tertiary rounded transition-colors"
           >
             <X className="w-5 h-5 text-text-secondary" />
           </button>
+
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-cricket-primary/20 rounded">
+              <Trophy className="w-6 h-6 text-cricket-accent" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-text-primary uppercase tracking-wide">
+                Match Summary
+              </h2>
+              <p className="text-sm text-text-secondary uppercase tracking-wide">
+                {matchType || 'T20 International'} • {venue || 'Stadium'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Content */}
+        {/* Innings Sections */}
         <div className="p-6 space-y-6">
-          {/* Winner Announcement */}
-          <div className={`card p-6 text-center ${
-            isUserTeamWinner ? 'bg-green-500/10 border-2 border-green-500/30' : 'bg-bg-tertiary'
-          }`}>
+          {/* First Innings */}
+          <div className="border border-border-primary rounded-lg overflow-hidden">
+            {/* Innings Header */}
             <div
-              className="w-20 h-20 rounded-full mx-auto mb-3 border-2"
+              className="flex items-center justify-between p-3 border-b border-border-primary"
               style={{
-                backgroundColor: winner.colors?.primary || '#2D5F3F',
-                borderColor: winner.colors?.secondary || '#D4AF37'
+                background: `linear-gradient(to right, ${innings1.teamColors?.primary || '#2D5F3F'}20, transparent)`
               }}
-            />
-            <h3 className={`text-2xl font-bold mb-2 ${
-              isUserTeamWinner ? 'text-green-400' : 'text-cricket-accent'
-            }`}>
-              {winner.name} Won!
-            </h3>
-            <p className="text-lg text-text-primary">
-              by {winMargin} {winType === 'runs' ? 'runs' : 'wickets'}
-            </p>
-            {isUserTeamWinner && (
-              <div className="mt-3">
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded">
-                  <Trophy className="w-4 h-4" />
-                  Victory!
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-full border-2"
+                  style={{
+                    backgroundColor: innings1.teamColors?.primary || '#2D5F3F',
+                    borderColor: innings1.teamColors?.secondary || '#D4AF37'
+                  }}
+                />
+                <span className="text-lg font-bold text-cricket-accent uppercase">
+                  {innings1.teamName}
                 </span>
               </div>
-            )}
-          </div>
-
-          {/* Scores */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`card p-4 ${homeTeam.id === winner.id ? 'border-2 border-cricket-accent' : ''}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className="w-8 h-8 rounded-full border"
-                  style={{
-                    backgroundColor: homeTeam.colors?.primary || '#2D5F3F',
-                    borderColor: homeTeam.colors?.secondary || '#D4AF37'
-                  }}
-                />
-                <h4 className="font-semibold text-text-primary text-sm">
-                  {homeTeam.name}
-                </h4>
-              </div>
-              <div className="text-3xl font-bold text-cricket-accent">
-                {homeTeam.score}/{homeTeam.wickets}
-              </div>
-              <div className="text-sm text-text-secondary">
-                {homeTeam.overs} overs
+              <div className="text-right">
+                <div className="text-2xl font-bold text-cricket-accent font-mono">
+                  {innings1.wickets}-{innings1.totalScore}
+                </div>
+                <div className="text-xs text-text-secondary uppercase">
+                  {innings1.overs}.{innings1.balls} overs
+                </div>
               </div>
             </div>
 
-            <div className={`card p-4 ${awayTeam.id === winner.id ? 'border-2 border-cricket-accent' : ''}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className="w-8 h-8 rounded-full border"
-                  style={{
-                    backgroundColor: awayTeam.colors?.primary || '#2D5F3F',
-                    borderColor: awayTeam.colors?.secondary || '#D4AF37'
-                  }}
-                />
-                <h4 className="font-semibold text-text-primary text-sm">
-                  {awayTeam.name}
-                </h4>
+            {/* Batting and Bowling Stats */}
+            <div className="grid grid-cols-2 divide-x divide-border-primary bg-bg-tertiary/50">
+              {/* Top Batsmen */}
+              <div className="p-4">
+                {innings1.topBatsmen && innings1.topBatsmen.length > 0 ? (
+                  <div className="space-y-2">
+                    {innings1.topBatsmen.map((batsman, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <PlayerName
+                          playerId={batsman.id}
+                          className="font-semibold text-text-primary uppercase text-xs flex-1"
+                        />
+                        <div className="flex items-baseline gap-2 font-mono">
+                          <span className="text-base font-bold text-cricket-accent">
+                            {batsman.runs}
+                          </span>
+                          <span className="text-xs text-text-secondary">
+                            {batsman.balls}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-secondary italic">No batting data</p>
+                )}
               </div>
-              <div className="text-3xl font-bold text-cricket-accent">
-                {awayTeam.score}/{awayTeam.wickets}
-              </div>
-              <div className="text-sm text-text-secondary">
-                {awayTeam.overs} overs
+
+              {/* Top Bowlers */}
+              <div className="p-4">
+                {innings1.topBowlers && innings1.topBowlers.length > 0 ? (
+                  <div className="space-y-2">
+                    {innings1.topBowlers.map((bowler, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <PlayerName
+                          playerId={bowler.id}
+                          className="font-semibold text-text-primary uppercase text-xs flex-1"
+                        />
+                        <div className="flex items-baseline gap-2 font-mono">
+                          <span className="text-xs text-text-secondary">
+                            {bowler.overs}
+                          </span>
+                          <span className="text-base font-bold text-cricket-accent">
+                            {bowler.wickets}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-secondary italic">No bowling data</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Key Performances */}
-          <div className="space-y-3">
-            {/* Player of the Match */}
-            {playerOfMatch && (
-              <div className="card p-3 bg-cricket-primary/10 border border-cricket-accent">
-                <div className="flex items-center gap-3">
-                  <Award className="w-5 h-5 text-cricket-accent flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-xs text-text-secondary">Player of the Match</p>
-                    <p className="text-sm font-semibold text-text-primary">
-                      {playerOfMatch.name}
-                    </p>
-                    <p className="text-xs text-text-secondary">
-                      {playerOfMatch.performance}
-                    </p>
-                  </div>
+          {/* Second Innings */}
+          <div className="border border-border-primary rounded-lg overflow-hidden">
+            {/* Innings Header */}
+            <div
+              className="flex items-center justify-between p-3 border-b border-border-primary"
+              style={{
+                background: `linear-gradient(to right, ${innings2.teamColors?.primary || '#2D5F3F'}20, transparent)`
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-full border-2"
+                  style={{
+                    backgroundColor: innings2.teamColors?.primary || '#2D5F3F',
+                    borderColor: innings2.teamColors?.secondary || '#D4AF37'
+                  }}
+                />
+                <span className="text-lg font-bold text-cricket-accent uppercase">
+                  {innings2.teamName}
+                </span>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-cricket-accent font-mono">
+                  {innings2.wickets}-{innings2.totalScore}
+                </div>
+                <div className="text-xs text-text-secondary uppercase">
+                  {innings2.overs}.{innings2.balls} overs
                 </div>
               </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Top Scorer */}
-              {topScorer && (
-                <div className="card p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Target className="w-4 h-4 text-blue-400" />
-                    <p className="text-xs text-text-secondary">Top Scorer</p>
+            {/* Batting and Bowling Stats */}
+            <div className="grid grid-cols-2 divide-x divide-border-primary bg-bg-tertiary/50">
+              {/* Top Batsmen */}
+              <div className="p-4">
+                {innings2.topBatsmen && innings2.topBatsmen.length > 0 ? (
+                  <div className="space-y-2">
+                    {innings2.topBatsmen.map((batsman, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <PlayerName
+                          playerId={batsman.id}
+                          className="font-semibold text-text-primary uppercase text-xs flex-1"
+                        />
+                        <div className="flex items-baseline gap-2 font-mono">
+                          <span className="text-base font-bold text-cricket-accent">
+                            {batsman.runs}
+                          </span>
+                          <span className="text-xs text-text-secondary">
+                            {batsman.balls}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm font-semibold text-text-primary">
-                    {topScorer.name}
-                  </p>
-                  <p className="text-lg font-bold text-blue-400">
-                    {topScorer.runs} ({topScorer.balls})
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-text-secondary italic">No batting data</p>
+                )}
+              </div>
 
-              {/* Top Bowler */}
-              {topBowler && (
-                <div className="card p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-red-400" />
-                    <p className="text-xs text-text-secondary">Top Bowler</p>
+              {/* Top Bowlers */}
+              <div className="p-4">
+                {innings2.topBowlers && innings2.topBowlers.length > 0 ? (
+                  <div className="space-y-2">
+                    {innings2.topBowlers.map((bowler, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <PlayerName
+                          playerId={bowler.id}
+                          className="font-semibold text-text-primary uppercase text-xs flex-1"
+                        />
+                        <div className="flex items-baseline gap-2 font-mono">
+                          <span className="text-xs text-text-secondary">
+                            {bowler.overs}
+                          </span>
+                          <span className="text-base font-bold text-cricket-accent">
+                            {bowler.wickets}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm font-semibold text-text-primary">
-                    {topBowler.name}
-                  </p>
-                  <p className="text-lg font-bold text-red-400">
-                    {topBowler.wickets}/{topBowler.runs}
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-text-secondary italic">No bowling data</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 p-4 border-t border-border-primary">
-          <button
-            onClick={onClose}
-            className="btn-secondary"
-          >
-            View Full Scorecard
-          </button>
-          <div className="flex-1"></div>
-          <button
-            onClick={() => {
-              if (onContinue) {
-                onContinue();
-              }
-              onClose();
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <span>Continue</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+        {/* Result Footer */}
+        <div className="p-4 border-t border-border-primary">
+          <div className="bg-cricket-accent text-center py-3 rounded uppercase font-bold text-lg tracking-wide text-bg-primary">
+            {winnerTeam} wins by {margin}
+          </div>
+
+          {/* Player of the Match */}
+          {playerOfMatch && (
+            <div className="mt-3 text-center">
+              <p className="text-xs text-text-secondary uppercase tracking-wide mb-1">Player of the Match</p>
+              <PlayerName
+                playerId={playerOfMatch.id}
+                className="text-sm font-bold text-cricket-accent"
+              />
+              {playerOfMatch.performance && (
+                <p className="text-xs text-text-secondary mt-1">{playerOfMatch.performance}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
