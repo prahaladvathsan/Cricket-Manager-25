@@ -50,9 +50,9 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
           </div>
         </div>
 
-        {/* Innings Side-by-Side */}
+        {/* Innings Stacked Vertically */}
         <div className="p-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
             {/* First Innings */}
             <div className="border border-border-primary rounded overflow-hidden">
               {/* Innings Header */}
