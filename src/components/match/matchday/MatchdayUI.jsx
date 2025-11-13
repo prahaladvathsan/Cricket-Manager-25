@@ -452,7 +452,14 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
         <div className="w-20 flex flex-col items-center justify-center gap-1 px-2 flex-shrink-0 border-l border-white/10">
           {status === 'completed' ? (
             <button
-              onClick={onMatchComplete}
+              onClick={() => {
+                console.log('🔘 Continue button clicked');
+                if (onMatchComplete) {
+                  onMatchComplete();
+                } else {
+                  console.error('❌ onMatchComplete is undefined!');
+                }
+              }}
               className="flex items-center justify-center gap-1 px-3 py-2 bg-cricket-accent hover:bg-cricket-accent/90 text-white rounded font-semibold transition-all shadow-md text-xs w-full"
             >
               <span>Continue</span>
@@ -959,8 +966,7 @@ export default function MatchdayUI() {
       <MatchResultModal
         isOpen={showResultModal}
         onClose={handleResultModalClose}
-        matchResult={matchResult}
-        onContinue={handleResultModalClose}
+        result={matchResult}
       />
     </div>
   );
