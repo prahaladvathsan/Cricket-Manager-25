@@ -764,7 +764,7 @@ export default function MatchdayUI() {
       };
 
       // Helper function to get top bowlers for an innings
-      const getTopBowlers = (inningsNum, limit = 3) => {
+      const getTopBowlers = (inningsNum, limit = 4) => {
         const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
         const bowlerStats = {};
 
