@@ -26,7 +26,7 @@ import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
 import StatsHub from './StatsHub/StatsHub';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
-import MatchResultModal from '../../shared/MatchResultModal';
+import MatchResultModal from '../MatchResultModal';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
 
 /**
@@ -510,13 +510,9 @@ export default function MatchdayUI() {
   // Match data from navigation state
   const navMatchData = location.state?.matchData;
 
-  // Auto-trigger completion when status changes to 'completed'
+  // Debug: Log status changes
   useEffect(() => {
-    if (status === 'completed' && !hasProcessedResult && !showResultModal) {
-      console.log('🎯 Status changed to completed, auto-showing modal');
-      // Don't call handleMatchComplete here to avoid dependency issues
-      // The Continue button will trigger it
-    }
+    console.log('🔄 Match status changed to:', status);
   }, [status]);
 
   // Initialize match on mount (only once)
@@ -773,48 +769,30 @@ export default function MatchdayUI() {
       recalculateStandings();
       advanceToNextMatch();
 
-      // Create result object for modal
+      // Create result object for modal (simpler format for match/MatchResultModal)
       const modalResult = {
-        winner: {
-          id: winnerTeam.id,
-          name: winnerTeam.name,
-          colors: getClub(winnerTeam.id)?.colors,
-          isUserTeam: winnerTeam.isUserTeam
-        },
-        loser: {
-          id: loserTeam.id,
-          name: loserTeam.name,
-          colors: getClub(loserTeam.id)?.colors,
-          isUserTeam: loserTeam.isUserTeam
-        },
-        winMargin,
-        winType,
         homeTeam: {
           id: homeTeam.id,
           name: homeTeam.name,
-          colors: getClub(homeTeam.id)?.colors,
-          score: innings1.battingTeam === homeTeam.id ? innings1.totalScore : innings2.totalScore,
-          wickets: innings1.battingTeam === homeTeam.id ? innings1.wickets : innings2.wickets,
-          overs: innings1.battingTeam === homeTeam.id
-            ? `${innings1.overs}.${innings1.balls || 0}`
-            : `${innings2.overs}.${innings2.balls || 0}`
+          colors: getClub(homeTeam.id)?.colors
         },
         awayTeam: {
           id: awayTeam.id,
           name: awayTeam.name,
-          colors: getClub(awayTeam.id)?.colors,
-          score: innings1.battingTeam === awayTeam.id ? innings1.totalScore : innings2.totalScore,
-          wickets: innings1.battingTeam === awayTeam.id ? innings1.wickets : innings2.wickets,
-          overs: innings1.battingTeam === awayTeam.id
-            ? `${innings1.overs}.${innings1.balls || 0}`
-            : `${innings2.overs}.${innings2.balls || 0}`
+          colors: getClub(awayTeam.id)?.colors
         },
-        playerOfMatch: playerOfMatch ? {
-          name: playerOfMatch.name,
-          performance: playerOfMatch.reason
-        } : null,
-        topScorer,
-        topBowler
+        innings1: {
+          ...innings1,
+          overs: innings1.overs,
+          balls: innings1.balls || 0
+        },
+        innings2: {
+          ...innings2,
+          overs: innings2.overs,
+          balls: innings2.balls || 0
+        },
+        winner: winner,
+        margin: `${winMargin} ${winType}`
       };
 
       setMatchResult(modalResult);
