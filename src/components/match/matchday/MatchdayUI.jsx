@@ -810,7 +810,7 @@ export default function MatchdayUI() {
         winType = 'runs';
       }
 
-      // Create result object for league store
+      // Create result object for league store (without ballByBall to save storage space)
       const leagueResult = {
         matchId: matchId,
         homeTeam: homeTeam.id,
@@ -825,7 +825,6 @@ export default function MatchdayUI() {
         margin: `${winMargin} ${winType}`,
         result: 'win',
         status: 'completed',
-        ballByBallData: ballByBall,
         timestamp: new Date().toISOString()
       };
 
