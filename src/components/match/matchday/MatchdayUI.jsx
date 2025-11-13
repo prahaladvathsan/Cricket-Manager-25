@@ -681,26 +681,29 @@ export default function MatchdayUI() {
       const winner = currentMatchState.winner;
       const ballByBall = currentMatchState.ballByBall || [];
 
+      // Get first batting team from matchStore
+      const firstBattingTeamId = currentMatchState.firstBattingTeamId;
+      console.log('🏏 First batting team:', firstBattingTeamId);
+      console.log('🏏 Home team:', homeTeam.id, homeTeam.name);
+      console.log('🏏 Away team:', awayTeam.id, awayTeam.name);
+
       // Calculate innings summaries from ballByBall data
       const calculateInningsScore = (inningsNum) => {
         const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
         let totalScore = 0;
         let wickets = 0;
         let legalBalls = 0;
-        let battingTeam = null;
 
         inningsBalls.forEach(ball => {
           totalScore += ball.runs || 0;
           if (ball.isWicket) wickets++;
           if (ball.isLegal) legalBalls++;
-          if (!battingTeam && ball.battingTeam) battingTeam = ball.battingTeam;
         });
 
         const overs = Math.floor(legalBalls / 6);
         const balls = legalBalls % 6;
 
         return {
-          battingTeam,
           totalScore,
           wickets,
           overs,
@@ -779,12 +782,17 @@ export default function MatchdayUI() {
         });
 
         return Object.entries(bowlerStats)
-          .map(([id, stats]) => ({
-            id,
-            wickets: stats.wickets,
-            runs: stats.runs,
-            overs: `${Math.floor(stats.balls / 6)}-${stats.runs}`
-          }))
+          .map(([id, stats]) => {
+            const overs = Math.floor(stats.balls / 6);
+            const ballsRemainder = stats.balls % 6;
+            const oversStr = ballsRemainder > 0 ? `${overs}.${ballsRemainder}` : `${overs}`;
+            return {
+              id,
+              wickets: stats.wickets,
+              runs: stats.runs,
+              overs: oversStr
+            };
+          })
           .sort((a, b) => b.wickets - a.wickets || a.runs - b.runs)
           .slice(0, limit);
       };
@@ -826,12 +834,12 @@ export default function MatchdayUI() {
       recalculateStandings();
       advanceToNextMatch();
 
-      // Determine which team batted first
-      const firstBattingTeamId = innings1.battingTeam;
-      const secondBattingTeamId = innings2.battingTeam;
-
+      // Determine which team batted first (use matchStore's firstBattingTeamId)
       const firstBattingTeam = firstBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
-      const secondBattingTeam = secondBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
+      const secondBattingTeam = firstBattingTeamId === homeTeam.id ? awayTeam : homeTeam;
+
+      console.log('✅ First batting team:', firstBattingTeam.name);
+      console.log('✅ Second batting team:', secondBattingTeam.name);
 
       // Create result object for modal (broadcast summary format)
       const modalResult = {
