@@ -4,7 +4,7 @@
  * Separates AI logic from user input logic
  */
 
-import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json' with { type: "json" };
+import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 
 class AIMatchController {
   constructor(matchStore, playerStore) {

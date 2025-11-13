@@ -4,7 +4,7 @@
  * @module core/tactics/DLSCalculator
  */
 
-import dlsResourcesConfig from '../../data/config/dls-resources-config.json' with { type: "json" };
+import dlsResourcesConfig from '../../data/config/dls-resources-config.json';
 
 /**
  * @class DLSCalculator

@@ -1,4 +1,4 @@
-import financeConfig from '../../data/config/financeConfig.json' with { type: "json" };
+import financeConfig from '../../data/config/financeConfig.json';
 
 /**
  * FinanceEngine - Core financial management system

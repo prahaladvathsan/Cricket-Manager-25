@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react';
+import PlayerName from '../shared/PlayerName';
 
 const PlayerBrowser = () => {
   const navigate = useNavigate();
@@ -249,8 +250,8 @@ const PlayerBrowser = () => {
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-cricket-text-secondary" />
                         <div>
-                          <div className="font-semibold text-cricket-text-primary">
-                            {player.name}
+                          <div className="font-semibold">
+                            <PlayerName playerId={player.id} player={player} className="font-semibold" />
                           </div>
                           <div className="text-xs text-cricket-text-secondary">
                             {player.fullName}

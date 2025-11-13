@@ -28,6 +28,11 @@ const useMatchStore = create(
   matchType: 'T20', // T20 | ODI | Test
   venue: null,
   date: null,
+  homeTeamId: null,
+  awayTeamId: null,
+  tossWinner: null,
+  tossDecision: null,
+  firstBattingTeamId: null, // Fixed throughout match for UI positioning
 
   // Teams & Players
   teams: {
@@ -128,7 +133,7 @@ const useMatchStore = create(
    * @param {Object} matchConfig - Match configuration
    */
   initializeMatch: (matchConfig) => set(() => {
-    const { homeTeam, awayTeam, venue, tossWinner, tossDecision } = matchConfig;
+    const { matchId, homeTeam, awayTeam, venue, tossWinner, tossDecision } = matchConfig;
 
     // Determine batting/bowling teams based on toss
     const battingFirst = tossDecision === 'bat' ? tossWinner :
@@ -136,10 +141,15 @@ const useMatchStore = create(
     const bowlingFirst = battingFirst === homeTeam.id ? awayTeam.id : homeTeam.id;
 
     return {
-      matchId: `match_${Date.now()}`,
+      matchId: matchId || `match_${Date.now()}`, // Use provided matchId or generate new one
       status: 'live',
       venue,
       date: new Date().toISOString(),
+      homeTeamId: homeTeam.id,
+      awayTeamId: awayTeam.id,
+      tossWinner,
+      tossDecision,
+      firstBattingTeamId: battingFirst,
       teams: {
         batting: {
           id: battingFirst,
@@ -263,7 +273,18 @@ const useMatchStore = create(
    * @param {Object} ballResult - Result of simulated ball
    */
   processBallResult: (ballResult) => set((state) => {
-    const newBallByBall = [...state.ballByBall, ballResult];
+    // Enrich ballResult with current ball context
+    const enrichedBallResult = {
+      ...ballResult,
+      innings: state.innings.number, // Add innings number for tracking
+      over: state.currentBall.over,
+      ball: state.currentBall.ball,
+      striker: state.innings.striker,
+      bowler: state.innings.bowler,
+      nonStriker: state.innings.nonStriker
+    };
+
+    const newBallByBall = [...state.ballByBall, enrichedBallResult];
     const newCommentary = [...state.commentary, ballResult.commentary];
 
     // Update scores
@@ -272,11 +293,14 @@ const useMatchStore = create(
 
     if (ballResult.isWicket) {
       newTeams.batting.wickets += 1;
+
+      // Calculate total balls bowled for this fall of wicket
+      const totalBalls = state.currentBall.over * 6 + state.currentBall.ball;
+
       newTeams.batting.fallOfWickets.push({
         wicket: newTeams.batting.wickets,
-        runs: newTeams.batting.totalScore,
-        over: state.currentBall.over,
-        ball: state.currentBall.ball,
+        score: newTeams.batting.totalScore,
+        balls: totalBalls,
         batsman: ballResult.dismissedPlayer,
         dismissalType: ballResult.dismissalType
       });
@@ -482,12 +506,10 @@ const useMatchStore = create(
     {
       name: 'cm25-match-store',
       version: 1,
-      // Only persist active matches (live or innings_break), skip completed/scheduled
+      // Exclude large arrays to avoid localStorage quota issues
       partialize: (state) => {
-        if (state.status === 'live' || state.status === 'innings_break') {
-          return state;
-        }
-        // Don't persist if match is not active
+        // Don't persist match data - it's ephemeral and causes quota issues
+        // Match data should be regenerated if needed
         return {
           matchId: null,
           status: 'scheduled'

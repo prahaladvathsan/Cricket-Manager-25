@@ -4,7 +4,7 @@
  * @module core/match-engine/BallTrajectoryPhysics
  */
 
-import physicsConfig from '../../../data/config/physics-config.json' with { type: "json" };
+import physicsConfig from '../../../data/config/physics-config.json';
 
 // Pre-calculate boundary distances for each degree (0-359) accounting for pitch offset
 const boundaryCache = {};

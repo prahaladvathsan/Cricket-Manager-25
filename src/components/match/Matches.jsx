@@ -4,12 +4,15 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, History, PlayCircle, Trophy, MapPin, Clock } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
 import usePlayerStore from '../../stores/playerStore';
+import TeamName from '../shared/TeamName';
 
 const Matches = () => {
+  const navigate = useNavigate();
   const { getUserTeam } = useTeamStore();
   const { fixtures, results, clubs } = useLeagueStore();
   const [activeTab, setActiveTab] = useState('fixtures');
@@ -78,29 +81,23 @@ const Matches = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-border-primary pb-3">
-        <h1 className="text-3xl font-semibold text-text-primary">
-          {userTeam ? `${userTeam.name} - Matches` : 'Matches'}
-        </h1>
-      </div>
-
+    <div className="space-y-2">
       {/* Quick Stats */}
       {userTeam && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="card p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div className="card p-2 text-center">
             <div className="text-2xl font-bold text-text-primary">{userStats.played}</div>
             <div className="text-text-secondary text-sm">Matches Played</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-2 text-center">
             <div className="text-2xl font-bold text-status-win">{userStats.wins}</div>
             <div className="text-text-secondary text-sm">Wins</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-2 text-center">
             <div className="text-2xl font-bold text-status-loss">{userStats.losses}</div>
             <div className="text-text-secondary text-sm">Losses</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-2 text-center">
             <div className={`text-2xl font-bold ${userStats.nrr >= 0 ? 'text-status-win' : 'text-status-loss'}`}>
               {userStats.nrr >= 0 ? '+' : ''}{userStats.nrr.toFixed(3)}
             </div>
@@ -134,10 +131,10 @@ const Matches = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="card p-4">
+      <div className="card p-2">
         {activeTab === 'fixtures' && (
           <>
-            <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <Calendar className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Upcoming Fixtures
@@ -174,10 +171,9 @@ const Matches = () => {
                               {isHome ? 'Home' : 'Away'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-text-primary font-semibold">
-                              vs {opponent?.name || 'Unknown'}
-                            </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-text-secondary text-sm font-medium">vs</span>
+                            <TeamName teamId={isHome ? fixture.awayTeam : fixture.homeTeam} inline={true} className="font-semibold" />
                           </div>
                           {fixture.venue && (
                             <div className="flex items-center gap-1 text-xs text-text-secondary mt-1">
@@ -186,7 +182,10 @@ const Matches = () => {
                             </div>
                           )}
                         </div>
-                        <button className="btn-secondary text-xs py-1 px-3">
+                        <button
+                          className="btn-secondary text-xs py-1 px-2"
+                          onClick={() => navigate(`/game/match/${fixture.matchId}/preview`)}
+                        >
                           View
                         </button>
                       </div>
@@ -207,7 +206,7 @@ const Matches = () => {
 
         {activeTab === 'results' && (
           <>
-            <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <History className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Match Results
@@ -255,9 +254,7 @@ const Matches = () => {
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-text-primary font-medium">
-                            {userTeam?.name}
-                          </span>
+                          <TeamName teamId={userTeam?.id} inline={true} className="font-medium" />
                           <span className="font-mono text-text-primary">
                             {ourInnings?.totalScore || 0}/{ourInnings?.wickets || 0}
                             {ourInnings?.ballsBowled && (
@@ -268,9 +265,7 @@ const Matches = () => {
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-text-secondary">
-                            {opponent?.name || 'Unknown'}
-                          </span>
+                          <TeamName teamId={isHome ? result.awayTeam : result.homeTeam} inline={true} className={won ? 'text-text-secondary' : ''} showHoverEffect={!won} />
                           <span className="font-mono text-text-secondary">
                             {theirInnings?.totalScore || 0}/{theirInnings?.wickets || 0}
                             {theirInnings?.ballsBowled && (

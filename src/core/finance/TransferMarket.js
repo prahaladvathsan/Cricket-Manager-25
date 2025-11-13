@@ -4,7 +4,7 @@
  * Players listed at internal value, teams bid hourly for 7 days
  */
 
-import transferConfig from '../../data/config/transferConfig.json' with { type: "json" };
+import transferConfig from '../../data/config/transferConfig.json';
 
 export default class TransferMarket {
   constructor(financeStore = null, teamStore = null) {

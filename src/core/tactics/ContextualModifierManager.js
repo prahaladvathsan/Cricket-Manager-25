@@ -4,7 +4,7 @@
  * @module core/tactics/ContextualModifierManager
  */
 
-import contextualConfig from '../../data/config/contextual-modifiers-config.json' with { type: "json" };
+import contextualConfig from '../../data/config/contextual-modifiers-config.json';
 
 /**
  * @class ContextualModifierManager

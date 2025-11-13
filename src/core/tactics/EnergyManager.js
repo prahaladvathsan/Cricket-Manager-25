@@ -4,7 +4,7 @@
  * @module core/tactics/EnergyManager
  */
 
-import energyConfig from '../../data/config/energy-config.json' with { type: "json" };
+import energyConfig from '../../data/config/energy-config.json';
 
 /**
  * @class EnergyManager

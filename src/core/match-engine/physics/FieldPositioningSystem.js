@@ -4,7 +4,7 @@
  * @module core/match-engine/FieldPositioningSystem
  */
 
-import fieldConfig from '../../../data/config/field-positioning-config.json' with { type: "json" };
+import fieldConfig from '../../../data/config/field-positioning-config.json';
 
 /**
  * @typedef {Object} FielderPosition

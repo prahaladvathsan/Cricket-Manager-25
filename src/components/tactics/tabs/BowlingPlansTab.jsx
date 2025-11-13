@@ -9,6 +9,7 @@ import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 import { getPrimaryBowlingRating, formatRating } from '../../../utils/ratingHelper';
+import PlayerName from '../../shared/PlayerName';
 
 const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const { getTeamTactics, updateBowlingPlans, updateBowlingRotation } = useTeamStore();
@@ -254,14 +255,8 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   {/* Player Header */}
                   <div className="mb-2 pb-2 border-b border-border-primary">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4
-                        className="text-sm font-semibold text-cricket-accent hover:underline cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPlayerClick?.(player.id);
-                        }}
-                      >
-                        {player.name}
+                      <h4 className="text-sm font-semibold">
+                        <PlayerName playerId={player.id} player={player} className="text-sm font-semibold" />
                       </h4>
                       <span className={`px-1.5 py-0.5 text-xs rounded ${
                         bowlingType === 'pace' ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'

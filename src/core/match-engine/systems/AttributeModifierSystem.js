@@ -4,7 +4,7 @@
  * @module core/match-engine/AttributeModifierSystem
  */
 
-import playstyleModifiers from '../../../data/config/playstyle-modifiers.json' with { type: "json" };
+import playstyleModifiers from '../../../data/config/playstyle-modifiers.json';
 
 /**
  * AttributeModifierSystem class for applying playstyle modifiers

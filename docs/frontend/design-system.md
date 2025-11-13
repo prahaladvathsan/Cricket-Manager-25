@@ -11,6 +11,174 @@ Cricket Manager follows a **Football Manager-inspired aesthetic** with **cricket
 3. **Cricket-First**: Visual language inspired by cricket broadcasts and scorecards
 4. **Tactical Clarity**: 2D pitch visualization with clear field positions
 5. **Responsive Tables**: All data tables should be sortable, filterable, and readable
+6. **Space Efficiency**: Compact, minimal spacing to maximize content visibility
+7. **Visual Clarity**: Hidden scrollbars, center-aligned stats, no redundant headers
+
+---
+
+## Compact Design Philosophy (V2 - January 2025)
+
+Cricket Manager has adopted a **space-efficient, compact design approach** to maximize content visibility and reduce visual clutter. This philosophy prioritizes information density while maintaining readability.
+
+### Core Compact Design Rules
+
+#### 1. **No Redundant Page Headers**
+- **Remove page title bars** that duplicate navigation information
+- Example: Don't show "Home" header on Home page - the sidebar already indicates location
+- Exception: Keep headers that contain essential context or actions
+
+```jsx
+// ❌ Redundant header
+<div>
+  <h1 className="text-3xl">League</h1>
+  {/* League content */}
+</div>
+
+// ✅ Compact approach - no header needed
+<div>
+  {/* League content directly */}
+</div>
+```
+
+#### 2. **Minimal Spacing (Primary Rule)**
+Use **compact spacing by default** across all components:
+
+```css
+/* Default spacing values */
+space-y-2      /* Vertical stack spacing (8px) */
+gap-2          /* Grid/flex gaps (8px) */
+p-2            /* Card padding (8px) */
+mb-2           /* Bottom margins (8px) */
+pb-1 / pb-2    /* Bottom padding (4px / 8px) */
+```
+
+**Golden Rule**: Start with `space-y-2` and `gap-2`, only increase if absolutely necessary for readability.
+
+```jsx
+// ✅ Correct - Compact spacing
+<div className="space-y-2">
+  <div className="grid grid-cols-3 gap-2">
+    <div className="card p-2">Content</div>
+  </div>
+</div>
+
+// ❌ Wrong - Excessive spacing
+<div className="space-y-6">
+  <div className="grid grid-cols-3 gap-4">
+    <div className="card p-6">Content</div>
+  </div>
+</div>
+```
+
+#### 3. **Hidden Scrollbars (Globally Applied)**
+Scrollbars are **visually hidden** but remain **functionally present**.
+
+```css
+/* Applied globally to all elements */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+```
+
+**Why**: Cleaner visual appearance while maintaining full scroll functionality.
+
+#### 4. **Center-Aligned Stat Boxes**
+All statistical display boxes should use **center alignment** for visual balance.
+
+```jsx
+// ✅ Correct - Center-aligned stats
+<div className="card p-2 text-center">
+  <div className="text-2xl font-bold">24</div>
+  <div className="text-text-secondary text-xs">Total Players</div>
+</div>
+
+// ❌ Wrong - Left-aligned stats (less balanced)
+<div className="card p-2">
+  <div className="text-2xl font-bold">24</div>
+  <div className="text-text-secondary text-xs">Total Players</div>
+</div>
+```
+
+#### 5. **Compact Buttons**
+Reduce button sizes for space efficiency:
+
+```jsx
+// Standard compact button
+<button className="btn-primary text-xs py-1 px-2">
+  Action
+</button>
+
+// Secondary compact button
+<button className="btn-secondary text-xs py-1 px-2">
+  Action
+</button>
+```
+
+**Original**: `text-sm py-2 px-4` (36px height)
+**Compact**: `text-xs py-1 px-2` (24px height)
+
+#### 6. **Integrate Actions into Navigation**
+Move standalone action buttons into tab bars or navigation elements to save vertical space.
+
+```jsx
+// ✅ Correct - Actions in tab bar
+<div className="border-b border-border-primary">
+  <nav className="flex items-center justify-between">
+    <div className="flex gap-2">
+      {/* Tabs */}
+    </div>
+    <div className="flex gap-2">
+      {/* Action buttons */}
+    </div>
+  </nav>
+</div>
+
+// ❌ Wrong - Separate header with buttons
+<div className="flex justify-between mb-4">
+  <h1>Page Title</h1>
+  <div>{/* Buttons */}</div>
+</div>
+<div className="tabs">{/* Tabs */}</div>
+```
+
+### Spacing Migration Guide
+
+When updating existing components, follow these replacements:
+
+| Old Value | New Value | Context |
+|-----------|-----------|---------|
+| `space-y-6` | `space-y-2` | Vertical stacks |
+| `space-y-4` | `space-y-2` | Vertical stacks |
+| `gap-4` | `gap-2` | Grid/flex gaps |
+| `p-6` | `p-2` | Card padding |
+| `p-4` | `p-2` | Card padding |
+| `p-3` | `p-2` | Card padding |
+| `mb-4` | `mb-2` | Bottom margins |
+| `mb-3` | `mb-2` | Bottom margins |
+| `pb-3` | `pb-2` or `pb-1` | Bottom padding |
+| `text-3xl` (headers) | Remove or reduce | Page titles |
+| `py-2 px-4` (buttons) | `py-1 px-2` | Button padding |
+
+### When to Break Compact Rules
+
+Use **larger spacing** only when:
+1. **Readability suffers** - Text becomes cramped or hard to parse
+2. **Visual hierarchy needed** - Important sections need clear separation
+3. **Touch targets** - Interactive elements need adequate tap areas (mobile)
+4. **Form inputs** - Input fields should remain comfortable to interact with
+
+**Example - Keep larger spacing for forms**:
+```jsx
+// Forms maintain comfortable spacing
+<div className="space-y-4">
+  <input className="py-2 px-3" />
+  <button className="py-2 px-4">Submit</button>
+</div>
+```
 
 ---
 
@@ -168,18 +336,21 @@ Cricket Manager follows a **Football Manager-inspired aesthetic** with **cricket
 --space-20: 5rem;    /* 80px */
 ```
 
-### Component-Specific Spacing
+### Component-Specific Spacing (V2 - Compact)
+
+**Note**: These values reflect the V2 compact design philosophy (January 2025).
+
 ```css
 /* Layout */
 --header-height: 64px;
 --sidebar-width: 240px;
 --sidebar-collapsed-width: 60px;
 
-/* Cards and panels */
---card-padding: 16px;          /* Default card padding */
---card-padding-lg: 24px;       /* Large card padding */
---card-padding-sm: 12px;       /* Small card padding */
---card-gap: 16px;              /* Gap between cards */
+/* Cards and panels (COMPACT V2) */
+--card-padding: 8px;           /* Default card padding (was 16px) */
+--card-padding-lg: 12px;       /* Large card padding (was 24px) */
+--card-padding-sm: 8px;        /* Small card padding (was 12px) */
+--card-gap: 8px;               /* Gap between cards (was 16px) */
 --card-border-radius: 8px;     /* Card corner radius */
 
 /* Tables */
@@ -188,13 +359,21 @@ Cricket Manager follows a **Football Manager-inspired aesthetic** with **cricket
 --table-padding-x: 12px;       /* Cell horizontal padding */
 --table-padding-y: 8px;        /* Cell vertical padding */
 
-/* Forms and inputs */
+/* Forms and inputs (Maintain comfortable sizing) */
 --input-height: 40px;          /* Default input height */
 --input-height-sm: 32px;       /* Small input height */
 --input-padding-x: 12px;       /* Input horizontal padding */
---button-height: 40px;         /* Default button height */
---button-height-sm: 32px;      /* Small button height */
+--button-height: 40px;         /* Default button height (forms) */
+--button-height-sm: 24px;      /* Compact button height (was 32px) */
 --button-height-lg: 48px;      /* Large button height */
+```
+
+**Default Utility Classes (V2)**:
+```css
+/* Use these as defaults for most components */
+.space-y-default { @apply space-y-2; }  /* 8px vertical spacing */
+.gap-default { @apply gap-2; }          /* 8px grid/flex gaps */
+.card-padding { @apply p-2; }           /* 8px card padding */
 ```
 
 ---
@@ -321,17 +500,17 @@ Cricket Manager follows a **Football Manager-inspired aesthetic** with **cricket
 </table>
 ```
 
-### Stats Display
+### Stats Display (V2 - Compact & Center-Aligned)
 ```jsx
-// Stat card
-<div className="bg-bg-secondary rounded-lg p-4">
-  <div className="text-text-secondary text-sm mb-1">
-    Label
-  </div>
-  <div className="text-text-primary text-2xl font-bold font-mono">
+// Stat card - MUST be center-aligned
+<div className="card p-2 text-center">
+  <div className="text-2xl font-bold text-text-primary font-mono">
     123.45
   </div>
-  <div className="text-text-positive text-xs mt-1">
+  <div className="text-text-secondary text-xs">
+    Label
+  </div>
+  <div className="text-text-positive text-xs">
     +5.2% ↑
   </div>
 </div>
@@ -343,7 +522,36 @@ Cricket Manager follows a **Football Manager-inspired aesthetic** with **cricket
     2,543
   </span>
 </span>
+
+// Stat grid (common pattern)
+<div className="grid grid-cols-4 gap-2">
+  <div className="card p-2 text-center">
+    <div className="text-2xl font-bold">24</div>
+    <div className="text-text-secondary text-xs">Players</div>
+  </div>
+  <div className="card p-2 text-center">
+    <div className="text-2xl font-bold text-status-win">18</div>
+    <div className="text-text-secondary text-xs">Wins</div>
+  </div>
+  {/* More stat boxes */}
+</div>
 ```
+
+### Clickable Entity Components
+
+**Rule**: Always use `PlayerName` and `TeamName` components - never hardcode names.
+
+```jsx
+// ✅ Correct
+<PlayerName playerId={player.id} />
+<TeamName teamId={team.id} variant="short" />
+
+// ❌ Wrong
+<span>{player.name}</span>
+<span>{team.name}</span>
+```
+
+Both components are clickable by default and open detail modals.
 
 ### Form Indicator (W-L-W-L-W)
 ```jsx
@@ -509,30 +717,33 @@ If light theme is added later:
 
 ---
 
-## Usage Examples
+## Usage Examples (V2 - Compact)
 
-### Dashboard Widget
+### Dashboard Widget (Compact)
 ```jsx
-<div className="bg-bg-secondary border border-border-primary rounded-lg p-6 hover:border-border-accent transition-colors">
-  <h3 className="text-xl font-semibold text-text-primary mb-4">
-    Next Match
-  </h3>
-  <div className="space-y-3">
-    <div className="flex justify-between items-center">
+<div className="card p-2 hover:border-border-accent transition-colors">
+  <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
+    <Calendar className="w-4 h-4 text-cricket-accent" />
+    <h3 className="text-lg font-semibold text-text-primary">
+      Next Match
+    </h3>
+  </div>
+  <div className="space-y-2">
+    <div className="flex justify-between items-center text-sm">
       <span className="text-text-secondary">Opponent:</span>
-      <span className="text-text-primary font-semibold">London Lions</span>
+      <TeamName teamId={opponentId} inline />
     </div>
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center text-sm">
       <span className="text-text-secondary">Venue:</span>
       <span className="text-text-primary">Wankhede Stadium</span>
     </div>
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center text-sm">
       <span className="text-text-secondary">Time:</span>
       <span className="text-text-primary font-mono">19:30 IST</span>
     </div>
   </div>
-  <button className="w-full mt-4 bg-cricket-primary hover:bg-cricket-primary-light text-white font-medium py-2 rounded-md transition-colors">
-    View Match Details
+  <button className="w-full mt-2 btn-primary text-xs py-1">
+    View Match
   </button>
 </div>
 ```
@@ -571,6 +782,17 @@ If light theme is added later:
 
 ## Changelog
 
+### Version 2.0 (January 2025) - Compact Design Update
+- **Major redesign**: Adopted space-efficient, compact design philosophy
+- **Global scrollbar hiding**: Visually hidden, functionally present
+- **Removed redundant headers**: Page titles eliminated when redundant with navigation
+- **Minimal spacing**: Default to `space-y-2`, `gap-2`, `p-2` (8px)
+- **Center-aligned stats**: All stat boxes use `text-center`
+- **Compact buttons**: Reduced to `text-xs py-1 px-2` (24px height)
+- **Integrated navigation**: Action buttons moved into tab bars
+- **Spacing migration guide**: Documented old → new value mappings
+- **Updated component patterns**: All examples reflect compact approach
+
 ### Version 1.0 (January 2025)
 - Initial design system creation
 - Football Manager-inspired aesthetic
@@ -582,9 +804,10 @@ If light theme is added later:
 
 ## Next Steps
 
-1. ✅ Design system documented
-2. **Extend Tailwind config** with design tokens
-3. **Create screen layout specs** for each major view
-4. **Build component library** using these patterns
-5. **Implement 2D pitch visualization**
-6. **Create Claude Code skill** for design consistency
+1. ✅ Design system documented (V1)
+2. ✅ Compact design philosophy implemented (V2)
+3. **Extend Tailwind config** with design tokens
+4. **Create screen layout specs** for each major view
+5. **Build component library** using compact patterns
+6. **Implement 2D pitch visualization**
+7. **Create Claude Code skill** for design consistency

@@ -3,7 +3,7 @@
  * @description Main auction orchestration - player categorization, bidding logic, winner determination
  */
 
-import auctionConfig from '../../data/config/auctionConfig.json' with { type: "json" };
+import auctionConfig from '../../data/config/auctionConfig.json';
 import PlayerValuation from './PlayerValuation.js';
 import AuctionAI from './AuctionAI.js';
 

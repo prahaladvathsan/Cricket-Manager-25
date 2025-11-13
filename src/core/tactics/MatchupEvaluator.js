@@ -4,7 +4,7 @@
  * @module core/tactics/MatchupEvaluator
  */
 
-import matchupConfig from '../../data/config/matchup-bonuses-config.json' with { type: "json" };
+import matchupConfig from '../../data/config/matchup-bonuses-config.json';
 
 /**
  * @class MatchupEvaluator

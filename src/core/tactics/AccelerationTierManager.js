@@ -4,7 +4,7 @@
  * @module core/tactics/AccelerationTierManager
  */
 
-import tacticsConfig from '../../data/config/tactics-config.json' with { type: "json" };
+import tacticsConfig from '../../data/config/tactics-config.json';
 import dlsCalculator from './DLSCalculator.js';
 
 /**

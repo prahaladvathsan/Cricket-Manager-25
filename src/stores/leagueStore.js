@@ -391,17 +391,17 @@ const useLeagueStore = create(
 
   /**
    * Get a fixture by ID
-   * @param {string} fixtureId - Fixture ID
+   * @param {string} fixtureId - Fixture ID (matchId)
    * @returns {Object|null} Fixture object or null if not found
    */
   getFixtureById: (fixtureId) => {
     const state = get();
-    // Search in league fixtures
-    const leagueFixture = state.fixtures.find(f => f.id === fixtureId);
+    // Search in league fixtures by matchId field
+    const leagueFixture = state.fixtures.find(f => f.matchId === fixtureId || f.id === fixtureId);
     if (leagueFixture) return leagueFixture;
 
     // Search in playoff fixtures if not found
-    const playoffFixture = state.playoffFixtures.find(f => f.id === fixtureId);
+    const playoffFixture = state.playoffFixtures.find(f => f.matchId === fixtureId || f.id === fixtureId);
     return playoffFixture || null;
   },
 

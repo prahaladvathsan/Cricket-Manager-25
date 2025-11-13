@@ -10,6 +10,7 @@ import usePlayerStore from '../../stores/playerStore';
 import PlayerCard from '../shared/PlayerCard';
 import SetTacticsModal from '../tactics/SetTacticsModal';
 import PlayerCardModal from '../shared/PlayerCardModal';
+import PlayerName from '../shared/PlayerName';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, formatRating } from '../../utils/ratingHelper';
 
 const Squad = () => {
@@ -135,7 +136,6 @@ const Squad = () => {
   // Calculate squad statistics
   const squadStats = {
     totalPlayers: squadPlayers.length,
-    overseas: squadPlayers.filter(p => p.nationality !== 'IND').length,
     batsmen: squadPlayers.filter(p => p.role === 'batsman').length,
     bowlers: squadPlayers.filter(p => p.role === 'bowler').length,
     allRounders: squadPlayers.filter(p => p.role === 'all-rounder').length,
@@ -168,37 +168,33 @@ const Squad = () => {
   };
 
   const renderSquadOverview = () => (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Squad Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <div className="card p-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div className="card p-2 text-center">
           <div className="text-2xl font-bold text-text-primary">{squadStats.totalPlayers}</div>
           <div className="text-text-secondary text-xs">Total Players</div>
         </div>
-        <div className="card p-3">
-          <div className="text-2xl font-bold text-cricket-accent">{squadStats.overseas}</div>
-          <div className="text-text-secondary text-xs">Overseas</div>
-        </div>
-        <div className="card p-3">
+        <div className="card p-2 text-center">
           <div className="text-2xl font-bold text-text-primary">{squadStats.batsmen}</div>
           <div className="text-text-secondary text-xs">Batsmen</div>
         </div>
-        <div className="card p-3">
+        <div className="card p-2 text-center">
           <div className="text-2xl font-bold text-text-primary">{squadStats.bowlers}</div>
           <div className="text-text-secondary text-xs">Bowlers</div>
         </div>
-        <div className="card p-3">
+        <div className="card p-2 text-center">
           <div className="text-2xl font-bold text-text-primary">{squadStats.allRounders}</div>
           <div className="text-text-secondary text-xs">All-Rounders</div>
         </div>
-        <div className="card p-3">
+        <div className="card p-2 text-center">
           <div className="text-2xl font-bold text-text-primary">{squadStats.wicketKeepers}</div>
           <div className="text-text-secondary text-xs">Keepers</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card p-3">
+      <div className="card p-2">
         <div className="flex flex-wrap gap-2">
           {/* Search */}
           <div className="flex-1 min-w-[200px] relative">
@@ -337,15 +333,13 @@ const Squad = () => {
               {filteredSortedPlayers.map((player, idx) => (
                 <tr
                   key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors cursor-pointer ${
+                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
                     idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
                   }`}
-                  onClick={() => {
-                    setSelectedPlayerId(player.id);
-                    setShowPlayerModal(true);
-                  }}
                 >
-                  <td className="px-3 py-2 font-medium text-cricket-accent hover:underline">{player.name}</td>
+                  <td className="px-3 py-2 font-medium">
+                    <PlayerName playerId={player.id} player={player} className="font-medium" />
+                  </td>
                   <td className="px-3 py-2 text-center text-text-secondary">{player.age || '-'}</td>
                   <td className="px-3 py-2 text-text-secondary">{player.nationality || '-'}</td>
                   <td className="px-3 py-2 text-text-secondary capitalize">{player.role || '-'}</td>
@@ -376,10 +370,10 @@ const Squad = () => {
   );
 
   const renderTeamInfo = () => (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Team Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <div className="card p-2">
           <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
             <Target className="w-4 h-4 text-cricket-accent" />
             <h3 className="text-lg font-semibold text-text-primary">Team Information</h3>
@@ -409,7 +403,7 @@ const Squad = () => {
         </div>
 
         {/* Financial Information */}
-        <div className="card p-4">
+        <div className="card p-2">
           <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
             <DollarSign className="w-4 h-4 text-cricket-accent" />
             <h3 className="text-lg font-semibold text-text-primary">Financial Overview</h3>
@@ -447,7 +441,7 @@ const Squad = () => {
 
   const renderStatistics = () => (
     <div className="space-y-4">
-      <div className="card p-4">
+      <div className="card p-2">
         <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
           <TrendingUp className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-lg font-semibold text-text-primary">Season Statistics</h3>
@@ -460,51 +454,40 @@ const Squad = () => {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-border-primary pb-3">
-        <div className="flex items-center space-x-3">
-          <div
-            className="w-10 h-10 rounded-full border-2"
-            style={{ backgroundColor: userTeam.colors.primary, borderColor: userTeam.colors.secondary }}
-          />
-          <div>
-            <h1 className="text-3xl font-semibold text-text-primary">{userTeam.name}</h1>
-            <p className="text-text-secondary text-sm">Squad Management</p>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            className="btn-secondary"
-            onClick={() => setShowTacticsModal(true)}
-          >
-            Set Tactics
-          </button>
-          <button className="btn-primary">Manage Squad</button>
-        </div>
-      </div>
-
+    <div className="space-y-2">
       {/* Tab Navigation */}
       <div className="border-b border-border-primary">
-        <nav className="flex gap-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id)}
-                className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
-                  selectedTab === tab.id
-                    ? 'border-cricket-accent text-cricket-accent'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </div>
-              </button>
-            );
-          })}
+        <nav className="flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedTab(tab.id)}
+                  className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+                    selectedTab === tab.id
+                      ? 'border-cricket-accent text-cricket-accent'
+                      : 'border-transparent text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex space-x-2 pb-2">
+            <button
+              className="btn-secondary text-sm px-3 py-1.5"
+              onClick={() => setShowTacticsModal(true)}
+            >
+              Set Tactics
+            </button>
+            <button className="btn-primary text-sm px-3 py-1.5">Manage Squad</button>
+          </div>
         </nav>
       </div>
 

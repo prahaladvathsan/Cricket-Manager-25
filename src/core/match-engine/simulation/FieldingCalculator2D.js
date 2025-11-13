@@ -8,7 +8,7 @@ import BallTrajectoryPhysics from '../physics/BallTrajectoryPhysics.js';
 import FieldPositioningSystem from '../physics/FieldPositioningSystem.js';
 import FielderMovementCalculator from '../physics/FielderMovementCalculator.js';
 import RunningDecisionCalculator from '../physics/RunningDecisionCalculator.js';
-import physicsConfig from '../../../data/config/physics-config.json' with { type: "json" };
+import physicsConfig from '../../../data/config/physics-config.json';
 
 
 /**

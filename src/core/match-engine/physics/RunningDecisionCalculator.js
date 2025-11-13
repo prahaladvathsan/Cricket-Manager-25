@@ -4,8 +4,8 @@
  * @module core/match-engine/RunningDecisionCalculator
  */
 
-import runningConfig from '../../../data/config/running-config.json' with { type: "json" };
-import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
+import runningConfig from '../../../data/config/running-config.json';
+import mentalityConfig from '../../../data/config/mentality-config.json';
 
 /**
  * @typedef {Object} RunningDecision

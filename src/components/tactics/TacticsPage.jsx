@@ -190,7 +190,7 @@ const TacticsPage = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto p-4 bg-bg-primary">
+      <div className="flex-1 overflow-y-auto p-2 bg-bg-primary">
         {activeTab === 'squad' && (
           <SquadPlaystyleTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
         )}

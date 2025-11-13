@@ -8,6 +8,7 @@ import { Plus, X, Search, Users as UsersIcon, UserCheck } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import { getPlayerRating, formatRating } from '../../../utils/ratingHelper';
+import PlayerName from '../../shared/PlayerName';
 
 const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,15 +197,9 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p
-                      className="text-sm font-medium text-cricket-accent hover:underline cursor-pointer truncate"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPlayerClick?.(player.id);
-                      }}
-                    >
-                      {player.name}
-                    </p>
+                    <div className="text-sm font-medium truncate">
+                      <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                    </div>
                     <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                       {player.role}
                     </span>
@@ -286,15 +281,9 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p
-                          className="text-sm font-medium text-cricket-accent hover:underline cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onPlayerClick?.(player.id);
-                          }}
-                        >
-                          {player.name}
-                        </p>
+                        <div className="text-sm font-medium">
+                          <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                        </div>
                         <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                           {player.role}
                         </span>

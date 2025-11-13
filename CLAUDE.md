@@ -96,6 +96,14 @@ See `docs/dev/active/README.md` for templates and `docs/dev/completed/developmen
 - **NEVER hardcode probabilities** in code - import from configs
 - Test outcomes with `node src/test/diagnosticBallTest.js`
 
+### Clickable Entity Components (CRITICAL)
+
+**NEVER hardcode `player.name` or `team.name`. ALWAYS use:**
+- `<PlayerName playerId={id} />` - Opens player detail modal
+- `<TeamName teamId={id} />` - Opens team roster modal
+
+This ensures consistent clickable behavior across all screens (Football Manager pattern).
+
 ### Data Processing
 - Player database processing is **external** (`cricket-data-processor` module adjacent to this repo)
 - Do NOT modify player data pipeline in this repo
@@ -128,11 +136,11 @@ See `docs/dev/active/README.md` for templates and `docs/dev/completed/developmen
 **Quick Links**:
 - [Developer Guide](docs/dev/README.md) - Complete dev documentation index
 - [Roadmap & Status](ROADMAP.md) - Current development status and next priorities
-- [Design System](docs/frontend/design-system.md) - UI specifications
-- [Match Engine](docs/core-systems/match-engine.md) - Simulation architecture
+- [Design System](docs/frontend/design-system.md) - UI components and patterns
+- [Integration Patterns](docs/frontend/integration-patterns.md) - Store integration patterns
 - [Active Tracking Templates](docs/dev/active/README.md) - Task management templates
 
-**Full documentation index**: See `docs/README.md`
+**Full documentation index**: See `docs/README.md` for all architecture and core systems docs
 
 ## Testing Quick Reference
 

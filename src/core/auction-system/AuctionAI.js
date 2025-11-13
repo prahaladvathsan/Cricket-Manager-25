@@ -3,7 +3,7 @@
  * @description AI bidding strategy and decision-making for auction
  */
 
-import auctionConfig from '../../data/config/auctionConfig.json' with { type: "json" };
+import auctionConfig from '../../data/config/auctionConfig.json';
 import PlayerValuation from './PlayerValuation.js';
 
 class AuctionAI {

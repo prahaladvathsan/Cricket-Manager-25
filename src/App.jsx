@@ -10,6 +10,10 @@ import Home from './components/layout/Home';
 import Squad from './components/team/Squad';
 import Matches from './components/match/Matches';
 import Match from './components/match/Match';
+import MatchLive from './components/match/MatchLive';
+import MatchdayUI from './components/match/matchday/MatchdayUI';
+import MatchPreview from './components/match/MatchPreview';
+import PreMatchFlow from './components/match/PreMatchFlow';
 import Auction from './components/auction/Auction';
 import League from './components/layout/League';
 import Transfers from './components/layout/Transfers';
@@ -99,6 +103,10 @@ function App() {
             }
           />
 
+          {/* Full-screen Match Routes (No Layout) */}
+          <Route path="/game/match/:matchId/live" element={<MatchdayUI />} />
+          <Route path="/game/match/:matchId/pre-match" element={<PreMatchFlow />} />
+
           {/* Game Routes (With Layout) */}
           <Route
             path="/game/*"
@@ -110,7 +118,9 @@ function App() {
                   <Route path="squad" element={<Squad />} />
                   <Route path="tactics" element={<TacticsPage />} />
                   <Route path="matches" element={<Matches />} />
-                  <Route path="match/:matchId" element={<Match />} />
+                  <Route path="match/:matchId/preview" element={<MatchPreview />} />
+                  {/* Redirect old match route to preview screen */}
+                  <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
                   <Route path="auction" element={<Auction />} />
                   <Route path="league" element={<League />} />
                   <Route path="transfers" element={<Transfers />} />

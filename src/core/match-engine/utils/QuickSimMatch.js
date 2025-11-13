@@ -38,22 +38,22 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     const innings1 = state.results?.[0] || innings;
     const innings2 = state.results?.[1] || innings;
 
-    let winner, loser, margin, marginType;
+    let winnerId, loserId, margin, marginType;
 
     if (innings2.totalScore > innings1.totalScore) {
-      winner = matchConfig.awayTeam;
-      loser = matchConfig.homeTeam;
+      winnerId = matchConfig.awayTeam.id;
+      loserId = matchConfig.homeTeam.id;
       margin = 10 - innings2.wickets; // Wickets remaining
       marginType = 'wickets';
     } else if (innings1.totalScore > innings2.totalScore) {
-      winner = matchConfig.homeTeam;
-      loser = matchConfig.awayTeam;
+      winnerId = matchConfig.homeTeam.id;
+      loserId = matchConfig.awayTeam.id;
       margin = innings1.totalScore - innings2.totalScore; // Runs
       marginType = 'runs';
     } else {
       // Tie - for simplicity, use super over logic or just pick one
-      winner = matchConfig.homeTeam;
-      loser = matchConfig.awayTeam;
+      winnerId = matchConfig.homeTeam.id;
+      loserId = matchConfig.awayTeam.id;
       margin = 0;
       marginType = 'tie';
     }
@@ -63,40 +63,39 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     const topBowler = getTopBowler(state);
     const playerOfMatch = topScorer.runs > topBowler.wickets * 20 ? topScorer : topBowler;
 
+    // Format margin text
+    let marginText = '';
+    if (marginType === 'wickets') {
+      marginText = `by ${margin} wicket${margin !== 1 ? 's' : ''}`;
+    } else if (marginType === 'runs') {
+      marginText = `by ${margin} run${margin !== 1 ? 's' : ''}`;
+    } else {
+      marginText = 'Match Tied';
+    }
+
     return {
       matchId: matchConfig.id,
-      winner,
-      loser,
+      homeTeam: matchConfig.homeTeam,
+      awayTeam: matchConfig.awayTeam,
+      winner: winnerId,
+      loser: loserId,
+      margin: marginText,
       winMargin: margin,
       winType: marginType,
-      homeTeam: {
-        ...matchConfig.homeTeam,
-        score: innings1.totalScore,
-        wickets: innings1.wickets,
-        overs: `${innings1.overs}.${innings1.balls || 0}`
+      innings1: {
+        ...innings1,
+        topScorer: topScorer,
+        topBowler: topBowler
       },
-      awayTeam: {
-        ...matchConfig.awayTeam,
-        score: innings2.totalScore,
-        wickets: innings2.wickets,
-        overs: `${innings2.overs}.${innings2.balls || 0}`
+      innings2: {
+        ...innings2,
+        topScorer: topScorer,
+        topBowler: topBowler
       },
       playerOfMatch: {
         name: playerOfMatch.name,
         performance: playerOfMatch.performance
-      },
-      topScorer: {
-        name: topScorer.name,
-        runs: topScorer.runs,
-        balls: topScorer.balls
-      },
-      topBowler: {
-        name: topBowler.name,
-        wickets: topBowler.wickets,
-        runs: topBowler.runs
-      },
-      innings1: innings1,
-      innings2: innings2
+      }
     };
   } catch (error) {
     console.error('Error quick-simulating match:', error);

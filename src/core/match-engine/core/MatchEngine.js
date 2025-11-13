@@ -102,14 +102,27 @@ class MatchEngine {
       throw new Error('Team data not found');
     }
 
-    // Select opening batsmen (first two batsmen in lineup)
+    // Select opening batsmen from batting order
     const battingSquad = teams.batting.squad;
     if (battingSquad.length < 2) {
       throw new Error('Insufficient batsmen in squad');
     }
 
-    const striker = battingSquad[0];
-    const nonStriker = battingSquad[1];
+    // Get batting order from team tactics
+    const teamTactics = this.teamStore.getState().getTeamTactics(innings.battingTeam);
+    const battingOrder = teamTactics?.battingOrder || [];
+
+    // Use batting order if available, otherwise use squad order
+    let striker, nonStriker;
+    if (battingOrder.length >= 2) {
+      striker = battingOrder[0];
+      nonStriker = battingOrder[1];
+      console.log('[MatchEngine setupOpeningPlayers] Using batting order:', striker, nonStriker);
+    } else {
+      striker = battingSquad[0];
+      nonStriker = battingSquad[1];
+      console.log('[MatchEngine setupOpeningPlayers] No batting order found, using squad order');
+    }
 
     // Select opening bowler (first bowler in squad)
     const bowlingSquad = teams.bowling.squad;
@@ -119,8 +132,12 @@ class MatchEngine {
     matchState.setOpeningBatsmen(striker, nonStriker);
     matchState.setCurrentBowler(openingBowler);
 
-    // Set up field formation (random for testing)
-    this.setupFieldFormation(bowlingTeam);
+    // Set up field formation - create team object with players from matchState
+    const bowlingTeamWithPlayers = {
+      ...bowlingTeam,
+      players: bowlingSquad  // Add squad (player IDs) from matchState
+    };
+    this.setupFieldFormation(bowlingTeamWithPlayers);
 
     // Initialize player conditions for match
     this.initializePlayerConditions(battingSquad.concat(bowlingSquad));
@@ -326,11 +343,14 @@ class MatchEngine {
         // No delay for instant simulation
       }
 
-      // Check if match is complete or needs second innings
-      if (this.isMatchComplete()) {
-        await this.completeMatch();
-      } else {
-        await this.startSecondInnings();
+      // Only proceed with match completion/second innings if NOT paused
+      if (!this.isPaused) {
+        // Check if match is complete or needs second innings
+        if (this.isMatchComplete()) {
+          await this.completeMatch();
+        } else if (this.isInningsComplete()) {
+          await this.startSecondInnings();
+        }
       }
 
     } catch (error) {
@@ -360,6 +380,11 @@ class MatchEngine {
     const striker = this.playerStore.getState().getPlayer(innings.striker);
     const nonStriker = this.playerStore.getState().getPlayer(innings.nonStriker);
     const bowler = this.playerStore.getState().getPlayer(innings.bowler);
+
+    // Debug: Log who is facing this ball
+    if (currentBall.over === 0 && currentBall.ball < 3) {
+      console.log(`[MatchEngine simulateBall] Over ${currentBall.over}.${currentBall.ball} - Striker: ${striker?.name} (${innings.striker}), Non-Striker: ${nonStriker?.name} (${innings.nonStriker})`);
+    }
 
     const wicketKeeper = this.getWicketKeeper(teams.bowling.squad);
 
@@ -635,6 +660,14 @@ class MatchEngine {
       condition: matchState.matchConditions[bowlerId]
     };
 
+    // Ensure matchConditions exists for these players
+    if (!matchState.matchConditions[strikerId]) {
+      matchState.matchConditions[strikerId] = { energy: 100, confidence: 50, fatigue: 0 };
+    }
+    if (!matchState.matchConditions[bowlerId]) {
+      matchState.matchConditions[bowlerId] = { energy: 100, confidence: 50, fatigue: 0 };
+    }
+
     // Update energy
     const strikerEnergy = energyManager.updateBattingEnergy(striker, 1, ballResult.runs);
     const bowlerOversCount = this.calculateOversBowled(matchState.ballByBall)[bowlerId] || 1;
@@ -668,6 +701,9 @@ class MatchEngine {
 
     // Get dismissed player name for logging
     const dismissedPlayer = this.playerStore.getState().getPlayer(ballResult.dismissedPlayer);
+    console.log('[MatchEngine handleWicket] Dismissed:', dismissedPlayer?.name, 'ID:', ballResult.dismissedPlayer);
+    console.log('[MatchEngine handleWicket] Current batsmen - Striker:', innings.striker, 'Non-Striker:', innings.nonStriker);
+    console.log('[MatchEngine handleWicket] Batted players before:', innings.battedPlayers);
 
     // Check if innings should end (all 10 wickets fallen)
     if (teams.batting.wickets >= this.config.maxWickets) {
@@ -686,16 +722,27 @@ class MatchEngine {
     }
 
     const newBatsman = this.playerStore.getState().getPlayer(newBatsmanId);
-    if (this.config.showBallByBall) {
-      console.log(`${newBatsman.name} comes to the crease`);
+    console.log(`[MatchEngine handleWicket] New batsman: ${newBatsman.name} (ID: ${newBatsmanId})`);
+
+    // Initialize match conditions for new batsman if not already initialized
+    if (!matchState.matchConditions[newBatsmanId]) {
+      console.log(`[MatchEngine handleWicket] Initializing match conditions for ${newBatsman.name}`);
+      matchState.matchConditions[newBatsmanId] = { energy: 100, confidence: 50, fatigue: 0 };
     }
 
     // Update striker/non-striker based on who got out
     if (ballResult.dismissedPlayer === innings.striker) {
+      console.log('[MatchEngine handleWicket] Striker got out, replacing striker with new batsman');
       matchState.setOpeningBatsmen(newBatsmanId, innings.nonStriker);
     } else {
+      console.log('[MatchEngine handleWicket] Non-striker got out, replacing non-striker with new batsman');
       matchState.setOpeningBatsmen(innings.striker, newBatsmanId);
     }
+
+    // Verify update
+    const newState = this.matchStore.getState();
+    console.log('[MatchEngine handleWicket] After update - Striker:', newState.innings.striker, 'Non-Striker:', newState.innings.nonStriker);
+    console.log('[MatchEngine handleWicket] Batted players after:', newState.innings.battedPlayers);
   }
 
   /**
@@ -709,22 +756,45 @@ class MatchEngine {
     // Use the battedPlayers list maintained by the matchStore
     const battedPlayers = new Set(innings.battedPlayers);
 
-    // First, try to find specialist batsmen
-    for (const playerId of teams.batting.squad) {
-      if (!battedPlayers.has(playerId)) {
-        const player = this.playerStore.getState().getPlayer(playerId);
-        if (player && ['batsman', 'all-rounder', 'wicket-keeper'].includes(player.role)) {
-          return playerId;
+    // Get batting order from team tactics
+    const teamTactics = this.teamStore.getState().getTeamTactics(teams.batting.id);
+    const battingOrder = teamTactics?.battingOrder || [];
+
+    console.log('[MatchEngine selectNextBatsman] battingOrder:', battingOrder);
+    console.log('[MatchEngine selectNextBatsman] battedPlayers:', Array.from(battedPlayers));
+
+    // If batting order is defined, use it
+    if (battingOrder.length > 0) {
+      for (const playerId of battingOrder) {
+        if (!battedPlayers.has(playerId)) {
+          const player = this.playerStore.getState().getPlayer(playerId);
+          if (player) {
+            console.log('[MatchEngine selectNextBatsman] Selected from batting order:', player.name, playerId);
+            return playerId;
+          }
         }
       }
-    }
+    } else {
+      // Fallback: use role-based selection
+      console.log('[MatchEngine selectNextBatsman] No batting order found, using role-based selection');
 
-    // If no specialist batsmen available, bowlers can bat (tail-enders)
-    for (const playerId of teams.batting.squad) {
-      if (!battedPlayers.has(playerId)) {
-        const player = this.playerStore.getState().getPlayer(playerId);
-        if (player && player.role === 'bowler') {
-          return playerId;
+      // First, try to find specialist batsmen
+      for (const playerId of teams.batting.squad) {
+        if (!battedPlayers.has(playerId)) {
+          const player = this.playerStore.getState().getPlayer(playerId);
+          if (player && ['batsman', 'all-rounder', 'wicket-keeper'].includes(player.role)) {
+            return playerId;
+          }
+        }
+      }
+
+      // If no specialist batsmen available, bowlers can bat (tail-enders)
+      for (const playerId of teams.batting.squad) {
+        if (!battedPlayers.has(playerId)) {
+          const player = this.playerStore.getState().getPlayer(playerId);
+          if (player && player.role === 'bowler') {
+            return playerId;
+          }
         }
       }
     }
@@ -812,7 +882,17 @@ class MatchEngine {
     const matchState = this.matchStore.getState();
     const { striker, nonStriker } = matchState.innings;
 
+    const strikerPlayer = this.playerStore.getState().getPlayer(striker);
+    const nonStrikerPlayer = this.playerStore.getState().getPlayer(nonStriker);
+
+    console.log('[MatchEngine rotateStrike] Before:', strikerPlayer?.name, '→', nonStrikerPlayer?.name);
     matchState.setOpeningBatsmen(nonStriker, striker);
+
+    // Verify strike rotated
+    const newState = this.matchStore.getState();
+    const newStrikerPlayer = this.playerStore.getState().getPlayer(newState.innings.striker);
+    const newNonStrikerPlayer = this.playerStore.getState().getPlayer(newState.innings.nonStriker);
+    console.log('[MatchEngine rotateStrike] After:', newStrikerPlayer?.name, '→', newNonStrikerPlayer?.name);
   }
 
   /**
@@ -821,11 +901,32 @@ class MatchEngine {
    */
   selectNextBowler() {
     const matchState = this.matchStore.getState();
-    const { teams, currentBall, ballByBall } = matchState;
+    const { teams, currentBall, ballByBall, tacticsState } = matchState;
 
     // Calculate overs bowled by each bowler
     const oversBowled = this.calculateOversBowled(ballByBall);
     const currentBowler = matchState.innings.bowler;
+
+    // Check if user has set over assignments in tacticsState
+    const overAssignments = tacticsState?.overAssignments || {};
+    const upcomingOverNumber = currentBall.over + 1; // Next over (0-indexed in currentBall, 1-indexed in assignments)
+    const assignedBowlerId = overAssignments[upcomingOverNumber];
+
+    // If over assignment exists and bowler is valid, use it
+    if (assignedBowlerId) {
+      const assignedPlayer = this.playerStore.getState().getPlayer(assignedBowlerId);
+      const overs = oversBowled[assignedBowlerId] || 0;
+
+      // Validate assignment: bowler exists, not current bowler, under overs limit
+      if (assignedPlayer &&
+          assignedBowlerId !== currentBowler &&
+          overs < this.config.maxBowlerOvers) {
+        console.log(`✓ Using assigned bowler for over ${upcomingOverNumber}: ${assignedPlayer.name}`);
+        return assignedBowlerId;
+      } else {
+        console.warn(`⚠ Assigned bowler invalid for over ${upcomingOverNumber}, using auto-selection`);
+      }
+    }
 
     // Get all potential bowlers (anyone except wicketkeeper)
     const potentialBowlers = teams.bowling.squad

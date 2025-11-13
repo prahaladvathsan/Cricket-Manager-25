@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Trophy,
   Calendar,
@@ -17,8 +18,10 @@ import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
 import SeasonProgress from '../league/SeasonProgress';
 import PlayerCardModal from '../shared/PlayerCardModal';
+import TeamName from '../shared/TeamName';
 
 const League = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('standings');
   const [leaderboardCategory, setLeaderboardCategory] = useState('batting');
   const [fixturesView, setFixturesView] = useState('list'); // 'list' or 'calendar'
@@ -168,7 +171,7 @@ const League = () => {
 
   // Tab content components
   const StandingsTable = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
       {/* Season Progress (Right Sidebar) */}
       <div className="lg:col-span-1 order-first lg:order-last">
         <SeasonProgress />
@@ -176,8 +179,8 @@ const League = () => {
 
       {/* Standings Table (Main Content) */}
       <div className="lg:col-span-2">
-        <div className="card p-4">
-          <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+        <div className="card p-2">
+          <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
             <Trophy className="w-4 h-4 text-cricket-accent" />
             <h3 className="text-lg font-semibold text-text-primary">
               League Standings
@@ -216,7 +219,7 @@ const League = () => {
                         {idx + 1}
                       </td>
                       <td className="py-2 px-3 text-text-primary font-medium">
-                        {team.clubName}
+                        <TeamName teamId={team.clubId} inline={true} />
                       </td>
                       <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
                         {team.played}
@@ -254,7 +257,7 @@ const League = () => {
               <div className="flex items-center gap-2 text-cricket-accent">
                 <Trophy className="w-5 h-5" />
                 <span className="font-semibold text-base">
-                  Season {currentSeason} Champion: {champion.name}
+                  Season {currentSeason} Champion: <TeamName teamId={champion.id} inline={true} className="font-bold" />
                 </span>
               </div>
             </div>
@@ -265,8 +268,8 @@ const League = () => {
   );
 
   const FixturesView = () => (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-4 border-b border-border-primary pb-2">
+    <div className="card p-2">
+      <div className="flex items-center justify-between mb-2 border-b border-border-primary pb-1">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-lg font-semibold text-text-primary">
@@ -338,13 +341,9 @@ const League = () => {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-text-primary font-medium text-sm">
-                            {clubs[fixture.homeTeam]?.shortName || fixture.homeTeamName || fixture.homeTeam}
-                          </span>
+                          <TeamName teamId={fixture.homeTeam} variant="short" inline={true} className="font-medium text-sm" />
                           <span className="text-text-secondary text-xs font-bold">vs</span>
-                          <span className="text-text-primary font-medium text-sm">
-                            {clubs[fixture.awayTeam]?.shortName || fixture.awayTeamName || fixture.awayTeam}
-                          </span>
+                          <TeamName teamId={fixture.awayTeam} variant="short" inline={true} className="font-medium text-sm" />
                         </div>
                         {fixture.venue && (
                           <div className="text-xs text-text-secondary mt-1">
@@ -353,7 +352,10 @@ const League = () => {
                         )}
                       </div>
                       {isScheduled && (
-                        <button className="btn-secondary text-xs py-1 px-3">
+                        <button
+                          className="btn-secondary text-xs py-1 px-3"
+                          onClick={() => navigate(`/game/match/${fixture.matchId}/preview`)}
+                        >
                           View
                         </button>
                       )}
@@ -479,8 +481,8 @@ const League = () => {
   );
 
   const ResultsView = () => (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+    <div className="card p-2">
+      <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
         <History className="w-4 h-4 text-cricket-accent" />
         <h3 className="text-lg font-semibold text-text-primary">
           Recent Results
@@ -490,10 +492,6 @@ const League = () => {
       {recentResults.length > 0 ? (
         <div className="space-y-2">
           {recentResults.map((result, idx) => {
-            const homeTeamName = clubs[result.homeTeam]?.name || result.homeTeam;
-            const awayTeamName = clubs[result.awayTeam]?.name || result.awayTeam;
-            const winnerName = clubs[result.winner]?.name || result.winner;
-
             return (
               <div
                 key={idx}
@@ -505,7 +503,7 @@ const League = () => {
                       <span className={`font-medium ${
                         result.winner === result.homeTeam ? 'text-text-primary' : 'text-text-secondary'
                       }`}>
-                        {homeTeamName}
+                        <TeamName teamId={result.homeTeam} inline={true} showHoverEffect={result.winner === result.homeTeam} />
                       </span>
                       <span className="font-mono text-text-primary">
                         {result.innings1?.totalScore || 0}/{result.innings1?.wickets || 0}
@@ -515,7 +513,7 @@ const League = () => {
                       <span className={`font-medium ${
                         result.winner === result.awayTeam ? 'text-text-primary' : 'text-text-secondary'
                       }`}>
-                        {awayTeamName}
+                        <TeamName teamId={result.awayTeam} inline={true} showHoverEffect={result.winner === result.awayTeam} />
                       </span>
                       <span className="font-mono text-text-primary">
                         {result.innings2?.totalScore || 0}/{result.innings2?.wickets || 0}
@@ -524,7 +522,7 @@ const League = () => {
                   </div>
                 </div>
                 <div className="text-xs text-cricket-accent border-t border-border-primary pt-2">
-                  {winnerName} won by {result.margin}
+                  <TeamName teamId={result.winner} inline={true} /> won by {result.margin}
                 </div>
               </div>
             );
@@ -542,8 +540,8 @@ const League = () => {
     const currentLeaders = leaderboards[leaderboardCategory] || [];
 
     return (
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-4 border-b border-border-primary pb-2">
+      <div className="card p-2">
+        <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
           <Award className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-lg font-semibold text-text-primary">
             Player Leaderboards
@@ -638,7 +636,7 @@ const League = () => {
                       </span>
                     </td>
                     <td className="py-2 px-2 text-text-secondary text-xs">
-                      {clubs[player.currentTeam]?.shortName || clubs[player.currentTeam]?.name || player.currentTeam}
+                      <TeamName teamId={player.currentTeam} variant="short" inline={true} className="text-xs" />
                     </td>
                     {leaderboardCategory === 'batting' && (
                       <>
@@ -693,15 +691,7 @@ const League = () => {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-primary pb-3">
-        <h1 className="text-3xl font-semibold text-text-primary">League</h1>
-        <div className="text-text-secondary text-sm">
-          {seasonName || `Season ${currentSeason}`}
-        </div>
-      </div>
-
+    <div className="space-y-2">
       {/* Navigation Tabs */}
       <div className="flex gap-2 border-b border-border-primary">
         <button

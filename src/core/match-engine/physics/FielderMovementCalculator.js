@@ -4,7 +4,7 @@
  * @module core/match-engine/FielderMovementCalculator
  */
 
-import physicsConfig from '../../../data/config/physics-config.json' with { type: "json" };
+import physicsConfig from '../../../data/config/physics-config.json';
 
 /**
  * @typedef {Object} FielderInterception

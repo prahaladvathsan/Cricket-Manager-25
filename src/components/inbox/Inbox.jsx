@@ -62,24 +62,6 @@ const Inbox = () => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border-primary pb-3 mb-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-text-primary">Inbox</h1>
-          <div className="flex items-center gap-2">
-            {messages.some(m => !m.read) && (
-              <button
-                onClick={markAllAsRead}
-                className="btn-secondary text-sm flex items-center gap-1.5"
-              >
-                <MailOpen className="w-4 h-4" />
-                Mark All Read
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Inbox Content */}
       {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
@@ -90,13 +72,22 @@ const Inbox = () => {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex gap-4 overflow-hidden">
+        <div className="flex-1 flex gap-2 overflow-hidden">
           {/* Message List */}
           <div className="w-2/5 flex flex-col border border-border-primary rounded-lg bg-bg-secondary overflow-hidden">
-            <div className="p-3 border-b border-border-primary bg-bg-tertiary">
+            <div className="p-2 border-b border-border-primary bg-bg-tertiary flex items-center justify-between">
               <h2 className="text-sm font-semibold text-text-primary">
                 Messages ({messages.length})
               </h2>
+              {messages.some(m => !m.read) && (
+                <button
+                  onClick={markAllAsRead}
+                  className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
+                >
+                  <MailOpen className="w-3 h-3" />
+                  Mark All Read
+                </button>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto">
               {messages.map((message) => (

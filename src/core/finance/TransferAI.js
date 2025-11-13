@@ -5,7 +5,7 @@
  * Hourly bidding cycle: Evaluate and bid on listings
  */
 
-import transferConfig from '../../data/config/transferConfig.json' with { type: "json" };
+import transferConfig from '../../data/config/transferConfig.json';
 import PerformanceValuation from './PerformanceValuation.js';
 
 export default class TransferAI {

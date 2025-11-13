@@ -7,6 +7,7 @@
 import React, { useMemo } from 'react';
 import { Award, TrendingUp, Target, Zap } from 'lucide-react';
 import PlayerValuation from '../../core/auction-system/PlayerValuation';
+import TeamName from './TeamName';
 
 /**
  * PlayerCard Component
@@ -18,6 +19,7 @@ import PlayerValuation from '../../core/auction-system/PlayerValuation';
  * @param {boolean} showPlaystyles - Show playstyle ratings (default: true)
  * @param {function} onClick - Optional click handler
  * @param {string} className - Additional CSS classes
+ * @param {function} onTeamClick - Callback when team name is clicked (to close parent modal)
  */
 const PlayerCard = ({
   player,
@@ -26,7 +28,8 @@ const PlayerCard = ({
   showAttributes = false,
   showPlaystyles = true,
   onClick = null,
-  className = ''
+  className = '',
+  onTeamClick = null
 }) => {
   if (!player) return null;
 
@@ -71,9 +74,18 @@ const PlayerCard = ({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-text-primary truncate">{player.name}</div>
-            <div className="text-xs text-text-secondary">
+            <div className="text-xs text-text-secondary flex items-center gap-2 flex-wrap">
+              {player.currentTeam && (
+                <TeamName
+                  teamId={player.currentTeam}
+                  variant="short"
+                  inline={true}
+                  className="text-xs"
+                  onBeforeOpen={onTeamClick}
+                />
+              )}
               {player.primaryPlaystyle?.batting && (
-                <span className="mr-2">{player.primaryPlaystyle.batting}</span>
+                <span>{player.primaryPlaystyle.batting}</span>
               )}
               {player.primaryPlaystyle?.bowling && player.role?.toLowerCase() === 'all-rounder' && (
                 <span>| {player.primaryPlaystyle.bowling}</span>
@@ -103,10 +115,19 @@ const PlayerCard = ({
             <Award className="w-5 h-5 text-cricket-accent flex-shrink-0" />
             <div>
               <h3 className="text-lg font-bold text-text-primary">{player.name}</h3>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${roleColor}`}>
                   {player.role}
                 </span>
+                {player.currentTeam && (
+                  <TeamName
+                    teamId={player.currentTeam}
+                    variant="short"
+                    inline={true}
+                    className="text-xs"
+                    onBeforeOpen={onTeamClick}
+                  />
+                )}
                 <span className="text-xs text-text-secondary">
                   {player.nationality} • {player.age}y
                 </span>
@@ -196,6 +217,16 @@ const PlayerCard = ({
             <span className={`px-2 py-1 rounded text-xs font-medium ${roleColor}`}>
               {player.role}
             </span>
+            {player.currentTeam && (
+              <span className="text-sm">
+                <TeamName
+                  teamId={player.currentTeam}
+                  variant="short"
+                  inline={true}
+                  onBeforeOpen={onTeamClick}
+                />
+              </span>
+            )}
             <span className="text-text-secondary">{player.nationality}</span>
             <span className="text-text-secondary">{player.age} years</span>
             {player.battingHand && (

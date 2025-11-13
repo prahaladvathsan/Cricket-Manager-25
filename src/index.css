@@ -5,6 +5,13 @@
 @layer base {
   * {
     box-sizing: border-box;
+    /* Hide scrollbars globally while keeping scroll functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   html {
@@ -77,5 +84,14 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: #718096;
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 }

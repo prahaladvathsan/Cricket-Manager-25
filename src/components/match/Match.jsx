@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Play, Pause, SkipForward, FastForward, Trophy, ChevronRight, X, AlertCircle
 } from 'lucide-react';
@@ -21,6 +21,7 @@ import PreMatchModal from './PreMatchModal';
 const Match = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Subscribe to matchStore updates
   const teams = useMatchStore((state) => state.teams);
@@ -52,36 +53,22 @@ const Match = () => {
   const autoSimulateRef = useRef(null);
 
   useEffect(() => {
-    // Load match data from league store using matchId parameter
-    let fixture = null;
+    // Check if toss data is provided via navigation state (from PreMatchFlow)
+    const navMatchData = location.state?.matchData;
 
-    // Try to get fixture by ID if matchId is provided
-    if (matchId) {
-      fixture = getFixtureById(matchId);
-    }
-
-    // Fallback to next fixture if matchId not found
-    if (!fixture) {
-      fixture = getNextFixture();
-    }
-
-    if (!fixture) {
-      console.warn('No fixture found, redirecting to league');
-      navigate('/game/league');
+    if (navMatchData && navMatchData.toss) {
+      // Pre-match flow was completed, use the provided data
+      setMatchData(navMatchData);
+      setTossResult(navMatchData.toss);
+      setShowPreMatchModal(false);
       return;
     }
 
-    const homeTeam = getClub(fixture.homeTeam);
-    const awayTeam = getClub(fixture.awayTeam);
-
-    setMatchData({
-      id: fixture.id,
-      homeTeam,
-      awayTeam,
-      venue: fixture.venue || homeTeam.homeGround,
-      weather: fixture.weather || 'Clear',
-      matchday: fixture.matchday
-    });
+    // If no toss data and we have a matchId, redirect to preview
+    if (matchId && !navMatchData) {
+      navigate(`/game/match/${matchId}/preview`, { replace: true });
+      return;
+    }
 
     return () => {
       // Cleanup
@@ -89,7 +76,14 @@ const Match = () => {
         clearInterval(autoSimulateRef.current);
       }
     };
-  }, [matchId, getFixtureById, getNextFixture, getClub, navigate]);
+  }, [matchId, location.state, navigate]);
+
+  // Auto-start match when matchData and tossResult are both available
+  useEffect(() => {
+    if (matchData && tossResult && !matchEngine && matchState === 'not_started') {
+      handleStartMatch(tossResult);
+    }
+  }, [matchData, tossResult, matchEngine, matchState]);
 
   // Initialize match after pre-match modal
   const handleStartMatch = async (toss) => {
@@ -305,28 +299,24 @@ const Match = () => {
         />
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* Match Header */}
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-cricket-accent" />
-                {matchData.homeTeam?.name} vs {matchData.awayTeam?.name}
-              </h1>
-              <p className="text-xs text-text-secondary mt-1">
-                T20 Match • {matchData.venue} • Matchday {matchData.matchday}
-              </p>
-            </div>
+        <div className="card p-2">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               {matchState === 'in_progress' && (
-                <span className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded animate-pulse">
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-semibold rounded animate-pulse">
                   LIVE
                 </span>
               )}
+              <p className="text-xs text-text-secondary">
+                {matchData.venue} • Matchday {matchData.matchday}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
               {matchState === 'completed' && (
-                <button onClick={handleContinue} className="btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
-                  <ChevronRight className="w-4 h-4" />
+                <button onClick={handleContinue} className="btn-primary flex items-center gap-1 text-xs py-1 px-2">
+                  <ChevronRight className="w-3 h-3" />
                   Continue
                 </button>
               )}
@@ -341,8 +331,8 @@ const Match = () => {
           </div>
 
           {/* Score Display */}
-          <div className="grid grid-cols-2 gap-4 mb-3">
-            <div className={`text-center p-3 rounded ${
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className={`text-center p-2 rounded ${
               innings?.battingTeam === matchData.homeTeam?.id
                 ? 'bg-cricket-primary/10 border-2 border-cricket-accent'
                 : 'bg-bg-tertiary'
@@ -350,18 +340,18 @@ const Match = () => {
               <div className="text-sm font-semibold text-text-primary">
                 {matchData.homeTeam?.name}
               </div>
-              <div className="text-3xl font-bold text-cricket-accent mt-1">
+              <div className="text-3xl font-bold text-cricket-accent">
                 {innings?.battingTeam === matchData.homeTeam?.id
                   ? formatScore(teams?.batting)
                   : formatScore(teams?.bowling)}
               </div>
-              <div className="text-xs text-text-secondary mt-1">
+              <div className="text-xs text-text-secondary">
                 {innings?.battingTeam === matchData.homeTeam?.id
                   ? formatOvers(innings?.overs, innings?.balls) + ' overs'
                   : ''}
               </div>
             </div>
-            <div className={`text-center p-3 rounded ${
+            <div className={`text-center p-2 rounded ${
               innings?.battingTeam === matchData.awayTeam?.id
                 ? 'bg-cricket-primary/10 border-2 border-cricket-accent'
                 : 'bg-bg-tertiary'
@@ -369,12 +359,12 @@ const Match = () => {
               <div className="text-sm font-semibold text-text-primary">
                 {matchData.awayTeam?.name}
               </div>
-              <div className="text-3xl font-bold text-cricket-accent mt-1">
+              <div className="text-3xl font-bold text-cricket-accent">
                 {innings?.battingTeam === matchData.awayTeam?.id
                   ? formatScore(teams?.batting)
                   : formatScore(teams?.bowling)}
               </div>
-              <div className="text-xs text-text-secondary mt-1">
+              <div className="text-xs text-text-secondary">
                 {innings?.battingTeam === matchData.awayTeam?.id
                   ? formatOvers(innings?.overs, innings?.balls) + ' overs'
                   : ''}
@@ -398,7 +388,7 @@ const Match = () => {
 
         {/* Error Alert */}
         {simError && (
-          <div className="card p-3 bg-red-500/10 border border-red-500/30">
+          <div className="card p-2 bg-red-500/10 border border-red-500/30">
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="flex-1">
@@ -417,38 +407,38 @@ const Match = () => {
 
         {/* Match Controls */}
         {matchState === 'in_progress' && (
-          <div className="card p-3">
-            <div className="flex items-center justify-center gap-3">
+          <div className="card p-2">
+            <div className="flex items-center justify-center gap-2">
               <button
                 onClick={handlePlayBall}
                 disabled={isSimulating}
-                className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
+                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-3 h-3" />
                 Play Ball
               </button>
               <button
                 onClick={handleSkipOver}
                 disabled={isSimulating}
-                className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
+                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2"
               >
-                <SkipForward className="w-4 h-4" />
+                <SkipForward className="w-3 h-3" />
                 Skip Over
               </button>
               {!isSimulating ? (
                 <button
                   onClick={handleAutoSimulate}
-                  className="btn-primary flex items-center gap-2 text-sm py-1.5 px-3"
+                  className="btn-primary flex items-center gap-1 text-xs py-1 px-2"
                 >
-                  <FastForward className="w-4 h-4" />
+                  <FastForward className="w-3 h-3" />
                   Auto-Simulate
                 </button>
               ) : (
                 <button
                   onClick={handlePause}
-                  className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
+                  className="btn-secondary flex items-center gap-1 text-xs py-1 px-2"
                 >
-                  <Pause className="w-4 h-4" />
+                  <Pause className="w-3 h-3" />
                   Pause
                 </button>
               )}
@@ -457,10 +447,10 @@ const Match = () => {
         )}
 
         {/* 3-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
           {/* Left Column: Scorecard (5 columns) */}
           <div className="lg:col-span-5">
-            <div className="card p-4">
+            <div className="card p-2">
               <MatchScorecard
                 matchData={matchData}
                 innings={innings}
@@ -471,7 +461,7 @@ const Match = () => {
 
           {/* Center Column: Commentary (4 columns) */}
           <div className="lg:col-span-4">
-            <div className="card p-4">
+            <div className="card p-2">
               <CommentaryFeed
                 ballByBall={ballByBall}
                 autoScroll={true}

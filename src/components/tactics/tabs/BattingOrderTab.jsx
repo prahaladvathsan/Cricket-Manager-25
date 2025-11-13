@@ -9,6 +9,7 @@ import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import tacticsConfig from '../../../data/config/tactics-config.json';
 import { getPrimaryBattingRating, formatRating } from '../../../utils/ratingHelper';
+import PlayerName from '../../shared/PlayerName';
 
 const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const { getTeamTactics, updateBattingOrder, updateAccelerationTier } = useTeamStore();
@@ -148,15 +149,9 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
                 {/* Player Info */}
                 <div className="flex-1 min-w-0">
-                  <p
-                    className="text-sm font-medium text-cricket-accent hover:underline cursor-pointer mb-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPlayerClick?.(player.id);
-                    }}
-                  >
-                    {player.name}
-                  </p>
+                  <div className="text-sm font-medium mb-1">
+                    <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                  </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-text-secondary truncate max-w-[200px]">
                       {battingPlaystyle}

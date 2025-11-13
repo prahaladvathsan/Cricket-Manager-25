@@ -5,7 +5,7 @@
  */
 
 import ProbabilityEngine from '../systems/ProbabilityEngine.js';
-import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
+import mentalityConfig from '../../../data/config/mentality-config.json';
 
 /**
  * @typedef {Object} ContactResult

@@ -34,7 +34,9 @@
       "Bash(powershell -Command \"Get-Content ''C:\\Users\\praha\\.claude\\bash-command-log.txt'' | Select-Object -First 1\")",
       "Bash(powershell -Command \"Get-ChildItem ''C:\\Users\\praha\\.claude\\hooks''\")",
       "Bash(powershell -Command \"Test-Path ''$env:USERPROFILE\\.claude\\file-operations-log.txt''\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "Bash(nul)"
     ],
     "deny": []
   }

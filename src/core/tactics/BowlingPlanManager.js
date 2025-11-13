@@ -4,7 +4,7 @@
  * @module core/tactics/BowlingPlanManager
  */
 
-import bowlingPlansConfig from '../../data/config/bowling-plans-config.json' with { type: "json" };
+import bowlingPlansConfig from '../../data/config/bowling-plans-config.json';
 
 /**
  * @class BowlingPlanManager

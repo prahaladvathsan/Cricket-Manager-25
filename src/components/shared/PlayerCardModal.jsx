@@ -7,6 +7,7 @@ import React from 'react';
 import { X, BarChart3, Activity } from 'lucide-react';
 import PlayerCard from './PlayerCard';
 import usePlayerStore from '../../stores/playerStore';
+import TeamName from './TeamName';
 
 const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
   const { players } = usePlayerStore();
@@ -72,6 +73,16 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                   }`}>
                     {player.role}
                   </span>
+                  {player.currentTeam && (
+                    <span className="text-sm">
+                      <TeamName
+                        teamId={player.currentTeam}
+                        variant="short"
+                        inline={true}
+                        onBeforeOpen={onClose}
+                      />
+                    </span>
+                  )}
                   <span className="text-text-secondary">{player.nationality}</span>
                   <span className="text-text-secondary">{player.age} years</span>
                   {player.battingHand && (

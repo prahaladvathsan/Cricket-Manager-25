@@ -3,7 +3,7 @@
  * @description Calculate player base prices and market valuations for auction
  */
 
-import auctionConfig from '../../data/config/auctionConfig.json' with { type: "json" };
+import auctionConfig from '../../data/config/auctionConfig.json';
 
 class PlayerValuation {
   constructor() {

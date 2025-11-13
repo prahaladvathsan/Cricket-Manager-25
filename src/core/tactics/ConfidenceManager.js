@@ -4,7 +4,7 @@
  * @module core/tactics/ConfidenceManager
  */
 
-import confidenceConfig from '../../data/config/confidence-config.json' with { type: "json" };
+import confidenceConfig from '../../data/config/confidence-config.json';
 
 /**
  * @class ConfidenceManager

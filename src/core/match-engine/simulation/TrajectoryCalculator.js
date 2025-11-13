@@ -4,9 +4,9 @@
  * @module core/match-engine/TrajectoryCalculator
  */
 
-import mentalityConfig from '../../../data/config/mentality-config.json' with { type: "json" };
-import trajectoryConfig from '../../../data/config/trajectory-config.json' with { type: "json" };
-import shotAnglesConfig from '../../../data/config/shot_angles_config.json' with { type: "json" };
+import mentalityConfig from '../../../data/config/mentality-config.json';
+import trajectoryConfig from '../../../data/config/trajectory-config.json';
+import shotAnglesConfig from '../../../data/config/shot_angles_config.json';
 
 /**
  * @typedef {Object} TrajectoryResult
