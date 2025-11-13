@@ -28,6 +28,8 @@ import useFinanceStore from '../../stores/financeStore';
 import useMatchStore from '../../stores/matchStore';
 import useAuctionStore from '../../stores/auctionStore';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
+import { getPlayerRating } from '../../utils/ratingHelper';
+import TeamName from '../shared/TeamName';
 import MatchResultModal from '../shared/MatchResultModal';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 
@@ -123,13 +125,17 @@ const Home = () => {
         }
 
         // Convert teams to clubs format for fixture generator
-        const clubs = allTeams.map(team => ({
-          id: team.id,
-          name: team.name,
-          shortName: team.shortName,
-          homeVenue: team.homeGround || `${team.name} Stadium`,
-          homeGround: team.homeGround || `${team.name} Stadium`
-        }));
+        const clubs = allTeams.map(team => {
+          console.log(`🎨 Team ${team.name} colors:`, team.colors);
+          return {
+            id: team.id,
+            name: team.name,
+            shortName: team.shortName,
+            homeVenue: team.homeGround || `${team.name} Stadium`,
+            homeGround: team.homeGround || `${team.name} Stadium`,
+            colors: team.colors || { primary: '#D4AF37', secondary: '#B8941F' } // Colors from team data
+          };
+        });
 
         // Generate fixtures using MatchWeekScheduleGenerator
         const scheduleGenerator = new MatchWeekScheduleGenerator();
@@ -207,16 +213,11 @@ const Home = () => {
         />
       )}
 
-      <div className="space-y-4">
-        {/* Header - More compact */}
-        <div className="flex items-center justify-between border-b border-border-primary pb-3">
-          <h1 className="text-3xl font-semibold text-text-primary">Home</h1>
-        </div>
-
+      <div className="space-y-2">
         {/* Error Alert */}
         {simError && (
-          <div className="card p-4 bg-red-500/10 border border-red-500/30">
-            <div className="flex items-start gap-3">
+          <div className="card p-2 bg-red-500/10 border border-red-500/30">
+            <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-red-500 mb-1">Simulation Error</h3>
@@ -249,10 +250,10 @@ const Home = () => {
 
         {/* Dashboard Grid - Show if team selected */}
         {userTeam && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {/* Next Match Card - Spans 2 columns */}
-          <div className="card p-4 md:col-span-2">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2 md:col-span-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <Calendar className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Next Match
@@ -261,12 +262,12 @@ const Home = () => {
             {nextFixture && homeTeam && awayTeam ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-center gap-6 py-2">
-                  <div className="text-text-primary font-semibold">
-                    {homeTeam.name}
+                  <div className="font-semibold">
+                    <TeamName teamId={homeTeam.id} inline={true} className="font-semibold" />
                   </div>
                   <div className="text-text-secondary text-lg font-bold">VS</div>
-                  <div className="text-text-primary font-semibold">
-                    {awayTeam.name}
+                  <div className="font-semibold">
+                    <TeamName teamId={awayTeam.id} inline={true} className="font-semibold" />
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-4 text-xs text-text-secondary">
@@ -298,8 +299,8 @@ const Home = () => {
           </div>
 
           {/* League Position */}
-          <div className="card p-4">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <Trophy className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 League Position
@@ -344,8 +345,8 @@ const Home = () => {
           </div>
 
           {/* Squad Status */}
-          <div className="card p-4">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <Users className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Squad Status
@@ -365,16 +366,10 @@ const Home = () => {
                 </div>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-text-secondary">Overseas</span>
-                <span className="text-text-primary font-mono">
-                  {squad.filter(p => p.nationality !== 'IND').length}/8
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
                 <span className="text-text-secondary">Avg Rating</span>
                 <span className="text-text-primary font-mono">
                   {squad.length > 0
-                    ? (squad.reduce((sum, p) => sum + (p.rating || 0), 0) / squad.length).toFixed(1)
+                    ? (squad.reduce((sum, p) => sum + getPlayerRating(p), 0) / squad.length).toFixed(1)
                     : '0.0'}
                 </span>
               </div>
@@ -383,8 +378,8 @@ const Home = () => {
           </div>
 
           {/* Recent Form */}
-          <div className="card p-4">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <TrendingUp className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Recent Form
@@ -422,8 +417,8 @@ const Home = () => {
           </div>
 
           {/* Financial Summary */}
-          <div className="card p-4">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <DollarSign className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Finances
@@ -453,8 +448,8 @@ const Home = () => {
           </div>
 
           {/* Objectives */}
-          <div className="card p-4">
-            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
               <Target className="w-4 h-4 text-cricket-accent" />
               <h3 className="text-lg font-semibold text-text-primary">
                 Objectives

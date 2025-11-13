@@ -13,13 +13,17 @@ import usePlayerStore from '../../stores/playerStore';
 import useMatchStore from '../../stores/matchStore';
 import useNavigationStore from '../../stores/navigationStore';
 import useInboxStore from '../../stores/inboxStore';
+import useAuctionStore from '../../stores/auctionStore';
 import SaveGameModal from '../shared/SaveGameModal';
+import MatchResultModal from '../match/MatchResultModal';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import MessageGenerator from '../../utils/MessageGenerator';
 
 const Header = () => {
   const navigate = useNavigate();
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [matchResult, setMatchResult] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
   const {
@@ -37,6 +41,7 @@ const Header = () => {
   const { getClub, recordResult, recalculateStandings, advanceToNextMatch } = useLeagueStore();
   const { goBack, canGoBack } = useNavigationStore();
   const { addMessage } = useInboxStore();
+  const { auctionState } = useAuctionStore();
 
   const userTeam = getUserTeam();
   const formattedDate = new Date(currentDate).toLocaleDateString('en-US', {
@@ -53,13 +58,13 @@ const Header = () => {
     const event = getCurrentEvent();
 
     if (event && event.type === 'match') {
-      // Match event - navigate to match or quick-sim
+      // Match event - navigate to pre-match flow or quick-sim
       const fixture = event.data;
       const isUserMatch = fixture && userTeam && (fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id);
 
       if (isUserMatch) {
-        // Navigate to match view for user team matches
-        navigate(`/game/match/${fixture.matchId}`);
+        // Navigate to pre-match flow for user team matches
+        navigate(`/game/match/${fixture.matchId || fixture.id}/pre-match`);
       } else {
         // Quick-sim AI vs AI match
         setIsSimulating(true);
@@ -72,13 +77,32 @@ const Header = () => {
             throw new Error('Team data not found for match');
           }
 
+          // Get playing XI for both teams
+          const homePlayers = usePlayerStore.getState().getPlayersByTeam(homeTeam.id);
+          const awayPlayers = usePlayerStore.getState().getPlayersByTeam(awayTeam.id);
+
+          // Select top 11 players for each team (by overall rating or just first 11)
+          const homePlayingXI = homePlayers.slice(0, 11).map(p => p.id);
+          const awayPlayingXI = awayPlayers.slice(0, 11).map(p => p.id);
+
+          const tossWinnerId = Math.random() < 0.5 ? homeTeam.id : awayTeam.id;
+          const tossDecision = Math.random() < 0.5 ? 'bat' : 'bowl';
+
           const matchConfig = {
             id: fixture.matchId,
-            homeTeam,
-            awayTeam,
+            homeTeam: {
+              ...homeTeam,
+              playingXI: homePlayingXI,  // matchStore expects playingXI
+              players: homePlayingXI      // MatchEngine expects players
+            },
+            awayTeam: {
+              ...awayTeam,
+              playingXI: awayPlayingXI,
+              players: awayPlayingXI
+            },
             venue: fixture.venue || homeTeam.homeGround,
-            tossWinner: Math.random() < 0.5 ? homeTeam.id : awayTeam.id,
-            tossDecision: Math.random() < 0.5 ? 'bat' : 'bowl'
+            tossWinner: tossWinnerId,
+            tossDecision: tossDecision
           };
 
           // Run quick simulation
@@ -98,17 +122,28 @@ const Header = () => {
           recalculateStandings();
           advanceToNextMatch();
 
-          // Advance day after match
-          advanceDay();
+          // Show result modal
+          setMatchResult(result);
+          setShowResultModal(true);
+
+          // Don't advance day yet - wait for user to close modal
         } catch (error) {
           console.error('Error simulating match:', error);
+          // Still advance day on error
+          advanceDay();
         } finally {
           setIsSimulating(false);
         }
       }
     } else if (event && event.type === 'auction') {
-      // Navigate to auction page
-      navigate('/game/auction');
+      // Check if auction is already completed
+      if (auctionState === 'completed') {
+        // Auction already done, just advance day
+        advanceDay();
+      } else {
+        // Navigate to auction page
+        navigate('/game/auction');
+      }
     } else {
       // Advance day (no event or rest day)
       const dayInfo = advanceDay();
@@ -148,6 +183,10 @@ const Header = () => {
       const isUserMatch = fixture && userTeam && (fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id);
       return isUserMatch ? 'Matchday' : 'Simulate Match';
     } else if (event && event.type === 'auction') {
+      // Check if auction is already completed
+      if (auctionState === 'completed') {
+        return 'Continue';
+      }
       return 'Auction';
     } else {
       return 'Continue';
@@ -165,6 +204,14 @@ const Header = () => {
   // Handle Save
   const handleSave = () => {
     setShowSaveModal(true);
+  };
+
+  // Handle Result Modal Close
+  const handleResultModalClose = () => {
+    setShowResultModal(false);
+    setMatchResult(null);
+    // Advance day after viewing result
+    advanceDay();
   };
 
   return (
@@ -214,6 +261,10 @@ const Header = () => {
                 if (event && event.type === 'match') {
                   return <Play className="w-4 h-4" />;
                 } else if (event && event.type === 'auction') {
+                  // Check if auction is already completed
+                  if (auctionState === 'completed') {
+                    return <ChevronRight className="w-4 h-4" />;
+                  }
                   return <Users className="w-4 h-4" />;
                 } else {
                   return <ChevronRight className="w-4 h-4" />;
@@ -229,6 +280,13 @@ const Header = () => {
       <SaveGameModal
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
+      />
+
+      {/* Match Result Modal */}
+      <MatchResultModal
+        isOpen={showResultModal}
+        onClose={handleResultModalClose}
+        result={matchResult}
       />
     </>
   );
