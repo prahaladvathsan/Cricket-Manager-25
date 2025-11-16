@@ -661,7 +661,15 @@ const useTeamStore = create(
     });
 
     console.log('✅ All team tactics initialized');
-  }
+  },
+
+  /**
+   * Reset all team tactics (used when starting a new game)
+   * Clears all tactics data to ensure fresh start
+   */
+  resetAllTactics: () => set({
+    teamTactics: {}
+  })
     }),
     {
       name: 'cm25-team-store',

@@ -198,7 +198,11 @@ const usePlayerStore = create(
             centuries: 0,
             fifties: 0,
             fiveWickets: 0,
-            notOuts: 0
+            fourWickets: 0,
+            notOuts: 0,
+            highestScore: 0,
+            highestScoreNotOut: false,
+            bestBowling: null
           },
           seasons: {}
         }
@@ -227,7 +231,8 @@ const usePlayerStore = create(
     // Initialize if needed
     if (!state.careerStats[playerId]) {
       get().initializeCareerStats(playerId);
-      return get(); // Get updated state
+      // Don't return early - continue to update stats below
+      state = get(); // Refresh state after initialization
     }
 
     const current = state.careerStats[playerId];
@@ -250,7 +255,11 @@ const usePlayerStore = create(
         centuries: 0,
         fifties: 0,
         fiveWickets: 0,
-        notOuts: 0
+        fourWickets: 0,
+        notOuts: 0,
+        highestScore: 0,
+        highestScoreNotOut: false,
+        bestBowling: null
       };
     }
 
@@ -287,6 +296,14 @@ const usePlayerStore = create(
       seasonStats.fifties += 1;
     }
 
+    // Update highest score
+    if (matchStats.runs !== undefined && matchStats.runs !== null) {
+      if (matchStats.runs > (seasonStats.highestScore || 0)) {
+        seasonStats.highestScore = matchStats.runs;
+        seasonStats.highestScoreNotOut = !matchStats.dismissed;
+      }
+    }
+
     // Update bowling stats
     if (matchStats.wickets !== undefined && matchStats.wickets !== null) {
       cumulative.totalWickets += matchStats.wickets;
@@ -295,6 +312,21 @@ const usePlayerStore = create(
       if (matchStats.wickets >= 5) {
         cumulative.fiveWickets += 1;
         seasonStats.fiveWickets += 1;
+      } else if (matchStats.wickets >= 4) {
+        seasonStats.fourWickets = (seasonStats.fourWickets || 0) + 1;
+      }
+
+      // Update best bowling figures
+      if (matchStats.wickets > 0) {
+        if (!seasonStats.bestBowling ||
+            matchStats.wickets > seasonStats.bestBowling.wickets ||
+            (matchStats.wickets === seasonStats.bestBowling.wickets &&
+             matchStats.runsConceded < seasonStats.bestBowling.runs)) {
+          seasonStats.bestBowling = {
+            wickets: matchStats.wickets,
+            runs: matchStats.runsConceded || 0
+          };
+        }
       }
     }
 
@@ -514,6 +546,14 @@ const usePlayerStore = create(
       }
     };
   }),
+
+  /**
+   * Reset all career stats for all players (for new game)
+   */
+  resetAllCareerStats: () => set(() => ({
+    careerStats: {},
+    currentSeasonId: null
+  })),
 
   /**
    * Calculate and update playstyles for all players

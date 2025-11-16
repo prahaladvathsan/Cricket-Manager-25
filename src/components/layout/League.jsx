@@ -19,19 +19,23 @@ import useGameStore from '../../stores/gameStore';
 import SeasonProgress from '../league/SeasonProgress';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import TeamName from '../shared/TeamName';
+import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 
 const League = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('standings');
   const [leaderboardCategory, setLeaderboardCategory] = useState('batting');
-  const [fixturesView, setFixturesView] = useState('list'); // 'list' or 'calendar'
+  const [fixturesView, setFixturesView] = useState('calendar'); // 'list' or 'calendar' - default to calendar
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
+
+  // Match result modal for clickable results
+  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal();
 
   // Get league data
   const { seasonName, standings, fixtures, results, clubs, stage, champion } = useLeagueStore();
   const { currentSeasonId } = usePlayerStore();
-  const { currentSeason } = useGameStore();
+  const { currentSeason, currentWeek, currentDate } = useGameStore();
 
   // Sort standings by points and NRR
   const sortedStandings = useMemo(() => {
@@ -125,11 +129,12 @@ const League = () => {
     return [...results].slice(-10).reverse();
   }, [results]);
 
+  // Get player stats from store (reactive)
+  const players = usePlayerStore(state => state.players);
+  const careerStats = usePlayerStore(state => state.careerStats);
+
   // Calculate leaderboards
   const leaderboards = useMemo(() => {
-    const players = usePlayerStore.getState().players;
-    const careerStats = usePlayerStore.getState().careerStats;
-
     // Get all players with current season stats
     const playersWithStats = Object.values(players)
       .map(player => ({
@@ -138,15 +143,15 @@ const League = () => {
       }))
       .filter(p => p.seasonStats && p.currentTeam); // Only players in teams with stats
 
-    // Batting leaderboard (minimum 50 runs)
+    // Batting leaderboard - no minimum threshold
     const battingLeaders = playersWithStats
-      .filter(p => p.seasonStats.runs >= 50)
+      .filter(p => p.seasonStats.runs > 0) // Only show players who have scored
       .sort((a, b) => b.seasonStats.runs - a.seasonStats.runs)
       .slice(0, 10);
 
-    // Bowling leaderboard (minimum 5 wickets)
+    // Bowling leaderboard - no minimum threshold
     const bowlingLeaders = playersWithStats
-      .filter(p => p.seasonStats.wickets >= 5)
+      .filter(p => p.seasonStats.wickets > 0) // Only show players who have taken wickets
       .sort((a, b) => {
         // Sort by wickets first, then economy
         if (b.seasonStats.wickets !== a.seasonStats.wickets) {
@@ -156,9 +161,9 @@ const League = () => {
       })
       .slice(0, 10);
 
-    // Fielding leaderboard (catches - we'll use a placeholder for now)
+    // Fielding leaderboard (catches)
     const fieldingLeaders = playersWithStats
-      .filter(p => p.seasonStats.catches && p.seasonStats.catches > 0)
+      .filter(p => p.seasonStats.catches && p.seasonStats.catches > 0) // Only show players with catches
       .sort((a, b) => (b.seasonStats.catches || 0) - (a.seasonStats.catches || 0))
       .slice(0, 10);
 
@@ -167,7 +172,7 @@ const League = () => {
       bowling: bowlingLeaders,
       fielding: fieldingLeaders
     };
-  }, [currentSeasonId]);
+  }, [players, careerStats, currentSeasonId]);
 
   // Tab content components
   const StandingsTable = () => (
@@ -414,11 +419,20 @@ const League = () => {
 
                               const hasFixtures = dayData.fixtures.length > 0;
 
+                              // Check if this is today
+                              const today = new Date(currentDate);
+                              today.setHours(0, 0, 0, 0);
+                              const cellDate = new Date(dayData.date);
+                              cellDate.setHours(0, 0, 0, 0);
+                              const isToday = cellDate.getTime() === today.getTime();
+
                               return (
                                 <div
                                   key={dayData.date}
                                   className={`h-16 border rounded transition-colors ${
-                                    hasFixtures
+                                    isToday
+                                      ? 'border-cricket-accent border-2 bg-cricket-accent/10 ring-2 ring-cricket-accent/20'
+                                      : hasFixtures
                                       ? 'border-cricket-accent/30 bg-cricket-accent/5 hover:bg-cricket-accent/10'
                                       : 'border-border-primary bg-bg-secondary'
                                   }`}
@@ -426,9 +440,14 @@ const League = () => {
                                   <div className="p-1 h-full flex flex-col">
                                     {/* Day Number */}
                                     <div className={`text-xs font-semibold mb-0.5 ${
-                                      hasFixtures ? 'text-cricket-accent' : 'text-text-secondary'
+                                      isToday
+                                        ? 'text-cricket-accent'
+                                        : hasFixtures
+                                        ? 'text-cricket-accent'
+                                        : 'text-text-secondary'
                                     }`}>
                                       {dayData.day}
+                                      {isToday && <span className="ml-0.5 text-xxs">•</span>}
                                     </div>
 
                                     {/* Fixtures */}
@@ -437,14 +456,44 @@ const League = () => {
                                         {dayData.fixtures.map((fixture, idx) => {
                                           const isCompleted = fixture.status === 'completed';
 
+                                          // Get current game date for comparison
+                                          const today = new Date(currentDate);
+                                          today.setHours(0, 0, 0, 0);
+
+                                          const fixtureDate = new Date(fixture.date);
+                                          fixtureDate.setHours(0, 0, 0, 0);
+
+                                          // Calculate start and end of current week (Mon-Sun)
+                                          const startOfWeek = new Date(today);
+                                          const dayOfWeek = today.getDay();
+                                          const diff = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek; // Adjust to Monday
+                                          startOfWeek.setDate(today.getDate() + diff);
+                                          startOfWeek.setHours(0, 0, 0, 0);
+
+                                          const endOfWeek = new Date(startOfWeek);
+                                          endOfWeek.setDate(startOfWeek.getDate() + 6);
+                                          endOfWeek.setHours(23, 59, 59, 999);
+
+                                          const isCurrentWeek = fixtureDate >= startOfWeek && fixtureDate <= endOfWeek;
+                                          const isPastWeek = fixtureDate < startOfWeek;
+                                          const isFutureWeek = fixtureDate > endOfWeek;
+
+                                          // Color coding: completed (green), current week (gold), past (dark gray), future (light gray)
+                                          let fixtureStyle = '';
+                                          if (isCompleted) {
+                                            fixtureStyle = 'bg-green-900/30 text-green-400 border border-green-500/30';
+                                          } else if (isCurrentWeek) {
+                                            fixtureStyle = 'bg-cricket-accent/20 text-cricket-accent border border-cricket-accent/40';
+                                          } else if (isPastWeek) {
+                                            fixtureStyle = 'bg-bg-primary/50 text-text-tertiary border border-border-primary opacity-60';
+                                          } else {
+                                            fixtureStyle = 'bg-bg-tertiary/50 text-text-secondary border border-border-primary';
+                                          }
+
                                           return (
                                             <div
                                               key={idx}
-                                              className={`text-xxs px-1 py-0.5 rounded truncate leading-tight ${
-                                                isCompleted
-                                                  ? 'bg-bg-tertiary text-text-secondary'
-                                                  : 'bg-cricket-primary/20 text-cricket-accent'
-                                              }`}
+                                              className={`text-xxs px-1 py-0.5 rounded truncate leading-tight ${fixtureStyle}`}
                                               title={`${clubs[fixture.homeTeam]?.shortName || 'TBD'} vs ${clubs[fixture.awayTeam]?.shortName || 'TBD'}`}
                                             >
                                               {clubs[fixture.homeTeam]?.shortName?.slice(0, 3) || 'TBD'} v {clubs[fixture.awayTeam]?.shortName?.slice(0, 3) || 'TBD'}
@@ -492,10 +541,24 @@ const League = () => {
       {recentResults.length > 0 ? (
         <div className="space-y-2">
           {recentResults.map((result, idx) => {
+            const hasFullScorecard = result.fullScorecard != null;
+
+            const handleResultClick = () => {
+              if (hasFullScorecard) {
+                showResult(result.fullScorecard);
+              }
+            };
+
             return (
               <div
                 key={idx}
-                className="p-3 border border-border-primary rounded hover:bg-bg-secondary transition-colors"
+                onClick={handleResultClick}
+                className={`p-3 border border-border-primary rounded transition-colors ${
+                  hasFullScorecard
+                    ? 'cursor-pointer hover:bg-cricket-primary/10 hover:border-cricket-accent'
+                    : 'hover:bg-bg-secondary'
+                }`}
+                title={hasFullScorecard ? 'Click to view full scorecard' : ''}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1 space-y-1">
@@ -765,6 +828,9 @@ const League = () => {
         }}
         playerId={selectedPlayerId}
       />
+
+      {/* Match Result Modal for clickable results */}
+      {MatchResultModalComponent}
     </div>
   );
 };

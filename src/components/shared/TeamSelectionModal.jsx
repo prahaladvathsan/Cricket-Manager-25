@@ -7,6 +7,9 @@ import React, { useState, useEffect } from 'react';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
+import usePlayerStore from '../../stores/playerStore';
+import useMatchStore from '../../stores/matchStore';
+import useFinanceStore from '../../stores/financeStore';
 import useNavigationStore from '../../stores/navigationStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useInboxStore from '../../stores/inboxStore';
@@ -16,13 +19,16 @@ import wplTeamsData from '../../data/teams/wpl-teams.json';
 
 const TeamSelectionModal = ({ isOpen, onClose }) => {
   const [selectedTeamId, setSelectedTeamId] = useState('');
-  const { teams, initializeTeams, setUserTeam } = useTeamStore();
+  const { teams, initializeTeams, setUserTeam, resetAllTactics } = useTeamStore();
   const { resetForNewGame, scheduleEvent } = useGameStore();
   const gameState = useGameStore();
   const { clearHistory } = useNavigationStore();
   const { addMessage, clearAllMessages } = useInboxStore();
   const leagueStore = useLeagueStore();
   const auctionStore = useAuctionStore();
+  const matchStore = useMatchStore();
+  const financeStore = useFinanceStore();
+  const { resetAllCareerStats } = usePlayerStore();
 
   useEffect(() => {
     // Initialize teams data if not already loaded
@@ -51,6 +57,26 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       if (auctionStore.resetAuction) {
         auctionStore.resetAuction();
       }
+
+      // Reset player career stats (IMPORTANT: clears stale stats from previous games)
+      resetAllCareerStats();
+      console.log('🔄 Reset all player career stats for new game');
+
+      // Reset match store (clear any ongoing match data)
+      if (matchStore.resetMatch) {
+        matchStore.resetMatch();
+        console.log('🔄 Reset match store for new game');
+      }
+
+      // Reset finance store (clear any old financial data)
+      if (financeStore.resetFinances) {
+        financeStore.resetFinances();
+        console.log('🔄 Reset finance store for new game');
+      }
+
+      // Reset all team tactics (IMPORTANT: clears stale playing XI data)
+      resetAllTactics();
+      console.log('🔄 Reset all team tactics for new game');
 
       // Set the selected team
       setUserTeam(selectedTeamId);

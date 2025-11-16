@@ -110,9 +110,15 @@ const useLeagueStore = create(
   /**
    * Record a match result
    * @param {Object} result - Match result object
+   * @param {Object} fullScorecard - Optional full scorecard data (for match result modal)
    */
-  recordResult: (result) => set((state) => {
-    const newResults = [...state.results, result];
+  recordResult: (result, fullScorecard = null) => set((state) => {
+    // Store result with optional full scorecard
+    const resultToStore = fullScorecard
+      ? { ...result, fullScorecard }
+      : result;
+
+    const newResults = [...state.results, resultToStore];
     const newStats = { ...state.stats };
 
     // Update highest/lowest scores
@@ -195,7 +201,7 @@ const useLeagueStore = create(
     });
 
     // Process each result
-    results.forEach(result => {
+    results.forEach((result, idx) => {
       const homeTeam = standingsMap[result.homeTeam];
       const awayTeam = standingsMap[result.awayTeam];
 
@@ -215,30 +221,64 @@ const useLeagueStore = create(
       // Determine which team batted first (check which innings belongs to which team)
       const homeTeamBattedFirst = innings1.battingTeam === result.homeTeam;
 
+      // Calculate balls from the innings data
+      const calculateBalls = (innings) => {
+        // Try multiple sources for ball count (in order of preference)
+        // 1. ballsBowled - most accurate total
+        if (innings.ballsBowled !== undefined && innings.ballsBowled !== null && innings.ballsBowled > 0) {
+          return innings.ballsBowled;
+        }
+        // 2. ballsFaced - alternative total
+        if (innings.ballsFaced !== undefined && innings.ballsFaced !== null && innings.ballsFaced > 0) {
+          return innings.ballsFaced;
+        }
+        // 3. Calculate from overs (e.g., 19.4 -> 19*6 + 4 = 118)
+        if (innings.overs !== undefined && innings.overs !== null) {
+          const oversFloat = parseFloat(innings.overs);
+          const completeOvers = Math.floor(oversFloat);
+          const ballsInOver = Math.round((oversFloat - completeOvers) * 10);
+          return completeOvers * 6 + ballsInOver;
+        }
+        // 4. oversCompleted + ballsInCurrentOver
+        if (innings.oversCompleted !== undefined && innings.oversCompleted !== null) {
+          const ballsInCurrentOver = innings.ballsInCurrentOver || 0;
+          const calculated = innings.oversCompleted * 6 + ballsInCurrentOver;
+          return calculated;
+        }
+        // 5. Last resort: use balls field (might be ballsInCurrentOver)
+        if (innings.balls !== undefined && innings.balls !== null && innings.balls > 0) {
+          return innings.balls;
+        }
+        return 0;
+      };
+
+      const innings1Balls = calculateBalls(innings1);
+      const innings2Balls = calculateBalls(innings2);
+
       // Home team stats
       if (homeTeamBattedFirst) {
         homeTeam.runsScored += innings1.totalScore;
-        homeTeam.ballsFaced += innings1.ballsFaced || (innings1.oversCompleted * 6 + (innings1.ballsInCurrentOver || 0));
+        homeTeam.ballsFaced += innings1Balls;
         homeTeam.runsConceded += innings2.totalScore;
-        homeTeam.ballsBowled += innings2.ballsFaced || (innings2.oversCompleted * 6 + (innings2.ballsInCurrentOver || 0));
+        homeTeam.ballsBowled += innings2Balls;
       } else {
         homeTeam.runsScored += innings2.totalScore;
-        homeTeam.ballsFaced += innings2.ballsFaced || (innings2.oversCompleted * 6 + (innings2.ballsInCurrentOver || 0));
+        homeTeam.ballsFaced += innings2Balls;
         homeTeam.runsConceded += innings1.totalScore;
-        homeTeam.ballsBowled += innings1.ballsFaced || (innings1.oversCompleted * 6 + (innings1.ballsInCurrentOver || 0));
+        homeTeam.ballsBowled += innings1Balls;
       }
 
       // Away team stats (opposite of home team)
       if (homeTeamBattedFirst) {
         awayTeam.runsScored += innings2.totalScore;
-        awayTeam.ballsFaced += innings2.ballsFaced || (innings2.oversCompleted * 6 + (innings2.ballsInCurrentOver || 0));
+        awayTeam.ballsFaced += innings2Balls;
         awayTeam.runsConceded += innings1.totalScore;
-        awayTeam.ballsBowled += innings1.ballsFaced || (innings1.oversCompleted * 6 + (innings1.ballsInCurrentOver || 0));
+        awayTeam.ballsBowled += innings1Balls;
       } else {
         awayTeam.runsScored += innings1.totalScore;
-        awayTeam.ballsFaced += innings1.ballsFaced || (innings1.oversCompleted * 6 + (innings1.ballsInCurrentOver || 0));
+        awayTeam.ballsFaced += innings1Balls;
         awayTeam.runsConceded += innings2.totalScore;
-        awayTeam.ballsBowled += innings2.ballsFaced || (innings2.oversCompleted * 6 + (innings2.ballsInCurrentOver || 0));
+        awayTeam.ballsBowled += innings2Balls;
       }
 
       // Update win/loss/tie

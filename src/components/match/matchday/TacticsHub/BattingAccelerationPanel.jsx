@@ -335,7 +335,7 @@ export default function BattingAccelerationPanel() {
       msOverflowStyle: 'none'
     }}>
       {/* CSS for webkit scrollbar hiding */}
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

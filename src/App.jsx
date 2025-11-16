@@ -9,8 +9,6 @@ import Layout from './components/layout/Layout';
 import Home from './components/layout/Home';
 import Squad from './components/team/Squad';
 import Matches from './components/match/Matches';
-import Match from './components/match/Match';
-import MatchLive from './components/match/MatchLive';
 import MatchdayUI from './components/match/matchday/MatchdayUI';
 import MatchPreview from './components/match/MatchPreview';
 import PreMatchFlow from './components/match/PreMatchFlow';

@@ -12,6 +12,9 @@ import energyManager from '../../tactics/EnergyManager.js';
 import pressureCalculator from '../../tactics/PressureCalculator.js';
 import accelerationTierManager from '../../tactics/AccelerationTierManager.js';
 
+// DEBUG: Set to true to enable match engine debugging
+const DEBUG_MATCH_ENGINE = false;
+
 /**
  * @typedef {Object} MatchConfig
  * @property {Object} homeTeam - Home team data
@@ -153,6 +156,14 @@ class MatchEngine {
    * @param {Object} bowlingTeam - Bowling team object
    */
   setupFieldFormation(bowlingTeam) {
+    if (DEBUG_MATCH_ENGINE) {
+      console.log('[MatchEngine] setupFieldFormation called with:', {
+        hasPlayers: !!bowlingTeam?.players,
+        playersLength: bowlingTeam?.players?.length,
+        teamName: bowlingTeam?.name
+      });
+    }
+
     // Get all 11 fielders (including bowler and wicket-keeper)
     const allFielders = bowlingTeam.players.map(p => ({
       ...this.playerStore.getState().getPlayer(p.id || p),
@@ -178,6 +189,14 @@ class MatchEngine {
 
     // Store fielding positions for later use
     this.fieldingPositions = fieldingPositions;
+
+    if (DEBUG_MATCH_ENGINE) {
+      console.log('[MatchEngine] Field formation setup complete:', {
+        formation: this.currentFieldFormation,
+        positionsLength: fieldingPositions?.length,
+        storedPositionsLength: this.fieldingPositions?.length
+      });
+    }
 
     if (this.config.showBallByBall) {
       console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders`);
@@ -382,9 +401,9 @@ class MatchEngine {
     const bowler = this.playerStore.getState().getPlayer(innings.bowler);
 
     // Debug: Log who is facing this ball
-    if (currentBall.over === 0 && currentBall.ball < 3) {
-      console.log(`[MatchEngine simulateBall] Over ${currentBall.over}.${currentBall.ball} - Striker: ${striker?.name} (${innings.striker}), Non-Striker: ${nonStriker?.name} (${innings.nonStriker})`);
-    }
+    // if (DEBUG_MATCH_ENGINE && currentBall.over === 0 && currentBall.ball < 3) {
+    //   console.log(`[MatchEngine simulateBall] Over ${currentBall.over}.${currentBall.ball} - Striker: ${striker?.name} (${innings.striker}), Non-Striker: ${nonStriker?.name} (${innings.nonStriker})`);
+    // }
 
     const wicketKeeper = this.getWicketKeeper(teams.bowling.squad);
 
@@ -429,6 +448,17 @@ class MatchEngine {
       matchSituation: enhancedMatchSituation,
       tacticsState: matchState.tacticsState
     };
+
+    // DEBUG: Log fielding team context on first few balls
+    // if (DEBUG_MATCH_ENGINE && currentBall.over === 0 && currentBall.ball < 3) {
+    //   console.log('[MatchEngine] Ball context fielding team:', {
+    //     bowlingSquadLength: teams.bowling.squad.length,
+    //     fieldingPositionsLength: this.fieldingPositions?.length,
+    //     hasFieldingPositions: !!this.fieldingPositions,
+    //     over: currentBall.over,
+    //     ball: currentBall.ball
+    //   });
+    // }
 
     // Simulate the ball
     const ballResult = await this.ballSimulator.simulateBall(ballContext);
@@ -477,13 +507,13 @@ class MatchEngine {
     // Format and display ball result
     if (this.config.showBallByBall) {
       const resultText = this.formatBallResult(ballResult);
-      console.log(`${currentBall.over}.${currentBall.ball + 1}: ${bowler.name} to ${striker.name}, ${resultText}${tacticsInfo}`);
+      // console.log(`${currentBall.over}.${currentBall.ball + 1}: ${bowler.name} to ${striker.name}, ${resultText}${tacticsInfo}`);
     }
 
     // Check if target reached immediately after processing ball result
     if (innings.number === 2 && teams.batting.totalScore >= innings.target) {
       innings.isComplete = true;
-      console.log(`\nTarget reached! ${teams.batting.name} wins by ${this.config.maxWickets - teams.batting.wickets} wickets`);
+      // console.log(`\nTarget reached! ${teams.batting.name} wins by ${this.config.maxWickets - teams.batting.wickets} wickets`);
       return;
     }
 
@@ -701,15 +731,15 @@ class MatchEngine {
 
     // Get dismissed player name for logging
     const dismissedPlayer = this.playerStore.getState().getPlayer(ballResult.dismissedPlayer);
-    console.log('[MatchEngine handleWicket] Dismissed:', dismissedPlayer?.name, 'ID:', ballResult.dismissedPlayer);
-    console.log('[MatchEngine handleWicket] Current batsmen - Striker:', innings.striker, 'Non-Striker:', innings.nonStriker);
-    console.log('[MatchEngine handleWicket] Batted players before:', innings.battedPlayers);
+    // console.log('[MatchEngine handleWicket] Dismissed:', dismissedPlayer?.name, 'ID:', ballResult.dismissedPlayer);
+    // console.log('[MatchEngine handleWicket] Current batsmen - Striker:', innings.striker, 'Non-Striker:', innings.nonStriker);
+    // console.log('[MatchEngine handleWicket] Batted players before:', innings.battedPlayers);
 
     // Check if innings should end (all 10 wickets fallen)
     if (teams.batting.wickets >= this.config.maxWickets) {
       // All out
       innings.isComplete = true;
-      console.log(`\n${teams.batting.name} all out for ${teams.batting.totalScore}`);
+      // console.log(`\n${teams.batting.name} all out for ${teams.batting.totalScore}`);
       return;
     }
 
@@ -717,25 +747,25 @@ class MatchEngine {
     const newBatsmanId = this.selectNextBatsman();
     if (!newBatsmanId) {
       innings.isComplete = true;
-      console.log(`\n${teams.batting.name} all out for ${teams.batting.totalScore}`);
+      // console.log(`\n${teams.batting.name} all out for ${teams.batting.totalScore}`);
       return;
     }
 
     const newBatsman = this.playerStore.getState().getPlayer(newBatsmanId);
-    console.log(`[MatchEngine handleWicket] New batsman: ${newBatsman.name} (ID: ${newBatsmanId})`);
+    // console.log(`[MatchEngine handleWicket] New batsman: ${newBatsman.name} (ID: ${newBatsmanId})`);
 
     // Initialize match conditions for new batsman if not already initialized
     if (!matchState.matchConditions[newBatsmanId]) {
-      console.log(`[MatchEngine handleWicket] Initializing match conditions for ${newBatsman.name}`);
+      // console.log(`[MatchEngine handleWicket] Initializing match conditions for ${newBatsman.name}`);
       matchState.matchConditions[newBatsmanId] = { energy: 100, confidence: 50, fatigue: 0 };
     }
 
     // Update striker/non-striker based on who got out
     if (ballResult.dismissedPlayer === innings.striker) {
-      console.log('[MatchEngine handleWicket] Striker got out, replacing striker with new batsman');
+      // console.log('[MatchEngine handleWicket] Striker got out, replacing striker with new batsman');
       matchState.setOpeningBatsmen(newBatsmanId, innings.nonStriker);
     } else {
-      console.log('[MatchEngine handleWicket] Non-striker got out, replacing non-striker with new batsman');
+      // console.log('[MatchEngine handleWicket] Non-striker got out, replacing non-striker with new batsman');
       matchState.setOpeningBatsmen(innings.striker, newBatsmanId);
     }
 
@@ -1126,8 +1156,8 @@ class MatchEngine {
     // Determine match result
     const result = this.calculateMatchResult(teams, innings);
 
-    // Update match store
-    matchState.completeMatch(result.description);
+    // Update match store with full result object (including winner)
+    this.matchStore.getState().completeMatch(result);
 
     console.log('Match completed:', result.description);
 

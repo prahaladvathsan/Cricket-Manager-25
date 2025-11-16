@@ -138,7 +138,7 @@ const PreMatchFlow = () => {
     <div className="fixed inset-0 bg-bg-primary flex flex-col">
       {/* Header - Matching MatchdayUI style */}
       <div style={gradientStyle} className="border-b-2 border-cricket-primary/30 shadow-lg">
-        <div className="flex items-stretch h-20">
+        <div className="flex items-stretch h-20 relative">
           {/* Left: Back button (fixed width) */}
           <div className="w-20 flex items-center justify-center border-r border-white/10 flex-shrink-0">
             <button
@@ -151,34 +151,43 @@ const PreMatchFlow = () => {
           </div>
 
           {/* Main content area */}
-          <div className="flex-1 flex items-center justify-between px-6 py-2 gap-6 min-w-0">
-            {/* Left: Phase title and match info */}
-            <div className="flex-shrink-0">
-              <h1 className="text-lg font-bold text-white drop-shadow-lg">
-                {phases[currentPhase]}
-              </h1>
-              <p className="text-xs text-white/70 drop-shadow-lg mt-0.5">
-                {matchData.homeTeam.shortName} vs {matchData.awayTeam.shortName}
-              </p>
-            </div>
+          <div className="flex-1 flex flex-col justify-center px-6 py-2 min-w-0">
+            {/* Match info header */}
+            <p className="text-xs text-white/70 drop-shadow-lg mb-2 text-center">
+              {matchData.homeTeam.shortName} vs {matchData.awayTeam.shortName}
+            </p>
 
-            {/* Center: Progress indicators */}
-            <div className="flex gap-2 flex-shrink-0">
-              {phases.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-20 h-1.5 rounded-full transition-colors ${
+            {/* Tab titles and Progress indicators */}
+            <div className="flex items-center justify-center gap-8">
+              {phases.map((phase, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-1 min-w-[100px]">
+                  {/* Tab title */}
+                  <div className={`text-xs font-semibold drop-shadow-lg transition-colors ${
                     idx === currentPhase
-                      ? 'bg-cricket-accent shadow-lg'
+                      ? 'text-cricket-accent'
                       : idx < currentPhase
-                      ? 'bg-cricket-primary/80'
-                      : 'bg-white/20'
-                  }`}
-                />
+                      ? 'text-white'
+                      : 'text-white/40'
+                  }`}>
+                    {phase}
+                  </div>
+                  {/* Progress bar */}
+                  <div
+                    className={`w-20 h-1.5 rounded-full transition-colors ${
+                      idx === currentPhase
+                        ? 'bg-cricket-accent shadow-lg'
+                        : idx < currentPhase
+                        ? 'bg-cricket-primary/80'
+                        : 'bg-white/20'
+                    }`}
+                  />
+                </div>
               ))}
             </div>
+          </div>
 
-            {/* Right: Continue button */}
+          {/* Right: Continue button (absolute positioning) */}
+          <div className="absolute right-6 top-1/2 -translate-y-1/2">
             <button
               onClick={handleContinue}
               disabled={!canContinue()}
@@ -197,7 +206,7 @@ const PreMatchFlow = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto">
-        <div className="h-full p-6">
+        <div className="h-full p-3">
           <div className="max-w-5xl mx-auto">
             {currentPhase === 0 && (
               <PreviewTab matchData={matchData} />

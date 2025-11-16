@@ -5,6 +5,7 @@
  */
 
 import MatchEngine from '../core/MatchEngine.js';
+import { updatePlayerStats } from '../../../utils/MatchStatsUpdater.js';
 
 /**
  * Quick-simulate an AI vs AI match and return the result
@@ -12,10 +13,19 @@ import MatchEngine from '../core/MatchEngine.js';
  * @param {Object} matchStore - Match store (Zustand store)
  * @param {Object} playerStore - Player store (Zustand store)
  * @param {Object} teamStore - Team store (Zustand store)
+ * @param {Object} leagueStore - League store (Zustand store) for seasonId
  * @returns {Promise<Object>} Match result with winner, margin, etc.
  */
-export async function quickSimMatch(matchConfig, matchStore, playerStore, teamStore) {
+export async function quickSimMatch(matchConfig, matchStore, playerStore, teamStore, leagueStore = null) {
   try {
+    // Set season ID for career stats tracking (CRITICAL for stats to be saved)
+    if (leagueStore) {
+      const currentSeasonId = leagueStore.getState().seasonId;
+      if (currentSeasonId) {
+        playerStore.getState().setCurrentSeasonId(currentSeasonId);
+      }
+    }
+
     // Create match engine with silent mode
     const engine = new MatchEngine(matchStore, playerStore, teamStore, { silent: true });
 
@@ -32,36 +42,96 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
 
     // Get match state to extract result
     const state = matchStore.getState();
-    const { innings, teams } = state;
+    const { results, teams, ballByBall } = state;
 
-    // Determine winner
-    const innings1 = state.results?.[0] || innings;
-    const innings2 = state.results?.[1] || innings;
+    // Update player and team stats (CRITICAL: must be called to update career stats)
+    updatePlayerStats(matchConfig, { ballByBall }, teamStore, playerStore);
+
+    // Extract innings data from results array
+    // results[0] = first innings, results[1] = second innings
+    if (!results || results.length < 2) {
+      throw new Error('Match simulation incomplete - missing innings data');
+    }
+
+    const innings1 = results[0];
+    const innings2 = results[1];
+
+    // Extract batting and bowling stats from ballByBall data - SEPARATELY for each innings
+    const innings1TopBatsmen = extractBattingStats(ballByBall || [], 1, playerStore);
+    const innings1TopBowlers = extractBowlingStats(ballByBall || [], 1, playerStore);
+    const innings2TopBatsmen = extractBattingStats(ballByBall || [], 2, playerStore);
+    const innings2TopBowlers = extractBowlingStats(ballByBall || [], 2, playerStore);
 
     let winnerId, loserId, margin, marginType;
 
+    // Determine winner based on second innings result
     if (innings2.totalScore > innings1.totalScore) {
-      winnerId = matchConfig.awayTeam.id;
-      loserId = matchConfig.homeTeam.id;
+      // Team batting second won (chasing team)
+      winnerId = innings2.battingTeam;
+      loserId = innings1.battingTeam;
       margin = 10 - innings2.wickets; // Wickets remaining
       marginType = 'wickets';
     } else if (innings1.totalScore > innings2.totalScore) {
-      winnerId = matchConfig.homeTeam.id;
-      loserId = matchConfig.awayTeam.id;
+      // Team batting first won (defending team)
+      winnerId = innings1.battingTeam;
+      loserId = innings2.battingTeam;
       margin = innings1.totalScore - innings2.totalScore; // Runs
       marginType = 'runs';
     } else {
-      // Tie - for simplicity, use super over logic or just pick one
-      winnerId = matchConfig.homeTeam.id;
-      loserId = matchConfig.awayTeam.id;
+      // Tie - award to team batting first
+      winnerId = innings1.battingTeam;
+      loserId = innings2.battingTeam;
       margin = 0;
       marginType = 'tie';
     }
 
-    // Get player of the match (top scorer or top wicket-taker)
-    const topScorer = getTopScorer(state);
-    const topBowler = getTopBowler(state);
-    const playerOfMatch = topScorer.runs > topBowler.wickets * 20 ? topScorer : topBowler;
+    // Get player of the match from BOTH innings (top scorer or top wicket-taker)
+    const allBatsmen = [...innings1TopBatsmen, ...innings2TopBatsmen];
+    const allBowlers = [...innings1TopBowlers, ...innings2TopBowlers];
+
+    const topScorer = allBatsmen.length > 0
+      ? allBatsmen.reduce((max, b) => b.runs > max.runs ? b : max, allBatsmen[0])
+      : null;
+
+    const topBowler = allBowlers.length > 0
+      ? allBowlers.reduce((max, b) => {
+          if (b.wickets > max.wickets) return b;
+          if (b.wickets === max.wickets && parseFloat(b.economy) < parseFloat(max.economy)) return b;
+          return max;
+        }, allBowlers[0])
+      : null;
+
+    // Determine player of match (prefer batting if both are equal)
+    let playerOfMatch;
+    if (!topScorer && !topBowler) {
+      playerOfMatch = { id: 'unknown', name: 'Unknown', performance: 'N/A' };
+    } else if (!topBowler) {
+      playerOfMatch = topScorer;
+    } else if (!topScorer) {
+      playerOfMatch = topBowler;
+    } else {
+      // Both exist - choose based on impact (runs vs wickets * 20)
+      playerOfMatch = topScorer.runs > topBowler.wickets * 20 ? topScorer : topBowler;
+    }
+
+    // Build comprehensive performance string for player of match
+    // Check if player has BOTH batting and bowling stats
+    const playerBattingStats = allBatsmen.find(b => b.id === playerOfMatch.id);
+    const playerBowlingStats = allBowlers.find(b => b.id === playerOfMatch.id);
+
+    let performanceText;
+    if (playerBattingStats && playerBowlingStats) {
+      // All-rounder performance: "45 (32) & 2-18 (4.0)"
+      performanceText = `${playerBattingStats.runs} (${playerBattingStats.balls}) & ${playerBowlingStats.wickets}-${playerBowlingStats.runs} (${playerBowlingStats.overs})`;
+    } else if (playerBattingStats) {
+      // Batting only: "45 (32)"
+      performanceText = `${playerBattingStats.runs} (${playerBattingStats.balls})`;
+    } else if (playerBowlingStats) {
+      // Bowling only: "2-18 (4.0)"
+      performanceText = `${playerBowlingStats.wickets}-${playerBowlingStats.runs} (${playerBowlingStats.overs})`;
+    } else {
+      performanceText = 'N/A';
+    }
 
     // Format margin text
     let marginText = '';
@@ -74,27 +144,42 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     }
 
     return {
-      matchId: matchConfig.id,
-      homeTeam: matchConfig.homeTeam,
-      awayTeam: matchConfig.awayTeam,
+      matchId: matchConfig.id || matchConfig.matchId,
+      homeTeam: matchConfig.homeTeam.id, // Return ID, not full object
+      awayTeam: matchConfig.awayTeam.id, // Return ID, not full object
       winner: winnerId,
       loser: loserId,
       margin: marginText,
       winMargin: margin,
       winType: marginType,
       innings1: {
-        ...innings1,
-        topScorer: topScorer,
-        topBowler: topBowler
+        battingTeam: innings1.battingTeam,
+        bowlingTeam: innings1.bowlingTeam,
+        totalScore: innings1.totalScore,
+        wickets: innings1.wickets,
+        overs: innings1.overs,
+        balls: innings1.balls,
+        extras: innings1.extras,
+        fallOfWickets: innings1.fallOfWickets,
+        topBatsmen: innings1TopBatsmen,
+        topBowlers: innings1TopBowlers
       },
       innings2: {
-        ...innings2,
-        topScorer: topScorer,
-        topBowler: topBowler
+        battingTeam: innings2.battingTeam,
+        bowlingTeam: innings2.bowlingTeam,
+        totalScore: innings2.totalScore,
+        wickets: innings2.wickets,
+        overs: innings2.overs,
+        balls: innings2.balls,
+        extras: innings2.extras,
+        fallOfWickets: innings2.fallOfWickets,
+        topBatsmen: innings2TopBatsmen,
+        topBowlers: innings2TopBowlers
       },
       playerOfMatch: {
-        name: playerOfMatch.name,
-        performance: playerOfMatch.performance
+        id: playerOfMatch.id || 'unknown',
+        name: playerOfMatch.name || 'Unknown',
+        performance: performanceText
       }
     };
   } catch (error) {
@@ -104,52 +189,125 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
 }
 
 /**
- * Get top scorer from match
- * @param {Object} state - Match state
- * @returns {Object} Top scorer details
+ * Extract batting stats from ball-by-ball data for a specific innings
+ * @param {Array} ballByBall - Ball-by-ball record
+ * @param {number} inningsNumber - Innings number (1 or 2)
+ * @param {Object} playerStore - Player store for names
+ * @returns {Array} Array of batsmen with stats
  */
-function getTopScorer(state) {
-  const battingStats = state.innings?.battingScorecard || [];
+function extractBattingStats(ballByBall, inningsNumber, playerStore) {
+  const batsmenStats = {};
 
-  if (battingStats.length === 0) {
-    return { name: 'Unknown', runs: 0, balls: 0, performance: '0 (0)' };
-  }
+  ballByBall.forEach(ball => {
+    // Only process balls from the specified innings
+    if (ball.innings !== inningsNumber) return;
 
-  const topScorer = battingStats.reduce((max, batsman) =>
-    batsman.runs > max.runs ? batsman : max, battingStats[0]);
+    const batsmanId = ball.striker;
+    if (!batsmanId) return;
 
-  return {
-    name: topScorer.name,
-    runs: topScorer.runs,
-    balls: topScorer.balls,
-    performance: `${topScorer.runs} (${topScorer.balls})`
-  };
+    if (!batsmenStats[batsmanId]) {
+      batsmenStats[batsmanId] = {
+        id: batsmanId,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        dots: 0
+      };
+    }
+
+    const stats = batsmenStats[batsmanId];
+
+    if (ball.isLegal) {
+      stats.balls++;
+      // On legal deliveries, ball.runs is the batsman's runs
+      const runsScored = ball.runs || 0;
+      stats.runs += runsScored;
+
+      if (runsScored === 0) stats.dots++;
+      if (runsScored === 4) stats.fours++;
+      if (runsScored === 6) stats.sixes++;
+    }
+  });
+
+  // Convert to array and add player names
+  const getPlayer = playerStore.getState().getPlayer;
+  return Object.values(batsmenStats)
+    .map(stats => {
+      const player = getPlayer(stats.id);
+      return {
+        ...stats,
+        name: player?.name || 'Unknown',
+        strikeRate: stats.balls > 0 ? ((stats.runs / stats.balls) * 100).toFixed(1) : '0.0'
+      };
+    })
+    .sort((a, b) => b.runs - a.runs)
+    .slice(0, 4); // Top 4 batsmen
 }
 
 /**
- * Get top bowler from match
- * @param {Object} state - Match state
- * @returns {Object} Top bowler details
+ * Extract bowling stats from ball-by-ball data for a specific innings
+ * @param {Array} ballByBall - Ball-by-ball record
+ * @param {number} inningsNumber - Innings number (1 or 2)
+ * @param {Object} playerStore - Player store for names
+ * @returns {Array} Array of bowlers with stats
  */
-function getTopBowler(state) {
-  const bowlingStats = Object.values(state.innings?.bowlingFigures || {});
+function extractBowlingStats(ballByBall, inningsNumber, playerStore) {
+  const bowlerStats = {};
 
-  if (bowlingStats.length === 0) {
-    return { name: 'Unknown', wickets: 0, runs: 0, performance: '0/0' };
-  }
+  ballByBall.forEach(ball => {
+    // Only process balls from the specified innings
+    if (ball.innings !== inningsNumber) return;
 
-  const topBowler = bowlingStats.reduce((max, bowler) => {
-    if (bowler.wickets > max.wickets) return bowler;
-    if (bowler.wickets === max.wickets && bowler.runsConceded < max.runsConceded) return bowler;
-    return max;
-  }, bowlingStats[0]);
+    const bowlerId = ball.bowlerId;
+    if (!bowlerId) return;
 
-  return {
-    name: topBowler.name,
-    wickets: topBowler.wickets,
-    runs: topBowler.runsConceded,
-    performance: `${topBowler.wickets}/${topBowler.runsConceded}`
-  };
+    if (!bowlerStats[bowlerId]) {
+      bowlerStats[bowlerId] = {
+        id: bowlerId,
+        wickets: 0,
+        runs: 0,
+        balls: 0,
+        dots: 0,
+        maidens: 0
+      };
+    }
+
+    const stats = bowlerStats[bowlerId];
+
+    // Bowlers are charged for all runs (including extras like wides/no-balls)
+    stats.runs += ball.runs || 0;
+
+    if (ball.isLegal) {
+      stats.balls++;
+      if (ball.runs === 0) stats.dots++;
+      if (ball.isWicket) stats.wickets++;
+    }
+    // Note: Illegal deliveries (wides, no-balls) don't count as balls bowled
+    // but the runs are still charged to the bowler
+  });
+
+  // Convert to array and add player names
+  const getPlayer = playerStore.getState().getPlayer;
+  return Object.values(bowlerStats)
+    .map(stats => {
+      const player = getPlayer(stats.id);
+      const overs = Math.floor(stats.balls / 6) + (stats.balls % 6) / 10;
+      const economy = overs > 0 ? (stats.runs / overs).toFixed(2) : '0.00';
+
+      return {
+        ...stats,
+        name: player?.name || 'Unknown',
+        overs: overs.toFixed(1),
+        economy
+      };
+    })
+    .sort((a, b) => {
+      // Sort by wickets (desc), then by economy (asc)
+      if (b.wickets !== a.wickets) return b.wickets - a.wickets;
+      return parseFloat(a.economy) - parseFloat(b.economy);
+    })
+    .slice(0, 4); // Top 4 bowlers
 }
 
 export default quickSimMatch;

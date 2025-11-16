@@ -14,6 +14,9 @@ import FielderMovementCalculator from '../physics/FielderMovementCalculator.js';
 import ProbabilityEngine from '../systems/ProbabilityEngine.js';
 import tacticsModifierSystem from '../../tactics/TacticsModifierSystem.js';
 
+// DEBUG: Set to true to enable ball simulation debugging
+const DEBUG_BALL_SIM = false;
+
 /**
  * @typedef {Object} BallResult
  * @property {string} outcome - Ball outcome
@@ -94,6 +97,14 @@ class SimpleBallSimulator {
       });
 
       // Step 3: Trajectory Calculation with 2D components (with modified attributes and tactical mentalities)
+      if (DEBUG_BALL_SIM && (!ballContext.fieldingTeam || !this.ballPhysics || !this.fielderMovement)) {
+        console.warn('[SimpleBallSimulator] Missing components before trajectory calculation:', {
+          hasFieldingTeam: !!ballContext.fieldingTeam,
+          fieldingTeamSquadLength: ballContext.fieldingTeam?.squad?.length,
+          hasBallPhysics: !!this.ballPhysics,
+          hasFielderMovement: !!this.fielderMovement
+        });
+      }
       const trajectoryResult = this.trajectoryCalculator.calculateTrajectory({
         contactResult,
         striker: modifiedStriker,

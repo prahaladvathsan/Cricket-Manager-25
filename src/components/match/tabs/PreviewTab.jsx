@@ -87,47 +87,47 @@ const PreviewTab = ({ matchData }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Match Header */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="card p-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-text-tertiary px-2 py-1 bg-bg-tertiary rounded">
-              MATCHDAY {matchday}
+            <span className="text-xs font-mono text-text-tertiary px-2 py-0.5 bg-bg-tertiary rounded">
+              MD {matchday}
             </span>
-            <span className="text-sm text-text-secondary">League Match</span>
+            <span className="text-xs text-text-secondary">League Match</span>
           </div>
-          <div className="flex items-center gap-2 text-text-secondary text-sm">
-            <Calendar className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 text-text-secondary text-xs">
+            <Calendar className="w-3 h-3" />
             <span>{date}</span>
           </div>
         </div>
 
         {/* Teams Comparison */}
-        <div className="grid grid-cols-3 gap-6 items-center mb-4">
+        <div className="grid grid-cols-3 gap-4 items-center mb-2">
           {/* Home Team */}
           <div className={`text-center ${isUserHomeTeam ? 'opacity-100' : 'opacity-90'}`}>
             <div
-              className="w-20 h-20 rounded-full mx-auto mb-3 border-4 shadow-lg"
+              className="w-16 h-16 rounded-full mx-auto mb-2 border-2 shadow-lg"
               style={{
                 backgroundColor: homeTeam.colors?.primary || '#2D5F3F',
                 borderColor: isUserHomeTeam ? '#D4AF37' : homeTeam.colors?.secondary || '#D4AF37'
               }}
             />
-            <h3 className="text-xl font-bold mb-1">
-              <TeamName teamId={homeTeam.id} inline={true} className="text-xl font-bold" />
+            <h3 className="text-lg font-bold mb-0.5">
+              <TeamName teamId={homeTeam.id} inline={true} className="text-lg font-bold" />
             </h3>
             {isUserHomeTeam && (
-              <span className="inline-block px-2 py-1 bg-cricket-accent/20 text-cricket-accent text-xs font-medium rounded">
+              <span className="inline-block px-1.5 py-0.5 bg-cricket-accent/20 text-cricket-accent text-xs font-medium rounded">
                 Your Team
               </span>
             )}
-            <div className="text-xs text-text-secondary mt-2">Home</div>
+            <div className="text-xs text-text-secondary mt-1">Home</div>
           </div>
 
           {/* VS */}
           <div className="text-center">
-            <div className="text-3xl font-bold text-text-secondary mb-2">VS</div>
+            <div className="text-2xl font-bold text-text-secondary mb-1">VS</div>
             <div className="flex items-center justify-center gap-1 text-xs text-text-secondary">
               <MapPin className="w-3 h-3" />
               <span className="truncate">{venue}</span>
@@ -137,71 +137,68 @@ const PreviewTab = ({ matchData }) => {
           {/* Away Team */}
           <div className={`text-center ${isUserAwayTeam ? 'opacity-100' : 'opacity-90'}`}>
             <div
-              className="w-20 h-20 rounded-full mx-auto mb-3 border-4 shadow-lg"
+              className="w-16 h-16 rounded-full mx-auto mb-2 border-2 shadow-lg"
               style={{
                 backgroundColor: awayTeam.colors?.primary || '#2D5F3F',
                 borderColor: isUserAwayTeam ? '#D4AF37' : awayTeam.colors?.secondary || '#D4AF37'
               }}
             />
-            <h3 className="text-xl font-bold mb-1">
-              <TeamName teamId={awayTeam.id} inline={true} className="text-xl font-bold" />
+            <h3 className="text-lg font-bold mb-0.5">
+              <TeamName teamId={awayTeam.id} inline={true} className="text-lg font-bold" />
             </h3>
             {isUserAwayTeam && (
-              <span className="inline-block px-2 py-1 bg-cricket-accent/20 text-cricket-accent text-xs font-medium rounded">
+              <span className="inline-block px-1.5 py-0.5 bg-cricket-accent/20 text-cricket-accent text-xs font-medium rounded">
                 Your Team
               </span>
             )}
-            <div className="text-xs text-text-secondary mt-2">Away</div>
+            <div className="text-xs text-text-secondary mt-1">Away</div>
           </div>
         </div>
       </div>
 
       {/* Match Details Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {/* Venue & Conditions */}
-        <div className="card p-4">
-          <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-cricket-accent" />
+        <div className="card p-2.5">
+          <h4 className="text-xs font-semibold text-text-primary mb-2 flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-cricket-accent" />
             Venue & Conditions
           </h4>
 
-          <div className="space-y-2">
-            <div>
+          <div className="grid grid-cols-3 gap-2">
+            {/* Stadium */}
+            <div className="bg-bg-tertiary rounded p-1.5">
               <div className="text-xs text-text-secondary mb-0.5">Stadium</div>
-              <div className="text-sm font-medium text-text-primary truncate">{venue}</div>
+              <div className="text-xs font-medium text-text-primary truncate">{venue}</div>
             </div>
 
-            <div>
+            {/* Weather */}
+            <div className="bg-bg-tertiary rounded p-1.5">
               <div className="text-xs text-text-secondary mb-0.5 flex items-center gap-1">
                 <Cloud className="w-3 h-3" />
                 Weather
               </div>
-              <div className="text-sm font-medium text-text-primary">
+              <div className="text-xs font-medium text-text-primary">
                 {weather.icon} {weather.type}
-              </div>
-              <div className="text-xs text-text-secondary mt-0.5">
-                {weather.description}
               </div>
             </div>
 
-            <div>
-              <div className="text-xs text-text-secondary mb-0.5">Pitch Conditions</div>
-              <div className="text-sm font-medium text-text-primary">Good batting track</div>
-              <div className="text-xs text-text-secondary mt-0.5">
-                Expected to remain consistent throughout
-              </div>
+            {/* Pitch */}
+            <div className="bg-bg-tertiary rounded p-1.5">
+              <div className="text-xs text-text-secondary mb-0.5">Pitch</div>
+              <div className="text-xs font-medium text-text-primary">Good batting track</div>
             </div>
           </div>
         </div>
 
         {/* Recent Form */}
-        <div className="card p-4">
-          <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-cricket-accent" />
+        <div className="card p-2.5">
+          <h4 className="text-xs font-semibold text-text-primary mb-2 flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-cricket-accent" />
             Recent Form
           </h4>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Home Team Form */}
             <div>
               <div className="text-xs text-text-secondary mb-1.5">{homeTeam.shortName}</div>
@@ -254,58 +251,58 @@ const PreviewTab = ({ matchData }) => {
       </div>
 
       {/* Tactics Configuration */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <Settings className="w-4 h-4 text-cricket-accent" />
+      <div className="card p-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+            <Settings className="w-3.5 h-3.5 text-cricket-accent" />
             Match Tactics
           </h4>
           <button
             onClick={() => setShowTacticsModal(true)}
-            className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5"
+            className="btn-primary text-xs px-2 py-1 flex items-center gap-1"
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className="w-3 h-3" />
             <span>Configure</span>
           </button>
         </div>
 
         {userTactics ? (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {/* Batting */}
-            <div className="bg-bg-tertiary rounded p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Users className="w-3.5 h-3.5 text-cricket-accent" />
+            <div className="bg-bg-tertiary rounded p-1.5">
+              <div className="flex items-center gap-1 mb-1">
+                <Users className="w-3 h-3 text-cricket-accent" />
                 <span className="text-xs font-medium text-text-secondary">Batting</span>
               </div>
-              <div className="text-sm font-semibold text-text-primary">
+              <div className="text-xs font-semibold text-text-primary">
                 {getAccelerationSummary()}
               </div>
             </div>
 
             {/* Bowling */}
-            <div className="bg-bg-tertiary rounded p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Target className="w-3.5 h-3.5 text-cricket-accent" />
+            <div className="bg-bg-tertiary rounded p-1.5">
+              <div className="flex items-center gap-1 mb-1">
+                <Target className="w-3 h-3 text-cricket-accent" />
                 <span className="text-xs font-medium text-text-secondary">Bowling</span>
               </div>
-              <div className="text-sm font-semibold text-text-primary">
+              <div className="text-xs font-semibold text-text-primary">
                 {userTactics.bowlingPlans ? `${Object.keys(userTactics.bowlingPlans).length} Plans Set` : 'Default Plans'}
               </div>
             </div>
 
             {/* Fielding */}
-            <div className="bg-bg-tertiary rounded p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Shield className="w-3.5 h-3.5 text-cricket-accent" />
+            <div className="bg-bg-tertiary rounded p-1.5">
+              <div className="flex items-center gap-1 mb-1">
+                <Shield className="w-3 h-3 text-cricket-accent" />
                 <span className="text-xs font-medium text-text-secondary">Fielding</span>
               </div>
-              <div className="text-sm font-semibold text-text-primary">
+              <div className="text-xs font-semibold text-text-primary">
                 {getFormationName(userTactics.fieldFormation)}
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-sm text-text-secondary text-center py-4">
+          <div className="text-xs text-text-secondary text-center py-3">
             Configure your match tactics to optimize team performance
           </div>
         )}

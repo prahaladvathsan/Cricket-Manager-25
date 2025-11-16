@@ -3,42 +3,29 @@
  * @description Season progress card showing current status and next fixture
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   TrendingUp,
   Play,
-  FastForward,
   Trophy,
   MapPin,
-  Clock,
-  AlertCircle,
-  X as CloseIcon
+  Clock
 } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
-import useMatchStore from '../../stores/matchStore';
-import usePlayerStore from '../../stores/playerStore';
-import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
-import MatchResultModal from '../shared/MatchResultModal';
 
 const SeasonProgress = () => {
   const navigate = useNavigate();
 
-  // Component state
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [matchResult, setMatchResult] = useState(null);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simError, setSimError] = useState(null);
+  // Component state (removed unused simulation state)
 
   // League store
   const getSeasonProgress = useLeagueStore((state) => state.getSeasonProgress);
   const getNextFixture = useLeagueStore((state) => state.getNextFixture);
   const isUserTeamMatch = useLeagueStore((state) => state.isUserTeamMatch);
   const getClub = useLeagueStore((state) => state.getClub);
-  const recordResult = useLeagueStore((state) => state.recordResult);
-  const advanceToNextMatch = useLeagueStore((state) => state.advanceToNextMatch);
   const stage = useLeagueStore((state) => state.stage);
   const seasonName = useLeagueStore((state) => state.seasonName);
 
@@ -53,74 +40,14 @@ const SeasonProgress = () => {
   const homeTeam = nextFixture ? getClub(nextFixture.homeTeam) : null;
   const awayTeam = nextFixture ? getClub(nextFixture.awayTeam) : null;
 
-  // Handle play/continue button
-  const handlePlayMatch = async () => {
-    if (!nextFixture || isSimulating) return;
+  // Handle play button (only for user matches)
+  const handlePlayMatch = () => {
+    if (!nextFixture || !isUserMatch) return;
 
-    // Clear previous errors
-    setSimError(null);
-
-    if (isUserMatch) {
-      // Navigate to match view for user team matches
-      navigate(`/game/match/${nextFixture.id}`);
-    } else {
-      // Quick-sim AI vs AI match
-      setIsSimulating(true);
-
-      try {
-        // Validate teams exist
-        if (!homeTeam || !awayTeam) {
-          throw new Error('Team data not found for match');
-        }
-
-        const matchConfig = {
-          id: nextFixture.id,
-          homeTeam,
-          awayTeam,
-          venue: nextFixture.venue || homeTeam.homeGround,
-          tossWinner: Math.random() < 0.5 ? homeTeam.id : awayTeam.id,
-          tossDecision: Math.random() < 0.5 ? 'bat' : 'bowl'
-        };
-
-        // Run quick simulation
-        const result = await quickSimMatch(
-          matchConfig,
-          useMatchStore,
-          usePlayerStore,
-          useTeamStore
-        );
-
-        // Validate result
-        if (!result || !result.winner) {
-          throw new Error('Invalid match result received');
-        }
-
-        // Record result in league store
-        recordResult(result);
-
-        // Show result modal
-        setMatchResult(result);
-        setShowResultModal(true);
-      } catch (error) {
-        console.error('Error quick-simulating match:', error);
-        setSimError(error.message || 'Failed to simulate match. Please try again.');
-      } finally {
-        setIsSimulating(false);
-      }
-    }
+    // Navigate to match view for user team matches
+    navigate(`/game/match/${nextFixture.id}`);
   };
 
-  // Handle result modal close
-  const handleResultModalClose = () => {
-    setShowResultModal(false);
-    setMatchResult(null);
-  };
-
-  // Handle continue after AI match
-  const handleContinueAfterAI = () => {
-    advanceToNextMatch();
-    handleResultModalClose();
-  };
 
   // If season is complete
   if (!nextFixture && stage === 'completed') {
@@ -146,37 +73,8 @@ const SeasonProgress = () => {
   }
 
   return (
-    <>
-      {/* Match Result Modal */}
-      {showResultModal && matchResult && (
-        <MatchResultModal
-          isOpen={showResultModal}
-          onClose={handleResultModalClose}
-          matchResult={matchResult}
-          onContinue={handleContinueAfterAI}
-        />
-      )}
-
-      <div className="card p-4">
-        {/* Error Alert */}
-        {simError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-xs text-red-400">{simError}</p>
-              </div>
-              <button
-                onClick={() => setSimError(null)}
-                className="p-0.5 hover:bg-red-500/20 rounded transition-colors flex-shrink-0"
-              >
-                <CloseIcon className="w-3 h-3 text-red-400" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Header */}
+    <div className="card p-4">
+      {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="w-5 h-5 text-cricket-accent" />
           <h3 className="text-base font-semibold text-text-primary">
@@ -289,37 +187,19 @@ const SeasonProgress = () => {
             )}
           </div>
 
-          {/* Action Button */}
-          <button
-            onClick={handlePlayMatch}
-            disabled={isSimulating}
-            className={`w-full flex items-center justify-center gap-2 py-2 rounded font-medium transition-colors ${
-              isUserMatch
-                ? 'bg-cricket-accent text-white hover:bg-cricket-accent/90 disabled:opacity-50'
-                : 'bg-bg-tertiary text-text-primary hover:bg-border-primary disabled:opacity-50'
-            }`}
-          >
-            {isSimulating ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                <span>Simulating...</span>
-              </>
-            ) : isUserMatch ? (
-              <>
-                <Play className="w-4 h-4" />
-                <span>Play Match</span>
-              </>
-            ) : (
-              <>
-                <FastForward className="w-4 h-4" />
-                <span>Quick Simulate</span>
-              </>
-            )}
-          </button>
+          {/* Action Button - Only show for user matches */}
+          {isUserMatch && (
+            <button
+              onClick={handlePlayMatch}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded font-medium transition-colors bg-cricket-accent text-white hover:bg-cricket-accent/90"
+            >
+              <Play className="w-4 h-4" />
+              <span>Play Match</span>
+            </button>
+          )}
         </div>
       )}
     </div>
-    </>
   );
 };
 

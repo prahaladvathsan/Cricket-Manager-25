@@ -15,16 +15,22 @@ import useNavigationStore from '../../stores/navigationStore';
 import useInboxStore from '../../stores/inboxStore';
 import useAuctionStore from '../../stores/auctionStore';
 import SaveGameModal from '../shared/SaveGameModal';
-import MatchResultModal from '../shared/MatchResultModal';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import MessageGenerator from '../../utils/MessageGenerator';
+import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 
 const Header = () => {
   const navigate = useNavigate();
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [matchResult, setMatchResult] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
+
+  // Match result modal hook
+  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal({
+    onClose: () => {
+      // Advance day when modal closes
+      advanceDay();
+    }
+  });
 
   const {
     currentSeason,
@@ -77,13 +83,28 @@ const Header = () => {
             throw new Error('Team data not found for match');
           }
 
-          // Get playing XI for both teams
-          const homePlayers = usePlayerStore.getState().getPlayersByTeam(homeTeam.id);
-          const awayPlayers = usePlayerStore.getState().getPlayersByTeam(awayTeam.id);
+          // Get playing XI from team tactics (properly configured after auction)
+          const homeTactics = useTeamStore.getState().getTeamTactics(homeTeam.id);
+          const awayTactics = useTeamStore.getState().getTeamTactics(awayTeam.id);
 
-          // Select top 11 players for each team (by overall rating or just first 11)
-          const homePlayingXI = homePlayers.slice(0, 11).map(p => p.id);
-          const awayPlayingXI = awayPlayers.slice(0, 11).map(p => p.id);
+          // Use tactics squadSelection if available, otherwise fallback to first 11 players
+          let homePlayingXI, awayPlayingXI;
+
+          if (homeTactics?.squadSelection && homeTactics.squadSelection.length === 11) {
+            homePlayingXI = homeTactics.squadSelection;
+          } else {
+            console.warn(`⚠️ No tactics found for ${homeTeam.name}, using first 11 players`);
+            const homePlayers = usePlayerStore.getState().getPlayersByTeam(homeTeam.id);
+            homePlayingXI = homePlayers.slice(0, 11).map(p => p.id);
+          }
+
+          if (awayTactics?.squadSelection && awayTactics.squadSelection.length === 11) {
+            awayPlayingXI = awayTactics.squadSelection;
+          } else {
+            console.warn(`⚠️ No tactics found for ${awayTeam.name}, using first 11 players`);
+            const awayPlayers = usePlayerStore.getState().getPlayersByTeam(awayTeam.id);
+            awayPlayingXI = awayPlayers.slice(0, 11).map(p => p.id);
+          }
 
           const tossWinnerId = Math.random() < 0.5 ? homeTeam.id : awayTeam.id;
           const tossDecision = Math.random() < 0.5 ? 'bat' : 'bowl';
@@ -110,7 +131,8 @@ const Header = () => {
             matchConfig,
             useMatchStore,
             usePlayerStore,
-            useTeamStore
+            useTeamStore,
+            useLeagueStore
           );
 
           if (!result || !result.winner) {
@@ -122,46 +144,44 @@ const Header = () => {
           recalculateStandings();
           advanceToNextMatch();
 
-          // Transform result for new modal format
+          // Determine which team batted first
           const firstBattingTeam = result.innings1.battingTeam === homeTeam.id ? homeTeam : awayTeam;
           const secondBattingTeam = result.innings2.battingTeam === homeTeam.id ? homeTeam : awayTeam;
 
-          const modalResult = {
+          // Show result modal using hook
+          showResult({
             venue: fixture.venue || homeTeam.homeGround,
             matchType: 'World Premier League T20',
-            innings1: {
-              teamId: firstBattingTeam.id,
-              teamName: firstBattingTeam.name,
-              teamColors: firstBattingTeam.colors,
-              totalScore: result.innings1.totalScore || 0,
-              wickets: result.innings1.wickets || 0,
-              overs: result.innings1.overs || 20,
-              balls: result.innings1.balls || 0,
-              topBatsmen: [], // quickSim doesn't provide detailed stats
-              topBowlers: []
+            firstBattingTeam: {
+              id: firstBattingTeam.id,
+              name: firstBattingTeam.name,
+              colors: firstBattingTeam.colors
             },
-            innings2: {
-              teamId: secondBattingTeam.id,
-              teamName: secondBattingTeam.name,
-              teamColors: secondBattingTeam.colors,
-              totalScore: result.innings2.totalScore || 0,
-              wickets: result.innings2.wickets || 0,
-              overs: result.innings2.overs || 20,
-              balls: result.innings2.balls || 0,
-              topBatsmen: [],
-              topBowlers: []
+            secondBattingTeam: {
+              id: secondBattingTeam.id,
+              name: secondBattingTeam.name,
+              colors: secondBattingTeam.colors
+            },
+            innings1Data: {
+              totalScore: result.innings1.totalScore,
+              wickets: result.innings1.wickets,
+              overs: result.innings1.overs,
+              balls: result.innings1.balls,
+              topBatsmen: result.innings1.topBatsmen,
+              topBowlers: result.innings1.topBowlers
+            },
+            innings2Data: {
+              totalScore: result.innings2.totalScore,
+              wickets: result.innings2.wickets,
+              overs: result.innings2.overs,
+              balls: result.innings2.balls,
+              topBatsmen: result.innings2.topBatsmen,
+              topBowlers: result.innings2.topBowlers
             },
             winner: result.winner,
             margin: result.margin.replace('by ', ''),
-            playerOfMatch: result.playerOfMatch ? {
-              id: result.playerOfMatch.id || result.playerOfMatch.name,
-              performance: result.playerOfMatch.performance
-            } : null
-          };
-
-          // Show result modal
-          setMatchResult(modalResult);
-          setShowResultModal(true);
+            playerOfMatch: result.playerOfMatch
+          });
 
           // Don't advance day yet - wait for user to close modal
         } catch (error) {
@@ -320,11 +340,7 @@ const Header = () => {
       />
 
       {/* Match Result Modal */}
-      <MatchResultModal
-        isOpen={showResultModal}
-        onClose={handleResultModalClose}
-        matchResult={matchResult}
-      />
+      {MatchResultModalComponent}
     </>
   );
 };

@@ -21,8 +21,20 @@ export function extractPlayerStatsFromBalls(ballByBall, matchConfig) {
 
   // Create player-to-team mapping
   const playerTeamMap = {};
-  homeSquad.forEach(p => playerTeamMap[p.id] = homeTeamId);
-  awaySquad.forEach(p => playerTeamMap[p.id] = awayTeamId);
+
+  // Handle both array of IDs (quick-sim) and array of objects (interactive)
+  homeSquad.forEach(p => {
+    const playerId = typeof p === 'string' ? p : p.id;
+    if (playerId) {
+      playerTeamMap[playerId] = homeTeamId;
+    }
+  });
+  awaySquad.forEach(p => {
+    const playerId = typeof p === 'string' ? p : p.id;
+    if (playerId) {
+      playerTeamMap[playerId] = awayTeamId;
+    }
+  });
 
   // Initialize tracking for dismissals
   const dismissals = new Set();
@@ -132,8 +144,6 @@ export function updatePlayerStats(matchConfig, matchState, teamStore, playerStor
     // Recalculate team aggregate stats
     teamStore.getState().recalculateTeamStats(teamId);
   });
-
-  console.log('✅ Player and team stats updated successfully');
 }
 
 /**

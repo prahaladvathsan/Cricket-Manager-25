@@ -25,6 +25,7 @@ const useMatchStore = create(
   // Match Identification & Status
   matchId: null,
   status: 'scheduled', // scheduled | live | innings_break | completed
+  winner: null, // Team ID of the winning team
   matchType: 'T20', // T20 | ODI | Test
   venue: null,
   date: null,
@@ -93,6 +94,9 @@ const useMatchStore = create(
 
   // Ball-by-Ball Record
   ballByBall: [],
+
+  // Match Results (stores completed innings data)
+  results: [], // Array of innings results: [innings1Data, innings2Data]
 
   // Player Conditions (dynamic during match)
   matchConditions: {
@@ -195,6 +199,7 @@ const useMatchStore = create(
         }
       },
       ballByBall: [],
+      results: [], // Reset results array for new match
       matchConditions: {},
       commentary: [`${tossWinner === homeTeam.id ? homeTeam.name : awayTeam.name} won the toss and chose to ${tossDecision === 'bat' ? 'bat first' : 'bowl first'}`],
       tacticsState: {
@@ -352,6 +357,20 @@ const useMatchStore = create(
   startSecondInnings: () => set((state) => {
     const target = state.teams.batting.totalScore + 1;
 
+    // Save first innings data to results array before resetting
+    const firstInningsData = {
+      inningsNumber: 1,
+      battingTeam: state.teams.batting.id,
+      bowlingTeam: state.teams.bowling.id,
+      totalScore: state.teams.batting.totalScore,
+      wickets: state.teams.batting.wickets,
+      overs: state.currentBall.over,
+      balls: state.currentBall.ball,
+      extras: { ...state.teams.batting.extras },
+      fallOfWickets: [...state.teams.batting.fallOfWickets],
+      partnerships: [...state.teams.batting.partnerships]
+    };
+
     return {
       status: 'live',
       innings: {
@@ -391,18 +410,39 @@ const useMatchStore = create(
           ballsLeft: 120
         }
       },
+      results: [firstInningsData], // Store first innings data
       commentary: [...state.commentary, `Second innings begins. Target: ${target} runs`]
     };
   }),
 
   /**
    * Complete match
-   * @param {string} result - Match result description
+   * @param {Object} matchResult - Match result object from MatchEngine
+   * @param {string} matchResult.winningTeam - Winner team ID
+   * @param {string} matchResult.description - Result description
    */
-  completeMatch: (result) => set((state) => ({
-    status: 'completed',
-    commentary: [...state.commentary, `Match completed. ${result}`]
-  })),
+  completeMatch: (matchResult) => set((state) => {
+    // Save second innings data to results array
+    const secondInningsData = {
+      inningsNumber: 2,
+      battingTeam: state.teams.batting.id,
+      bowlingTeam: state.teams.bowling.id,
+      totalScore: state.teams.batting.totalScore,
+      wickets: state.teams.batting.wickets,
+      overs: state.currentBall.over,
+      balls: state.currentBall.ball,
+      extras: { ...state.teams.batting.extras },
+      fallOfWickets: [...state.teams.batting.fallOfWickets],
+      partnerships: [...state.teams.batting.partnerships]
+    };
+
+    return {
+      status: 'completed',
+      winner: matchResult.winningTeam || null, // Store winner team ID
+      results: [...state.results, secondInningsData], // Add second innings to results
+      commentary: [...state.commentary, `Match completed. ${matchResult.description || matchResult}`]
+    };
+  }),
 
   /**
    * Reset match state
@@ -410,6 +450,7 @@ const useMatchStore = create(
   resetMatch: () => set({
     matchId: null,
     status: 'scheduled',
+    winner: null,
     teams: {
       batting: {
         id: null,
@@ -455,6 +496,7 @@ const useMatchStore = create(
       }
     },
     ballByBall: [],
+    results: [], // Reset results array
     matchConditions: {},
     commentary: [],
     tacticsState: {

@@ -11,6 +11,7 @@ import PlayerCard from '../shared/PlayerCard';
 import SetTacticsModal from '../tactics/SetTacticsModal';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
+import PlayerStatsTable from './PlayerStatsTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, formatRating } from '../../utils/ratingHelper';
 
 const Squad = () => {
@@ -27,7 +28,15 @@ const Squad = () => {
   const [sortBy, setSortBy] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
+  // Statistics tab state
+  const [statsSubTab, setStatsSubTab] = useState('batting');
+  const [statsRoleFilter, setStatsRoleFilter] = useState('all');
+  const [minQualifying, setMinQualifying] = useState(1);
+
   const { getUserTeam } = useTeamStore();
+  const players = usePlayerStore(state => state.players);
+  const careerStats = usePlayerStore(state => state.careerStats);
+  const currentSeasonId = usePlayerStore(state => state.currentSeasonId);
   const { getPlayersByTeam } = usePlayerStore();
 
   const userTeam = getUserTeam();
@@ -141,6 +150,77 @@ const Squad = () => {
     allRounders: squadPlayers.filter(p => p.role === 'all-rounder').length,
     wicketKeepers: squadPlayers.filter(p => p.role === 'wicket-keeper').length
   };
+
+  // Prepare batting statistics data
+  const battingStats = useMemo(() => {
+    if (!currentSeasonId) return [];
+
+    return squadPlayers
+      .map(player => {
+        const seasonStats = careerStats[player.id]?.seasons[currentSeasonId];
+
+        if (!seasonStats) return null;
+
+        return {
+          playerId: player.id,
+          playerName: player.name,
+          role: player.role,
+          matches: seasonStats.matches || 0,
+          innings: seasonStats.matches || 0, // In T20, innings = matches for most players
+          runs: seasonStats.runs || 0,
+          ballsFaced: seasonStats.ballsFaced || 0,
+          battingAvg: seasonStats.battingAvg || 0,
+          strikeRate: seasonStats.strikeRate || 0,
+          fifties: seasonStats.fifties || 0,
+          centuries: seasonStats.centuries || 0,
+          highestScore: seasonStats.highestScore || 0,
+          highestScoreNotOut: seasonStats.highestScoreNotOut || false,
+          notOuts: seasonStats.notOuts || 0
+        };
+      })
+      .filter(Boolean); // Remove threshold - show all players with stats
+  }, [squadPlayers, careerStats, currentSeasonId]);
+
+  // Prepare bowling statistics data
+  const bowlingStats = useMemo(() => {
+    if (!currentSeasonId) return [];
+
+    return squadPlayers
+      .map(player => {
+        const seasonStats = careerStats[player.id]?.seasons[currentSeasonId];
+
+        if (!seasonStats) return null;
+
+        // Calculate bowling strike rate
+        const bowlingStrikeRate = seasonStats.wickets > 0
+          ? Number((seasonStats.ballsBowled / seasonStats.wickets).toFixed(2))
+          : 0;
+
+        // Find best bowling figures (this will need to be tracked separately in match updates)
+        const bestBowling = seasonStats.bestBowling || null;
+
+        // Calculate 4W hauls (need to track this in match updates)
+        const fourWickets = seasonStats.fourWickets || 0;
+
+        return {
+          playerId: player.id,
+          playerName: player.name,
+          role: player.role,
+          matches: seasonStats.matches || 0,
+          innings: seasonStats.matches || 0, // In T20, bowling innings = matches for bowlers
+          ballsBowled: seasonStats.ballsBowled || 0,
+          runsConceded: seasonStats.runsConceded || 0,
+          wickets: seasonStats.wickets || 0,
+          bowlingAvg: seasonStats.bowlingAvg || 0,
+          economy: seasonStats.economy || 0,
+          bowlingStrikeRate,
+          bestBowling,
+          fourWickets,
+          fiveWickets: seasonStats.fiveWickets || 0
+        };
+      })
+      .filter(Boolean); // Remove threshold - show all players with stats
+  }, [squadPlayers, careerStats, currentSeasonId]);
 
   const tabs = [
     { id: 'squad', label: 'Squad Overview', icon: Users },
@@ -439,19 +519,119 @@ const Squad = () => {
     </div>
   );
 
-  const renderStatistics = () => (
-    <div className="space-y-4">
-      <div className="card p-2">
-        <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
-          <TrendingUp className="w-4 h-4 text-cricket-accent" />
-          <h3 className="text-lg font-semibold text-text-primary">Season Statistics</h3>
+  const renderStatistics = () => {
+    // Check if any stats exist
+    const hasStats = currentSeasonId && (battingStats.length > 0 || bowlingStats.length > 0);
+
+    if (!hasStats) {
+      return (
+        <div className="space-y-4">
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+              <TrendingUp className="w-4 h-4 text-cricket-accent" />
+              <h3 className="text-lg font-semibold text-text-primary">Season Statistics</h3>
+            </div>
+            <p className="text-text-secondary text-sm">
+              Detailed statistics will be available once matches begin.
+            </p>
+          </div>
         </div>
-        <p className="text-text-secondary text-sm">
-          Detailed statistics will be available once matches begin.
-        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {/* Sub-tabs for Batting/Bowling */}
+        <div className="flex items-center gap-2 border-b border-border-primary pb-2">
+          <button
+            onClick={() => setStatsSubTab('batting')}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              statsSubTab === 'batting'
+                ? 'bg-cricket-accent text-cricket-primary'
+                : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+            }`}
+          >
+            Batting Statistics
+          </button>
+          <button
+            onClick={() => setStatsSubTab('bowling')}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              statsSubTab === 'bowling'
+                ? 'bg-cricket-accent text-cricket-primary'
+                : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+            }`}
+          >
+            Bowling Statistics
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="card p-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <label className="text-xs text-text-secondary">Filter by:</label>
+
+            {/* Role Filter */}
+            <select
+              value={statsRoleFilter}
+              onChange={(e) => setStatsRoleFilter(e.target.value)}
+              className="px-2 py-1 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+            >
+              <option value="all">All Roles</option>
+              {statsSubTab === 'batting' ? (
+                <>
+                  <option value="batsmen">Batsmen & WKs</option>
+                  <option value="all-rounders">All-Rounders</option>
+                </>
+              ) : (
+                <>
+                  <option value="bowlers">Bowlers</option>
+                  <option value="all-rounders">All-Rounders</option>
+                </>
+              )}
+            </select>
+
+            {/* Minimum Qualifying */}
+            <label className="text-xs text-text-secondary ml-4">
+              {statsSubTab === 'batting' ? 'Min. Matches:' : 'Min. Overs:'}
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={minQualifying}
+              onChange={(e) => setMinQualifying(parseInt(e.target.value) || 0)}
+              className="w-16 px-2 py-1 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+            />
+
+            <div className="ml-auto text-xs text-text-secondary">
+              {statsSubTab === 'batting'
+                ? `${battingStats.length} player${battingStats.length !== 1 ? 's' : ''} with batting stats`
+                : `${bowlingStats.length} player${bowlingStats.length !== 1 ? 's' : ''} with bowling stats`
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics Table */}
+        {statsSubTab === 'batting' && (
+          <PlayerStatsTable
+            players={battingStats}
+            type="batting"
+            roleFilter={statsRoleFilter}
+            minQualifying={minQualifying}
+          />
+        )}
+        {statsSubTab === 'bowling' && (
+          <PlayerStatsTable
+            players={bowlingStats}
+            type="bowling"
+            roleFilter={statsRoleFilter}
+            minQualifying={minQualifying}
+          />
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-2">

@@ -331,9 +331,13 @@ export default function BowlingPlansPanel() {
   const teamTactics = useTeamStore(state => state.teamTactics);
   const bowlingRotation = teamTactics[bowlingTeam.id]?.bowlingRotation || [];
 
-  // Get all bowlers from bowling team (filter players who have bowling attributes)
+  // IMPORTANT: Get squadSelection from team tactics (authoritative source for playing XI)
+  const bowlingTeamTactics = teamTactics[bowlingTeam.id];
+  const playingXI = bowlingTeamTactics?.squadSelection || bowlingTeam.squad;
+
+  // Get all bowlers from playing XI (filter players who have bowling attributes)
   const getPlayer = usePlayerStore(state => state.getPlayer);
-  const bowlers = bowlingTeam.squad
+  const bowlers = playingXI
     .map(playerId => getPlayer(playerId))
     .filter(player => player && player.bowlingType && player.bowlingType !== 'none')
     .sort((a, b) => {

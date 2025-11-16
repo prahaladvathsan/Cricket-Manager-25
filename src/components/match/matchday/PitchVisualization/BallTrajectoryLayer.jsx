@@ -75,17 +75,30 @@ const InstantPathRenderer = ({ trajectory }) => {
       return null;
     }
 
+    // Validate trajectory data has valid numbers
+    const distance = trajectory.expectedDistance;
+    const direction = trajectory.direction;
+
+    if (typeof distance !== 'number' || isNaN(distance) ||
+        typeof direction !== 'number' || isNaN(direction)) {
+      return null;
+    }
+
     // Striker position (batting end)
     const strikerX = 0;
     const strikerY = -10.06;
 
     // Convert direction (degrees) to radians
-    const angleRad = (trajectory.direction * Math.PI) / 180;
+    const angleRad = (direction * Math.PI) / 180;
 
     // Calculate end point from trajectory
-    const distance = trajectory.expectedDistance;
     const endX = strikerX + distance * Math.cos(angleRad);
     const endY = strikerY + distance * Math.sin(angleRad);
+
+    // Final validation - ensure calculated values are valid
+    if (isNaN(endX) || isNaN(endY)) {
+      return null;
+    }
 
     // Generate SVG path based on shot type
     let path = '';

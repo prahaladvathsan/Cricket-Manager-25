@@ -8,6 +8,9 @@ import mentalityConfig from '../../../data/config/mentality-config.json';
 import trajectoryConfig from '../../../data/config/trajectory-config.json';
 import shotAnglesConfig from '../../../data/config/shot_angles_config.json';
 
+// DEBUG: Set to true to enable trajectory calculation debugging
+const DEBUG_TRAJECTORY = false;
+
 /**
  * @typedef {Object} TrajectoryResult
  * @property {string} shotType - Shot type (aerial, grounded)
@@ -219,6 +222,19 @@ class TrajectoryCalculator {
       directionResult = this.calculateShotDirection(striker, fieldingTeam, ballPhysics, fielderMovement, speed, shotType);
     } else {
       // Fallback to simple random direction
+      if (DEBUG_TRAJECTORY) {
+        console.warn('[TrajectoryCalculator] Fallback triggered - missing components:', {
+          hasFieldingTeam: !!fieldingTeam,
+          fieldingTeamType: typeof fieldingTeam,
+          fieldingTeamSquadLength: fieldingTeam?.squad?.length,
+          fieldingTeamPositionsLength: fieldingTeam?.fieldingPositions?.length,
+          hasBallPhysics: !!ballPhysics,
+          ballPhysicsType: typeof ballPhysics,
+          hasFielderMovement: !!fielderMovement,
+          fielderMovementType: typeof fielderMovement,
+          strikerName: striker?.name
+        });
+      }
       directionResult = {
         direction: Math.floor(Math.random() * 360),
         expectedDistance: -999, // Unknown

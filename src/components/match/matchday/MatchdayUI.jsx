@@ -19,15 +19,15 @@ import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import useLeagueStore from '../../../stores/leagueStore';
 import useGameStore from '../../../stores/gameStore';
-import { ArrowLeft, Play, Pause, FastForward, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Play, Pause, FastForward, ArrowRight, ChevronDown } from 'lucide-react';
 import TeamName from '../../shared/TeamName';
 import PlayerName from '../../shared/PlayerName';
 import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
 import StatsHub from './StatsHub/StatsHub';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
-import MatchResultModal from '../../shared/MatchResultModal';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
+import { useMatchResultModal } from '../../../hooks/useMatchResultModal';
 
 /**
  * MatchHeader - Broadcast-style HUD with 2-row layout
@@ -45,6 +45,8 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
   const homeTeamId = useMatchStore(state => state.homeTeamId);
   const awayTeamId = useMatchStore(state => state.awayTeamId);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSkipDropdown, setShowSkipDropdown] = useState(false);
+  const skipDropdownRef = React.useRef(null);
 
   // Debug: Log status changes
   useEffect(() => {
@@ -241,10 +243,11 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
 
         // Check if match is complete
         if (matchEngine.isMatchComplete()) {
-          console.log('🏏 Match completed! Updating status to completed');
+          console.log('🏏 Match completed! Finalizing match result...');
 
-          // Update match status to completed
-          useMatchStore.getState().completeMatch('Match finished');
+          // For interactive matches, MatchEngine might not have called completeMatch
+          // if the match was paused. We need to call it explicitly.
+          await matchEngine.completeMatch();
 
           console.log('🏏 Triggering completion handler');
           if (onMatchComplete) {
@@ -258,17 +261,75 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     }
   };
 
+  // Click outside handler for skip dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (skipDropdownRef.current && !skipDropdownRef.current.contains(event.target)) {
+        setShowSkipDropdown(false);
+      }
+    };
+
+    if (showSkipDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showSkipDropdown]);
+
   const handleSkipOver = async () => {
     if (!matchEngine || isPlaying) return;
+    setShowSkipDropdown(false);
     matchEngine.isPaused = false;
-    const currentOver = currentBall?.over || 0;
+    const startOver = matchEngine.matchStore.getState().currentBall?.over || 0;
     try {
-      while ((currentBall?.over || 0) === currentOver && !matchEngine.isInningsComplete()) {
+      while (!matchEngine.isInningsComplete()) {
+        const currentOver = matchEngine.matchStore.getState().currentBall?.over || 0;
+        if (currentOver > startOver) break;
         await matchEngine.simulateBall();
       }
       matchEngine.isPaused = true;
     } catch (error) {
       console.error('Error skipping over:', error);
+      matchEngine.isPaused = true;
+    }
+  };
+
+  const handleSkipOvers = async (count) => {
+    if (!matchEngine || isPlaying) return;
+    setShowSkipDropdown(false);
+    matchEngine.isPaused = false;
+    const startOver = matchEngine.matchStore.getState().currentBall?.over || 0;
+    const targetOver = startOver + count;
+    try {
+      while (!matchEngine.isInningsComplete()) {
+        const currentOver = matchEngine.matchStore.getState().currentBall?.over || 0;
+        if (currentOver >= targetOver) break;
+        await matchEngine.simulateBall();
+      }
+      matchEngine.isPaused = true;
+    } catch (error) {
+      console.error('Error skipping overs:', error);
+      matchEngine.isPaused = true;
+    }
+  };
+
+  const handleSkipInnings = async () => {
+    if (!matchEngine || isPlaying) return;
+    setShowSkipDropdown(false);
+    matchEngine.isPaused = false;
+    const startInnings = matchEngine.matchStore.getState().innings?.number || 1;
+    try {
+      while (!matchEngine.isInningsComplete()) {
+        await matchEngine.simulateBall();
+      }
+      // If 1st innings just completed, need to start 2nd innings
+      if (startInnings === 1 && !matchEngine.isMatchComplete()) {
+        matchEngine.startSecondInnings();
+      }
+      matchEngine.isPaused = true;
+    } catch (error) {
+      console.error('Error skipping innings:', error);
       matchEngine.isPaused = true;
     }
   };
@@ -475,15 +536,47 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
                 {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                 <span>{isPlaying ? 'Pause' : 'Play'}</span>
               </button>
-              <button
-                onClick={handleSkipOver}
-                className="flex items-center justify-center gap-1 px-2 py-1 bg-black/40 hover:bg-black/60 border border-white/20 text-white rounded transition-all text-xs w-full"
-                disabled={!matchEngine || isPlaying}
-                title="Skip to end of current over"
-              >
-                <FastForward className="w-3 h-3" />
-                <span>Skip</span>
-              </button>
+
+              {/* Skip Dropdown */}
+              <div ref={skipDropdownRef} className="relative w-full">
+                <button
+                  onClick={() => setShowSkipDropdown(!showSkipDropdown)}
+                  className="flex items-center justify-center gap-1 px-2 py-1 bg-black/40 hover:bg-black/60 border border-white/20 text-white rounded transition-all text-xs w-full"
+                  disabled={!matchEngine || isPlaying}
+                  title="Skip options"
+                >
+                  <FastForward className="w-3 h-3" />
+                  <span>Skip</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showSkipDropdown && !isPlaying && matchEngine && (
+                  <div className="absolute top-full mt-1 right-0 bg-bg-secondary border border-border-primary rounded shadow-lg z-50 min-w-max">
+                    <button
+                      onClick={handleSkipOver}
+                      className="w-full px-3 py-2 text-xs text-text-primary hover:bg-cricket-primary/20 transition-colors text-left flex items-center gap-2 border-b border-border-primary"
+                    >
+                      <FastForward className="w-3 h-3" />
+                      <span>Skip Over</span>
+                    </button>
+                    <button
+                      onClick={() => handleSkipOvers(5)}
+                      className="w-full px-3 py-2 text-xs text-text-primary hover:bg-cricket-primary/20 transition-colors text-left flex items-center gap-2 border-b border-border-primary"
+                    >
+                      <FastForward className="w-3 h-3" />
+                      <span>Skip 5 Overs</span>
+                    </button>
+                    <button
+                      onClick={handleSkipInnings}
+                      className="w-full px-3 py-2 text-xs text-text-primary hover:bg-cricket-primary/20 transition-colors text-left flex items-center gap-2"
+                    >
+                      <FastForward className="w-3 h-3" />
+                      <span>Skip to End of Innings</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -502,10 +595,18 @@ export default function MatchdayUI() {
   const [matchEngine, setMatchEngine] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState(null);
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [matchResult, setMatchResult] = useState(null);
   const [hasProcessedResult, setHasProcessedResult] = useState(false);
   const initializingRef = React.useRef(false); // Prevent concurrent initializations
+
+  // Match result modal hook
+  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal({
+    onClose: () => {
+      // Navigate to home after viewing result
+      navigate('/game/home');
+      // Advance day
+      advanceDay();
+    }
+  });
 
   const status = useMatchStore(state => state.status);
   const matchStoreId = useMatchStore(state => state.matchId);
@@ -657,6 +758,31 @@ export default function MatchdayUI() {
   }, [matchId]); // Only depend on matchId (not navMatchData to prevent re-runs)
 
   /**
+   * Format player of match performance text
+   * @param {Object} player - Player stats from calculatePlayerOfMatch
+   * @returns {string} Formatted performance string
+   */
+  const formatPlayerOfMatchPerformance = (player) => {
+    const hasBatting = player.runs > 0 || player.ballsFaced > 0;
+    const hasBowling = player.wickets > 0 || player.ballsBowled > 0;
+
+    if (hasBatting && hasBowling) {
+      // All-rounder: "45 (32) & 2-18 (4.0)"
+      const overs = Math.floor(player.ballsBowled / 6) + (player.ballsBowled % 6) / 10;
+      return `${player.runs} (${player.ballsFaced}) & ${player.wickets}-${player.runsConceded} (${overs.toFixed(1)})`;
+    } else if (hasBatting) {
+      // Batting only: "45 (32)"
+      return `${player.runs} (${player.ballsFaced})`;
+    } else if (hasBowling) {
+      // Bowling only: "2-18 (4.0)"
+      const overs = Math.floor(player.ballsBowled / 6) + (player.ballsBowled % 6) / 10;
+      return `${player.wickets}-${player.runsConceded} (${overs.toFixed(1)})`;
+    }
+
+    return 'N/A';
+  };
+
+  /**
    * Process match result and update all stores
    */
   const processMatchResult = () => {
@@ -680,6 +806,9 @@ export default function MatchdayUI() {
       // Determine winner from match state
       const winner = currentMatchState.winner;
       const ballByBall = currentMatchState.ballByBall || [];
+
+      console.log('🏆 Winner from matchStore:', winner);
+      console.log('🏆 Match status:', currentMatchState.status);
 
       // Get first batting team from matchStore
       const firstBattingTeamId = currentMatchState.firstBattingTeamId;
@@ -828,11 +957,6 @@ export default function MatchdayUI() {
         timestamp: new Date().toISOString()
       };
 
-      // Record result in league store
-      recordResult(leagueResult);
-      recalculateStandings();
-      advanceToNextMatch();
-
       // Determine which team batted first (use matchStore's firstBattingTeamId)
       const firstBattingTeam = firstBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
       const secondBattingTeam = firstBattingTeamId === homeTeam.id ? awayTeam : homeTeam;
@@ -840,29 +964,33 @@ export default function MatchdayUI() {
       console.log('✅ First batting team:', firstBattingTeam.name);
       console.log('✅ Second batting team:', secondBattingTeam.name);
 
-      // Create result object for modal (broadcast summary format)
-      const modalResult = {
+      // Prepare full scorecard data for storage
+      const fullScorecard = {
         venue: navMatchData.venue || homeTeam.homeGround,
         matchType: 'World Premier League T20',
-        innings1: {
-          teamId: firstBattingTeam.id,
-          teamName: firstBattingTeam.name,
-          teamColors: getClub(firstBattingTeam.id)?.colors,
+        firstBattingTeam: {
+          id: firstBattingTeam.id,
+          name: firstBattingTeam.name,
+          colors: getClub(firstBattingTeam.id)?.colors
+        },
+        secondBattingTeam: {
+          id: secondBattingTeam.id,
+          name: secondBattingTeam.name,
+          colors: getClub(secondBattingTeam.id)?.colors
+        },
+        innings1Data: {
           totalScore: innings1.totalScore,
           wickets: innings1.wickets,
           overs: innings1.overs,
-          balls: innings1.balls || 0,
+          balls: innings1.balls,
           topBatsmen: getTopBatsmen(1),
           topBowlers: getTopBowlers(1)
         },
-        innings2: {
-          teamId: secondBattingTeam.id,
-          teamName: secondBattingTeam.name,
-          teamColors: getClub(secondBattingTeam.id)?.colors,
+        innings2Data: {
           totalScore: innings2.totalScore,
           wickets: innings2.wickets,
           overs: innings2.overs,
-          balls: innings2.balls || 0,
+          balls: innings2.balls,
           topBatsmen: getTopBatsmen(2),
           topBowlers: getTopBowlers(2)
         },
@@ -870,11 +998,60 @@ export default function MatchdayUI() {
         margin: `${winMargin} ${winType}`,
         playerOfMatch: playerOfMatch ? {
           id: playerOfMatch.id,
-          performance: playerOfMatch.performance
+          performance: formatPlayerOfMatchPerformance(playerOfMatch)
         } : null
       };
 
-      setMatchResult(modalResult);
+      // Record result in league store with full scorecard
+      console.log('📊 Recording league result:', {
+        matchId: leagueResult.matchId,
+        homeTeam: leagueResult.homeTeam,
+        awayTeam: leagueResult.awayTeam,
+        winner: leagueResult.winner,
+        winnerName: leagueResult.winnerName
+      });
+      recordResult(leagueResult, fullScorecard);
+      recalculateStandings();
+      advanceToNextMatch();
+
+      // Show result modal using hook - data will be formatted automatically
+      showResult({
+        venue: navMatchData.venue || homeTeam.homeGround,
+        matchType: 'World Premier League T20',
+        firstBattingTeam: {
+          id: firstBattingTeam.id,
+          name: firstBattingTeam.name,
+          colors: getClub(firstBattingTeam.id)?.colors
+        },
+        secondBattingTeam: {
+          id: secondBattingTeam.id,
+          name: secondBattingTeam.name,
+          colors: getClub(secondBattingTeam.id)?.colors
+        },
+        innings1Data: {
+          totalScore: innings1.totalScore,
+          wickets: innings1.wickets,
+          overs: innings1.overs,
+          balls: innings1.balls,
+          topBatsmen: getTopBatsmen(1),
+          topBowlers: getTopBowlers(1)
+        },
+        innings2Data: {
+          totalScore: innings2.totalScore,
+          wickets: innings2.wickets,
+          overs: innings2.overs,
+          balls: innings2.balls,
+          topBatsmen: getTopBatsmen(2),
+          topBowlers: getTopBowlers(2)
+        },
+        winner: winner,
+        margin: `${winMargin} ${winType}`,
+        playerOfMatch: playerOfMatch ? {
+          id: playerOfMatch.id,
+          performance: formatPlayerOfMatchPerformance(playerOfMatch)
+        } : null
+      });
+
       setHasProcessedResult(true);
 
       console.log('✅ Match result processed successfully');
@@ -890,23 +1067,10 @@ export default function MatchdayUI() {
     console.log('🎯 handleMatchComplete called, status:', status);
 
     // Process result if not already done
+    // The showResult() call inside processMatchResult() will handle showing the modal
     if (!hasProcessedResult) {
       processMatchResult();
     }
-
-    // Show modal (don't navigate yet)
-    setShowResultModal(true);
-  };
-
-  /**
-   * Handle result modal close/continue
-   */
-  const handleResultModalClose = () => {
-    setShowResultModal(false);
-    // Navigate to home after viewing result
-    navigate('/game/home');
-    // Advance day
-    advanceDay();
   };
 
   // Show loading state
@@ -1035,11 +1199,7 @@ export default function MatchdayUI() {
       </div>
 
       {/* Match Result Modal */}
-      <MatchResultModal
-        isOpen={showResultModal}
-        onClose={handleResultModalClose}
-        matchResult={matchResult}
-      />
+      {MatchResultModalComponent}
     </div>
   );
 }

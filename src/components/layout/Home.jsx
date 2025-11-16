@@ -32,6 +32,7 @@ import { getPlayerRating } from '../../utils/ratingHelper';
 import TeamName from '../shared/TeamName';
 import MatchResultModal from '../shared/MatchResultModal';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
+import FinancialSummary from '../board/FinancialSummary';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -417,35 +418,10 @@ const Home = () => {
           </div>
 
           {/* Financial Summary */}
-          <div className="card p-2">
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <DollarSign className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Finances
-              </h3>
-            </div>
-            {finances ? (
-              <div className="space-y-2.5">
-                <div>
-                  <div className="text-text-secondary text-xs mb-0.5">Budget</div>
-                  <div className="text-text-primary font-mono font-bold text-2xl">
-                    ₹{(finances.currentBudget / 10000000).toFixed(1)} Cr
-                  </div>
-                </div>
-                <div className="flex justify-between text-xs pt-2 border-t border-border-primary">
-                  <span className="text-text-secondary">Expenses</span>
-                  <span className="text-text-primary font-mono">
-                    ₹{(finances.totalExpenses / 10000000).toFixed(1)} Cr
-                  </span>
-                </div>
-                <button className="btn-secondary w-full mt-3 text-sm py-1.5">View Finances</button>
-              </div>
-            ) : (
-              <p className="text-text-secondary text-center py-6 text-sm">
-                No financial data
-              </p>
-            )}
-          </div>
+          <FinancialSummary
+            compact={true}
+            onClick={() => navigate('/game/board')}
+          />
 
           {/* Objectives */}
           <div className="card p-2">
