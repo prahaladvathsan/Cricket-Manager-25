@@ -1,0 +1,3467 @@
+[
+  {
+    "id": "299572",
+    "name": "Sikandar Raza",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 6,
+      "stumping": 6,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "521637",
+    "name": "Ben Duckett",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 16,
+      "stumping": 17,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "643197",
+    "name": "Max O'Dowd",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 17,
+      "stumping": 20,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "670045",
+    "name": "Gudakesh Motie",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 10,
+      "stumping": 19,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "822553",
+    "name": "Tushar Deshpande",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 10,
+      "stumping": 4,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "1159641",
+    "name": "Monank Patel",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 7,
+      "stumping": 7,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1206039",
+    "name": "Akash Madhwal",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 3,
+      "stumping": 18,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1287032",
+    "name": "Naman Dhir",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 11,
+      "stumping": 9,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1353033",
+    "name": "Muhammad Jawadullah",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 1,
+      "stumping": 14,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1452455",
+    "name": "Ayush Mhatre",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 20,
+      "collecting": 4,
+      "stumping": 19,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "44828",
+    "name": "Faf du Plessis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 13,
+      "stumping": 12,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "211855",
+    "name": "Liam Dawson",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 1,
+      "stumping": 11,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "269280",
+    "name": "Reeza Hendricks",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 10,
+      "stumping": 6,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "276298",
+    "name": "Andre Russell",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 13,
+      "stumping": 20,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "495964",
+    "name": "Ryan Burl",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 2,
+      "stumping": 17,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "629080",
+    "name": "Binura Fernando",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 3,
+      "stumping": 11,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "714451",
+    "name": "Shivam Dube",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 3,
+      "stumping": 13,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "720471",
+    "name": "Ishan Kishan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 2,
+      "stumping": 11,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "784379",
+    "name": "Wanindu Hasaranga",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 8,
+      "stumping": 1,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "806241",
+    "name": "Richard Ngarava",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 1,
+      "stumping": 2,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "820351",
+    "name": "Rovman Powell",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 15,
+      "stumping": 19,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "990039",
+    "name": "Shoriful Islam",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 19,
+      "stumping": 4,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1168641",
+    "name": "Harpreet Brar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 20,
+      "stumping": 1,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1175485",
+    "name": "Abdul Samad",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 1,
+      "stumping": 5,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1206190",
+    "name": "Shreyas Movva",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 10,
+      "stumping": 16,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1211825",
+    "name": "Will O’Rourke",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 7,
+      "stumping": 19,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1252585",
+    "name": "Shubham Dubey",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 1,
+      "stumping": 13,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "1350768",
+    "name": "Prince Yadav",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 19,
+      "collecting": 5,
+      "stumping": 17,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "379143",
+    "name": "Quinton de Kock",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 4,
+      "stumping": 14,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "537119",
+    "name": "Mohit Sharma",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 11,
+      "stumping": 18,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "625371",
+    "name": "Hardik Pandya",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 14,
+      "stumping": 11,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "823703",
+    "name": "Rajat Patidar",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 19,
+      "stumping": 7,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "942645",
+    "name": "Khaleel Ahmed",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 17,
+      "stumping": 14,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1028655",
+    "name": "Pathum Nissanka",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 8,
+      "stumping": 5,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1070665",
+    "name": "Dewald Brevis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 12,
+      "stumping": 2,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1170265",
+    "name": "Tilak Varma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 10,
+      "stumping": 5,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1277627",
+    "name": "Sanjay Krishnamurthi",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 18,
+      "collecting": 13,
+      "stumping": 11,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "333066",
+    "name": "Johnson Charles",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 1,
+      "stumping": 5,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "436757",
+    "name": "Heinrich Klaasen",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 6,
+      "stumping": 13,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "475281",
+    "name": "Shardul Thakur",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 2,
+      "stumping": 8,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "512191",
+    "name": "Fakhar Zaman",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 3,
+      "stumping": 3,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "547766",
+    "name": "Jacob Duffy",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 17,
+      "stumping": 15,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "671805",
+    "name": "George Munsey",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 17,
+      "stumping": 16,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "681305",
+    "name": "Hasan Ali",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 3,
+      "stumping": 2,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "949473",
+    "name": "Brandon McMullen",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 2,
+      "stumping": 7,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "990081",
+    "name": "Mohammad Naim",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 19,
+      "stumping": 14,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1045883",
+    "name": "Clive Madande",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 15,
+      "stumping": 9,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1073106",
+    "name": "Abdul Samad",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 3,
+      "stumping": 16,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "1123718",
+    "name": "Spencer Johnson",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 10,
+      "stumping": 18,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1129328",
+    "name": "Teja Nidamanuru",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 20,
+      "stumping": 14,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1449074",
+    "name": "Vipraj Nigam",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 17,
+      "collecting": 3,
+      "stumping": 17,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "290630",
+    "name": "Manish Pandey",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 2,
+      "stumping": 7,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "348148",
+    "name": "Mohammad Nawaz",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 1,
+      "stumping": 8,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "377534",
+    "name": "Shashank Singh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 15,
+      "stumping": 4,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "390484",
+    "name": "Jaydev Unadkat",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 7,
+      "stumping": 13,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "422108",
+    "name": "KL Rahul",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 8,
+      "stumping": 10,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "489889",
+    "name": "Pat Cummins",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 6,
+      "stumping": 14,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "571703",
+    "name": "Wellington Masakadza",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 2,
+      "stumping": 9,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "605661",
+    "name": "Ryan Rickelton",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 10,
+      "stumping": 7,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "784373",
+    "name": "Kamindu Mendis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 17,
+      "stumping": 18,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "817069",
+    "name": "Navneet Dhaliwal",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 9,
+      "stumping": 6,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "892749",
+    "name": "Tim David",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 5,
+      "stumping": 7,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "913853",
+    "name": "Lalit Rajbanshi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 16,
+      "stumping": 2,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "971349",
+    "name": "Nandre Burger",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 1,
+      "stumping": 13,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1350792",
+    "name": "Suyash Sharma",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 6,
+      "stumping": 10,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1409976",
+    "name": "Aniket Verma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 11,
+      "stumping": 7,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1460388",
+    "name": "Vignesh Puthur",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 16,
+      "collecting": 8,
+      "stumping": 20,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "308967",
+    "name": "Jos Buttler",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 19,
+      "stumping": 3,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "438563",
+    "name": "Mark Chapman",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 11,
+      "stumping": 17,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "446507",
+    "name": "Suryakumar Yadav",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 3,
+      "stumping": 8,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "538506",
+    "name": "Taskin Ahmed",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 5,
+      "stumping": 10,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "946483",
+    "name": "Nqabayomzi Peter",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 7,
+      "stumping": 16,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "1151270",
+    "name": "Ayush Badoni",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 14,
+      "stumping": 18,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1175488",
+    "name": "Dhruv Jurel",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 3,
+      "stumping": 5,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1194795",
+    "name": "Matheesha Pathirana",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 17,
+      "stumping": 19,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "1209292",
+    "name": "Vaibhav Arora",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 20,
+      "stumping": 18,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1241277",
+    "name": "Muhammad Waseem",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 13,
+      "stumping": 1,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "1457849",
+    "name": "Vinayak Shukla",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 15,
+      "collecting": 8,
+      "stumping": 1,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "300631",
+    "name": "Kusal Perera",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 5,
+      "stumping": 6,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "326968",
+    "name": "Michael Bracewell",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 19,
+      "stumping": 1,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "559235",
+    "name": "Kuldeep Yadav",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 9,
+      "stumping": 13,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "698317",
+    "name": "Ruben Trumpelmann",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 5,
+      "stumping": 12,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "824541",
+    "name": "Jaker Ali",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 11,
+      "stumping": 5,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1071484",
+    "name": "Brian Bennett",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 5,
+      "stumping": 7,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1079434",
+    "name": "Riyan Parag",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 3,
+      "stumping": 8,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "1139511",
+    "name": "Parvez Hossain Emon",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 16,
+      "stumping": 10,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1161038",
+    "name": "Alishan Sharafu",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 13,
+      "stumping": 9,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1168049",
+    "name": "Jake Fraser-McGurk",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 11,
+      "stumping": 2,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1175458",
+    "name": "Akash Singh",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 16,
+      "stumping": 13,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1191381",
+    "name": "Noah Croes",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 16,
+      "stumping": 2,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1360042",
+    "name": "Tinotenda Maposa",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 15,
+      "stumping": 1,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "1460529",
+    "name": "Digvesh Rathi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 14,
+      "collecting": 9,
+      "stumping": 6,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "330902",
+    "name": "Mustafizur Rahman",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 17,
+      "stumping": 1,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "348109",
+    "name": "Paul van Meekeren",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 1,
+      "stumping": 13,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "581379",
+    "name": "Shai Hope",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 13,
+      "stumping": 13,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "679567",
+    "name": "Ben Dwarshuis",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 12,
+      "stumping": 5,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "696401",
+    "name": "Marco Jansen",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 6,
+      "stumping": 6,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "926851",
+    "name": "Mukesh Kumar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 18,
+      "stumping": 18,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "942371",
+    "name": "Zeeshan Ansari",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 18,
+      "stumping": 20,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "964085",
+    "name": "Finlay McCreath",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 17,
+      "stumping": 20,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1153767",
+    "name": "Vikramjit Singh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 16,
+      "stumping": 2,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1193293",
+    "name": "Akhil Kumar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 3,
+      "stumping": 14,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1195670",
+    "name": "Kyle Klein",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 2,
+      "stumping": 7,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1209126",
+    "name": "Ashwani Kumar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 13,
+      "collecting": 6,
+      "stumping": 20,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "277916",
+    "name": "Ajinkya Rahane",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 15,
+      "stumping": 20,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "425943",
+    "name": "Sanju Samson",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 14,
+      "stumping": 4,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "596010",
+    "name": "Gerald Coetzee",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 1,
+      "stumping": 4,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "596097",
+    "name": "Rubin Hermann",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 11,
+      "stumping": 7,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "604302",
+    "name": "Nicholas Pooran",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 6,
+      "stumping": 1,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "642519",
+    "name": "Shreyas Iyer",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 3,
+      "stumping": 14,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "662235",
+    "name": "Josh Inglis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 7,
+      "stumping": 10,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "662973",
+    "name": "Sam Curran",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 11,
+      "stumping": 13,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "670035",
+    "name": "Brandon King",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 18,
+      "stumping": 3,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1122853",
+    "name": "Tony Munyonga",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 19,
+      "stumping": 4,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1151288",
+    "name": "Sai Sudharsan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 20,
+      "stumping": 19,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1175456",
+    "name": "Priyansh Arya",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 8,
+      "stumping": 12,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1194959",
+    "name": "Jacob Bethell",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 13,
+      "stumping": 9,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1258606",
+    "name": "Tashinga Musekiwa",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 12,
+      "collecting": 18,
+      "stumping": 12,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "272450",
+    "name": "Mitchell Marsh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 4,
+      "stumping": 9,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "326016",
+    "name": "Bhuvneshwar Kumar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 9,
+      "stumping": 4,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "542023",
+    "name": "Lungi Ngidi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 5,
+      "stumping": 16,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "554691",
+    "name": "Axar Patel",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 13,
+      "stumping": 13,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "604527",
+    "name": "Nitish Rana",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 12,
+      "stumping": 18,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "625960",
+    "name": "Kyle Jamieson",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 15,
+      "stumping": 17,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "716733",
+    "name": "Khushdil Shah",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 20,
+      "stumping": 15,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "784369",
+    "name": "Avishka Fernando",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 4,
+      "stumping": 12,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "794713",
+    "name": "Kushal Bhurtel",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 11,
+      "stumping": 6,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "955235",
+    "name": "Nuwan Thushara",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 4,
+      "stumping": 2,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "1159720",
+    "name": "Yash Dayal",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 12,
+      "stumping": 10,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1160970",
+    "name": "Haider Ali",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 6,
+      "stumping": 20,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "1161024",
+    "name": "Prabhsimran Singh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 16,
+      "stumping": 15,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "1427052",
+    "name": "Juanoy Drysdale",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 11,
+      "collecting": 8,
+      "stumping": 8,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "398439",
+    "name": "Karun Nair",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 17,
+      "stumping": 12,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "417268",
+    "name": "Matthew Cross",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 11,
+      "stumping": 14,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "481896",
+    "name": "Mohammed Shami",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 1,
+      "stumping": 4,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "595790",
+    "name": "Nikolaas Davin",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 8,
+      "stumping": 15,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "681801",
+    "name": "Shakeel Ahmed",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 1,
+      "stumping": 17,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "784367",
+    "name": "Charith Asalanka",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 18,
+      "stumping": 3,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "820685",
+    "name": "Nicholas Kirton",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 9,
+      "stumping": 19,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "826915",
+    "name": "Nathan Ellis",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 19,
+      "stumping": 12,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "914503",
+    "name": "Harsh Thaker",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 13,
+      "stumping": 13,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "959769",
+    "name": "Ben Sears",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 6,
+      "stumping": 7,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1060380",
+    "name": "Ruturaj Gaikwad",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 6,
+      "stumping": 3,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1070173",
+    "name": "Shubman Gill",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 8,
+      "stumping": 18,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "1127317",
+    "name": "Scott Edwards",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 5,
+      "stumping": 1,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1139520",
+    "name": "Tanzim Hasan Sakib",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 10,
+      "stumping": 15,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "1290929",
+    "name": "Tim Robinson",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 11,
+      "stumping": 16,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "1329697",
+    "name": "Sufiyan Muqeem",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 8,
+      "stumping": 18,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1486141",
+    "name": "Muhammad Zohaib",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 10,
+      "collecting": 18,
+      "stumping": 6,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "234675",
+    "name": "Ravindra Jadeja",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 3,
+      "stumping": 1,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "325026",
+    "name": "Glenn Maxwell",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 5,
+      "stumping": 4,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "391832",
+    "name": "Roston Chase",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 11,
+      "stumping": 10,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "451947",
+    "name": "Milind Kumar",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 10,
+      "stumping": 12,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "536936",
+    "name": "Litton Das",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 17,
+      "stumping": 12,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "595978",
+    "name": "Tristan Stubbs",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 14,
+      "stumping": 8,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "629074",
+    "name": "Kusal Mendis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 11,
+      "stumping": 17,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "777815",
+    "name": "Vijaykumar Vyshak",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 19,
+      "stumping": 16,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "778963",
+    "name": "Abhinav Manohar",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 12,
+      "stumping": 17,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "794707",
+    "name": "Dipendra Singh Airee",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 7,
+      "stumping": 15,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "911707",
+    "name": "Harry Brook",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 2,
+      "stumping": 15,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "914541",
+    "name": "Sherfane Rutherford",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 9,
+      "stumping": 8,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "940973",
+    "name": "Mohammed Siraj",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 12,
+      "stumping": 15,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "959759",
+    "name": "Finn Allen",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 7,
+      "stumping": 1,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1061467",
+    "name": "Dilon Heyliger",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 20,
+      "stumping": 17,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1072488",
+    "name": "Rohit Paudel",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 17,
+      "stumping": 7,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1151273",
+    "name": "Nehal Wadhera",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 18,
+      "stumping": 4,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1161031",
+    "name": "Saim Ayub",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 16,
+      "stumping": 1,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1161606",
+    "name": "Haris Rauf",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 11,
+      "stumping": 15,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1294342",
+    "name": "Kwena Maphaka",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 3,
+      "stumping": 9,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1394273",
+    "name": "Jewel Andrew",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 9,
+      "collecting": 4,
+      "stumping": 17,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "325012",
+    "name": "Marcus Stoinis",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 13,
+      "stumping": 3,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "381743",
+    "name": "Daryl Mitchell",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 8,
+      "stumping": 3,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "471342",
+    "name": "Krunal Pandya",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 17,
+      "stumping": 13,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "493773",
+    "name": "Lockie Ferguson",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 10,
+      "stumping": 13,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "670025",
+    "name": "Shimron Hetmyer",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 11,
+      "stumping": 9,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "677077",
+    "name": "Romario Shepherd",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 1,
+      "stumping": 5,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "681117",
+    "name": "Faheem Ashraf",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 19,
+      "stumping": 9,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "819429",
+    "name": "Azmatullah Omarzai",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 7,
+      "stumping": 2,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "897549",
+    "name": "Will Jacks",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 15,
+      "stumping": 13,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "922943",
+    "name": "Shadab Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 19,
+      "stumping": 9,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "938959",
+    "name": "Wessly Madhevere",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 17,
+      "stumping": 4,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "959767",
+    "name": "Rachin Ravindra",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 13,
+      "stumping": 13,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "1048739",
+    "name": "Sai Kishore",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 15,
+      "stumping": 15,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "1072470",
+    "name": "Shaheen Shah Afridi",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 8,
+      "stumping": 16,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1131978",
+    "name": "Ashutosh Sharma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 11,
+      "stumping": 14,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1175428",
+    "name": "Anshul Kamboj",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 7,
+      "stumping": 13,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "1175496",
+    "name": "Nitish Kumar Reddy",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 12,
+      "stumping": 7,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "1213979",
+    "name": "Mitchell Owen",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 3,
+      "stumping": 13,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "1306214",
+    "name": "Eshan Malinga",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 18,
+      "stumping": 8,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1398125",
+    "name": "Hasan Nawaz",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 2,
+      "stumping": 14,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1403089",
+    "name": "Jediah Blades",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 8,
+      "collecting": 10,
+      "stumping": 10,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "28081",
+    "name": "MS Dhoni",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 11,
+      "stumping": 9,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "244497",
+    "name": "Adil Rashid",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 10,
+      "stumping": 3,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "307756",
+    "name": "Jatinder Singh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 13,
+      "stumping": 11,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "337790",
+    "name": "Rassie van der Dussen",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 11,
+      "stumping": 11,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "390481",
+    "name": "Harshal Patel",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 12,
+      "stumping": 8,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "398666",
+    "name": "Sean Abbott",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 20,
+      "stumping": 14,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "431901",
+    "name": "Evin Lewis",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 10,
+      "stumping": 19,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "481875",
+    "name": "George Linde",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 17,
+      "stumping": 20,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "530812",
+    "name": "Akeal Hosein",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 17,
+      "stumping": 18,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "596417",
+    "name": "Brydon Carse",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 17,
+      "stumping": 18,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "643133",
+    "name": "Daniel Doram",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 12,
+      "stumping": 2,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "1070183",
+    "name": "Abhishek Sharma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 6,
+      "stumping": 17,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1096092",
+    "name": "Jamie Smith",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 15,
+      "stumping": 18,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1119026",
+    "name": "Devdutt Padikkal",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 13,
+      "stumping": 3,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1244751",
+    "name": "Arshad Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 3,
+      "stumping": 12,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1274487",
+    "name": "Zach Lion-Cachet",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 4,
+      "stumping": 7,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1296273",
+    "name": "Rupesh Singh",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 4,
+      "stumping": 2,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1419054",
+    "name": "Yuvraj Samra",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 7,
+      "collecting": 8,
+      "stumping": 16,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "321777",
+    "name": "David Miller",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 3,
+      "stumping": 9,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "391485",
+    "name": "Jason Holder",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 6,
+      "stumping": 13,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "455463",
+    "name": "Aamir Kaleem",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 16,
+      "stumping": 16,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "497121",
+    "name": "Deepak Hooda",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 15,
+      "stumping": 9,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "524075",
+    "name": "Tangeni Lungameni",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 2,
+      "stumping": 6,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "530011",
+    "name": "Travis Head",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 16,
+      "stumping": 15,
+      "reflexes": 15
+    }
+  },
+  {
+    "id": "552152",
+    "name": "Dushmantha Chameera",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 18,
+      "stumping": 3,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "559066",
+    "name": "Ish Sodhi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 12,
+      "stumping": 15,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "625383",
+    "name": "Jasprit Bumrah",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 8,
+      "stumping": 18,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "647785",
+    "name": "Sahibzada Farhan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 19,
+      "stumping": 5,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "793463",
+    "name": "Rashid Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 9,
+      "stumping": 3,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1050545",
+    "name": "Xavier Bartlett",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 8,
+      "stumping": 16,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1138316",
+    "name": "Maheesh Theekshana",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 17,
+      "stumping": 15,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1161050",
+    "name": "Sediqullah Atal",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 18,
+      "stumping": 18,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1216159",
+    "name": "Harsh Dubey",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 3,
+      "stumping": 19,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1460539",
+    "name": "Saghir Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 6,
+      "collecting": 12,
+      "stumping": 8,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "34102",
+    "name": "Rohit Sharma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 11,
+      "stumping": 14,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "403902",
+    "name": "Liam Livingstone",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 16,
+      "stumping": 20,
+      "reflexes": 10
+    }
+  },
+  {
+    "id": "506612",
+    "name": "Matt Henry",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 13,
+      "stumping": 11,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "550215",
+    "name": "Kagiso Rabada",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 17,
+      "stumping": 7,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "623977",
+    "name": "Salman Agha",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 19,
+      "stumping": 3,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "669365",
+    "name": "Phil Salt",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 13,
+      "stumping": 18,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "723105",
+    "name": "Rinku Singh",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 19,
+      "stumping": 3,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "827051",
+    "name": "Blessing Muzarabani",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 5,
+      "stumping": 19,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "917159",
+    "name": "Prasidh Krishna",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 5,
+      "stumping": 8,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "926629",
+    "name": "Hasan Mahmud",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 10,
+      "stumping": 20,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "928067",
+    "name": "Josh Little",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 18,
+      "stumping": 15,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1158538",
+    "name": "Abbas Afridi",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 9,
+      "stumping": 14,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1159843",
+    "name": "Kumar Kartikeya",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 16,
+      "stumping": 1,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1195676",
+    "name": "Jasper Davidson",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 20,
+      "stumping": 19,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1205559",
+    "name": "Mohammad Haris",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 4,
+      "stumping": 20,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1294144",
+    "name": "Dhruv Parashar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 1,
+      "stumping": 15,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1385640",
+    "name": "Lhuan-dre Pretorius",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 5,
+      "collecting": 6,
+      "stumping": 10,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "8917",
+    "name": "Moeen Ali",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 7,
+      "stumping": 5,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "230558",
+    "name": "Sunil Narine",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 2,
+      "stumping": 4,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "236779",
+    "name": "Ishant Sharma",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 9,
+      "stumping": 8,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "379504",
+    "name": "Adam Zampa",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 4,
+      "stumping": 7,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "510530",
+    "name": "Jamie Overton",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 5,
+      "stumping": 9,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "541991",
+    "name": "JP Kotze",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 2,
+      "stumping": 2,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "594322",
+    "name": "Corbin Bosch",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 12,
+      "stumping": 17,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "625964",
+    "name": "Tim Seifert",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 1,
+      "stumping": 15,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "974175",
+    "name": "Fazalhaq Farooqi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 11,
+      "stumping": 3,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "990031",
+    "name": "Towhid Hridoy",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 10,
+      "stumping": 1,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1038205",
+    "name": "Trevor Gwandu",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 18,
+      "stumping": 17,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "1071504",
+    "name": "Michael Levitt",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 20,
+      "stumping": 4,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1125976",
+    "name": "Arshdeep Singh",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 17,
+      "stumping": 19,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1199426",
+    "name": "Irfan Khan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 11,
+      "stumping": 1,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1278263",
+    "name": "Jack Jarvis",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 1,
+      "stumping": 18,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1292495",
+    "name": "Angkrish Raghuvanshi",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 1,
+      "stumping": 18,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1292497",
+    "name": "Shaik Rasheed",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 16,
+      "stumping": 4,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "1356971",
+    "name": "Shamar Joseph",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 17,
+      "stumping": 8,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "1388460",
+    "name": "Rahul Chopra",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 2,
+      "stumping": 16,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1408688",
+    "name": "Vaibhav Suryavanshi",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 4,
+      "collecting": 10,
+      "stumping": 15,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "25490",
+    "name": "Richie Berrington",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 16,
+      "stumping": 9,
+      "reflexes": 5
+    }
+  },
+  {
+    "id": "26421",
+    "name": "Ravichandran Ashwin",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 7,
+      "stumping": 16,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "277912",
+    "name": "Trent Boult",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 20,
+      "stumping": 16,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "288284",
+    "name": "Josh Hazlewood",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 6,
+      "stumping": 19,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "315232",
+    "name": "Asif Khan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 12,
+      "stumping": 7,
+      "reflexes": 14
+    }
+  },
+  {
+    "id": "370040",
+    "name": "Jeffrey Vandersay",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 14,
+      "stumping": 4,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "414966",
+    "name": "Michael Leask",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 3,
+      "stumping": 8,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "446763",
+    "name": "Rahul Tripathi",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 1,
+      "stumping": 14,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "447261",
+    "name": "Deepak Chahar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 18,
+      "stumping": 6,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "734459",
+    "name": "Abrar Ahmed",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 19,
+      "stumping": 8,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "851403",
+    "name": "Venkatesh Iyer",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 19,
+      "stumping": 6,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "931581",
+    "name": "Rishabh Pant",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 4,
+      "stumping": 14,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1151278",
+    "name": "Yashasvi Jaiswal",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 3,
+      "stumping": 6,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "1161044",
+    "name": "Shamim Hossain",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 5,
+      "stumping": 7,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1193309",
+    "name": "Ali Sheikh",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 20,
+      "stumping": 20,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1193310",
+    "name": "Saiteja Mukkamalla",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 14,
+      "stumping": 19,
+      "reflexes": 2
+    }
+  },
+  {
+    "id": "1252522",
+    "name": "Salman Mirza",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 3,
+      "stumping": 16,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1277545",
+    "name": "Abishek Porel",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 3,
+      "collecting": 10,
+      "stumping": 13,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "30288",
+    "name": "Karn Sharma",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 13,
+      "stumping": 19,
+      "reflexes": 11
+    }
+  },
+  {
+    "id": "47850",
+    "name": "Roelof van der Merwe",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 14,
+      "stumping": 10,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "311592",
+    "name": "Mitchell Starc",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 20,
+      "stumping": 16,
+      "reflexes": 19
+    }
+  },
+  {
+    "id": "430246",
+    "name": "Yuzvendra Chahal",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 13,
+      "stumping": 19,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "438362",
+    "name": "Sandeep Sharma",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 1,
+      "stumping": 2,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "502714",
+    "name": "Mitchell Santner",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 14,
+      "stumping": 14,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "600498",
+    "name": "Aiden Markram",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 15,
+      "stumping": 16,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "659081",
+    "name": "Mark Watt",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 9,
+      "stumping": 16,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "669855",
+    "name": "Jofra Archer",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 6,
+      "stumping": 16,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "694211",
+    "name": "Avesh Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 20,
+      "stumping": 14,
+      "reflexes": 16
+    }
+  },
+  {
+    "id": "719715",
+    "name": "Washington Sundar",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 6,
+      "stumping": 4,
+      "reflexes": 4
+    }
+  },
+  {
+    "id": "833087",
+    "name": "Mahedi Hasan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 5,
+      "stumping": 1,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "990023",
+    "name": "Tanzid Hasan",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 6,
+      "stumping": 8,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1108375",
+    "name": "Varun Chakravarthy",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 7,
+      "stumping": 12,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1139523",
+    "name": "Rishad Hossain",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 17,
+      "stumping": 18,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "1175441",
+    "name": "Ravi Bishnoi",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 9,
+      "stumping": 6,
+      "reflexes": 1
+    }
+  },
+  {
+    "id": "1176959",
+    "name": "Akash Deep",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 14,
+      "stumping": 11,
+      "reflexes": 13
+    }
+  },
+  {
+    "id": "1241201",
+    "name": "Matiullah Khan",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 1,
+      "stumping": 16,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1312645",
+    "name": "Harshit Rana",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 2,
+      "collecting": 14,
+      "stumping": 11,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "253802",
+    "name": "Virat Kohli",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 18,
+      "stumping": 18,
+      "reflexes": 20
+    }
+  },
+  {
+    "id": "359746",
+    "name": "Saad Bin Zafar",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 19,
+      "stumping": 6,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "379140",
+    "name": "Devon Conway",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 7,
+      "stumping": 2,
+      "reflexes": 17
+    }
+  },
+  {
+    "id": "385938",
+    "name": "Kaleem Sana",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 18,
+      "stumping": 8,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "535393",
+    "name": "Senuran Muthusamy",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 6,
+      "stumping": 15,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "670031",
+    "name": "Alzarri Joseph",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 13,
+      "stumping": 15,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "721867",
+    "name": "Jitesh Sharma",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 1,
+      "stumping": 8,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "800675",
+    "name": "Karan KC",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 14,
+      "stumping": 20,
+      "reflexes": 7
+    }
+  },
+  {
+    "id": "957645",
+    "name": "Aaron Jones",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 18,
+      "stumping": 4,
+      "reflexes": 8
+    }
+  },
+  {
+    "id": "974087",
+    "name": "Rahmanullah Gurbaz",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 12,
+      "stumping": 15,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "1076713",
+    "name": "Cameron Green",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 7,
+      "stumping": 4,
+      "reflexes": 3
+    }
+  },
+  {
+    "id": "1175489",
+    "name": "Sameer Rizvi",
+    "currentRole": "batsman",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 4,
+      "stumping": 13,
+      "reflexes": 9
+    }
+  },
+  {
+    "id": "1182529",
+    "name": "Noor Ahmad",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 2,
+      "stumping": 17,
+      "reflexes": 18
+    }
+  },
+  {
+    "id": "1195672",
+    "name": "Aryan Dutt",
+    "currentRole": "all-rounder",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 1,
+      "stumping": 17,
+      "reflexes": 12
+    }
+  },
+  {
+    "id": "1202098",
+    "name": "Zakary Foulkes",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 11,
+      "stumping": 14,
+      "reflexes": 6
+    }
+  },
+  {
+    "id": "1206052",
+    "name": "Yudhvir Singh",
+    "currentRole": "bowler",
+    "keepingAttributes": {
+      "keeping": 1,
+      "collecting": 12,
+      "stumping": 20,
+      "reflexes": 12
+    }
+  }
+]

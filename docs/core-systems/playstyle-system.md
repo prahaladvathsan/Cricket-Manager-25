@@ -5,9 +5,10 @@
 The playstyle system introduces dynamic attribute modifiers that adapt player performance based on match context. Each player has playstyle ratings for various playing styles, and these ratings determine how effectively contextual modifiers enhance (or reduce) their attributes during match simulation.
 
 **Key Features:**
-- **24 Unique Playstyles**: 16 batting + 8 bowling (4 pace + 4 spin)
+- **25 Unique Playstyles**: 16 batting + 8 bowling (4 pace + 4 spin) + 1 wicketkeeping
 - **Dynamic Modifiers**: Attributes adjust based on match situation (phase, wickets, run rate, etc.)
 - **Bowling Type Segregation**: Pace and spin bowlers have distinct playstyles based on bowlingType field
+- **Wicketkeeping Specialization**: Dedicated wicketkeeper playstyle with specialist glovework rating
 - **Fully Configurable**: All weightages, modifiers, and conditions externalized to JSON
 - **Non-Invasive Integration**: Existing match engine logic unchanged, only input attributes modified
 - **Performance Optimized**: Modifiers calculated once per ball with minimal overhead
@@ -51,10 +52,11 @@ The playstyle system introduces dynamic attribute modifiers that adapt player pe
 - All-rounder
 - Wicket-keeper
 
-**Playstyle** (24 types): Specific playing style within role
+**Playstyle** (25 types): Specific playing style within role
 - **Batting**: Opener-Slogger, Finisher, Wall, etc. (16 total)
 - **Bowling - Pace**: Swing Bowler, Hit-the-Deck Seamer, Short-Ball Specialist, Death Specialist (4 total)
 - **Bowling - Spin**: Classical Spinner, Flat Spinner, Mystery Spinner, Containment Spinner (4 total)
+- **Wicketkeeping**: Wicketkeeper (1 total) - specialist glovework rating
 
 **PlaystyleRating** (0-100 scale): Player's suitability for each playstyle
 - Calculated from weighted attribute sum
@@ -105,6 +107,17 @@ Defines attribute weightages for calculating playstyle ratings.
           "intelligence": 1,
           "neutralBowling": 2
         }
+      }
+    }
+  },
+  "wicketkeeping": {
+    "Wicketkeeper": {
+      "description": "Specialist wicketkeeper - glovework, stumping ability, and catching behind the stumps",
+      "attributes": {
+        "keeping": 8,
+        "collecting": 5,
+        "stumping": 4,
+        "reflexes": 3
       }
     }
   }
@@ -395,14 +408,20 @@ Updated player schema includes:
       "Death Specialist": 65.3,
       "Swing Bowler": 42.8,
       "Classical Spinner": 31.5
+    },
+    "wicketkeeping": {
+      "Wicketkeeper": 88.3
     }
   },
   "primaryPlaystyle": {
     "batting": "Finisher",
-    "bowling": "Death Specialist"
+    "bowling": "Death Specialist",
+    "wicketkeeping": "Wicketkeeper"
   }
 }
 ```
+
+**Note**: Wicket-keepers have `wicketkeeping` playstyle populated, while non-keepers have empty array or null.
 
 ## Batting Playstyles
 
@@ -507,6 +526,42 @@ Bowling playstyles are segregated by bowlingType (pace/spin), with each type hav
 - **Key Attributes**: accuracy, intelligence, defensiveBowling
 - **Bonuses**: Dot ball pressure (always), tactical accuracy (always)
 - **Special Effects**: Induces impatience, batsman aggression +1 (targets batsman)
+
+## Wicketkeeping Playstyle
+
+Unlike batting and bowling playstyles that apply dynamic match-context modifiers, wicketkeeping uses a pure attribute-based rating system.
+
+**Wicketkeeper**
+- **Description**: Specialist wicketkeeper with elite glovework, stumping ability, and catching behind stumps
+- **Key Attributes**:
+  - keeping (40% weight) - Wicket-keeping technique
+  - collecting (25% weight) - Ball collection cleanness
+  - stumping (20% weight) - Stumping ability
+  - reflexes (15% weight) - Reaction time
+- **Rating Calculation**: Pure attribute rating (0-100), no position or overall modifiers
+- **UI Display**: Wicket-keepers show wicketkeeping rating instead of bowling playstyles
+- **Role Badge**: Cyan color theme (#4DD0E1) distinguishes keepers from other roles
+
+### Wicketkeeping Rating Formula
+
+```javascript
+// Pure attribute-based calculation
+weightedSum = (keeping × 8) + (collecting × 5) + (stumping × 4) + (reflexes × 3)
+maxPossible = (8 × 20) + (5 × 20) + (4 × 20) + (3 × 20) = 400
+wicketkeepingRating = (weightedSum / maxPossible) × 100
+
+// Example: Elite keeper with keeping=18, collecting=17, stumping=19, reflexes=16
+weightedSum = (18×8) + (17×5) + (19×4) + (16×3) = 144 + 85 + 76 + 48 = 353
+wicketkeepingRating = (353 / 400) × 100 = 88.3
+```
+
+### Database Integration
+
+- **35 wicketkeepers** identified in player database (315 total players)
+- **Keeper attributes**: keeping, collecting, stumping = 10-20 (elite range)
+- **Non-keeper attributes**: keeping, collecting, stumping = 1-4 (minimal)
+- **Match engine**: Prevents wicket-keepers from bowling, credits catches behind stumps
+- **Team selection**: Validates minimum 1 wicket-keeper in playing XI
 
 ## Performance Impact
 
@@ -707,5 +762,5 @@ Potential future additions to the playstyle system:
 
 ---
 
-**Last Updated**: 2025-01-10
-**Version**: 1.0.0
+**Last Updated**: 2025-01-16 (Added wicketkeeping playstyle system)
+**Version**: 1.1.0

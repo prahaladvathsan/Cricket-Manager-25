@@ -59,6 +59,47 @@ export function getPrimaryBowlingRating(player) {
 }
 
 /**
+ * Get the primary fielding playstyle rating for a player
+ * @param {Object} player - Player object
+ * @returns {number} Rating value (0-100 scale), or 0 if not available
+ */
+export function getPrimaryFieldingRating(player) {
+  if (!player) return 0;
+
+  // Try to get from topPlaystyles first (most reliable)
+  if (player.topPlaystyles?.fielding?.[0]?.rating) {
+    return player.topPlaystyles.fielding[0].rating;
+  }
+
+  // Fallback: Try to get from playstyleRatings using primaryPlaystyle
+  if (player.primaryPlaystyle?.fielding && player.playstyleRatings?.fielding) {
+    const rating = player.playstyleRatings.fielding[player.primaryPlaystyle.fielding];
+    if (rating !== undefined) return rating;
+  }
+
+  // Last resort: Calculate from keeping attributes (keeping=40%, collecting=25%, stumping=20%, reflexes=15%)
+  const fielding = player.attributes?.fielding;
+  if (fielding) {
+    const keeping = fielding.keeping || 0;
+    const collecting = fielding.collecting || 0;
+    const stumping = fielding.stumping || 0;
+    const reflexes = fielding.reflexes || 0;
+
+    // Weighted average, scaled to 0-100
+    return ((keeping * 0.40 + collecting * 0.25 + stumping * 0.20 + reflexes * 0.15) / 20) * 100;
+  }
+
+  return 0;
+}
+
+/**
+ * @deprecated Use getPrimaryFieldingRating instead
+ */
+export function getPrimaryWicketkeepingRating(player) {
+  return getPrimaryFieldingRating(player);
+}
+
+/**
  * Get the most appropriate rating for a player based on their role
  * @param {Object} player - Player object
  * @returns {number} Rating value (0-100 scale)
@@ -67,6 +108,11 @@ export function getPlayerRating(player) {
   if (!player) return 0;
 
   const role = player.role?.toLowerCase() || '';
+
+  // For wicket-keepers, use fielding rating
+  if (role === 'wicket-keeper') {
+    return getPrimaryFieldingRating(player);
+  }
 
   // For bowlers, prioritize bowling rating
   if (role === 'bowler') {
@@ -80,7 +126,7 @@ export function getPlayerRating(player) {
     return Math.max(battingRating, bowlingRating);
   }
 
-  // For batsmen, wicket-keepers, and others, use batting rating
+  // For batsmen and others, use batting rating
   return getPrimaryBattingRating(player);
 }
 

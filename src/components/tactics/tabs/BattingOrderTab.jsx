@@ -1,10 +1,10 @@
 /**
  * @file BattingOrderTab.jsx
- * @description Tab for setting batting order and acceleration tiers
+ * @description Tab for setting batting order and acceleration tiers with drag-and-drop
  */
 
-import React, { useMemo } from 'react';
-import { ChevronUp, ChevronDown, Info } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { GripVertical, Info } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import tacticsConfig from '../../../data/config/tactics-config.json';
@@ -12,11 +12,13 @@ import { getPrimaryBattingRating, formatRating } from '../../../utils/ratingHelp
 import PlayerName from '../../shared/PlayerName';
 
 const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { getTeamTactics, updateBattingOrder, updateAccelerationTier } = useTeamStore();
+  const { getTeamTactics, updateBattingOrder, updateAccelerationTier, updatePlaystyleOverride } = useTeamStore();
   const { players } = usePlayerStore();
 
   const teamTactics = getTeamTactics(teamId);
   const battingOrder = teamTactics?.battingOrder || [];
+
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Get acceleration tiers from config
   const accelerationTiers = useMemo(() => {
@@ -34,22 +36,63 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       .filter(Boolean);
   }, [battingOrder, players]);
 
-  const handleMoveUp = (index) => {
-    if (index === 0) return;
-    const newOrder = [...battingOrder];
-    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-    updateBattingOrder(teamId, newOrder);
+  // Get available batting playstyles for a player
+  const getAvailableBattingPlaystyles = (player) => {
+    if (!player.playstyleRatings?.batting) return [];
+
+    return Object.entries(player.playstyleRatings.batting)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, rating]) => ({ name, rating }));
   };
 
-  const handleMoveDown = (index) => {
-    if (index === battingOrder.length - 1) return;
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      return;
+    }
+
     const newOrder = [...battingOrder];
-    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    const [removed] = newOrder.splice(draggedIndex, 1);
+    newOrder.splice(dropIndex, 0, removed);
+
     updateBattingOrder(teamId, newOrder);
+    setDraggedIndex(null);
   };
 
   const handleTierChange = (playerId, tier) => {
     updateAccelerationTier(teamId, playerId, tier);
+  };
+
+  const handleBattingPlaystyleChange = (playerId, playstyle) => {
+    const player = players[playerId];
+    const currentOverride = teamTactics?.playstyleOverrides?.[playerId];
+
+    // If selecting primary playstyle, remove batting override (keep bowling if exists)
+    if (playstyle === player.primaryPlaystyle.batting) {
+      if (currentOverride?.bowling) {
+        updatePlaystyleOverride(teamId, playerId, { batting: null, bowling: currentOverride.bowling });
+      } else {
+        updatePlaystyleOverride(teamId, playerId, null);
+      }
+    } else {
+      updatePlaystyleOverride(teamId, playerId, { batting: playstyle });
+    }
   };
 
   const getTierColor = (tierName) => {
@@ -98,84 +141,83 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             </h3>
           </div>
           <span className="text-xs text-text-secondary">
-            Use arrows to reorder | Set acceleration tier for each batsman
+            Drag to reorder | Configure playstyle & acceleration tier
           </span>
         </div>
       </div>
 
-      {/* Merged Batting Order List */}
+      {/* Batting Order List with Drag and Drop */}
       <div className="card p-3">
-        <div className="space-y-2">
+        <div className="flex flex-col gap-1">
           {orderedPlayers.map((player, index) => {
             const currentTier = teamTactics?.accelerationTiers[player.id] || 'Rotate';
             const overrides = teamTactics?.playstyleOverrides?.[player.id];
             const battingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
             const battingRating = getPrimaryBattingRating(player);
+            const isBattingPrimary = battingPlaystyle === player.primaryPlaystyle?.batting;
+            const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
+            const isDragging = draggedIndex === index;
 
             return (
               <div
                 key={player.id}
-                className="flex items-center gap-2 p-2 bg-bg-tertiary rounded hover:bg-bg-secondary transition-colors"
+                draggable={true}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`flex items-center gap-2 p-1 rounded transition-all ${
+                  isDragging
+                    ? 'bg-cricket-primary/20 border border-cricket-accent'
+                    : 'bg-bg-tertiary border border-transparent cursor-move hover:border-cricket-accent'
+                }`}
               >
-                {/* Move Buttons */}
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    onClick={() => handleMoveUp(index)}
-                    disabled={index === 0}
-                    className="p-0.5 hover:bg-bg-primary rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Move up"
-                  >
-                    <ChevronUp className="w-3.5 h-3.5 text-text-secondary" />
-                  </button>
-                  <button
-                    onClick={() => handleMoveDown(index)}
-                    disabled={index === battingOrder.length - 1}
-                    className="p-0.5 hover:bg-bg-primary rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Move down"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5 text-text-secondary" />
-                  </button>
-                </div>
+                {/* Drag Handle */}
+                <GripVertical className="w-4 h-4 text-text-secondary flex-shrink-0" />
 
                 {/* Position */}
-                <div className="flex flex-col items-center min-w-[50px]">
-                  <span className="text-base font-bold text-text-primary font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-text-primary font-mono w-5">
                     {index + 1}
                   </span>
-                  <span className={`px-2 py-0.5 text-xs rounded font-medium ${getPositionColor(index)}`}>
+                  <span className={`px-1.5 py-0.5 text-xs rounded font-medium ${getPositionColor(index)}`}>
                     {getPositionLabel(index)}
                   </span>
                 </div>
 
-                {/* Player Info */}
+                {/* Player Name */}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium mb-1">
-                    <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-text-secondary truncate max-w-[200px]">
-                      {battingPlaystyle}
-                    </span>
-                    <span className="text-cricket-accent font-mono font-semibold">
-                      {formatRating(battingRating)}
-                    </span>
-                  </div>
+                  <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
                 </div>
 
-                {/* Acceleration Tier Dropdown */}
-                <div className="min-w-[180px]">
-                  <select
-                    value={currentTier}
-                    onChange={(e) => handleTierChange(player.id, e.target.value)}
-                    className={`w-full px-2 py-1.5 bg-bg-secondary border border-border-primary rounded text-xs font-medium focus:outline-none focus:border-cricket-accent ${getTierColor(currentTier)}`}
-                  >
-                    {accelerationTiers.map(({ name, description }) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Batting Playstyle */}
+                <select
+                  value={battingPlaystyle}
+                  onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-[220px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                >
+                  {availableBattingPlaystyles.map(({ name, rating }) => (
+                    <option key={name} value={name}>
+                      {name} ({rating.toFixed(0)})
+                      {name === player.primaryPlaystyle?.batting && ' ⭐'}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Acceleration Tier */}
+                <select
+                  value={currentTier}
+                  onChange={(e) => handleTierChange(player.id, e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`w-[140px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs font-medium focus:outline-none focus:border-cricket-accent ${getTierColor(currentTier)}`}
+                >
+                  {accelerationTiers.map(({ name, description }) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
               </div>
             );
           })}

@@ -490,6 +490,18 @@
     }
   },
 
+  "fielding": {
+    "Wicketkeeper": {
+      "description": "Specialist wicketkeeper - glovework, stumping ability, and catching behind the stumps",
+      "attributes": {
+        "keeping": 8,
+        "collecting": 5,
+        "stumping": 4,
+        "reflexes": 3
+      }
+    }
+  },
+
   "roleCategories": {
     "batsman": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor", "Finisher", "Runner", "Pinch-Hitter", "Wall"],
     "bowler": {
@@ -497,6 +509,6 @@
       "spin": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner"]
     },
     "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced"],
-    "wicket-keeper": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Finisher"]
+    "wicket-keeper": ["Wicketkeeper"]
   }
 }

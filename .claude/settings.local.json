@@ -36,7 +36,10 @@
       "Bash(powershell -Command \"Test-Path ''$env:USERPROFILE\\.claude\\file-operations-log.txt''\")",
       "Bash(powershell:*)",
       "Bash(npm install:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "WebSearch",
+      "WebFetch(domain:australiancricketinstitute.com)",
+      "Bash($null)"
     ],
     "deny": []
   }

@@ -43,7 +43,7 @@ const LineupsTab = ({ matchData, tossState, onStartMatch }) => {
       'batsman': { label: 'Bat', class: 'bg-blue-900/40 text-blue-300' },
       'bowler': { label: 'Bowl', class: 'bg-red-900/40 text-red-300' },
       'all-rounder': { label: 'All', class: 'bg-purple-900/40 text-purple-300' },
-      'wicket-keeper': { label: 'WK', class: 'bg-green-900/40 text-green-300' }
+      'wicket-keeper': { label: 'WK', class: 'bg-cyan-900/40 text-cyan-300' }
     };
     return badges[role] || { label: 'Bat', class: 'bg-blue-900/40 text-blue-300' };
   };

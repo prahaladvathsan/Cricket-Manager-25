@@ -67,8 +67,8 @@ const ScorecardModal = ({ isOpen, onClose }) => {
       if (ball.isWicket && ball.dismissedPlayer === strikerId) {
         battingStats[strikerId].dismissal = ball.dismissalType || { type: 'out' };
         battingStats[strikerId].dismissalBowler = ball.bowler;
-        if (ball.metadata?.fieldingResult?.fielder) {
-          battingStats[strikerId].dismissalFielder = ball.metadata.fieldingResult.fielder;
+        if (ball.fielderId) {
+          battingStats[strikerId].dismissalFielder = ball.fielderId;
         }
       }
     });
@@ -127,26 +127,34 @@ const ScorecardModal = ({ isOpen, onClose }) => {
 
   // Helper functions
   const formatDismissal = (stat) => {
-    if (!stat.dismissal || stat.dismissal.type === 'not out') return 'not out';
+    if (!stat.dismissal) return 'not out';
+
+    // Handle both string and object formats
+    const dismissalType = typeof stat.dismissal === 'string' ? stat.dismissal : stat.dismissal.type;
+
+    if (dismissalType === 'not out' || !dismissalType) return 'not out';
 
     const bowlerName = getPlayer(stat.dismissalBowler)?.name || 'Unknown';
     const fielderName = stat.dismissalFielder ? getPlayer(stat.dismissalFielder)?.name : null;
 
-    switch (stat.dismissal.type) {
+    switch (dismissalType) {
       case 'bowled':
         return `b ${bowlerName}`;
       case 'caught':
+      case 'caught_behind':
         return fielderName ? `c ${fielderName} b ${bowlerName}` : `c & b ${bowlerName}`;
       case 'lbw':
         return `lbw b ${bowlerName}`;
+      case 'run_out':
       case 'run out':
         return fielderName ? `run out (${fielderName})` : 'run out';
       case 'stumped':
         return fielderName ? `st ${fielderName} b ${bowlerName}` : `st b ${bowlerName}`;
+      case 'hit_wicket':
       case 'hit wicket':
         return `hit wicket b ${bowlerName}`;
       default:
-        return stat.dismissal.type;
+        return dismissalType;
     }
   };
 

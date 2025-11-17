@@ -11,8 +11,9 @@ import React from 'react';
  *
  * Coordinate System:
  * - Origin at center (0, 0)
- * - Y-axis points up (standard SVG with transform)
- * - Striker at (0, -10.06) facing bowler at (0, 10.06)
+ * - Y-axis points up (positive Y = top of screen, negative Y = bottom)
+ * - Bowler/Non-striker at (0, -10.06) - BOTTOM of screen
+ * - Keeper/Striker at (0, +10.06) - TOP of screen
  * - All dimensions in meters
  * - SVG viewBox: -80 -80 160 160 (accommodates 70m boundary + padding)
  *

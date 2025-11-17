@@ -68,7 +68,7 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                     player.role === 'batsman' ? 'bg-blue-900/30 text-blue-400' :
                     player.role === 'bowler' ? 'bg-red-900/30 text-red-400' :
                     player.role === 'all-rounder' ? 'bg-purple-900/30 text-purple-400' :
-                    player.role === 'wicket-keeper' ? 'bg-green-900/30 text-green-400' :
+                    player.role === 'wicket-keeper' ? 'bg-cyan-900/30 text-cyan-400' :
                     'bg-bg-tertiary text-text-secondary'
                   }`}>
                     {player.role}
@@ -98,7 +98,7 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
             {/* Top 3 Playstyles */}
             {player.topPlaystyles && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Batting Top 3 */}
+                {/* Batting Top 3 - show for all players */}
                 {player.topPlaystyles.batting && player.topPlaystyles.batting.length > 0 && (
                   <div className="p-2 bg-bg-tertiary rounded">
                     <div className="text-xs font-semibold text-blue-400 mb-2">Top Batting Playstyles</div>
@@ -124,30 +124,58 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                   </div>
                 )}
 
-                {/* Bowling Top 3 */}
-                {player.topPlaystyles.bowling && player.topPlaystyles.bowling.length > 0 && (
-                  <div className="p-2 bg-bg-tertiary rounded">
-                    <div className="text-xs font-semibold text-red-400 mb-2">Top Bowling Playstyles</div>
-                    <div className="space-y-1">
-                      {player.topPlaystyles.bowling.slice(0, 3).map((style, idx) => {
-                        const isPrimary = player.primaryPlaystyle?.bowling === style.name;
-                        return (
-                          <div key={idx} className="flex items-center justify-between">
-                            <span className={`text-xs truncate mr-1 ${
-                              isPrimary ? 'text-red-400 font-bold' : 'text-text-secondary'
-                            }`}>
-                              {isPrimary && '★ '}{style.name}
-                            </span>
-                            <span className={`text-xs font-bold tabular-nums ${
-                              isPrimary ? 'text-red-400' : 'text-text-primary'
-                            }`}>
-                              {style.rating.toFixed(0)}
-                            </span>
-                          </div>
-                        );
-                      })}
+                {/* Fielding Top 3 - for wicket-keepers instead of bowling */}
+                {player.role === 'wicket-keeper' ? (
+                  player.topPlaystyles.fielding && player.topPlaystyles.fielding.length > 0 && (
+                    <div className="p-2 bg-bg-tertiary rounded">
+                      <div className="text-xs font-semibold text-cyan-400 mb-2">Top Fielding Playstyles</div>
+                      <div className="space-y-1">
+                        {player.topPlaystyles.fielding.slice(0, 3).map((style, idx) => {
+                          const isPrimary = player.primaryPlaystyle?.fielding === style.name;
+                          return (
+                            <div key={idx} className="flex items-center justify-between">
+                              <span className={`text-xs truncate mr-1 ${
+                                isPrimary ? 'text-cyan-400 font-bold' : 'text-text-secondary'
+                              }`}>
+                                {isPrimary && '★ '}{style.name}
+                              </span>
+                              <span className={`text-xs font-bold tabular-nums ${
+                                isPrimary ? 'text-cyan-400' : 'text-text-primary'
+                              }`}>
+                                {style.rating.toFixed(0)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )
+                ) : (
+                  /* Bowling Top 3 - for non-wicket-keepers */
+                  player.topPlaystyles.bowling && player.topPlaystyles.bowling.length > 0 && (
+                    <div className="p-2 bg-bg-tertiary rounded">
+                      <div className="text-xs font-semibold text-red-400 mb-2">Top Bowling Playstyles</div>
+                      <div className="space-y-1">
+                        {player.topPlaystyles.bowling.slice(0, 3).map((style, idx) => {
+                          const isPrimary = player.primaryPlaystyle?.bowling === style.name;
+                          return (
+                            <div key={idx} className="flex items-center justify-between">
+                              <span className={`text-xs truncate mr-1 ${
+                                isPrimary ? 'text-red-400 font-bold' : 'text-text-secondary'
+                              }`}>
+                                {isPrimary && '★ '}{style.name}
+                              </span>
+                              <span className={`text-xs font-bold tabular-nums ${
+                                isPrimary ? 'text-red-400' : 'text-text-primary'
+                              }`}>
+                                {style.rating.toFixed(0)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
                 )}
               </div>
             )}

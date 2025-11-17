@@ -82,7 +82,7 @@ const TeamCard = ({
     'batsman': 'bg-blue-900/30 text-blue-400',
     'bowler': 'bg-red-900/30 text-red-400',
     'all-rounder': 'bg-purple-900/30 text-purple-400',
-    'wicket-keeper': 'bg-green-900/30 text-green-400'
+    'wicket-keeper': 'bg-cyan-900/30 text-cyan-400'
   };
 
   // Compact variant - minimal info

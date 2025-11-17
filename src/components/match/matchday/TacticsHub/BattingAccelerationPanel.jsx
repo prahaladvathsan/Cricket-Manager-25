@@ -33,7 +33,7 @@ const ROLE_CONFIG = {
   batsman: { label: 'Bat', color: 'bg-blue-600' },
   bowler: { label: 'Bowl', color: 'bg-red-600' },
   'all-rounder': { label: 'AR', color: 'bg-purple-600' },
-  'wicket-keeper': { label: 'WK', color: 'bg-green-600' },
+  'wicket-keeper': { label: 'WK', color: 'bg-cyan-600' },
 };
 
 /**

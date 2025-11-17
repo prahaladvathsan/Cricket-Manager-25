@@ -41,7 +41,7 @@ const PlayerCard = ({
     'batsman': 'bg-blue-900/30 text-blue-400',
     'bowler': 'bg-red-900/30 text-red-400',
     'all-rounder': 'bg-purple-900/30 text-purple-400',
-    'wicket-keeper': 'bg-green-900/30 text-green-400'
+    'wicket-keeper': 'bg-cyan-900/30 text-cyan-400'
   };
 
   const roleColor = roleColors[player.role?.toLowerCase()] || 'bg-bg-tertiary text-text-secondary';
@@ -84,11 +84,17 @@ const PlayerCard = ({
                   onBeforeOpen={onTeamClick}
                 />
               )}
-              {player.primaryPlaystyle?.batting && (
-                <span>{player.primaryPlaystyle.batting}</span>
-              )}
-              {player.primaryPlaystyle?.bowling && player.role?.toLowerCase() === 'all-rounder' && (
-                <span>| {player.primaryPlaystyle.bowling}</span>
+              {player.role?.toLowerCase() === 'wicket-keeper' && player.primaryPlaystyle?.fielding ? (
+                <span>{player.primaryPlaystyle.fielding}</span>
+              ) : (
+                <>
+                  {player.primaryPlaystyle?.batting && (
+                    <span>{player.primaryPlaystyle.batting}</span>
+                  )}
+                  {player.primaryPlaystyle?.bowling && (
+                    <span>| {player.primaryPlaystyle.bowling}</span>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -159,25 +165,48 @@ const PlayerCard = ({
               </div>
             </div>
 
-            {/* Bowling */}
-            <div className="p-2 bg-bg-tertiary rounded">
-              <div className="text-xs font-semibold text-red-400 mb-1.5">Bowling</div>
-              <div className="space-y-1">
-                {player.topPlaystyles.bowling?.slice(0, 3).map((style, idx) => {
-                  const isPrimary = player.primaryPlaystyle?.bowling === style.name;
-                  return (
-                    <div key={idx} className="flex items-center justify-between">
-                      <span className={`text-xs truncate mr-1 ${isPrimary ? 'text-red-400 font-medium' : 'text-text-secondary'}`}>
-                        {style.name}
-                      </span>
-                      <span className={`text-xs font-bold tabular-nums ${isPrimary ? 'text-red-400' : 'text-text-primary'}`}>
-                        {style.rating.toFixed(0)}
-                      </span>
-                    </div>
-                  );
-                }) || <span className="text-xs text-text-tertiary">—</span>}
+            {/* Fielding (for wicket-keepers) OR Bowling (for others) */}
+            {player.role?.toLowerCase() === 'wicket-keeper' ? (
+              player.topPlaystyles.fielding && player.topPlaystyles.fielding.length > 0 && (
+                <div className="p-2 bg-bg-tertiary rounded">
+                  <div className="text-xs font-semibold text-cyan-400 mb-1.5">Fielding</div>
+                  <div className="space-y-1">
+                    {player.topPlaystyles.fielding.slice(0, 3).map((style, idx) => {
+                      const isPrimary = player.primaryPlaystyle?.fielding === style.name;
+                      return (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className={`text-xs truncate mr-1 ${isPrimary ? 'text-cyan-400 font-medium' : 'text-text-secondary'}`}>
+                            {style.name}
+                          </span>
+                          <span className={`text-xs font-bold tabular-nums ${isPrimary ? 'text-cyan-400' : 'text-text-primary'}`}>
+                            {style.rating.toFixed(0)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="p-2 bg-bg-tertiary rounded">
+                <div className="text-xs font-semibold text-red-400 mb-1.5">Bowling</div>
+                <div className="space-y-1">
+                  {player.topPlaystyles.bowling?.slice(0, 3).map((style, idx) => {
+                    const isPrimary = player.primaryPlaystyle?.bowling === style.name;
+                    return (
+                      <div key={idx} className="flex items-center justify-between">
+                        <span className={`text-xs truncate mr-1 ${isPrimary ? 'text-red-400 font-medium' : 'text-text-secondary'}`}>
+                          {style.name}
+                        </span>
+                        <span className={`text-xs font-bold tabular-nums ${isPrimary ? 'text-red-400' : 'text-text-primary'}`}>
+                          {style.rating.toFixed(0)}
+                        </span>
+                      </div>
+                    );
+                  }) || <span className="text-xs text-text-tertiary">—</span>}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -268,14 +297,26 @@ const PlayerCard = ({
                 </div>
               </div>
             )}
-            {player.primaryPlaystyle.bowling && (
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <div>
-                  <div className="text-xxs text-text-secondary">Bowling</div>
-                  <div className="text-sm text-text-primary font-medium">{player.primaryPlaystyle.bowling}</div>
+            {player.role?.toLowerCase() === 'wicket-keeper' ? (
+              player.primaryPlaystyle.fielding && (
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                  <div>
+                    <div className="text-xxs text-text-secondary">Fielding</div>
+                    <div className="text-sm text-text-primary font-medium">{player.primaryPlaystyle.fielding}</div>
+                  </div>
                 </div>
-              </div>
+              )
+            ) : (
+              player.primaryPlaystyle.bowling && (
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <div>
+                    <div className="text-xxs text-text-secondary">Bowling</div>
+                    <div className="text-sm text-text-primary font-medium">{player.primaryPlaystyle.bowling}</div>
+                  </div>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -315,21 +356,40 @@ const PlayerCard = ({
             </div>
           </div>
 
-          {/* Bowling Playstyles */}
-          <div className="p-3 bg-bg-tertiary rounded-lg">
-            <div className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              Bowling Playstyles
-            </div>
-            <div className="space-y-2">
-              {player.topPlaystyles.bowling?.slice(0, 5).map((style, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <span className="text-xs text-text-secondary">{style.name}</span>
-                  <span className="text-sm font-bold text-text-primary tabular-nums">{style.rating.toFixed(1)}</span>
+          {/* Fielding (for wicket-keepers) OR Bowling (for others) */}
+          {player.role?.toLowerCase() === 'wicket-keeper' ? (
+            player.topPlaystyles.fielding && player.topPlaystyles.fielding.length > 0 && (
+              <div className="p-3 bg-bg-tertiary rounded-lg">
+                <div className="text-sm font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Fielding Playstyles
                 </div>
-              )) || <span className="text-xs text-text-tertiary">No bowling data</span>}
+                <div className="space-y-2">
+                  {player.topPlaystyles.fielding.slice(0, 5).map((style, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className="text-xs text-text-secondary">{style.name}</span>
+                      <span className="text-sm font-bold text-text-primary tabular-nums">{style.rating.toFixed(1)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="p-3 bg-bg-tertiary rounded-lg">
+              <div className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                Bowling Playstyles
+              </div>
+              <div className="space-y-2">
+                {player.topPlaystyles.bowling?.slice(0, 5).map((style, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span className="text-xs text-text-secondary">{style.name}</span>
+                    <span className="text-sm font-bold text-text-primary tabular-nums">{style.rating.toFixed(1)}</span>
+                  </div>
+                )) || <span className="text-xs text-text-tertiary">No bowling data</span>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

@@ -5,7 +5,7 @@
  */
 
 // Load playstyle weightings configuration using ES6 import (browser-compatible)
-import playstyleWeightings from '../data/config/playstyle-weightings.json';
+import playstyleWeightings from '../data/config/playstyle-weightings.json' with { type: 'json' };
 
 /**
  * PlaystyleCalculator class for calculating playstyle ratings
@@ -103,6 +103,9 @@ class PlaystyleCalculator {
     } else if (category === 'bowling') {
       const bowlingOverall = player.attributes.overall?.bowling_overall || 10;
       finalRating = (attributeRating * 0.8) + (bowlingOverall);
+    } else if (category === 'fielding') {
+      // For fielding, use pure attribute rating (no overall modifier needed)
+      finalRating = attributeRating;
     }
 
     return Math.max(0, Math.min(100, finalRating)); // Clamp to 0-100
@@ -154,12 +157,13 @@ class PlaystyleCalculator {
   /**
    * Calculate all playstyle ratings for a player
    * @param {Object} player - Player object
-   * @returns {Object} Object with batting and bowling playstyle ratings
+   * @returns {Object} Object with batting, bowling, and fielding playstyle ratings
    */
   calculateAllPlaystyleRatings(player) {
     const ratings = {
       batting: {},
-      bowling: {}
+      bowling: {},
+      fielding: {}
     };
 
     // Calculate batting playstyle ratings
@@ -204,6 +208,15 @@ class PlaystyleCalculator {
       }
     }
 
+    // Calculate fielding playstyle ratings
+    for (const playstyleName in this.weightings.fielding) {
+      ratings.fielding[playstyleName] = this.calculatePlaystyleRating(
+        player,
+        'fielding',
+        playstyleName
+      );
+    }
+
     return ratings;
   }
 
@@ -212,14 +225,15 @@ class PlaystyleCalculator {
    * @param {Object} player - Player object
    * @param {string} role - Player role (batsman, bowler, all-rounder, wicket-keeper)
    * @param {number} topN - Number of top playstyles to return (default: 3)
-   * @returns {Object} Object with top batting and bowling playstyles
+   * @returns {Object} Object with top batting, bowling, and fielding playstyles
    */
   getPlayerPrimaryPlaystyles(player, role, topN = 3) {
     const allRatings = this.calculateAllPlaystyleRatings(player);
 
     const result = {
       batting: [],
-      bowling: []
+      bowling: [],
+      fielding: []
     };
 
     // Get applicable batting playstyles based on role
@@ -254,8 +268,21 @@ class PlaystyleCalculator {
 
     result.bowling = bowlingPlaystyles;
 
+    // Fielding playstyles
+    const fieldingPlaystyles = Object.entries(allRatings.fielding)
+      .map(([name, rating]) => ({ name, rating }))
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, topN);
+
+    result.fielding = fieldingPlaystyles;
+
     // Determine primary playstyle based on role
-    if (role.toLowerCase() === 'batsman' || role.toLowerCase() === 'wicket-keeper') {
+    if (role.toLowerCase() === 'wicket-keeper') {
+      // Wicket-keepers use their fielding playstyle as primary
+      result.primary = fieldingPlaystyles[0]?.name || null;
+      result.primaryRating = fieldingPlaystyles[0]?.rating || 0;
+      result.primaryCategory = 'fielding';
+    } else if (role.toLowerCase() === 'batsman') {
       result.primary = battingPlaystyles[0]?.name || null;
       result.primaryRating = battingPlaystyles[0]?.rating || 0;
       result.primaryCategory = 'batting';

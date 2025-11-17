@@ -97,22 +97,45 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     }
   };
 
-  // Get available batting playstyles for a player (rating > 40)
+  const handleFieldingPlaystyleChange = (playerId, playstyle) => {
+    const player = players[playerId];
+    const currentOverride = teamTactics?.playstyleOverrides[playerId];
+
+    // If selecting primary playstyle, remove fielding override (keep batting if exists)
+    if (playstyle === player.primaryPlaystyle.fielding) {
+      if (currentOverride?.batting) {
+        updatePlaystyleOverride(teamId, playerId, { batting: currentOverride.batting, fielding: null });
+      } else {
+        updatePlaystyleOverride(teamId, playerId, null);
+      }
+    } else {
+      updatePlaystyleOverride(teamId, playerId, { fielding: playstyle });
+    }
+  };
+
+  // Get available batting playstyles for a player (all playstyles, sorted by rating)
   const getAvailableBattingPlaystyles = (player) => {
     if (!player.playstyleRatings?.batting) return [];
 
     return Object.entries(player.playstyleRatings.batting)
-      .filter(([_, rating]) => rating > 40)
       .sort((a, b) => b[1] - a[1])
       .map(([name, rating]) => ({ name, rating }));
   };
 
-  // Get available bowling playstyles for a player (rating > 40)
+  // Get available bowling playstyles for a player (all playstyles, sorted by rating)
   const getAvailableBowlingPlaystyles = (player) => {
     if (!player.playstyleRatings?.bowling) return [];
 
     return Object.entries(player.playstyleRatings.bowling)
-      .filter(([_, rating]) => rating > 40)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, rating]) => ({ name, rating }));
+  };
+
+  // Get available fielding playstyles for a player (all playstyles, sorted by rating)
+  const getAvailableFieldingPlaystyles = (player) => {
+    if (!player.playstyleRatings?.fielding) return [];
+
+    return Object.entries(player.playstyleRatings.fielding)
       .sort((a, b) => b[1] - a[1])
       .map(([name, rating]) => ({ name, rating }));
   };
@@ -122,7 +145,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       case 'batsman': return 'text-blue-400';
       case 'bowler': return 'text-red-400';
       case 'all-rounder': return 'text-purple-400';
-      case 'wicket-keeper': return 'text-green-400';
+      case 'wicket-keeper': return 'text-cyan-400';
       default: return 'text-text-secondary';
     }
   };
@@ -132,16 +155,16 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       case 'batsman': return 'bg-blue-500/20 text-blue-400';
       case 'bowler': return 'bg-red-500/20 text-red-400';
       case 'all-rounder': return 'bg-purple-500/20 text-purple-400';
-      case 'wicket-keeper': return 'bg-green-500/20 text-green-400';
+      case 'wicket-keeper': return 'bg-cyan-500/20 text-cyan-400';
       default: return 'bg-bg-tertiary text-text-secondary';
     }
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
       {/* Left Column: Available Squad */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+      <div className="card p-3">
+        <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1.5">
           <UsersIcon className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-base font-semibold text-text-primary">
             Available Squad
@@ -152,7 +175,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         </div>
 
         {/* Filters */}
-        <div className="space-y-2 mb-3">
+        <div className="space-y-1.5 mb-2">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -184,48 +207,116 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         </div>
 
         {/* Available Players List */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="flex flex-col gap-1 overflow-y-auto">
           {availablePlayers.length === 0 ? (
             <p className="text-text-secondary text-sm text-center py-4">
               {searchTerm || roleFilter !== 'all' ? 'No players match filters' : 'All players selected'}
             </p>
           ) : (
-            availablePlayers.map(player => (
-              <div
-                key={player.id}
-                className="flex items-center gap-2 p-2 bg-bg-tertiary rounded hover:bg-bg-secondary transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium truncate">
-                      <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+            availablePlayers.map(player => {
+              const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
+              const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);
+              const availableFieldingPlaystyles = getAvailableFieldingPlaystyles(player);
+              const overrides = teamTactics?.playstyleOverrides[player.id];
+              const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
+              const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
+              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding;
+              const isBattingPrimary = currentBattingPlaystyle === player.primaryPlaystyle?.batting;
+              const isBowlingPrimary = currentBowlingPlaystyle === player.primaryPlaystyle?.bowling;
+              const isFieldingPrimary = currentFieldingPlaystyle === player.primaryPlaystyle?.fielding;
+
+              return (
+                <div
+                  key={player.id}
+                  className="p-1.5 bg-bg-tertiary rounded"
+                >
+                  <div className="flex items-start gap-2 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium">
+                          <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                        </div>
+                        <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
+                          {player.role}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
-                      {player.role}
-                    </span>
+                    <button
+                      onClick={() => handleAddPlayer(player.id)}
+                      className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                      title="Add to playing XI"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span>Rating: {formatRating(getPlayerRating(player))}</span>
-                    <span>•</span>
-                    <span className="truncate">{player.primaryPlaystyle?.batting || 'N/A'}</span>
+
+                  {/* Playstyle Selectors */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Batting Playstyle */}
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-0.5">
+                        Batting {!isBattingPrimary && <span className="text-yellow-400">(Override)</span>}
+                      </label>
+                      <select
+                        value={currentBattingPlaystyle}
+                        onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
+                        className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                      >
+                        {availableBattingPlaystyles.map(({ name, rating }) => (
+                          <option key={name} value={name}>
+                            {name} ({rating.toFixed(0)})
+                            {name === player.primaryPlaystyle?.batting && ' ⭐'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
+                    {player.role === 'wicket-keeper' ? (
+                      player.topPlaystyles?.fielding?.[0] && (
+                        <div>
+                          <label className="block text-xs text-text-secondary mb-0.5">
+                            Fielding
+                          </label>
+                          <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
+                            {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div>
+                        <label className="block text-xs text-text-secondary mb-0.5">
+                          Bowling {!isBowlingPrimary && <span className="text-yellow-400">(Override)</span>}
+                        </label>
+                        {availableBowlingPlaystyles.length > 0 ? (
+                          <select
+                            value={currentBowlingPlaystyle}
+                            onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
+                            className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                          >
+                            {availableBowlingPlaystyles.map(({ name, rating }) => (
+                              <option key={name} value={name}>
+                                {name} ({rating.toFixed(0)})
+                                {name === player.primaryPlaystyle?.bowling && ' ⭐'}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="text-xs text-text-tertiary italic">No data</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleAddPlayer(player.id)}
-                  className="p-1.5 bg-cricket-accent/20 text-cricket-accent rounded hover:bg-cricket-accent/30 transition-colors"
-                  title="Add to playing XI"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
       {/* Right Column: Selected Playing XI */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+      <div className="card pt-3 px-3 pb-0">
+        <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1.5">
           <UserCheck className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-base font-semibold text-text-primary">
             Playing XI
@@ -238,7 +329,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         </div>
 
         {/* Validation Warnings */}
-        <div className="mb-3 space-y-1">
+        <div className="mb-2 space-y-0.5">
           {selectedPlayers.length < 11 && (
             <p className="text-xs text-yellow-400">⚠ Select {11 - selectedPlayers.length} more player(s)</p>
           )}
@@ -255,7 +346,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         </div>
 
         {/* Selected Players List */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="flex flex-col gap-1 overflow-y-auto">
           {selectedPlayers.length === 0 ? (
             <p className="text-text-secondary text-sm text-center py-4">
               No players selected yet
@@ -264,18 +355,21 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             selectedPlayers.map((player, idx) => {
               const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
               const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);
+              const availableFieldingPlaystyles = getAvailableFieldingPlaystyles(player);
               const overrides = teamTactics?.playstyleOverrides[player.id];
               const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
               const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
+              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding;
               const isBattingPrimary = currentBattingPlaystyle === player.primaryPlaystyle?.batting;
               const isBowlingPrimary = currentBowlingPlaystyle === player.primaryPlaystyle?.bowling;
+              const isFieldingPrimary = currentFieldingPlaystyle === player.primaryPlaystyle?.fielding;
 
               return (
                 <div
                   key={player.id}
-                  className="p-2 bg-bg-tertiary rounded"
+                  className="p-1.5 bg-bg-tertiary rounded"
                 >
-                  <div className="flex items-start gap-2 mb-2">
+                  <div className="flex items-start gap-2 mb-1">
                     <span className="text-xs text-text-secondary font-mono min-w-[20px]">
                       {idx + 1}.
                     </span>
@@ -291,7 +385,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     </div>
                     <button
                       onClick={() => handleRemovePlayer(player.id)}
-                      className="p-1 text-text-secondary hover:text-red-400 transition-colors"
+                      className="p-1 text-red-400 hover:text-red-300 transition-colors"
                       title="Remove from playing XI"
                     >
                       <X className="w-4 h-4" />
@@ -299,11 +393,11 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   </div>
 
                   {/* Playstyle Selectors */}
-                  <div className="ml-6 space-y-2">
+                  <div className="ml-5 grid grid-cols-2 gap-2">
                     {/* Batting Playstyle */}
                     <div>
-                      <label className="block text-xs text-text-secondary mb-1">
-                        Batting Playstyle {!isBattingPrimary && <span className="text-yellow-400">(Override)</span>}
+                      <label className="block text-xs text-text-secondary mb-0.5">
+                        Batting {!isBattingPrimary && <span className="text-yellow-400">(Override)</span>}
                       </label>
                       <select
                         value={currentBattingPlaystyle}
@@ -319,24 +413,39 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       </select>
                     </div>
 
-                    {/* Bowling Playstyle */}
-                    {availableBowlingPlaystyles.length > 0 && (
+                    {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
+                    {player.role === 'wicket-keeper' ? (
+                      player.topPlaystyles?.fielding?.[0] && (
+                        <div>
+                          <label className="block text-xs text-text-secondary mb-0.5">
+                            Fielding
+                          </label>
+                          <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
+                            {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
+                          </div>
+                        </div>
+                      )
+                    ) : (
                       <div>
-                        <label className="block text-xs text-text-secondary mb-1">
-                          Bowling Playstyle {!isBowlingPrimary && <span className="text-yellow-400">(Override)</span>}
+                        <label className="block text-xs text-text-secondary mb-0.5">
+                          Bowling {!isBowlingPrimary && <span className="text-yellow-400">(Override)</span>}
                         </label>
-                        <select
-                          value={currentBowlingPlaystyle}
-                          onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
-                          className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                        >
-                          {availableBowlingPlaystyles.map(({ name, rating }) => (
-                            <option key={name} value={name}>
-                              {name} ({rating.toFixed(0)})
-                              {name === player.primaryPlaystyle?.bowling && ' ⭐'}
-                            </option>
-                          ))}
-                        </select>
+                        {availableBowlingPlaystyles.length > 0 ? (
+                          <select
+                            value={currentBowlingPlaystyle}
+                            onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
+                            className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                          >
+                            {availableBowlingPlaystyles.map(({ name, rating }) => (
+                              <option key={name} value={name}>
+                                {name} ({rating.toFixed(0)})
+                                {name === player.primaryPlaystyle?.bowling && ' ⭐'}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="text-xs text-text-tertiary italic">No data</div>
+                        )}
                       </div>
                     )}
                   </div>

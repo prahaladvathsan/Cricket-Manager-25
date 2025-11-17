@@ -577,6 +577,23 @@ const useTeamStore = create(
   },
 
   /**
+   * Update team fielding setup (comprehensive version with powerplay/post-powerplay)
+   * @param {string} teamId - Team ID
+   * @param {Object} fieldingSetup - Fielding setup object with powerplay and postPowerplay configurations
+   */
+  updateFieldingSetup: (teamId, fieldingSetup) => {
+    set((state) => ({
+      teamTactics: {
+        ...state.teamTactics,
+        [teamId]: {
+          ...state.teamTactics[teamId],
+          fielding: fieldingSetup
+        }
+      }
+    }));
+  },
+
+  /**
    * Export tactics in format suitable for match initialization
    * @param {string} teamId - Team ID
    * @returns {Object|null} Tactics formatted for match engine

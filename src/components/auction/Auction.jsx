@@ -1748,17 +1748,23 @@ const Auction = () => {
                                   <PlayerName playerId={player.id} player={player} className="font-semibold text-sm" />
                                 </div>
                                 <div className="text-xs text-cricket-text-secondary truncate">
-                                  {player.primaryPlaystyle?.batting && (
-                                    <span>{player.primaryPlaystyle.batting}</span>
-                                  )}
-                                  {player.primaryPlaystyle?.bowling && role === 'all-rounder' && (
-                                    <span> | {player.primaryPlaystyle.bowling}</span>
-                                  )}
-                                  {player.primaryPlaystyle?.bowling && role === 'bowler' && (
-                                    <span>{player.primaryPlaystyle.bowling}</span>
-                                  )}
-                                  {!player.primaryPlaystyle?.batting && !player.primaryPlaystyle?.bowling && (
-                                    <span className="text-cricket-text-tertiary">—</span>
+                                  {role === 'wicket-keeper' && player.primaryPlaystyle?.fielding ? (
+                                    <span>{player.primaryPlaystyle.fielding}</span>
+                                  ) : (
+                                    <>
+                                      {player.primaryPlaystyle?.batting && (
+                                        <span>{player.primaryPlaystyle.batting}</span>
+                                      )}
+                                      {player.primaryPlaystyle?.bowling && role === 'all-rounder' && (
+                                        <span> | {player.primaryPlaystyle.bowling}</span>
+                                      )}
+                                      {player.primaryPlaystyle?.bowling && role === 'bowler' && (
+                                        <span>{player.primaryPlaystyle.bowling}</span>
+                                      )}
+                                      {!player.primaryPlaystyle?.batting && !player.primaryPlaystyle?.bowling && !player.primaryPlaystyle?.fielding && (
+                                        <span className="text-cricket-text-tertiary">—</span>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                                 <div className="text-xs text-cricket-accent font-bold mt-1">

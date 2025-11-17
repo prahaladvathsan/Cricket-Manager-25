@@ -69,8 +69,7 @@ class TeamSelectionManager {
     const MIN_BOWLING_OPTIONS = 5;
     const TARGET_BOWLING_OPTIONS = 6;
 
-    // Step 1: Add best keeper (optional - only if available in database)
-    // NOTE: Currently database has no wicket-keepers, so this is skipped
+    // Step 1: Add wicket-keeper (highest rated keeper)
     if (keepers.length > 0) {
       team.push(keepers[0]);
     }

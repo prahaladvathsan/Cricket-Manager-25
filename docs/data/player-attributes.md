@@ -69,11 +69,17 @@ All attributes use a **1-20 scale** where:
 | Attribute | Description | Match Engine Usage |
 |-----------|-------------|-------------------|
 | **catching** | Catching ability | Catch success probability = catching / 20 |
-| **throwing** | Throw accuracy and power | Run-out probability |
-| **agility_fielding** | Field movement speed | Interception radius |
-| **reflexes** | Reaction time | Close-in catching |
-| **wk_catching** (keeper) | Wicket-keeping catching | Keeper-specific catches |
-| **wk_reflexes** (keeper) | Keeper reaction time | Stumping probability |
+| **reflexes** | Reaction time | Close-in catching, keeper reactions |
+| **groundFielding** | Field movement and stopping | Fielding effectiveness |
+| **throwPower** | Throw distance | Long throws to stumps |
+| **throwAccuracy** | Throw accuracy | Run-out probability |
+| **keeping** (keeper) | Wicket-keeping technique | Wicketkeeping rating (40% weight) |
+| **collecting** (keeper) | Ball collection cleanness | Wicketkeeping rating (25% weight) |
+| **stumping** (keeper) | Stumping ability | Wicketkeeping rating (20% weight) |
+
+**Wicket-Keeper Attribute Ranges:**
+- **Keepers**: keeping, collecting, stumping = 10-20 (elite)
+- **Non-keepers**: keeping, collecting, stumping = 1-4 (minimal)
 
 ## Condition Attributes (0-100 Scale)
 
@@ -153,10 +159,11 @@ errorProbability = 1 - (combinedJudgment / 40)
 
 ## Playstyle System
 
-Players have playstyle ratings (0-100) for 21 different playstyles that apply dynamic attribute modifiers based on match context:
+Players have playstyle ratings (0-100) for 25 different playstyles that apply dynamic attribute modifiers based on match context:
 
-- **16 Batting Playstyles**: Anchor, Aggressor, Accumulator, Power Hitter, etc.
-- **9 Bowling Playstyles**: Death Specialist, Powerplay Bowler, Wicket Taker, etc.
+- **16 Batting Playstyles**: Opener-Slogger, Finisher, Wall, Runner, etc.
+- **8 Bowling Playstyles**: Death Specialist, Swing Bowler, Classical Spinner, etc. (segregated by pace/spin)
+- **1 Wicketkeeping Playstyle**: Wicketkeeper (specialist glovework rating)
 
 See [`docs/core-systems/playstyle-system.md`] for complete playstyle documentation.
 

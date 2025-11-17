@@ -1,222 +1,303 @@
 /**
  * @file FieldingTab.jsx
- * @description Tab for setting field formation
+ * @description Comprehensive fielding setup tab with template selection, visual editor, and T20 rules validation
  */
 
-import React from 'react';
-import { Shield, Users, Target, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, AlertCircle, CheckCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
+import FieldTemplateSelector from './FieldTemplateSelector';
+import FieldVisualEditor from './FieldVisualEditor';
+import { validateFieldingSetup, getViolationMessages } from '../../../core/match-engine/validation/FieldingRulesValidator';
+import fieldConfig from '../../../data/config/field-positioning-config.json';
 
 const FieldingTab = ({ teamId, onPlayerClick }) => {
-  const { getTeamTactics, updateFieldFormation } = useTeamStore();
+  const { getTeamTactics, updateFieldingSetup } = useTeamStore();
+
+  const [phase, setPhase] = useState('powerplay'); // 'powerplay' or 'postPowerplay'
+  const [showVisualEditor, setShowVisualEditor] = useState(true);
+  const [validationResult, setValidationResult] = useState(null);
 
   const teamTactics = getTeamTactics(teamId);
-  const currentFormation = teamTactics?.fieldFormation || 'neutral';
 
-  const formations = [
-    {
-      id: 'attacking',
-      name: 'Attacking Formation',
-      icon: TrendingUp,
-      description: 'Aggressive field with close catchers and attacking positions',
-      split: '6-3 Split',
-      splitDetail: '6 in circle, 3 on boundary',
-      color: 'red',
-      characteristics: [
-        'More slips and close catchers',
-        'Pressure on batsman',
-        'Higher risk of boundaries',
-        'Best for taking wickets'
-      ]
-    },
-    {
-      id: 'neutral',
-      name: 'Neutral Formation',
-      icon: Shield,
-      description: 'Balanced field with mix of catching and boundary positions',
-      split: '5-4-2 Split',
-      splitDetail: '5 in circle, 4 mid, 2 boundary',
-      color: 'green',
-      characteristics: [
-        'Balanced approach',
-        'Flexible positioning',
-        'Adapts to match situation',
-        'General purpose formation'
-      ]
-    },
-    {
-      id: 'defensive',
-      name: 'Defensive Formation',
-      icon: Users,
-      description: 'Protective field with boundary riders and run-saving positions',
-      split: '3-2-6 Split',
-      splitDetail: '3 in circle, 2 mid, 6 boundary',
-      color: 'blue',
-      characteristics: [
-        'More boundary protection',
-        'Run-saving focus',
-        'Lower risk of boundaries',
-        'Best for defending totals'
-      ]
+  // Get current field setup for selected phase
+  const currentSetup = phase === 'powerplay'
+    ? teamTactics?.fielding?.powerplay
+    : teamTactics?.fielding?.postPowerplay;
+
+  const currentTemplateId = currentSetup?.template || 'standard_powerplay';
+  const currentTemplate = fieldConfig.formations[currentTemplateId];
+
+  // Initialize default fielding setup if not exists
+  useEffect(() => {
+    if (teamId && teamTactics && !teamTactics.fielding) {
+      updateFieldingSetup(teamId, {
+        powerplay: {
+          template: 'standard_powerplay',
+          positions: fieldConfig.formations.standard_powerplay.positions
+        },
+        postPowerplay: {
+          template: 'death_standard',
+          positions: fieldConfig.formations.death_standard.positions
+        }
+      });
     }
-  ];
+  }, [teamId, teamTactics, updateFieldingSetup]);
 
-  const handleFormationChange = (formationId) => {
-    updateFieldFormation(teamId, formationId);
-  };
+  // Get positions (use customized positions if available, otherwise template positions)
+  const currentPositions = currentSetup?.positions || currentTemplate?.positions || [];
 
-  const getColorClasses = (color, isSelected) => {
-    const baseClasses = {
-      red: {
-        border: 'border-red-500/30',
-        bg: 'bg-red-500/10',
-        text: 'text-red-400',
-        iconBg: 'bg-red-500/20',
-        selectedBorder: 'border-red-500',
-        selectedBg: 'bg-red-500/20'
-      },
-      green: {
-        border: 'border-green-500/30',
-        bg: 'bg-green-500/10',
-        text: 'text-green-400',
-        iconBg: 'bg-green-500/20',
-        selectedBorder: 'border-green-500',
-        selectedBg: 'bg-green-500/20'
-      },
-      blue: {
-        border: 'border-blue-500/30',
-        bg: 'bg-blue-500/10',
-        text: 'text-blue-400',
-        iconBg: 'bg-blue-500/20',
-        selectedBorder: 'border-blue-500',
-        selectedBg: 'bg-blue-500/20'
+  // Validate current setup
+  useEffect(() => {
+    if (currentPositions.length > 0) {
+      const over = phase === 'powerplay' ? 1 : 10;
+      const result = validateFieldingSetup(currentPositions, over);
+      setValidationResult(result);
+    }
+  }, [currentPositions, phase]);
+
+  const handleTemplateSelect = (templateId) => {
+    const template = fieldConfig.formations[templateId];
+    if (!template) return;
+
+    const newSetup = {
+      ...teamTactics?.fielding,
+      [phase]: {
+        template: templateId,
+        positions: template.positions,
+        playerAssignments: {} // Reset player assignments when changing template
       }
     };
 
-    return baseClasses[color];
+    updateFieldingSetup(teamId, newSetup);
+  };
+
+  const handleUpdateSetup = (updatedSetup) => {
+    const newSetup = {
+      ...teamTactics?.fielding,
+      [phase]: updatedSetup
+    };
+
+    updateFieldingSetup(teamId, newSetup);
+  };
+
+  const handleResetToDefaults = () => {
+    if (window.confirm('Reset fielding setups to defaults? This cannot be undone.')) {
+      updateFieldingSetup(teamId, {
+        powerplay: {
+          template: 'standard_powerplay',
+          positions: fieldConfig.formations.standard_powerplay.positions,
+          playerAssignments: {}
+        },
+        postPowerplay: {
+          template: 'death_standard',
+          positions: fieldConfig.formations.death_standard.positions,
+          playerAssignments: {}
+        }
+      });
+    }
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-4">
       {/* Header */}
-      <div className="card p-4 mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Shield className="w-4 h-4 text-cricket-accent" />
-          <h3 className="text-base font-semibold text-text-primary">
-            Field Formation
-          </h3>
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-cricket-accent" />
+            <h3 className="text-lg font-semibold text-text-primary">
+              Fielding Setup
+            </h3>
+          </div>
+          <button
+            onClick={handleResetToDefaults}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-primary rounded hover:bg-bg-tertiary transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Reset to Defaults
+          </button>
         </div>
-        <p className="text-sm text-text-secondary">
-          Choose your default field formation. This affects fielder positioning and strategy.
+        <p className="text-sm text-text-secondary mb-3">
+          Configure your fielding formations for different match phases. Each phase follows official T20 fielding restrictions.
         </p>
+
+        {/* Phase Toggle */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPhase('powerplay')}
+            className={`flex-1 px-4 py-2.5 rounded text-sm font-medium transition-colors ${
+              phase === 'powerplay'
+                ? 'bg-cricket-primary text-white'
+                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
+            }`}
+          >
+            <div className="text-center">
+              <div className="font-semibold">Powerplay Setup</div>
+              <div className="text-xs opacity-80 mt-0.5">Overs 1-6 • Max 2 outside circle</div>
+            </div>
+          </button>
+          <button
+            onClick={() => setPhase('postPowerplay')}
+            className={`flex-1 px-4 py-2.5 rounded text-sm font-medium transition-colors ${
+              phase === 'postPowerplay'
+                ? 'bg-cricket-primary text-white'
+                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
+            }`}
+          >
+            <div className="text-center">
+              <div className="font-semibold">Post-Powerplay Setup</div>
+              <div className="text-xs opacity-80 mt-0.5">Overs 7-20 • Max 5 outside circle</div>
+            </div>
+          </button>
+        </div>
       </div>
 
-      {/* Formation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {formations.map((formation) => {
-          const isSelected = currentFormation === formation.id;
-          const Icon = formation.icon;
-          const colors = getColorClasses(formation.color, isSelected);
-
-          return (
-            <button
-              key={formation.id}
-              onClick={() => handleFormationChange(formation.id)}
-              className={`card p-4 text-left transition-all hover:scale-[1.02] ${
-                isSelected
-                  ? `border-2 ${colors.selectedBorder} ${colors.selectedBg}`
-                  : 'border border-border-primary hover:border-border-secondary'
-              }`}
-            >
-              {/* Header */}
-              <div className="flex items-start gap-3 mb-3">
-                <div className={`p-2 rounded ${colors.iconBg}`}>
-                  <Icon className={`w-5 h-5 ${colors.text}`} />
-                </div>
-                <div className="flex-1">
-                  <h4 className={`text-sm font-semibold mb-1 ${
-                    isSelected ? colors.text : 'text-text-primary'
-                  }`}>
-                    {formation.name}
-                  </h4>
-                  {isSelected && (
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors.bg} ${colors.text}`}>
-                      <Target className="w-3 h-3" />
-                      Active
+      {/* Validation Status */}
+      {validationResult && (
+        <div className={`card p-3 ${
+          validationResult.isValid
+            ? 'border-l-4 border-green-500 bg-green-500/10'
+            : 'border-l-4 border-yellow-500 bg-yellow-500/10'
+        }`}>
+          <div className="flex items-start gap-2">
+            {validationResult.isValid ? (
+              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <p className={`text-sm font-semibold ${
+                  validationResult.isValid ? 'text-green-400' : 'text-yellow-400'
+                }`}>
+                  {validationResult.isValid ? 'Valid T20 Field Setup' : 'Field Setup Notes'}
+                </p>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-text-secondary">
+                    Outside circle: <span className="font-mono text-text-primary">
+                      {validationResult.summary.fieldersOutsideCircle}/{validationResult.summary.maxOutsideCircle}
                     </span>
-                  )}
+                  </span>
+                  <span className="text-text-secondary">
+                    Leg side: <span className="font-mono text-text-primary">
+                      {validationResult.summary.fieldersLegSide}/{validationResult.summary.maxLegSide}
+                    </span>
+                  </span>
+                  <span className="text-text-secondary">
+                    Behind square: <span className="font-mono text-text-primary">
+                      {validationResult.summary.fieldersBehindSquareLeg}/{validationResult.summary.maxBehindSquareLeg}
+                    </span>
+                  </span>
                 </div>
               </div>
-
-              {/* Description */}
-              <p className="text-xs text-text-secondary mb-3">
-                {formation.description}
-              </p>
-
-              {/* Split Info */}
-              <div className={`p-2 rounded ${colors.bg} mb-3`}>
-                <p className={`text-xs font-semibold ${colors.text} mb-0.5`}>
-                  {formation.split}
-                </p>
+              {validationResult.violations.length > 0 && (
+                <div className="text-xs text-text-secondary space-y-0.5 mt-2">
+                  {getViolationMessages(validationResult.violations).map((msg, idx) => (
+                    <div key={idx}>{msg}</div>
+                  ))}
+                </div>
+              )}
+              {validationResult.isValid && (
                 <p className="text-xs text-text-secondary">
-                  {formation.splitDetail}
+                  This formation complies with all T20 fielding regulations for {phase === 'powerplay' ? 'powerplay overs' : 'post-powerplay overs'}.
                 </p>
-              </div>
-
-              {/* Characteristics */}
-              <div className="space-y-1.5">
-                {formation.characteristics.map((char, idx) => (
-                  <div key={idx} className="flex items-start gap-2">
-                    <div className={`w-1 h-1 rounded-full mt-1.5 ${
-                      isSelected ? colors.text.replace('text-', 'bg-') : 'bg-text-secondary'
-                    }`}></div>
-                    <p className="text-xs text-text-secondary flex-1">
-                      {char}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Future Enhancement Note */}
-      <div className="card p-4 mt-4 bg-bg-tertiary/50 border-border-secondary">
-        <div className="flex items-start gap-2">
-          <Target className="w-4 h-4 text-text-secondary mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-text-primary mb-1">
-              Individual Fielding Positions - Coming Soon
-            </p>
-            <p className="text-xs text-text-secondary">
-              Future update will allow you to customize individual fielder positions and create custom formations.
-              For now, formations provide automatic intelligent positioning based on match situation.
-            </p>
+              )}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Current Template Info */}
+      {currentTemplate && (
+        <div className="card p-4 bg-bg-tertiary/50">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h4 className="text-sm font-semibold text-text-primary">
+                {currentTemplate.name}
+              </h4>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {currentTemplate.description}
+              </p>
+            </div>
+            <div className="flex gap-2 text-xs">
+              {currentTemplate.isAttacking && (
+                <span className="px-2 py-1 rounded bg-red-500/20 text-red-400 font-medium">
+                  Attacking
+                </span>
+              )}
+              <span className="px-2 py-1 rounded bg-cricket-primary/20 text-cricket-accent font-medium">
+                {currentTemplate.bowlingType || 'Any'}
+              </span>
+              <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-medium">
+                {currentTemplate.phase || 'Any'} Phase
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visual Editor Toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowVisualEditor(!showVisualEditor)}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary border border-border-primary rounded hover:bg-bg-tertiary transition-colors"
+        >
+          {showVisualEditor ? (
+            <>
+              <EyeOff className="w-3 h-3" />
+              Hide Field View
+            </>
+          ) : (
+            <>
+              <Eye className="w-3 h-3" />
+              Show Field View
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Field Positioning System Info */}
-      <div className="card p-4 mt-4">
-        <h4 className="text-sm font-semibold text-text-primary mb-2">
-          How Field Positioning Works
+      {/* Visual Field Editor */}
+      {showVisualEditor && currentPositions.length > 0 && (
+        <FieldVisualEditor
+          positions={currentPositions}
+          validationResult={validationResult}
+          phase={phase}
+          currentSetup={currentSetup}
+          onUpdateSetup={handleUpdateSetup}
+        />
+      )}
+
+      {/* Template Selector */}
+      <FieldTemplateSelector
+        selectedTemplate={currentTemplateId}
+        onSelectTemplate={handleTemplateSelect}
+        phase={phase}
+      />
+
+      {/* T20 Rules Reference */}
+      <div className="card p-4">
+        <h4 className="text-sm font-semibold text-text-primary mb-3">
+          T20 Fielding Rules Reference
         </h4>
-        <div className="space-y-2 text-xs text-text-secondary">
-          <p>
-            The match engine uses your selected formation to automatically position all 11 fielders
-            on a 2D coordinate system based on:
-          </p>
-          <ul className="ml-4 space-y-1 list-disc">
-            <li>Current bowler type (pace/spin)</li>
-            <li>Match phase (powerplay/middle/death)</li>
-            <li>Match situation (defending/chasing)</li>
-            <li>Batsman tendencies</li>
-          </ul>
-          <p className="mt-2">
-            Fielders automatically adjust positions when bowlers change to optimize
-            catching and run-saving opportunities.
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <h5 className="font-semibold text-text-primary mb-2">Powerplay (Overs 1-6)</h5>
+            <ul className="space-y-1 text-text-secondary">
+              <li>• Maximum 2 fielders outside 30-yard circle</li>
+              <li>• Minimum 2 fielders in close catching positions</li>
+              <li>• Maximum 5 fielders on leg side</li>
+              <li>• Maximum 2 fielders behind square leg</li>
+            </ul>
+          </div>
+          <div>
+            <h5 className="font-semibold text-text-primary mb-2">Post-Powerplay (Overs 7-20)</h5>
+            <ul className="space-y-1 text-text-secondary">
+              <li>• Maximum 5 fielders outside 30-yard circle</li>
+              <li>• No restriction on close catchers</li>
+              <li>• Maximum 5 fielders on leg side</li>
+              <li>• Maximum 2 fielders behind square leg</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

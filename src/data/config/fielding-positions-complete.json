@@ -1,0 +1,761 @@
+{
+  "version": "2.0.0",
+  "description": "Complete fielding position database for cricket field setup",
+  "lastUpdated": "2025-01-16",
+  "notes": "Polar coordinates calculated from striker position at (0, -11). Boundary radius: 70m. 30-yard circle: ~27.43m radius.",
+  "fieldDimensions": {
+    "boundaryRadius": 70,
+    "circleRadius": 27.43,
+    "pitchLength": 20.12,
+    "strikerOffset": 11,
+    "wicketKeeperDistance": 20,
+    "description": "Standard cricket field dimensions in meters"
+  },
+  "positions": [
+    {
+      "id": "wicketkeeper",
+      "name": "Wicketkeeper",
+      "shortName": "WK",
+      "x": 0,
+      "y": 20,
+      "polarAngle": 180,
+      "polarDistance": 31,
+      "zone": "close",
+      "side": "behind",
+      "isFixed": true,
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Behind the stumps, catches edges and effects stumpings"
+    },
+    {
+      "id": "first_slip",
+      "name": "First Slip",
+      "shortName": "1st Slip",
+      "x": -5,
+      "y": 6,
+      "polarAngle": 145,
+      "polarDistance": 18,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "pace",
+        "swing"
+      ],
+      "role": "attacking",
+      "description": "Next to keeper, catches thick edges"
+    },
+    {
+      "id": "second_slip",
+      "name": "Second Slip",
+      "shortName": "2nd Slip",
+      "x": -8,
+      "y": 7,
+      "polarAngle": 138,
+      "polarDistance": 22,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "pace",
+        "swing"
+      ],
+      "role": "attacking",
+      "description": "Outside first slip, catches flying edges"
+    },
+    {
+      "id": "third_slip",
+      "name": "Third Slip",
+      "shortName": "3rd Slip",
+      "x": -11,
+      "y": 8,
+      "polarAngle": 132,
+      "polarDistance": 25,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "pace",
+        "swing"
+      ],
+      "role": "attacking",
+      "description": "Outside second slip, for extreme edges"
+    },
+    {
+      "id": "gully",
+      "name": "Gully",
+      "shortName": "Gully",
+      "x": -12,
+      "y": 9,
+      "polarAngle": 127,
+      "polarDistance": 26,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "pace",
+        "swing"
+      ],
+      "role": "attacking",
+      "description": "Backward of point, catches square cuts and edges"
+    },
+    {
+      "id": "leg_slip",
+      "name": "Leg Slip",
+      "shortName": "Leg Slip",
+      "x": 5,
+      "y": 6,
+      "polarAngle": 215,
+      "polarDistance": 18,
+      "zone": "close",
+      "side": "leg",
+      "bowlingTypes": [
+        "pace",
+        "leg-spin"
+      ],
+      "role": "attacking",
+      "description": "Behind wicket on leg side, catches glances and edges"
+    },
+    {
+      "id": "leg_gully",
+      "name": "Leg Gully",
+      "shortName": "Leg Gully",
+      "x": 10,
+      "y": 10,
+      "polarAngle": 225,
+      "polarDistance": 25,
+      "zone": "close",
+      "side": "leg",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "attacking",
+      "description": "Wider than leg slip, unconventional attacking position"
+    },
+    {
+      "id": "third_man",
+      "name": "Third Man",
+      "shortName": "3rd Man",
+      "x": -20,
+      "y": 40,
+      "polarAngle": 117,
+      "polarDistance": 44.7,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "defensive",
+      "description": "Boundary behind gully, stops late cuts and edges"
+    },
+    {
+      "id": "short_third_man",
+      "name": "Short Third Man",
+      "shortName": "Short 3rd",
+      "x": -12,
+      "y": 12,
+      "polarAngle": 135,
+      "polarDistance": 17,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "spin",
+        "pace"
+      ],
+      "role": "balanced",
+      "description": "Saves singles behind point, common in T20"
+    },
+    {
+      "id": "fly_slip",
+      "name": "Fly Slip",
+      "shortName": "Fly Slip",
+      "x": -9,
+      "y": 12,
+      "polarAngle": 140,
+      "polarDistance": 28,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Deeper than regular slip, for aerial edges"
+    },
+    {
+      "id": "point",
+      "name": "Point",
+      "shortName": "Point",
+      "x": -22,
+      "y": -6,
+      "polarAngle": 75,
+      "polarDistance": 27,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Square on off side, stops cuts and square drives"
+    },
+    {
+      "id": "backward_point",
+      "name": "Backward Point",
+      "shortName": "Bwd Point",
+      "x": -18,
+      "y": 3,
+      "polarAngle": 100,
+      "polarDistance": 25,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Behind square on off side, covers late cuts"
+    },
+    {
+      "id": "silly_point",
+      "name": "Silly Point",
+      "shortName": "Silly Pt",
+      "x": -8,
+      "y": -6,
+      "polarAngle": 53,
+      "polarDistance": 12,
+      "zone": "silly",
+      "side": "off",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Very close on off side, dangerous position for spin"
+    },
+    {
+      "id": "cover_point",
+      "name": "Cover Point",
+      "shortName": "Cvr Point",
+      "x": -20,
+      "y": -12,
+      "polarAngle": 59,
+      "polarDistance": 28,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Between point and cover, versatile position"
+    },
+    {
+      "id": "cover",
+      "name": "Cover",
+      "shortName": "Cover",
+      "x": -16,
+      "y": -16,
+      "polarAngle": 45,
+      "polarDistance": 27,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "45° on off side, saves drives and cuts"
+    },
+    {
+      "id": "short_cover",
+      "name": "Short Cover",
+      "shortName": "Short Cvr",
+      "x": -10,
+      "y": -12,
+      "polarAngle": 40,
+      "polarDistance": 18,
+      "zone": "close",
+      "side": "off",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Close in at cover, creates pressure"
+    },
+    {
+      "id": "extra_cover",
+      "name": "Extra Cover",
+      "shortName": "Extra Cvr",
+      "x": -22,
+      "y": -20,
+      "polarAngle": 48,
+      "polarDistance": 35,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Between cover and mid-off, stops elegant drives"
+    },
+    {
+      "id": "deep_point",
+      "name": "Deep Point",
+      "shortName": "Deep Pt",
+      "x": -36,
+      "y": 5,
+      "polarAngle": 172,
+      "polarDistance": 36.3,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary at point, prevents square boundaries"
+    },
+    {
+      "id": "deep_backward_point",
+      "name": "Deep Backward Point",
+      "shortName": "Deep Bwd Pt",
+      "x": -30,
+      "y": 15,
+      "polarAngle": 153,
+      "polarDistance": 33.5,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary behind square on off side"
+    },
+    {
+      "id": "deep_cover",
+      "name": "Deep Cover",
+      "shortName": "Deep Cvr",
+      "x": -60,
+      "y": -15,
+      "polarAngle": -166,
+      "polarDistance": 61.8,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary at cover, stops cover drives"
+    },
+    {
+      "id": "sweeper_cover",
+      "name": "Sweeper Cover",
+      "shortName": "Sweeper",
+      "x": -50,
+      "y": -30,
+      "polarAngle": 59,
+      "polarDistance": 62,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Roaming boundary fielder on off side, common in T20"
+    },
+    {
+      "id": "mid_off",
+      "name": "Mid Off",
+      "shortName": "Mid Off",
+      "x": -14,
+      "y": -22,
+      "polarAngle": 32,
+      "polarDistance": 32,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Near bowler on off side, saves straight drives"
+    },
+    {
+      "id": "silly_mid_off",
+      "name": "Silly Mid Off",
+      "shortName": "Silly Off",
+      "x": -6,
+      "y": -14,
+      "polarAngle": 25,
+      "polarDistance": 17,
+      "zone": "silly",
+      "side": "off",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Very close to batter on off side"
+    },
+    {
+      "id": "long_off",
+      "name": "Long Off",
+      "shortName": "Long Off",
+      "x": -65,
+      "y": -55,
+      "polarAngle": -140,
+      "polarDistance": 85.1,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Straight boundary on off side, stops lofted drives"
+    },
+    {
+      "id": "deep_extra_cover",
+      "name": "Deep Extra Cover",
+      "shortName": "Deep Extra",
+      "x": -55,
+      "y": -20,
+      "polarAngle": -160,
+      "polarDistance": 58.5,
+      "zone": "boundary",
+      "side": "off",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary between cover and long off"
+    },
+    {
+      "id": "bowler",
+      "name": "Bowler",
+      "shortName": "Bowler",
+      "x": 0,
+      "y": -10,
+      "polarAngle": 0,
+      "polarDistance": 21,
+      "zone": "close",
+      "side": "neutral",
+      "isFixed": true,
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Bowling position, follows through after delivery"
+    },
+    {
+      "id": "mid_on",
+      "name": "Mid On",
+      "shortName": "Mid On",
+      "x": 14,
+      "y": -22,
+      "polarAngle": 328,
+      "polarDistance": 32,
+      "zone": "ring",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Near bowler on leg side, saves straight drives"
+    },
+    {
+      "id": "silly_mid_on",
+      "name": "Silly Mid On",
+      "shortName": "Silly On",
+      "x": 6,
+      "y": -14,
+      "polarAngle": 335,
+      "polarDistance": 17,
+      "zone": "silly",
+      "side": "leg",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Very close to batter on leg side"
+    },
+    {
+      "id": "long_on",
+      "name": "Long On",
+      "shortName": "Long On",
+      "x": 65,
+      "y": -55,
+      "polarAngle": -40,
+      "polarDistance": 85.1,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Straight boundary on leg side, stops lofted shots"
+    },
+    {
+      "id": "mid_wicket",
+      "name": "Mid Wicket",
+      "shortName": "Mid Wkt",
+      "x": 18,
+      "y": -8,
+      "polarAngle": 294,
+      "polarDistance": 24,
+      "zone": "ring",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "45° on leg side, saves flicks and pulls"
+    },
+    {
+      "id": "short_mid_wicket",
+      "name": "Short Mid Wicket",
+      "shortName": "Short MW",
+      "x": 10,
+      "y": -6,
+      "polarAngle": 301,
+      "polarDistance": 13,
+      "zone": "close",
+      "side": "leg",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Close catching position on leg side"
+    },
+    {
+      "id": "deep_mid_wicket",
+      "name": "Deep Mid Wicket",
+      "shortName": "Deep MW",
+      "x": 52,
+      "y": -10,
+      "polarAngle": -11,
+      "polarDistance": 53,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary at mid-wicket, common position in T20"
+    },
+    {
+      "id": "cow_corner",
+      "name": "Cow Corner",
+      "shortName": "Cow Corner",
+      "x": 60,
+      "y": -30,
+      "polarAngle": 333,
+      "polarDistance": 70,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary between deep mid-wicket and long on, unconventional"
+    },
+    {
+      "id": "square_leg",
+      "name": "Square Leg",
+      "shortName": "Sq Leg",
+      "x": 16,
+      "y": -2,
+      "polarAngle": 275,
+      "polarDistance": 19,
+      "zone": "ring",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Square on leg side, saves pulls and sweeps"
+    },
+    {
+      "id": "backward_square_leg",
+      "name": "Backward Square Leg",
+      "shortName": "Bwd Sq Leg",
+      "x": 18,
+      "y": 3,
+      "polarAngle": 260,
+      "polarDistance": 25,
+      "zone": "ring",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Behind square on leg side, covers fine pulls"
+    },
+    {
+      "id": "deep_square_leg",
+      "name": "Deep Square Leg",
+      "shortName": "Deep Sq Leg",
+      "x": 0,
+      "y": 5,
+      "polarAngle": 90,
+      "polarDistance": 5,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Boundary square on leg side, stops pull shots"
+    },
+    {
+      "id": "short_leg",
+      "name": "Short Leg",
+      "shortName": "Short Leg",
+      "x": 8,
+      "y": 6,
+      "polarAngle": 235,
+      "polarDistance": 15,
+      "zone": "silly",
+      "side": "leg",
+      "bowlingTypes": [
+        "spin",
+        "pace"
+      ],
+      "role": "attacking",
+      "description": "Very close on leg side, catches bat-pad chances"
+    },
+    {
+      "id": "leg_45",
+      "name": "45 (Leg 45)",
+      "shortName": "45",
+      "x": 14,
+      "y": 8,
+      "polarAngle": 250,
+      "polarDistance": 20,
+      "zone": "close",
+      "side": "leg",
+      "bowlingTypes": [
+        "spin"
+      ],
+      "role": "attacking",
+      "description": "Halfway between square leg and short fine leg, rare"
+    },
+    {
+      "id": "fine_leg",
+      "name": "Fine Leg",
+      "shortName": "Fine Leg",
+      "x": 20,
+      "y": 34,
+      "polarAngle": 210,
+      "polarDistance": 55,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "defensive",
+      "description": "Boundary behind wicket on leg side, stops glances"
+    },
+    {
+      "id": "short_fine_leg",
+      "name": "Short Fine Leg",
+      "shortName": "Short Fine",
+      "x": 12,
+      "y": 14,
+      "polarAngle": 49,
+      "polarDistance": 18.4,
+      "zone": "ring",
+      "side": "leg",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "balanced",
+      "description": "Saves singles behind square leg, common in T20"
+    },
+    {
+      "id": "deep_fine_leg",
+      "name": "Deep Fine Leg",
+      "shortName": "Deep Fine",
+      "x": 24,
+      "y": 40,
+      "polarAngle": 59,
+      "polarDistance": 46.6,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "defensive",
+      "description": "Alternative name for fine leg at boundary"
+    },
+    {
+      "id": "long_leg",
+      "name": "Long Leg",
+      "shortName": "Long Leg",
+      "x": 30,
+      "y": 35,
+      "polarAngle": 49,
+      "polarDistance": 46.1,
+      "zone": "boundary",
+      "side": "leg",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "defensive",
+      "description": "Boundary version of fine leg, stops hooks and pulls"
+    },
+    {
+      "id": "straight_hit",
+      "name": "Straight Hit",
+      "shortName": "Str Hit",
+      "x": 0,
+      "y": -70,
+      "polarAngle": 0,
+      "polarDistance": 81,
+      "zone": "boundary",
+      "side": "neutral",
+      "bowlingTypes": [
+        "all"
+      ],
+      "role": "defensive",
+      "description": "Behind bowler at boundary, very rare position"
+    },
+    {
+      "id": "ravine",
+      "name": "Ravine",
+      "shortName": "Ravine",
+      "x": -16,
+      "y": 22,
+      "polarAngle": 126,
+      "polarDistance": 35,
+      "zone": "ring",
+      "side": "off",
+      "bowlingTypes": [
+        "pace"
+      ],
+      "role": "attacking",
+      "description": "Between gully and third man, very rare position"
+    }
+  ],
+  "zoneDefinitions": {
+    "silly": {
+      "description": "Very close (5-12m)",
+      "minDistance": 5,
+      "maxDistance": 12,
+      "risk": "high"
+    },
+    "close": {
+      "description": "Close catching (12-20m)",
+      "minDistance": 12,
+      "maxDistance": 20,
+      "risk": "medium"
+    },
+    "ring": {
+      "description": "30-yard circle (20-28m)",
+      "minDistance": 20,
+      "maxDistance": 28,
+      "risk": "low"
+    },
+    "boundary": {
+      "description": "Outside circle to boundary (28-70m)",
+      "minDistance": 28,
+      "maxDistance": 70,
+      "risk": "low"
+    }
+  },
+  "sideDefinitions": {
+    "off": "Off side (left of batter for right-hander)",
+    "leg": "Leg side (right of batter for right-hander)",
+    "behind": "Behind the wicket",
+    "neutral": "Straight (neither off nor leg)"
+  }
+}

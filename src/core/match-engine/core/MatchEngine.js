@@ -170,8 +170,24 @@ class MatchEngine {
       id: p.id || p
     }));
 
-    // Take first 11 fielders
-    const fielders = allFielders.slice(0, 11);
+    // Find wicketkeeper by role
+    const wicketKeeper = this.getWicketKeeper(bowlingTeam.players);
+
+    // Filter out wicketkeeper from remaining fielders to avoid duplication
+    const nonKeeperFielders = allFielders.filter(f => f.id !== wicketKeeper.id);
+
+    // Take first 9 non-keeper fielders (we need 11 total: 1 bowler + 1 keeper + 9 others)
+    const otherFielders = nonKeeperFielders.slice(0, 9);
+
+    // Ensure we have exactly 11 fielders with keeper at position 1
+    // Position 0 is bowler (will be updated dynamically during match)
+    // Position 1 is wicketkeeper (guaranteed to be the actual keeper)
+    // Positions 2-10 are other fielders (9 fielders)
+    const fielders = [
+      nonKeeperFielders[0] || allFielders[0], // Position 0: bowler placeholder (first non-keeper)
+      wicketKeeper,                            // Position 1: wicketkeeper (guaranteed)
+      ...otherFielders                         // Positions 2-10: remaining 9 fielders
+    ];
 
     if (fielders.length < 11) {
       console.warn(`Only ${fielders.length} fielders available, need 11. Using available fielders.`);
@@ -194,12 +210,14 @@ class MatchEngine {
       console.log('[MatchEngine] Field formation setup complete:', {
         formation: this.currentFieldFormation,
         positionsLength: fieldingPositions?.length,
-        storedPositionsLength: this.fieldingPositions?.length
+        storedPositionsLength: this.fieldingPositions?.length,
+        wicketKeeper: wicketKeeper.name,
+        wicketKeeperAtPosition1: this.fieldingPositions[1]?.fielder?.id === wicketKeeper.id
       });
     }
 
     if (this.config.showBallByBall) {
-      console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders`);
+      console.log(`Field formation set: ${this.currentFieldFormation} with ${fieldingPositions.length} positioned fielders (keeper: ${wicketKeeper.name})`);
     }
   }
 

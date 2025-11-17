@@ -10,10 +10,12 @@ import {
   Activity,
   Shield,
   RotateCcw,
-  CheckCircle
+  CheckCircle,
+  Eye
 } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
+import OverviewTab from './tabs/OverviewTab';
 import SquadPlaystyleTab from './tabs/SquadPlaystyleTab';
 import BattingOrderTab from './tabs/BattingOrderTab';
 import BowlingPlansTab from './tabs/BowlingPlansTab';
@@ -21,7 +23,7 @@ import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
 
 const TacticsPage = () => {
-  const [activeTab, setActiveTab] = useState('squad');
+  const [activeTab, setActiveTab] = useState('overview');
   const [validationErrors, setValidationErrors] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
@@ -58,7 +60,8 @@ const TacticsPage = () => {
   }
 
   const tabs = [
-    { id: 'squad', label: 'Squad & Playstyles', icon: Users },
+    { id: 'overview', label: 'Overview', icon: Eye },
+    { id: 'squad', label: 'Playing XI & Playstyles', icon: Users },
     { id: 'batting', label: 'Batting Order', icon: Target },
     { id: 'bowling', label: 'Bowling Plans', icon: Activity },
     { id: 'fielding', label: 'Fielding', icon: Shield }
@@ -134,23 +137,15 @@ const TacticsPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-secondary">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-cricket-accent" />
-          <h1 className="text-xl font-semibold text-text-primary">
-            Team Tactics
-          </h1>
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="px-4 py-2 bg-green-500/10 border-b border-green-500/30">
+          <div className="flex items-center gap-1.5 text-green-400 text-sm">
+            <CheckCircle className="w-4 h-4" />
+            <span>Tactics validated successfully</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {showSuccess && (
-            <div className="flex items-center gap-1.5 text-green-400 text-sm">
-              <CheckCircle className="w-4 h-4" />
-              <span>Tactics validated successfully</span>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
@@ -191,6 +186,9 @@ const TacticsPage = () => {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-2 bg-bg-primary">
+        {activeTab === 'overview' && (
+          <OverviewTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
+        )}
         {activeTab === 'squad' && (
           <SquadPlaystyleTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
         )}
