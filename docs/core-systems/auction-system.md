@@ -448,9 +448,9 @@ This ensures economically accurate auction simulation - the highest bidder(s) wi
 
 ## React UI Implementation
 
-### Auction Component (`src/components/auction/Auction.jsx`)
+### Transfers Component (`src/components/layout/Transfers.jsx`)
 
-The React UI provides a real-time interactive auction experience with Football Manager-inspired design.
+The React UI provides a real-time interactive auction experience with Football Manager-inspired design. The Transfers component handles both the initial season auction and mid-season transfer windows.
 
 **Status**: ✅ **Complete and Working** (January 2025)
 

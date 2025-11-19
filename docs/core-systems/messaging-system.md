@@ -34,10 +34,10 @@ In-game inbox for notifications, tutorials, and event summaries. Messages appear
 
 | Type | Generator Method | Trigger Location | Purpose |
 |------|------------------|------------------|---------|
-| `welcome` | `generateWelcomeMessage()` | Auction.jsx:post-auction | Welcome new manager |
-| `expectations` | `generateExpectationsMessage()` | Auction.jsx:post-auction | Season objectives |
-| `tutorial` | `generateTutorialMessage()` | Auction.jsx:post-auction | Game manual primer |
-| `auction_summary` | `generateAuctionSummaryMessage()` | Auction.jsx:post-auction | Auction results |
+| `welcome` | `generateWelcomeMessage()` | Transfers.jsx:post-auction | Welcome new manager |
+| `expectations` | `generateExpectationsMessage()` | Transfers.jsx:post-auction | Season objectives |
+| `tutorial` | `generateTutorialMessage()` | Transfers.jsx:post-auction | Game manual primer |
+| `auction_summary` | `generateAuctionSummaryMessage()` | Transfers.jsx:post-auction | Auction results |
 | `match_reminder` | `generateMatchReminderMessage()` | Header.jsx:day-before-match | Pre-match checklist |
 | `match_result` | `generateMatchResultMessage()` | (Future) | Post-match summary |
 

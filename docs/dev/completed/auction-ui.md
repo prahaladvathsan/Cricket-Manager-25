@@ -1,6 +1,8 @@
 # Auction UI Implementation - COMPLETED
 
-## Status: ✅ Complete (November 2024)
+## Status: ✅ Complete (November 2024) - Moved to Transfers.jsx (January 2025)
+
+> **Note**: The auction functionality originally implemented in `src/components/auction/Auction.jsx` has been consolidated into `src/components/layout/Transfers.jsx` which now handles both the initial season auction and mid-season transfer windows. The standalone Auction.jsx component has been deprecated.
 
 ## Overview
 Interactive React-based auction interface for the World Premier League season start.
@@ -43,9 +45,9 @@ Interactive React-based auction interface for the World Premier League season st
 ### Squad Integration (November 2024)
 **Issue**: Players not appearing in Squad view after auction
 **Fix**: Added `assignPlayerToTeam(playerId, teamId)` calls in:
-- `finalizePlayerAuction` (Auction.jsx:724)
-- `handleSkipRound` (Auction.jsx:560)
-- `handleSkipToEnd` (Auction.jsx:667)
+- `finalizePlayerAuction` (Transfers.jsx)
+- `handleSkipRound` (Transfers.jsx)
+- `handleSkipToEnd` (Transfers.jsx)
 
 This ensures both `squadLists` (teamStore) and `currentTeam` (playerStore) are updated.
 

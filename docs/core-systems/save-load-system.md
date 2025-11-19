@@ -283,9 +283,9 @@ stores.financeStore.setState({ teamFinances: teamFinancesMap });
 )}
 ```
 
-### 2. Auction Component Integration
+### 2. Transfers Component Integration (Auction)
 
-**Location:** `src/components/auction/Auction.jsx`
+**Location:** `src/components/layout/Transfers.jsx`
 
 ```jsx
 import useAuctionStore from '../../stores/auctionStore';
