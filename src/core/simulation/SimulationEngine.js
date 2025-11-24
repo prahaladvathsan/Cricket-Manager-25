@@ -395,9 +395,21 @@ class SimulationEngine {
       { day: offseasonStartDay, type: 'offseason_start' },
       { day: transferWindowStartDay, type: 'transfer_window_open' },
       { day: transferWindowEndDay, type: 'transfer_window_close' },
-      { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } },
-      { day: nextSeasonStartDay, type: 'auction', data: { season: currentSeason + 1 } }
+      { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } }
     ];
+
+    // Schedule new season start event for the day after transfer window closes
+    // This will trigger season transition and either auction (odd) or direct league init (even)
+    const nextSeason = currentSeason + 1;
+    const isNextSeasonOdd = nextSeason % 2 === 1;
+
+    if (isNextSeasonOdd) {
+      // Odd season: Schedule auction which will trigger league init
+      additionalEvents.push({ day: nextSeasonStartDay, type: 'auction', data: { season: nextSeason } });
+    } else {
+      // Even season: Schedule preseason_start which will trigger league init without auction
+      additionalEvents.push({ day: nextSeasonStartDay, type: 'preseason_start', data: { season: nextSeason } });
+    }
 
     this.gameStore.getState().scheduleEvents([...matchEvents, ...additionalEvents]);
     this.gameStore.getState().advancePhase('league');
@@ -433,16 +445,23 @@ class SimulationEngine {
       transfersCompleted: 0
     };
 
-    // Check if auction needs to happen (preseason phase)
-    if (this.gameStore.getState().currentPhase === 'preseason') {
-      console.log('📋 Auction day - running auction...');
-      await this.runAuction();
-      summary.eventsProcessed++;
+    // Check if auction needs to happen (preseason phase, first day)
+    // For odd seasons, auction event triggers this
+    // For even seasons, preseason_start event already handled this above
+    if (this.gameStore.getState().currentPhase === 'preseason' && this.gameStore.getState().gameDay === 1) {
+      const currentSeason = this.gameStore.getState().currentSeason;
+      const isOddSeason = currentSeason % 2 === 1;
 
-      // After auction, initialize league with fixtures starting from a future date
-      console.log('🏏 Initializing league after auction...');
-      await this.initializeLeague();
-      summary.eventsProcessed++;
+      if (isOddSeason) {
+        // Odd seasons: Run auction then initialize league
+        console.log('📋 Auction day - running auction...');
+        await this.runAuction();
+        summary.eventsProcessed++;
+
+        console.log('🏏 Initializing league after auction...');
+        await this.initializeLeague();
+        summary.eventsProcessed++;
+      }
     }
 
     // Get current day's event
@@ -512,9 +531,25 @@ class SimulationEngine {
         }
 
         summary.eventsProcessed++;
+
+        // NOTE: Do NOT call resetForNewSeason() here!
+        // Season transition happens later when auction or preseason_start event is reached
+        console.log('✅ Season end processing complete. Transfer window and offseason will follow.');
       } catch (error) {
         console.error('Error processing season end:', error);
       }
+    } else if (event && event.type === 'preseason_start') {
+      // PRESEASON START (Even seasons - no auction)
+      console.log('🔄 Preseason starting for even season (no auction)...');
+
+      // Transition to new season
+      this.gameStore.getState().resetForNewSeason();
+      console.log(`✅ Season transition complete - Now in Season ${this.gameStore.getState().currentSeason}`);
+
+      // Initialize league immediately (no auction for even seasons)
+      console.log('🏏 Even season - Initializing league with existing squads...');
+      await this.initializeLeague();
+      summary.eventsProcessed++;
     }
 
     // Advance to next day

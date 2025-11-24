@@ -48,7 +48,8 @@ const Header = () => {
     advanceDay,
     getCurrentEvent,
     isWeekend,
-    calendarEvents
+    calendarEvents,
+    resetForNewSeason
   } = useGameStore();
   const { getUserTeam } = useTeamStore();
   const { getClub, recordResult, recalculateStandings, advanceToNextMatch, standings, champion } = useLeagueStore();
@@ -348,6 +349,12 @@ const Header = () => {
         }
       }
     } else if (event && event.type === 'auction') {
+      // ODD SEASON: Auction event
+      // Transition to new season BEFORE auction
+      console.log('🔄 Auction event - Transitioning to new season...');
+      resetForNewSeason();
+      console.log(`✅ Season transition complete - Now in Season ${currentSeason + 1}`);
+
       // Check if auction is already completed
       if (auctionState === 'completed') {
         // Auction already done, just advance day
@@ -356,6 +363,14 @@ const Header = () => {
         // Navigate to transfers page (auction is now on transfers page)
         navigate('/game/transfers');
       }
+    } else if (event && event.type === 'preseason_start') {
+      // EVEN SEASON: Preseason start (no auction)
+      console.log('🔄 Preseason start for even season - Transitioning to new season...');
+      resetForNewSeason();
+      console.log(`✅ Season transition complete - Now in Season ${currentSeason + 1}`);
+
+      // Navigate to transfers page which will initialize league
+      navigate('/game/transfers');
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
       // SEASON END EVENT - Distribute prizes, show summary, send inbox message
       console.log('🏆 Season End Event Triggered!');
@@ -401,11 +416,12 @@ const Header = () => {
 
         // 3. Show Season Summary Modal (user must acknowledge before continuing)
         setShowSeasonSummary(true);
-        // Don't advance day yet - modal will do it on close
+        // Don't advance day yet - modal will advance on close
+        // NOTE: Do NOT call resetForNewSeason() here! That happens later.
 
       } catch (error) {
         console.error('Error processing season end:', error);
-        // Still advance day on error
+        // Just advance day on error
         advanceDay();
       }
     } else {
@@ -609,6 +625,8 @@ const Header = () => {
               <SeasonSummaryView
                 onContinue={() => {
                   setShowSeasonSummary(false);
+                  // Just advance day - season transition happens later (at auction or preseason_start)
+                  console.log('✅ User acknowledged season end. Continuing to offseason/transfer window...');
                   advanceDay();
                 }}
               />

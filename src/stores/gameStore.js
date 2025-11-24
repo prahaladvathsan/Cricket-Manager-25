@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import MessageGenerator from '../utils/MessageGenerator';
 
 /**
  * @typedef {Object} GameState
@@ -79,6 +80,70 @@ const useGameStore = create(
       currentDate: newDate.toISOString(),
       currentWeek: shouldAdvanceWeek ? state.currentWeek + 1 : state.currentWeek
     });
+
+    // Process daily injury countdown (must be done after state update)
+    // This needs to run after the day advances to properly track recovery
+    if (typeof window !== 'undefined') {
+      // Only run in browser environment
+      setTimeout(() => {
+        try {
+          // Import stores dynamically to avoid circular dependencies
+          import('./playerStore').then(playerStoreModule => {
+            import('./inboxStore').then(inboxStoreModule => {
+              import('./teamStore').then(teamStoreModule => {
+                import('../utils/MessageGenerator').then(MessageGeneratorModule => {
+                  const playerStore = playerStoreModule.default;
+                  const inboxStore = inboxStoreModule.default;
+                  const teamStore = teamStoreModule.default;
+                  const MessageGenerator = MessageGeneratorModule.default;
+
+                  const userTeamId = teamStore.getState().userTeamId;
+                  const players = playerStore.getState().players;
+
+                  Object.entries(players).forEach(([playerId, player]) => {
+                    if (player.condition && player.condition.injuryDuration > 0) {
+                      const newDuration = player.condition.injuryDuration - 1;
+
+                      if (newDuration <= 0) {
+                        // Player recovered - reset injury fields and send recovery message
+                        playerStore.getState().updatePlayerCondition(playerId, {
+                          injury: null,
+                          injuryDuration: null
+                        });
+
+                        // Send recovery inbox message only for user's squad players
+                        const isUserPlayer = player.currentTeam === userTeamId;
+                        if (isUserPlayer) {
+                          inboxStore.getState().addMessage(MessageGenerator.generateRecoveryMessage(player));
+                          console.log(`✅ ${player.name} has recovered from injury`);
+                        } else {
+                          console.log(`✅ ${player.name} has recovered from injury (no inbox message - not user's player)`);
+                        }
+                      } else {
+                        // Decrement injury duration
+                        playerStore.getState().updatePlayerCondition(playerId, {
+                          injuryDuration: newDuration
+                        });
+                      }
+                    }
+                  });
+                }).catch(error => {
+                  console.error('Error importing MessageGenerator:', error);
+                });
+              }).catch(error => {
+                console.error('Error importing teamStore:', error);
+              });
+            }).catch(error => {
+              console.error('Error importing inboxStore:', error);
+            });
+          }).catch(error => {
+            console.error('Error importing playerStore:', error);
+          });
+        } catch (error) {
+          console.error('Error processing daily injury countdown:', error);
+        }
+      }, 0);
+    }
 
     return {
       type: dayEvent ? dayEvent.type : (isWeekend ? 'rest' : null),
@@ -165,14 +230,36 @@ const useGameStore = create(
   /**
    * Reset game state for new season
    */
-  resetForNewSeason: () => set((state) => ({
-    currentSeason: state.currentSeason + 1,
-    currentPhase: 'preseason',
-    currentWeek: 1,
-    gameDay: 1,
-    calendarEvents: [],
-    isSimulating: false
-  })),
+  resetForNewSeason: () => set((state) => {
+    const newSeason = state.currentSeason + 1;
+    const currentDateObj = new Date(state.currentDate);
+
+    // Determine new season start date based on season parity
+    // Odd seasons (1,3,5...): Start Jan 1, end June 30
+    // Even seasons (2,4,6...): Start July 1, end Dec 31
+    const isNewSeasonOdd = newSeason % 2 === 1;
+    let newSeasonStartDate;
+
+    if (isNewSeasonOdd) {
+      // Odd season starts January 1 (year increments)
+      newSeasonStartDate = new Date(currentDateObj.getFullYear() + 1, 0, 1); // Jan 1 next year
+    } else {
+      // Even season starts July 1 (same year as previous season end)
+      newSeasonStartDate = new Date(currentDateObj.getFullYear(), 6, 1); // July 1 same year
+    }
+
+    console.log(`🗓️ New season ${newSeason} starts: ${newSeasonStartDate.toISOString()}`);
+
+    return {
+      currentSeason: newSeason,
+      currentPhase: 'preseason',
+      currentWeek: 1,
+      gameDay: 1,
+      currentDate: newSeasonStartDate.toISOString(),
+      calendarEvents: [],
+      isSimulating: false
+    };
+  }),
 
   /**
    * Reset game state for brand new game

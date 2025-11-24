@@ -233,13 +233,18 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 >
                   <div className="flex items-start gap-2 mb-1">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-sm font-medium">
                           <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
                         </div>
                         <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                           {player.role}
                         </span>
+                        {player.condition?.injury && (
+                          <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
+                            🔴 Injured {player.condition.injuryDuration}d
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button
@@ -344,6 +349,9 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               )}
             </>
           )}
+          {selectedPlayers.filter(p => p.condition?.injury).length > 0 && (
+            <p className="text-xs text-red-400 font-semibold">🔴 WARNING: {selectedPlayers.filter(p => p.condition?.injury).length} injured player(s) in playing XI!</p>
+          )}
         </div>
 
         {/* Selected Players List */}
@@ -375,13 +383,18 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       {idx + 1}.
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-sm font-medium">
                           <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
                         </div>
                         <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                           {player.role}
                         </span>
+                        {player.condition?.injury && (
+                          <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400 font-semibold" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
+                            ⚠ Injured {player.condition.injuryDuration}d
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button

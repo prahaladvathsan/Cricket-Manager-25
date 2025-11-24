@@ -538,11 +538,11 @@ class MatchEngine {
     let { currentBall, innings, teams } = matchState;
 
     // Log header at the very start of ball simulation (before any other logs)
-    const ballNumber = matchState.ballByBall.length + 1;
-    const ballNotation = `${currentBall.over}.${currentBall.ball + 1}`;
-    console.log('\n' + '═'.repeat(80));
-    console.log(`🏏 BALL #${ballNumber} | Over ${ballNotation}`);
-    console.log('═'.repeat(80));
+    // const ballNumber = matchState.ballByBall.length + 1;
+    // const ballNotation = `${currentBall.over}.${currentBall.ball + 1}`;
+    // console.log('\n' + '═'.repeat(80));
+    // console.log(`🏏 BALL #${ballNumber} | Over ${ballNotation}`);
+    // console.log('═'.repeat(80));
 
     // CRITICAL: Refresh fielding positions with current bowler BEFORE ball simulation
     // This ensures position 0 has the actual current bowler, not a placeholder
@@ -1485,12 +1485,50 @@ class MatchEngine {
     Object.entries(energyUpdates).forEach(([playerId, updates]) => {
       const player = this.playerStore.getState().getPlayer(playerId);
       if (player && player.condition) {
-        player.condition.fitness = updates.fitness;
-        player.condition.fatigue = updates.fatigue;
+        // Calculate injury severity based on duration
+        let injurySeverity = null;
         if (updates.injuryDuration) {
-          player.condition.injuryDuration = updates.injuryDuration;
-          console.log(`⚠️ ${player.name} injured for ${updates.injuryDuration} days`);
+          if (updates.injuryDuration <= 30) {
+            injurySeverity = 'minor';
+          } else if (updates.injuryDuration <= 60) {
+            injurySeverity = 'major';
+          } else {
+            injurySeverity = 'severe';
+          }
         }
+
+        // Use playerStore.updatePlayerCondition to properly persist all updates
+        const conditionUpdates = {
+          fitness: updates.fitness,
+          fatigue: updates.fatigue
+        };
+
+        if (updates.injuryDuration) {
+          conditionUpdates.injuryDuration = updates.injuryDuration;
+          conditionUpdates.injury = injurySeverity;
+          console.log(`⚠️ ${player.name} injured (${injurySeverity}) for ${updates.injuryDuration} days`);
+
+          // Send injury inbox message only for user's squad players
+          if (this.inboxStore && this.teamStore) {
+            const userTeamId = this.teamStore.getState().userTeamId;
+            const isUserPlayer = player.currentTeam === userTeamId;
+
+            if (isUserPlayer) {
+              // Use dynamic import for MessageGenerator to avoid bundling issues
+              import('../../../utils/MessageGenerator').then(module => {
+                const MessageGenerator = module.default;
+                const matchId = this.matchId || 'current_match';
+                this.inboxStore.getState().addMessage(
+                  MessageGenerator.generateInjuryMessage(player, updates.injuryDuration, injurySeverity, matchId)
+                );
+              }).catch(error => {
+                console.error('Error loading MessageGenerator for injury message:', error);
+              });
+            }
+          }
+        }
+
+        this.playerStore.getState().updatePlayerCondition(playerId, conditionUpdates);
       }
     });
 

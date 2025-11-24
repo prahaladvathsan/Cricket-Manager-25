@@ -48,6 +48,19 @@ const TacticsPage = () => {
     }
   }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
 
+  // Auto-validate tactics when component unmounts (user leaves page)
+  useEffect(() => {
+    return () => {
+      // Validate on unmount
+      const errors = validateTactics();
+      if (errors.length > 0) {
+        console.warn('⚠️ Tactics validation errors detected:', errors);
+        // Display warning message briefly before unmounting
+        alert(`⚠️ Tactics validation errors:\n\n${errors.join('\n')}\n\nPlease fix these issues before your next match.`);
+      }
+    };
+  }, []); // Empty deps - only run on mount/unmount
+
   if (!teamId) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -130,6 +143,20 @@ const TacticsPage = () => {
     // Validate batting order
     if (!teamTactics.battingOrder || teamTactics.battingOrder.length !== 11) {
       errors.push('Batting order must have all 11 players');
+    }
+
+    // Validate no injured players in playing XI
+    const injuredPlayers = teamTactics.squadSelection.filter(playerId => {
+      const player = players[playerId];
+      return player && player.condition?.injury;
+    });
+
+    if (injuredPlayers.length > 0) {
+      const injuredPlayerNames = injuredPlayers.map(id => {
+        const player = players[id];
+        return `${player.name} (${player.condition.injuryDuration}d)`;
+      }).join(', ');
+      errors.push(`Injured players in XI: ${injuredPlayerNames}. Remove them from playing XI.`);
     }
 
     return errors;

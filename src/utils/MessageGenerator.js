@@ -333,6 +333,104 @@ Best regards,
       }
     };
   }
+
+  /**
+   * Generate injury message
+   * @param {Object} player - Injured player
+   * @param {number} duration - Injury duration in days
+   * @param {string} severity - Injury severity (minor/major/severe)
+   * @param {string} matchId - Match ID where injury occurred
+   * @returns {Object} Message data
+   */
+  static generateInjuryMessage(player, duration, severity, matchId) {
+    const severityEmoji = {
+      minor: '🟡',
+      major: '🟠',
+      severe: '🔴'
+    };
+
+    const severityText = {
+      minor: 'Minor Injury',
+      major: 'Major Injury',
+      severe: 'Severe Injury'
+    };
+
+    const injuryDescriptions = {
+      minor: 'a minor knock',
+      major: 'a significant injury',
+      severe: 'a serious injury'
+    };
+
+    return {
+      type: 'injury',
+      subject: `${severityEmoji[severity]} ${player.name} - ${severityText[severity]}`,
+      sender: 'Medical Staff',
+      body: `Manager,
+
+We regret to inform you that **${player.name}** has sustained ${injuryDescriptions[severity]} during the recent match.
+
+**Injury Report:**
+- **Player:** ${player.name}
+- **Severity:** ${severityText[severity]}
+- **Expected Recovery:** ${duration} days
+- **Status:** Unavailable for selection
+
+**Medical Staff Recommendation:**
+The player should not participate in matches until fully recovered. Please remove them from your Playing XI if currently selected.
+
+**Next Steps:**
+→ [Update your tactics and remove injured player](/game/tactics)
+
+We will monitor their recovery and inform you when they are fit to return to action.
+
+Best regards,
+**${player.teamId ? 'Team' : 'Club'} Medical Staff**`,
+      metadata: {
+        playerId: player.id,
+        playerName: player.name,
+        duration,
+        severity,
+        matchId,
+        link: '/game/tactics'
+      }
+    };
+  }
+
+  /**
+   * Generate recovery message
+   * @param {Object} player - Recovered player
+   * @returns {Object} Message data
+   */
+  static generateRecoveryMessage(player) {
+    return {
+      type: 'recovery',
+      subject: `✅ ${player.name} - Fit and Available`,
+      sender: 'Medical Staff',
+      body: `Manager,
+
+Good news! **${player.name}** has successfully completed their recovery and is now fully fit for selection.
+
+**Recovery Status:**
+- **Player:** ${player.name}
+- **Status:** ✅ Fit and available
+- **Condition:** Cleared for match participation
+
+The player has been training with the squad and is ready to be selected for upcoming matches.
+
+**Next Steps:**
+→ [View squad and update tactics](/game/squad)
+
+Welcome back, ${player.name}!
+
+Best regards,
+**${player.teamId ? 'Team' : 'Club'} Medical Staff**`,
+      metadata: {
+        playerId: player.id,
+        playerName: player.name,
+        link: '/game/squad'
+      }
+    };
+  }
 }
 
 export default MessageGenerator;
