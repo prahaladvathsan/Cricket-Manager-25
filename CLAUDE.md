@@ -159,6 +159,47 @@ This ensures consistent clickable behavior across all screens (Football Manager 
 - PlaystyleCalculator.js already fixed for browser use
 - All game logic must run client-side
 
+## Git Workflow (CRITICAL)
+
+**Branch Strategy**:
+- **`main` branch**: Production-ready code ONLY - deployed to https://cricket-manager.com/
+- **`testing` branch**: All active development happens here
+
+**Development Workflow**:
+1. **ALWAYS work on `testing` branch** - This is the default development branch
+2. **ALWAYS push to `testing` branch** - Never push directly to main
+3. **ALWAYS pull from `testing` branch** - Keep your local testing branch up to date
+4. **Merge to main ONLY when**:
+   - Features are stable and thoroughly tested
+   - User has given explicit approval
+   - No known bugs or issues exist
+
+**Commands**:
+```bash
+# Start work (ensure you're on testing)
+git checkout testing
+git pull origin testing
+
+# During development
+git add .
+git commit -m "Your commit message"
+git push origin testing
+
+# When ready to deploy (user approval required)
+git checkout main
+git merge testing
+git push origin main
+git checkout testing  # Switch back to testing
+```
+
+**NEVER**:
+- Push untested code to main
+- Merge to main without user approval
+- Work directly on main branch
+- Push directly to main
+
+**Production Deployment**: main branch auto-deploys to cricket-manager.com via GitHub Actions.
+
 ## Documentation
 
 **Quick Links**:
@@ -195,7 +236,7 @@ See `docs/dev/testing.md` for testing guidelines.
 - **No Python dependencies** - Data processing is separate
 - **Performance critical** - Match engine must maintain ~50k+ balls/second
 - **Deterministic** - Seeded randomization for reproducible results
-- **Git workflow** - Main branch is `main`, feature branches for non-trivial work
+- **Git workflow** - `testing` branch for all development, `main` for production only (see Git Workflow section)
 
 ---
 
