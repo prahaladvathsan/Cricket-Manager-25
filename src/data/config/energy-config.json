@@ -126,9 +126,9 @@
       "description": "Injury probability equals fatigue percentage",
       "probability": "fatigue / 100",
       "duration": {
-        "min": 10,
+        "min": 1,
         "max": 90,
-        "description": "Random duration in days"
+        "description": "Random duration in days with inverse linear weighting (shorter injuries more likely)"
       }
     }
   },
