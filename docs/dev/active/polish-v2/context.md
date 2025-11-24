@@ -72,6 +72,15 @@
    - Solution: Added `preseason_start` event for even seasons that directly initializes league
    - Even seasons now properly skip auction and initialize league with existing squads
 
+3. **Empty Season Schedule After Transition** - FIXED
+   - Problem: After season transition, no matches or events were scheduled
+   - Root Cause: `resetForNewSeason()` cleared calendar, but league initialization wasn't being called
+   - Solution: Added `initializeNewSeasonLeague()` function in Header.jsx
+     - Generates fixtures using MatchWeekScheduleGenerator
+     - Schedules all match events, playoffs, offseason, transfer window
+     - Initializes league store with fixtures and teams
+   - Triggers on: preseason_start events, post-auction, or as fallback check
+
 ## Injury System Documentation
 
 ### How Injuries Are Triggered

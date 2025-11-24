@@ -127,8 +127,16 @@ class PlayerValuation {
       }
     }
 
+    // Wicketkeeper scarcity premium (reduced)
+    // Wicketkeepers are mandatory (need at least 1) so add modest baseline bonus
+    let wicketkeeperBonus = 0;
+    if (player.role === 'wicket-keeper') {
+      // Base wicketkeeper value boost (they're rare and mandatory)
+      wicketkeeperBonus = baseValue * 0.10; // 10% bonus for any wicketkeeper (reduced from 25%)
+    }
+
     // Final market value: base + fit-based value, scaled by quality/scarcity/budget
-    const marketValue = (baseValue + fitValue + allRounderBonus)
+    const marketValue = (baseValue + fitValue + allRounderBonus + wicketkeeperBonus)
                         * tierMultiplier
                         * reducedScarcity
                         * squadMultiplier

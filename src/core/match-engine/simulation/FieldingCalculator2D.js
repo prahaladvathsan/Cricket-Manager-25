@@ -76,12 +76,12 @@ class FieldingCalculator2D {
         time: aerialTime
       };
 
-      console.log('🎾 [BOUNCE] Calculated bounce point for aerial shot:', {
-        bounceDistance: bounceDistance.toFixed(2),
-        direction: shotDirection,
-        shotSpeed: shotSpeed.toFixed(2),
-        bouncePoint
-      });
+      // console.log('🎾 [BOUNCE] Calculated bounce point for aerial shot:', {
+      //   bounceDistance: bounceDistance.toFixed(2),
+      //   direction: shotDirection,
+      //   shotSpeed: shotSpeed.toFixed(2),
+      //   bouncePoint
+      // });
     }
 
     // Analyze fielder interception using polar coordinates (ALWAYS - even for boundaries)
@@ -172,11 +172,11 @@ class FieldingCalculator2D {
       console.log(`  Running decision: ${runningResult.runsAttempted} runs (isRunOut: ${runningResult.isRunOut})`);
     }
 
-    console.log('🎾 [BOUNCE] Passing to determineFinalOutcome:', {
-      shotType,
-      bouncePoint,
-      hasBouncePoint: !!bouncePoint
-    });
+    // console.log('🎾 [BOUNCE] Passing to determineFinalOutcome:', {
+    //   shotType,
+    //   bouncePoint,
+    //   hasBouncePoint: !!bouncePoint
+    // });
 
     // Determine final outcome
     return this.determineFinalOutcome(
@@ -469,17 +469,17 @@ class FieldingCalculator2D {
    * @returns {FieldingResult2D} Final fielding result
    */
   determineFinalOutcome(runningResult, interceptionAnalysis, shotDirection, boundaryDistance, shotSpeed, trajectoryResult, shotType, bouncePoint = null) {
-    console.log('🎯 [OUTCOME] determineFinalOutcome called:', {
-      shotType,
-      bouncePoint,
-      runs: runningResult.runsAttempted,
-      isRunOut: runningResult.isRunOut
-    });
+    // console.log('🎯 [OUTCOME] determineFinalOutcome called:', {
+    //   shotType,
+    //   bouncePoint,
+    //   runs: runningResult.runsAttempted,
+    //   isRunOut: runningResult.isRunOut
+    // });
 
     // Check if ball reached boundary (no interception)
     if (!interceptionAnalysis.closestFielder || !interceptionAnalysis.closestFielder.canIntercept) {
       // Pass bouncePoint for aerial shots reaching boundary
-      console.log('🎯 [OUTCOME] Ball reached boundary (FOUR)');
+      // console.log('🎯 [OUTCOME] Ball reached boundary (FOUR)');
       return this.handleFour(shotDirection, boundaryDistance, shotSpeed, interceptionAnalysis.closestFielder, bouncePoint);
     }
 
@@ -487,11 +487,11 @@ class FieldingCalculator2D {
     // For grounded shots or aerial post-bounce interceptions, this is the actual ball travel distance
     const shotDistance = interceptionAnalysis.closestFielder.expectedDistance || 0;
 
-    console.log('🎯 [OUTCOME] Ball fielded:', {
-      shotDistance: shotDistance.toFixed(2),
-      outcome: runningResult.isRunOut ? 'RUN_OUT' : runningResult.runsAttempted === 0 ? 'DOT' : 'RUNS',
-      addingBouncePoint: shotType === 'aerial' ? bouncePoint : null
-    });
+    // console.log('🎯 [OUTCOME] Ball fielded:', {
+    //   shotDistance: shotDistance.toFixed(2),
+    //   outcome: runningResult.isRunOut ? 'RUN_OUT' : runningResult.runsAttempted === 0 ? 'DOT' : 'RUNS',
+    //   addingBouncePoint: shotType === 'aerial' ? bouncePoint : null
+    // });
 
     if (runningResult.isRunOut) {
       return {

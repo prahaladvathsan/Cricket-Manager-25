@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
+import usePlayerStore from '../../stores/playerStore';
 import PreviewTab from './tabs/PreviewTab';
 import TossTab from './tabs/TossTab';
 import LineupsTab from './tabs/LineupsTab';
@@ -93,9 +94,80 @@ const PreMatchFlow = () => {
     });
   };
 
+  // Validate user team tactics
+  const validateUserTactics = () => {
+    const { getTeamTactics } = useTeamStore.getState();
+    const { players } = usePlayerStore.getState();
+    const userTeamId = userTeam?.id;
+
+    if (!userTeamId) return { valid: true, errors: [] };
+
+    const tactics = getTeamTactics(userTeamId);
+    const errors = [];
+
+    if (!tactics) {
+      errors.push('Tactics not initialized');
+      return { valid: false, errors };
+    }
+
+    // Validate squad selection
+    if (!tactics.squadSelection || tactics.squadSelection.length !== 11) {
+      errors.push('Must select exactly 11 players');
+    }
+
+    // Validate minimum bowlers
+    const bowlers = tactics.squadSelection?.filter(playerId => {
+      const player = players[playerId];
+      return player && (player.role === 'bowler' || player.role === 'all-rounder');
+    }) || [];
+
+    if (bowlers.length < 5) {
+      errors.push('Must have at least 5 bowling options');
+    }
+
+    // Validate wicket-keeper
+    const hasWicketKeeper = tactics.squadSelection?.some(playerId => {
+      const player = players[playerId];
+      return player && player.role === 'wicket-keeper';
+    });
+
+    if (!hasWicketKeeper) {
+      errors.push('Must have at least 1 wicket-keeper');
+    }
+
+    // Validate batting order
+    if (!tactics.battingOrder || tactics.battingOrder.length !== 11) {
+      errors.push('Batting order must have all 11 players');
+    }
+
+    // CRITICAL: Validate no injured players in playing XI
+    const injuredPlayers = tactics.squadSelection?.filter(playerId => {
+      const player = players[playerId];
+      return player && player.condition?.injury;
+    }) || [];
+
+    if (injuredPlayers.length > 0) {
+      const injuredPlayerNames = injuredPlayers.map(id => {
+        const player = players[id];
+        return `${player.name} (${player.condition.injuryDuration}d)`;
+      }).join(', ');
+      errors.push(`Injured players in XI: ${injuredPlayerNames}`);
+    }
+
+    return { valid: errors.length === 0, errors };
+  };
+
   // Handle Continue button
   const handleContinue = () => {
     if (currentPhase === 0) {
+      // CRITICAL: Validate tactics before allowing user to continue from Preview & Tactics phase
+      const validation = validateUserTactics();
+      if (!validation.valid) {
+        alert(
+          `⚠️ Cannot continue - Tactics validation errors:\n\n${validation.errors.join('\n')}\n\nPlease click "Configure Tactics" to fix these issues.`
+        );
+        return; // Block progression
+      }
       setCurrentPhase(1);
     } else if (currentPhase === 1) {
       if (tossState.completed && tossState.decision) {

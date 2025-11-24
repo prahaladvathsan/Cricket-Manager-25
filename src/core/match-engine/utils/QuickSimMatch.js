@@ -8,6 +8,101 @@ import MatchEngine from '../core/MatchEngine.js';
 import { updatePlayerStats } from '../../../utils/MatchStatsUpdater.js';
 
 /**
+ * Auto-fix injured players in a team's lineup before match
+ * Replaces injured players with uninjured players from the squad
+ * @param {string} teamId - Team ID
+ * @param {Object} teamStore - Team store
+ * @param {Object} playerStore - Player store
+ * @returns {Object} {squad: Array, hadInjuries: boolean}
+ */
+function autoFixInjuredPlayersInLineup(teamId, teamStore, playerStore) {
+  const tactics = teamStore.getState().getTeamTactics(teamId);
+  if (!tactics || !tactics.squadSelection) {
+    return { squad: tactics?.squadSelection || [], hadInjuries: false };
+  }
+
+  const players = playerStore.getState().players;
+  const teamPlayers = Object.values(players).filter(p => p.currentTeam === teamId);
+
+  // Find injured players in current squad selection
+  const injuredInSquad = tactics.squadSelection.filter(playerId => {
+    const player = players[playerId];
+    return player && player.condition?.injury;
+  });
+
+  if (injuredInSquad.length === 0) {
+    console.log(`✓ No injured players in ${teamStore.getState().teams[teamId]?.name || teamId} lineup`);
+    return { squad: tactics.squadSelection, hadInjuries: false };
+  }
+
+  console.log(`🏥 Auto-fixing ${injuredInSquad.length} injured player(s) in ${teamStore.getState().teams[teamId]?.name || teamId} lineup`);
+
+  // Find available uninjured players (not in squad, not injured)
+  const availablePlayers = teamPlayers.filter(p =>
+    !tactics.squadSelection.includes(p.id) &&
+    !p.condition?.injury
+  );
+
+  // Replace each injured player with an available player of similar role
+  const newSquadSelection = [...tactics.squadSelection];
+  injuredInSquad.forEach(injuredId => {
+    const injuredPlayer = players[injuredId];
+    if (!injuredPlayer) return;
+
+    // Try to find replacement of same role
+    let replacement = availablePlayers.find(p =>
+      p.role === injuredPlayer.role &&
+      !newSquadSelection.includes(p.id)
+    );
+
+    // If no same-role replacement, take any available player
+    if (!replacement) {
+      replacement = availablePlayers.find(p => !newSquadSelection.includes(p.id));
+    }
+
+    if (replacement) {
+      // Replace injured player with replacement
+      const injuredIndex = newSquadSelection.indexOf(injuredId);
+      newSquadSelection[injuredIndex] = replacement.id;
+      console.log(`  ↳ Replaced ${injuredPlayer.name} (${injuredPlayer.role}, injured) with ${replacement.name} (${replacement.role})`);
+    } else {
+      console.warn(`  ⚠️ No replacement found for ${injuredPlayer.name} - keeping injured player`);
+    }
+  });
+
+  // Update team tactics with new squad selection
+  teamStore.getState().updateSquadSelection(teamId, newSquadSelection);
+
+  // Also need to update batting order to remove/replace injured players
+  if (tactics.battingOrder) {
+    const newBattingOrder = tactics.battingOrder
+      .map(playerId => {
+        if (injuredInSquad.includes(playerId)) {
+          // Find replacement in new squad
+          const injuredIndex = tactics.squadSelection.indexOf(playerId);
+          return newSquadSelection[injuredIndex];
+        }
+        return playerId;
+      })
+      .filter(Boolean);
+
+    teamStore.getState().updateBattingOrder(teamId, newBattingOrder);
+  }
+
+  // CRITICAL: Clear bowling rotation to force MatchEngine to auto-generate a new one
+  // This is safer than trying to patch it, because there might be other players in the rotation
+  // who aren't in the updated squad
+  if (injuredInSquad.length > 0) {
+    console.log(`  ↳ Clearing bowling rotation to force auto-generation with updated squad`);
+    teamStore.getState().updateBowlingRotation(teamId, null);
+  }
+
+  console.log(`  ✓ Final squad (${newSquadSelection.length} players):`, newSquadSelection.map(id => players[id]?.name).join(', '));
+
+  return { squad: newSquadSelection, hadInjuries: true };
+}
+
+/**
  * Quick-simulate an AI vs AI match and return the result
  * @param {Object} matchConfig - Match configuration
  * @param {Object} matchStore - Match store (Zustand store)
@@ -24,6 +119,32 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
       if (currentSeasonId) {
         playerStore.getState().setCurrentSeasonId(currentSeasonId);
       }
+    }
+
+    // CRITICAL: Auto-fix injured players in both teams' lineups before match starts
+    const homeResult = autoFixInjuredPlayersInLineup(matchConfig.homeTeam.id, teamStore, playerStore);
+    const awayResult = autoFixInjuredPlayersInLineup(matchConfig.awayTeam.id, teamStore, playerStore);
+
+    // ONLY update matchConfig if there were actual injuries fixed
+    // Otherwise leave matchConfig untouched to avoid breaking matches
+    if (homeResult.hadInjuries || awayResult.hadInjuries) {
+      console.log('🔄 Updating matchConfig with corrected playing XIs after injury fixes');
+
+      // CRITICAL: matchConfig expects arrays of player IDs (strings), NOT player objects!
+      // This matches how SimulationEngine constructs matchConfig
+      matchConfig = {
+        ...matchConfig,
+        homeTeam: {
+          ...matchConfig.homeTeam,
+          playingXI: homeResult.squad,  // Array of player IDs
+          players: homeResult.squad     // Array of player IDs
+        },
+        awayTeam: {
+          ...matchConfig.awayTeam,
+          playingXI: awayResult.squad,  // Array of player IDs
+          players: awayResult.squad     // Array of player IDs
+        }
+      };
     }
 
     // Create match engine with silent mode

@@ -266,10 +266,38 @@ class EnergyManager {
       let injuryDuration = null;
       const injuryProbability = newFatigue / 100;
       if (Math.random() < injuryProbability) {
-        // Trigger injury
+        // Trigger injury with inverse linear probability (shorter injuries more likely)
         const minDuration = this.fatigueInjuryRules.injuryTrigger.duration.min;
         const maxDuration = this.fatigueInjuryRules.injuryTrigger.duration.max;
-        injuryDuration = Math.floor(Math.random() * (maxDuration - minDuration + 1)) + minDuration;
+
+        // Calculate weights: shorter durations get higher weights
+        // For duration d: weight = (maxDuration - d + 1)
+        // This creates inverse linear scaling where probability decreases with duration
+        const weights = [];
+        const durations = [];
+        let totalWeight = 0;
+
+        for (let d = minDuration; d <= maxDuration; d++) {
+          const weight = (maxDuration - d + 1);
+          weights.push(weight);
+          durations.push(d);
+          totalWeight += weight;
+        }
+
+        // Weighted random selection
+        let random = Math.random() * totalWeight;
+        for (let i = 0; i < durations.length; i++) {
+          random -= weights[i];
+          if (random <= 0) {
+            injuryDuration = durations[i];
+            break;
+          }
+        }
+
+        // Fallback to minimum duration if something goes wrong
+        if (!injuryDuration) {
+          injuryDuration = minDuration;
+        }
       }
 
       updates[playerId] = {

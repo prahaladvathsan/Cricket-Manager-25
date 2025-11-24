@@ -406,6 +406,19 @@ class AuctionAI {
       fitScore = Math.max(maxBattingValue, maxBowlingValue);
     }
 
+    // Wicketkeeper mandatory bonus (reduced)
+    // Teams need at least 1 wicketkeeper, so prioritize if none in squad
+    if (role === 'wicket-keeper' && teamNeeds['wicket-keeper'] > 0) {
+      const wicketkeeperGap = teamNeeds['wicket-keeper'];
+      if (wicketkeeperGap >= 2) {
+        // No wicketkeepers at all - important but not excessive
+        fitScore += 80; // Moderate bonus (reduced from 300)
+      } else if (wicketkeeperGap === 1) {
+        // Only 1 wicketkeeper - nice to have backup
+        fitScore += 30; // Small bonus (reduced from 150)
+      }
+    }
+
     // Check if player fills quality gap
     if (teamNeeds.qualityGaps) {
       if (qualityTier === 'elite' && teamNeeds.qualityGaps.elite.gap > 0) {
