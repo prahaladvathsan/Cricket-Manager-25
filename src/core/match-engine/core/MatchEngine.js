@@ -1506,6 +1506,7 @@ class MatchEngine {
         if (updates.injuryDuration) {
           conditionUpdates.injuryDuration = updates.injuryDuration;
           conditionUpdates.injury = injurySeverity;
+          conditionUpdates.fatigue = 0; // Reset fatigue to 0 when injured (player will rest during recovery)
           console.log(`⚠️ ${player.name} injured (${injurySeverity}) for ${updates.injuryDuration} days`);
 
           // Send injury inbox message only for user's squad players
