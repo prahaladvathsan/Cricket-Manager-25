@@ -989,7 +989,7 @@ const useTeamStore = create(
         console.warn(`⚠ Failed to auto-complete bowling rotation for team ${teamId}`);
       }
     } else {
-      console.log(`✓ Bowling rotation for team ${teamId} is complete and valid`);
+      // console.log(`✓ Bowling rotation for team ${teamId} is complete and valid`);
     }
   },
 

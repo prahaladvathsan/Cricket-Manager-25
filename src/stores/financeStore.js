@@ -306,13 +306,13 @@ const useFinanceStore = create(
   getTeamFinances: (teamId) => {
     const state = get();
     //console.log('💰 getTeamFinances called for teamId:', teamId);
-    console.log('💰 Current state:', {
-      initialized: state.initialized,
-      seasonId: state.seasonId,
-      teamFinancesSize: state.teamFinances?.size,
-      hasEngine: !!state.engine,
-      engineHasMethod: !!(state.engine && typeof state.engine.getTeamFinances === 'function')
-    });
+    // console.log('💰 Current state:', {
+    //   initialized: state.initialized,
+    //   seasonId: state.seasonId,
+    //   teamFinancesSize: state.teamFinances?.size,
+    //   hasEngine: !!state.engine,
+    //   engineHasMethod: !!(state.engine && typeof state.engine.getTeamFinances === 'function')
+    // });
 
     // Safety check: ensure engine exists and has the method
     if (!state.engine || typeof state.engine.getTeamFinances !== 'function') {
