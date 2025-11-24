@@ -17,7 +17,7 @@ import useMatchStore from '../../../../stores/matchStore';
 import useTeamStore from '../../../../stores/teamStore';
 import BattingAccelerationPanel from './BattingAccelerationPanel';
 import BowlingPlansPanel from './BowlingPlansPanel';
-import FieldFormationPanel from './FieldFormationPanel';
+import FieldingTacticsPanel from './FieldingTacticsPanel';
 
 export default function TacticsHub() {
   const [activeTab, setActiveTab] = useState('batting');
@@ -87,7 +87,7 @@ export default function TacticsHub() {
 
         {activeTab === 'bowling' && <BowlingPlansPanel />}
 
-        {activeTab === 'fielding' && <FieldFormationPanel />}
+        {activeTab === 'fielding' && <FieldingTacticsPanel />}
       </div>
     </div>
   );

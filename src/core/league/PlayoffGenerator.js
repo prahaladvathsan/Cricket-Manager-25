@@ -28,7 +28,7 @@ class PlayoffGenerator {
     // Qualifier 1: 1st vs 2nd
     fixtures.push({
       matchId: 'playoff_q1',
-      matchday: 91, // After 90 league matches
+      matchday: 91, // Day 1 of playoffs
       round: 'Qualifier 1',
       homeTeam: top4[0].clubId,
       homeTeamName: top4[0].clubName,
@@ -43,7 +43,7 @@ class PlayoffGenerator {
     // Eliminator: 3rd vs 4th
     fixtures.push({
       matchId: 'playoff_eliminator',
-      matchday: 91,
+      matchday: 92, // Day 2 of playoffs
       round: 'Eliminator',
       homeTeam: top4[2].clubId,
       homeTeamName: top4[2].clubName,
@@ -58,7 +58,7 @@ class PlayoffGenerator {
     // Qualifier 2: To be determined after Q1 and Eliminator
     fixtures.push({
       matchId: 'playoff_q2',
-      matchday: 92,
+      matchday: 93, // Day 3 of playoffs
       round: 'Qualifier 2',
       homeTeam: null, // TBD: Loser of Q1
       homeTeamName: 'TBD (Loser Q1)',
@@ -73,7 +73,7 @@ class PlayoffGenerator {
     // Final: To be determined after Q1 and Q2
     fixtures.push({
       matchId: 'playoff_final',
-      matchday: 93,
+      matchday: 94, // Day 4 of playoffs
       round: 'Final',
       homeTeam: null, // TBD: Winner of Q1
       homeTeamName: 'TBD (Winner Q1)',
@@ -94,10 +94,22 @@ class PlayoffGenerator {
    * Update playoff fixtures after match results
    * @param {Array} playoffFixtures - Current playoff fixtures
    * @param {Object} result - Latest match result
+   * @param {Object} clubs - Club data map (optional, for getting team names)
    * @returns {Array} Updated playoff fixtures
    */
-  updatePlayoffFixtures(playoffFixtures, result) {
+  updatePlayoffFixtures(playoffFixtures, result, clubs = {}) {
     const updatedFixtures = [...playoffFixtures];
+
+    // Helper to get team name
+    const getTeamName = (teamId) => {
+      if (clubs[teamId]) {
+        return clubs[teamId].name;
+      }
+      // Fallback: try to get from result object
+      if (teamId === result.homeTeam) return result.homeTeamName;
+      if (teamId === result.awayTeam) return result.awayTeamName;
+      return teamId; // Last resort: use ID as name
+    };
 
     // Handle Qualifier 1 result
     if (result.matchId === 'playoff_q1') {
@@ -108,14 +120,14 @@ class PlayoffGenerator {
       const finalMatch = updatedFixtures.find(f => f.matchId === 'playoff_final');
       if (finalMatch) {
         finalMatch.homeTeam = winner;
-        finalMatch.homeTeamName = result.winnerName;
+        finalMatch.homeTeamName = getTeamName(winner);
       }
 
       // Update Q2 with Q1 loser
       const q2Match = updatedFixtures.find(f => f.matchId === 'playoff_q2');
       if (q2Match) {
         q2Match.homeTeam = loser;
-        q2Match.homeTeamName = result.homeTeam === loser ? result.homeTeamName : result.awayTeamName;
+        q2Match.homeTeamName = getTeamName(loser);
         q2Match.status = 'scheduled'; // Can now be played
       }
     }
@@ -128,7 +140,7 @@ class PlayoffGenerator {
       const q2Match = updatedFixtures.find(f => f.matchId === 'playoff_q2');
       if (q2Match) {
         q2Match.awayTeam = winner;
-        q2Match.awayTeamName = result.winnerName;
+        q2Match.awayTeamName = getTeamName(winner);
         q2Match.status = 'scheduled'; // Can now be played
       }
     }
@@ -141,7 +153,7 @@ class PlayoffGenerator {
       const finalMatch = updatedFixtures.find(f => f.matchId === 'playoff_final');
       if (finalMatch) {
         finalMatch.awayTeam = winner;
-        finalMatch.awayTeamName = result.winnerName;
+        finalMatch.awayTeamName = getTeamName(winner);
         finalMatch.status = 'scheduled'; // Can now be played
       }
     }

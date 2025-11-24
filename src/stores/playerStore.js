@@ -44,6 +44,7 @@ const usePlayerStore = create(
     const playersMap = {};
     const available = [];
     let bowlingTypeAssigned = 0;
+    let primaryPlaystylesFilled = 0;
 
     playersData.forEach(player => {
       // Assign random bowlingType if null
@@ -52,7 +53,69 @@ const usePlayerStore = create(
         bowlingTypeAssigned++;
       }
 
-      // Players from master database already have playstyleRatings, topPlaystyles, and primaryPlaystyle
+      // Ensure all players have primary playstyles in all disciplines
+      // Primary playstyle = highest rated playstyle in each discipline
+      if (!player.primaryPlaystyle) {
+        player.primaryPlaystyle = { batting: null, bowling: null, fielding: null };
+      }
+
+      // Fill missing batting primary playstyle
+      if (!player.primaryPlaystyle.batting && player.playstyleRatings?.batting) {
+        const battingRatings = player.playstyleRatings.batting;
+        let highestRating = 0;
+        let highestPlaystyle = null;
+
+        for (const [playstyleName, rating] of Object.entries(battingRatings)) {
+          if (rating > highestRating) {
+            highestRating = rating;
+            highestPlaystyle = playstyleName;
+          }
+        }
+
+        if (highestPlaystyle) {
+          player.primaryPlaystyle.batting = highestPlaystyle;
+          primaryPlaystylesFilled++;
+        }
+      }
+
+      // Fill missing bowling primary playstyle
+      if (!player.primaryPlaystyle.bowling && player.playstyleRatings?.bowling) {
+        const bowlingRatings = player.playstyleRatings.bowling;
+        let highestRating = 0;
+        let highestPlaystyle = null;
+
+        for (const [playstyleName, rating] of Object.entries(bowlingRatings)) {
+          if (rating > highestRating) {
+            highestRating = rating;
+            highestPlaystyle = playstyleName;
+          }
+        }
+
+        if (highestPlaystyle) {
+          player.primaryPlaystyle.bowling = highestPlaystyle;
+          primaryPlaystylesFilled++;
+        }
+      }
+
+      // Fill missing fielding primary playstyle (mainly for wicket-keepers)
+      if (!player.primaryPlaystyle.fielding && player.playstyleRatings?.fielding) {
+        const fieldingRatings = player.playstyleRatings.fielding;
+        let highestRating = 0;
+        let highestPlaystyle = null;
+
+        for (const [playstyleName, rating] of Object.entries(fieldingRatings)) {
+          if (rating > highestRating) {
+            highestRating = rating;
+            highestPlaystyle = playstyleName;
+          }
+        }
+
+        if (highestPlaystyle) {
+          player.primaryPlaystyle.fielding = highestPlaystyle;
+          primaryPlaystylesFilled++;
+        }
+      }
+
       playersMap[player.id] = player;
       if (!player.currentTeam) {
         available.push(player.id);
@@ -62,6 +125,9 @@ const usePlayerStore = create(
     console.log(`✅ Initialized ${playersData.length} players with pre-calculated playstyle data`);
     if (bowlingTypeAssigned > 0) {
       console.log(`✅ Assigned random bowlingType to ${bowlingTypeAssigned} players`);
+    }
+    if (primaryPlaystylesFilled > 0) {
+      console.log(`✅ Filled ${primaryPlaystylesFilled} missing primary playstyles`);
     }
 
     return {
@@ -149,6 +215,18 @@ const usePlayerStore = create(
       [playerId]: { ...state.players[playerId], currentTeam: teamId }
     },
     availablePlayers: state.availablePlayers.filter(id => id !== playerId)
+  })),
+
+  /**
+   * Set player's sold price from auction
+   * @param {string} playerId - Player ID
+   * @param {number} soldPrice - Sold price in dollars
+   */
+  setPlayerSoldPrice: (playerId, soldPrice) => set((state) => ({
+    players: {
+      ...state.players,
+      [playerId]: { ...state.players[playerId], soldPrice }
+    }
   })),
 
   /**

@@ -103,7 +103,6 @@
         "duration": "number",
         "retentionStatus": "string"
       },
-      "rating": "number",
       "playstyleRatings": {
         "description": "All playstyle ratings calculated from player attributes (0-100 scale)",
         "batting": {
@@ -134,10 +133,14 @@
           "Flat Spinner": "number 0-100 (spin)",
           "Mystery Spinner": "number 0-100 (spin)",
           "Containment Spinner": "number 0-100 (spin)"
+        },
+        "fielding": {
+          "description": "Fielding playstyles - all players have ratings, extensible for future fielding playstyles",
+          "Wicketkeeper": "number 0-100 - Specialist wicketkeeper rating"
         }
       },
       "topPlaystyles": {
-        "description": "Top 3 playstyles for each category with ratings",
+        "description": "Top 3-5 playstyles for each category with ratings",
         "batting": [
           {
             "name": "string - Playstyle name",
@@ -165,12 +168,14 @@
             "name": "string - Playstyle name",
             "rating": "number 0-100"
           }
-        ]
+        ],
+        "fielding": "array - Empty [] for non-wicket-keepers, populated for wicket-keepers with top fielding playstyles"
       },
       "primaryPlaystyle": {
         "description": "Player's primary (highest rated) playstyle for their role",
         "batting": "string - Name of primary batting playstyle | null",
-        "bowling": "string - Name of primary bowling playstyle | null"
+        "bowling": "string - Name of primary bowling playstyle | null",
+        "fielding": "string - Name of primary fielding playstyle | null (only populated for wicket-keepers)"
       },
       "tactics": {
         "bowlingStylePreferences": {

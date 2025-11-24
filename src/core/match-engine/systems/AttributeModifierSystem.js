@@ -60,30 +60,45 @@ class AttributeModifierSystem {
       const conditionsMet = this.evaluateConditions(modifier.conditions, matchContext);
 
       if (conditionsMet) {
-        // Apply effects
+        // Calculate effect details before applying
+        const effectDetails = [];
+
         for (const effect of modifier.effects) {
-          // Check if effect targets opponent
+          // Get current value before modification
+          const targetPlayer = (effect.targetPlayer === 'batsman' && modifiedOpponent) ? modifiedOpponent : modifiedPlayer;
+          const currentValue = this.getAttributeValue(targetPlayer, effect.attribute);
+
+          if (currentValue !== null && currentValue !== undefined) {
+            // Calculate the actual effect value
+            let effectValue = 0;
+            if (effect.scalingFactor !== undefined) {
+              effectValue = Math.round(currentValue * playstyleRating * effect.scalingFactor * 100) / 100;
+            } else if (effect.flatBonus !== undefined) {
+              effectValue = effect.flatBonus;
+            } else if (effect.flatPenalty !== undefined) {
+              effectValue = -effect.flatPenalty;
+            }
+
+            effectDetails.push({
+              attribute: effect.attribute,
+              value: effectValue,
+              isPositive: effectValue > 0
+            });
+          }
+
+          // Now apply the effect
           if (effect.targetPlayer === 'batsman' && modifiedOpponent) {
-            this.applyEffect(
-              modifiedOpponent,
-              effect,
-              playstyleRating,
-              matchContext
-            );
+            this.applyEffect(modifiedOpponent, effect, playstyleRating, matchContext);
           } else {
-            this.applyEffect(
-              modifiedPlayer,
-              effect,
-              playstyleRating,
-              matchContext
-            );
+            this.applyEffect(modifiedPlayer, effect, playstyleRating, matchContext);
           }
         }
 
         appliedModifiers.push({
           name: modifier.name,
           sideEffect: modifier.sideEffect || false,
-          effects: modifier.effects.length
+          effectDetails: effectDetails,
+          conditions: modifier.conditions || [] // Include conditions for UI display
         });
       }
     }

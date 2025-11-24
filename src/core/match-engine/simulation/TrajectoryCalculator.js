@@ -7,6 +7,7 @@
 import mentalityConfig from '../../../data/config/mentality-config.json';
 import trajectoryConfig from '../../../data/config/trajectory-config.json';
 import shotAnglesConfig from '../../../data/config/shot_angles_config.json';
+import physicsConfig from '../../../data/config/physics-config.json';
 
 // DEBUG: Set to true to enable trajectory calculation debugging
 const DEBUG_TRAJECTORY = false;
@@ -39,6 +40,9 @@ class TrajectoryCalculator {
     this.wicketConfig = mentalityConfig.wicketTypes;
     this.trajectoryConfig = trajectoryConfig;
     this.shotAngles = shotAnglesConfig; // Ranked list of 362 shot angles
+
+    // Physics configuration - striker position
+    this.strikerOffset = physicsConfig.fieldDimensions.strikerOffset; // 10.06m from center on positive Y axis
   }
 
   /**
@@ -495,7 +499,7 @@ class TrajectoryCalculator {
 
         const directionRadians = direction * Math.PI / 180;
         const bounceX = bounceDistance * Math.cos(directionRadians);
-        const bounceY = -11 + bounceDistance * Math.sin(directionRadians); // Account for striker offset
+        const bounceY = this.strikerOffset + bounceDistance * Math.sin(directionRadians); // Striker at (0, +strikerOffset)
 
         let minDistance = Infinity;
 
@@ -530,9 +534,9 @@ class TrajectoryCalculator {
    * @returns {number} Angle in degrees (0-360)
    */
   calculateAngleFromStriker(x, y) {
-    // Striker is at (0, -11), fielder is at (x, y)
+    // Striker is at (0, strikerOffset) on positive Y axis
     const dx = x - 0;
-    const dy = y - (-11);
+    const dy = y - this.strikerOffset;
     let angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
     // Normalize to 0-360 range
@@ -562,13 +566,6 @@ class TrajectoryCalculator {
     return wicketTypes[randomIndex];
   }
 
-  /**
-   * Get dummy direction (placeholder for future direction system)
-   * @returns {number} Random direction
-   */
-  getDummyDirection() {
-    return Math.round(Math.random() * 360);
-  }
 
   /**
    * Get default result for error cases

@@ -12,10 +12,11 @@ import { getPrimaryBowlingRating, formatRating } from '../../../utils/ratingHelp
 import PlayerName from '../../shared/PlayerName';
 
 const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { getTeamTactics, updateBowlingPlans, updateBowlingRotation, updatePlaystyleOverride } = useTeamStore();
+  const { updateBowlingPlans, updateBowlingRotation, updatePlaystyleOverride, autoAssignBowlingRotation } = useTeamStore();
   const { players } = usePlayerStore();
 
-  const teamTactics = getTeamTactics(teamId);
+  // Subscribe to team tactics changes to ensure UI updates when playing XI changes
+  const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
 
   // Over assignments: array of 20 player IDs (or null for unassigned)
   const overAssignments = useMemo(() => {
@@ -50,11 +51,11 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     return { primaryBowlers: primary, partTimers: partTime };
   }, [teamTactics?.squadSelection, players]);
 
-  // Get unique bowlers assigned
-  const assignedBowlers = useMemo(() => {
-    const uniqueIds = [...new Set(overAssignments.filter(id => id !== null))];
-    return uniqueIds.map(id => players[id]).filter(Boolean);
-  }, [overAssignments, players]);
+  // Get all bowlers from playing XI (for bowling plans section)
+  const allBowlers = useMemo(() => {
+    // Combine primary bowlers and part-timers
+    return [...primaryBowlers, ...partTimers];
+  }, [primaryBowlers, partTimers]);
 
   // Handle over assignment change
   const handleOverAssignment = (overIndex, playerId) => {
@@ -63,82 +64,19 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     updateBowlingRotation(teamId, newAssignments);
   };
 
-  // Auto-assign bowling rotation using intelligent selection
+  // Auto-assign bowling rotation using teamStore method
   const handleAutoAssign = () => {
-    const newAssignments = [];
-    const oversBowled = {}; // Track overs bowled per player
-    const maxOversPerBowler = 4;
-    let previousBowler = null;
-
-    // Get all eligible bowlers (primary bowlers + part-timers)
-    const eligibleBowlers = [...primaryBowlers, ...partTimers];
-
-    if (eligibleBowlers.length === 0) {
+    if (primaryBowlers.length === 0 && partTimers.length === 0) {
       alert('No bowlers available for auto-assignment');
       return;
     }
 
-    // Initialize overs bowled
-    eligibleBowlers.forEach(bowler => {
-      oversBowled[bowler.id] = 0;
-    });
-
-    // Assign each over (0-19)
-    for (let overIndex = 0; overIndex < 20; overIndex++) {
-      // Determine phase for this over
-      let phase = 'powerplay';
-      if (overIndex >= 6 && overIndex < 12) phase = 'middle';
-      else if (overIndex >= 12 && overIndex < 16) phase = 'middle';
-      else if (overIndex >= 16) phase = 'death';
-
-      // Score each eligible bowler
-      const scoredBowlers = eligibleBowlers
-        .filter(bowler =>
-          bowler.id !== previousBowler &&
-          oversBowled[bowler.id] < maxOversPerBowler
-        )
-        .map(bowler => {
-          const bowlerPlaystyle = bowler.primaryPlaystyle?.bowling || '';
-          const playstyleRatings = bowler.playstyleRatings?.bowling || {};
-          const bowlingRating = getPrimaryBowlingRating(bowler);
-
-          // Base score from bowling rating
-          let score = bowlingRating / 10;
-
-          // Phase-based bonuses
-          const phaseBonuses = {
-            powerplay: { 'Swing Bowler': 3, 'Wicket-Taker': 3 },
-            middle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
-            death: { 'Death Specialist': 4, 'Yorker Specialist': 3 },
-          };
-          score += phaseBonuses[phase]?.[bowlerPlaystyle] || 0;
-
-          // Rotation bonus - prefer bowlers with fewer overs bowled
-          score += (maxOversPerBowler - oversBowled[bowler.id]) * 1.5;
-
-          // Penalty for part-timers (prefer primary bowlers)
-          if (bowler.role !== 'bowler' && bowler.role !== 'all-rounder') {
-            score -= 2;
-          }
-
-          return { bowler, score };
-        });
-
-      // Sort by score and select best
-      scoredBowlers.sort((a, b) => b.score - a.score);
-
-      if (scoredBowlers.length > 0) {
-        const selectedBowler = scoredBowlers[0].bowler;
-        newAssignments[overIndex] = selectedBowler.id;
-        oversBowled[selectedBowler.id]++;
-        previousBowler = selectedBowler.id;
-      } else {
-        // Fallback: assign null if no eligible bowler (shouldn't happen)
-        newAssignments[overIndex] = null;
-      }
+    const newAssignments = autoAssignBowlingRotation(teamId);
+    if (newAssignments.length === 20) {
+      updateBowlingRotation(teamId, newAssignments);
+    } else {
+      alert('Failed to auto-assign bowling rotation. Please check your playing XI.');
     }
-
-    updateBowlingRotation(teamId, newAssignments);
   };
 
   // Get available bowling playstyles for a player
@@ -347,24 +285,26 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           </h3>
         </div>
 
-        {assignedBowlers.length === 0 ? (
+        {allBowlers.length === 0 ? (
           <p className="text-xs text-text-secondary text-center py-4">
-            Assign bowlers to overs to set their bowling plans
+            No bowlers in playing XI. Add bowlers in the Squad tab.
           </p>
         ) : (
           <div className="space-y-1 max-h-[600px] overflow-y-auto">
-            {assignedBowlers.map(player => {
+            {allBowlers.map(player => {
               const bowlingType = player.bowlingType || 'pace';
               const plans = getBowlingPlans(bowlingType);
-              const currentPlans = teamTactics?.bowlingPlans[player.id] || {
-                lineLength: player.tactics?.defaultBowlingPlans?.lineLength || 'Wide Line',
-                variation: player.tactics?.defaultBowlingPlans?.variation || 'Consistent Accuracy'
-              };
+              const currentPlans = teamTactics?.bowlingPlans[player.id];
+
+              // If no plans set yet, skip this player
+              if (!currentPlans) {
+                return null; // Skip rendering this player's plans until they're initialized
+              }
 
               const lineLengthPlan = plans.lineLengthPlans.find(p => p.name === currentPlans.lineLength);
               const variationPlan = plans.variationPlans.find(p => p.name === currentPlans.variation);
               const overrides = teamTactics?.playstyleOverrides?.[player.id];
-              const playstyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
+              const playstyle = overrides?.bowling || player.primaryPlaystyle?.bowling || '';
               const rating = getPrimaryBowlingRating(player);
               const isBowlingPrimary = playstyle === player.primaryPlaystyle?.bowling;
               const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);

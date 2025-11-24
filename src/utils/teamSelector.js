@@ -5,6 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { getPlayerRating } from './ratingHelper.js';
 
 /**
  * Team selector for creating balanced cricket teams
@@ -75,8 +76,8 @@ class TeamSelector {
    */
   getTopPlayers(count) {
     return this.players
-      .filter(player => player.rating > 3.0) // Filter out very low rated
-      .sort((a, b) => b.rating - a.rating)
+      .filter(player => getPlayerRating(player) > 30) // Filter out very low rated (30/100 scale)
+      .sort((a, b) => getPlayerRating(b) - getPlayerRating(a))
       .slice(0, count);
   }
 
@@ -197,7 +198,7 @@ class TeamSelector {
   calculateTeamRating(players) {
     if (players.length === 0) return 0;
 
-    const totalRating = players.reduce((sum, player) => sum + player.rating, 0);
+    const totalRating = players.reduce((sum, player) => sum + getPlayerRating(player), 0);
     return Math.round((totalRating / players.length) * 10) / 10;
   }
 
@@ -211,10 +212,11 @@ class TeamSelector {
 
     console.log('\nPlayers:');
     team.players
-      .sort((a, b) => b.rating - a.rating)
+      .sort((a, b) => getPlayerRating(b) - getPlayerRating(a))
       .forEach((player, index) => {
         const captain = player.id === team.captain ? ' (C)' : '';
-        console.log(`${index + 1}. ${player.name} (${player.role}) - ${player.rating}${captain}`);
+        const rating = getPlayerRating(player).toFixed(1);
+        console.log(`${index + 1}. ${player.name} (${player.role}) - ${rating}${captain}`);
       });
   }
 

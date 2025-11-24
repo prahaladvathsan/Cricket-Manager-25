@@ -74,7 +74,11 @@ const useMatchStore = create(
     nonStriker: null, // player at non-striker end
     bowler: null, // current bowler
     isComplete: false,
-    battedPlayers: [] // Track all players who have batted in this innings
+    battedPlayers: [], // Track all players who have batted in this innings
+    // Fielding state (dynamically updated during match)
+    currentFieldFormation: 'neutral_orthodox', // Current fielding formation ID
+    fieldPositions: [], // Array of 11 position objects with x, y coordinates
+    fieldPlayerAssignments: {} // Position index → Player ID mapping
   },
 
   // Current Ball State
@@ -102,6 +106,16 @@ const useMatchStore = create(
   matchConditions: {
     // playerId: { energy: 100, confidence: 50, fatigue: 0 }
   },
+
+  // Match Tracking (for confidence/energy calculations)
+  matchTracking: {
+    consecutiveDots: {},      // playerId → consecutive dot ball count
+    batsmanMilestones: {},    // playerId → [25, 50, ...] milestones reached
+    overTargets: {}           // teamId → required run rate
+  },
+
+  // Current Modifier Breakdown (for UI display)
+  currentModifierBreakdown: null, // { striker: {...}, bowler: {...}, strikerName, bowlerName }
 
   // Commentary
   commentary: [],
@@ -183,7 +197,10 @@ const useMatchStore = create(
         striker: null, // Will be set when opening batsmen are selected
         nonStriker: null,
         bowler: null,
-        isComplete: false
+        isComplete: false,
+        currentFieldFormation: 'neutral_orthodox',
+        fieldPositions: [],
+        fieldPlayerAssignments: {}
       },
       currentBall: {
         over: 0,
@@ -259,6 +276,21 @@ const useMatchStore = create(
     currentBall: {
       ...state.currentBall,
       bowler
+    }
+  })),
+
+  /**
+   * Update fielding formation and positions during match
+   * @param {string} formation - Formation template ID
+   * @param {Array} positions - Array of 11 position objects (optional)
+   * @param {Object} assignments - Position index to player ID mapping (optional)
+   */
+  updateFieldFormation: (formation, positions = null, assignments = null) => set((state) => ({
+    innings: {
+      ...state.innings,
+      currentFieldFormation: formation,
+      ...(positions && { fieldPositions: positions }),
+      ...(assignments && { fieldPlayerAssignments: assignments })
     }
   })),
 
@@ -382,7 +414,10 @@ const useMatchStore = create(
         nonStriker: null,
         bowler: null,
         isComplete: false,
-        battedPlayers: [] // Reset for second innings
+        battedPlayers: [], // Reset for second innings
+        currentFieldFormation: 'neutral_orthodox',
+        fieldPositions: [],
+        fieldPlayerAssignments: {}
       },
       teams: {
         batting: {
@@ -480,7 +515,10 @@ const useMatchStore = create(
       striker: null,
       nonStriker: null,
       bowler: null,
-      isComplete: false
+      isComplete: false,
+      currentFieldFormation: 'neutral_orthodox',
+      fieldPositions: [],
+      fieldPlayerAssignments: {}
     },
     currentBall: {
       over: 0,
@@ -543,7 +581,62 @@ const useMatchStore = create(
       requiredRate: innings.target ?
         ((innings.target - teams.batting.totalScore) / (currentBall.matchSituation.ballsLeft / 6)) : null
     };
-  }
+  },
+
+  /**
+   * Get player's confidence level name
+   * @param {string} playerId - Player ID
+   * @returns {string} Confidence level name
+   */
+  getPlayerConfidenceLevel: (playerId) => {
+    const state = get();
+    const confidence = state.matchConditions[playerId]?.confidence || 50;
+
+    if (confidence >= 81) return 'Sky-High';
+    if (confidence >= 61) return 'High';
+    if (confidence >= 41) return 'Normal';
+    if (confidence >= 21) return 'Low';
+    return 'Shattered';
+  },
+
+  /**
+   * Get player's energy level name
+   * @param {string} playerId - Player ID
+   * @returns {string} Energy level name
+   */
+  getPlayerEnergyLevel: (playerId) => {
+    const state = get();
+    const energy = state.matchConditions[playerId]?.energy || 100;
+
+    if (energy >= 80) return 'Fresh';
+    if (energy >= 60) return 'Slightly Tired';
+    if (energy >= 40) return 'Tired';
+    if (energy >= 20) return 'Exhausted';
+    return 'Gassed';
+  },
+
+  /**
+   * Update player conditions
+   * @param {string} playerId - Player ID
+   * @param {Object} updates - Condition updates { confidence?, energy?, fatigue? }
+   */
+  updatePlayerConditions: (playerId, updates) => set((state) => ({
+    matchConditions: {
+      ...state.matchConditions,
+      [playerId]: {
+        ...(state.matchConditions[playerId] || {}),
+        ...updates
+      }
+    }
+  })),
+
+  /**
+   * Set modifier breakdown for UI display
+   * @param {Object} breakdown - Modifier breakdown { striker, bowler, strikerName, bowlerName }
+   */
+  setModifierBreakdown: (breakdown) => set(() => ({
+    currentModifierBreakdown: breakdown
+  }))
     }),
     {
       name: 'cm25-match-store',

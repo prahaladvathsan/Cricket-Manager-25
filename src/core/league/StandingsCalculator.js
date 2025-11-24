@@ -75,11 +75,18 @@ class StandingsCalculator {
   updateRunsAndBalls(standing, battingInnings, bowlingInnings) {
     // Runs scored and balls faced (when batting)
     standing.runsScored += battingInnings.totalScore;
-    standing.ballsFaced += battingInnings.ballsBowled; // Balls faced by batting team
+
+    // CRITICAL NRR RULE: If team was all out (10 wickets), use full quota (120 balls for T20)
+    // This prevents teams that get bowled out from having artificially inflated run rates
+    const battingBalls = battingInnings.wickets === 10 ? 120 : battingInnings.ballsBowled;
+    standing.ballsFaced += battingBalls;
 
     // Runs conceded and balls bowled (when bowling)
     standing.runsConceded += bowlingInnings.totalScore;
-    standing.ballsBowled += bowlingInnings.ballsBowled;
+
+    // CRITICAL NRR RULE: If opponent was all out, use full quota (120 balls for T20)
+    const bowlingBalls = bowlingInnings.wickets === 10 ? 120 : bowlingInnings.ballsBowled;
+    standing.ballsBowled += bowlingBalls;
   }
 
   /**

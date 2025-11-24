@@ -64,19 +64,13 @@ export default function StatsHub() {
 
       {/* Tab Content - Clickable to expand */}
       <div
-        className="flex-1 overflow-y-auto p-4 cursor-pointer hover:bg-bg-tertiary/30 transition-colors"
+        className="flex-1 overflow-y-auto p-4 cursor-pointer hover:bg-bg-tertiary/30 transition-colors [&::-webkit-scrollbar]:hidden"
         onClick={() => setExpandedModal(activeTab)}
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}
       >
-        <style jsx>{`
-          .flex-1::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-
         {/* Content */}
         <div>
           {activeTab === 'scorecard' && <LiveScorecard />}

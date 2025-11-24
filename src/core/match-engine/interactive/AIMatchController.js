@@ -70,7 +70,7 @@ class AIMatchController {
   /**
    * AI selects field formation based on match situation
    * @param {Object} matchState - Current match state
-   * @returns {string} Field formation ('attacking', 'neutral', 'defensive')
+   * @returns {string} Field formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
    */
   selectFieldFormation(matchState) {
     const { currentBall, innings, teams } = matchState;
@@ -78,12 +78,12 @@ class AIMatchController {
 
     // Powerplay (overs 1-6): Attacking
     if (currentBall.over < 6) {
-      return 'attacking';
+      return 'attacking_pace_cordon';
     }
 
     // Death overs (16-20): Defensive
     if (currentBall.over >= 15) {
-      return 'defensive';
+      return 'defensive_ring_fence';
     }
 
     // Second innings - consider target
@@ -94,15 +94,15 @@ class AIMatchController {
 
       // If batting team needs high run rate, go defensive
       if (reqRunRate > 10) {
-        return 'defensive';
+        return 'defensive_ring_fence';
       } else if (reqRunRate < 6) {
         // If they're cruising, go attacking
-        return 'attacking';
+        return 'attacking_pace_cordon';
       }
     }
 
     // Middle overs: Neutral (default)
-    return 'neutral';
+    return 'neutral_orthodox';
   }
 
   /**

@@ -11,9 +11,9 @@ import React from 'react';
  *
  * Coordinate System:
  * - Origin at center (0, 0)
- * - Y-axis points up (positive Y = top of screen, negative Y = bottom)
- * - Bowler/Non-striker at (0, -10.06) - BOTTOM of screen
- * - Keeper/Striker at (0, +10.06) - TOP of screen
+ * - Data: Positive Y = keeper/striker end, Negative Y = bowler end
+ * - Rendering: Y-axis is flipped via transform="scale(1, -1)"
+ * - Visual result: Keeper/striker at TOP, bowler at BOTTOM (correct orientation)
  * - All dimensions in meters
  * - SVG viewBox: -80 -80 160 160 (accommodates 70m boundary + padding)
  *
@@ -38,14 +38,16 @@ const CricketFieldSVG = ({ children, className = '' }) => {
       style={{ aspectRatio: '1 / 1' }}
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Background - Cricket Green */}
-      <rect
-        x="-80"
-        y="-80"
-        width="160"
-        height="160"
-        fill="#2D5F3F"
-      />
+      {/* Apply Y-axis flip: positive Y data = top of screen */}
+      <g transform="scale(1, -1)">
+        {/* Background - Cricket Green */}
+        <rect
+          x="-80"
+          y="-80"
+          width="160"
+          height="160"
+          fill="#2D5F3F"
+        />
 
       {/* Boundary Circle - 70m radius */}
       <circle
@@ -185,8 +187,46 @@ const CricketFieldSVG = ({ children, className = '' }) => {
         />
       </g>
 
-      {/* Render children (fielders, trajectories, etc.) on top of field */}
-      {children}
+        {/* Render children (fielders, trajectories, etc.) on top of field */}
+        {children}
+      </g>
+
+      {/* Zone Legend - Top Right Corner Overlay (outside flip for correct text orientation) */}
+      <g id="zone-legend" transform="translate(52, -65)">
+        {/* Semi-transparent background */}
+        <rect
+          x="0"
+          y="0"
+          width="24"
+          height="24"
+          fill="#1a1a1a"
+          opacity="0.9"
+          rx="1.5"
+        />
+
+        {/* Legend entries */}
+        <g transform="translate(2, 2.5)">
+          {/* Bowler/Keeper - BLACK */}
+          <circle cx="1.8" cy="1.8" r="1.2" fill="#000000" stroke="white" strokeWidth="0.15" />
+          <text x="4" y="2.5" fontSize="3" fill="white" fontWeight="600">B/K</text>
+
+          {/* Silly - Red */}
+          <circle cx="1.8" cy="5.5" r="1.2" fill="#EF4444" />
+          <text x="4" y="6.2" fontSize="3" fill="white" fontWeight="500">Silly</text>
+
+          {/* Close - Orange */}
+          <circle cx="1.8" cy="9.2" r="1.2" fill="#F97316" />
+          <text x="4" y="9.9" fontSize="3" fill="white" fontWeight="500">Close</text>
+
+          {/* Ring - Yellow */}
+          <circle cx="1.8" cy="12.9" r="1.2" fill="#EAB308" />
+          <text x="4" y="13.6" fontSize="3" fill="white" fontWeight="500">Ring</text>
+
+          {/* Boundary - Blue */}
+          <circle cx="1.8" cy="16.6" r="1.2" fill="#3B82F6" />
+          <text x="4" y="17.3" fontSize="3" fill="white" fontWeight="500">Boundary</text>
+        </g>
+      </g>
     </svg>
   );
 };

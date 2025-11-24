@@ -4,7 +4,10 @@
  * @module core/match-engine/FieldPositioningSystem
  */
 
-import fieldConfig from '../../../data/config/field-positioning-config.json';
+import {
+  getFormationWithPositions,
+  getFieldDimensions
+} from '../../../utils/fieldingFormationResolver.js';
 
 /**
  * @typedef {Object} FielderPosition
@@ -24,9 +27,8 @@ import fieldConfig from '../../../data/config/field-positioning-config.json';
 
 class FieldPositioningSystem {
   constructor() {
-    this.fieldDimensions = fieldConfig.fieldDimensions;
-    this.formations = fieldConfig.formations;
-    this.currentFormation = 'neutral';
+    this.fieldDimensions = getFieldDimensions();
+    this.currentFormation = 'neutral_orthodox';
     this.fieldingPositions = [];
 
     // console.log('✅ FieldPositioningSystem initialized'); // Suppressed for cleaner output
@@ -34,12 +36,14 @@ class FieldPositioningSystem {
 
   /**
    * Set field formation and assign fielders
-   * @param {string} formationType - Formation type (attacking, neutral, defensive)
+   * @param {string} formationType - Formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox')
    * @param {Object[]} fielders - Array of 11 fielders (including bowler and keeper)
    * @returns {FielderPosition[]} Positioned fielders
    */
   setFormation(formationType, fielders) {
-    if (!this.formations[formationType]) {
+    const formation = getFormationWithPositions(formationType);
+
+    if (!formation) {
       throw new Error(`Unknown formation type: ${formationType}`);
     }
 
@@ -48,8 +52,8 @@ class FieldPositioningSystem {
     }
 
     this.currentFormation = formationType;
-    const formation = this.formations[formationType];
 
+    // Map fielders to resolved positions
     this.fieldingPositions = formation.positions.map((position, index) => ({
       ...position,
       fielder: fielders[index] || null
@@ -188,13 +192,13 @@ class FieldPositioningSystem {
   }
 
   /**
-   * Get formation information
-   * @param {string} formationType - Formation type
-   * @returns {Formation} Formation details
+   * Get formation information with resolved positions
+   * @param {string} formationType - Formation ID
+   * @returns {Formation} Formation details with resolved position data
    */
   getFormationInfo(formationType = null) {
     const type = formationType || this.currentFormation;
-    return this.formations[type];
+    return getFormationWithPositions(type);
   }
 
   /**

@@ -18,6 +18,7 @@ import usePlayerStore from '../../../../stores/playerStore';
 import useTeamStore from '../../../../stores/teamStore';
 import { Target, Zap, Star, List } from 'lucide-react';
 import PlayerName from '../../../shared/PlayerName';
+import ConditionBar from '../../../shared/ConditionBar';
 import bowlingPlansConfig from '../../../../data/config/bowling-plans-config.json';
 
 // Helper function to convert config plans to UI format
@@ -67,6 +68,7 @@ const PlanSelector = ({ label, currentPlan, plans, onChange, icon: Icon }) => {
  */
 const BowlerRow = ({ playerId, isCurrentBowler, bowlingPlans, onUpdatePlan }) => {
   const getPlayer = usePlayerStore(state => state.getPlayer);
+  const matchConditions = useMatchStore(state => state.matchConditions);
   const player = getPlayer(playerId);
 
   if (!player) return null;
@@ -96,7 +98,7 @@ const BowlerRow = ({ playerId, isCurrentBowler, bowlingPlans, onUpdatePlan }) =>
         : 'bg-bg-tertiary border-border-primary'
     }`}>
       {/* Bowler info */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 space-y-1">
         <div className="flex items-center gap-2">
           <PlayerName playerId={playerId} />
           <span className="text-xs text-text-secondary">
@@ -107,6 +109,19 @@ const BowlerRow = ({ playerId, isCurrentBowler, bowlingPlans, onUpdatePlan }) =>
               BOWLING
             </span>
           )}
+        </div>
+        {/* Condition bars */}
+        <div className="flex gap-1.5">
+          <ConditionBar
+            type="confidence"
+            value={matchConditions[playerId]?.confidence || 50}
+            showValue={false}
+          />
+          <ConditionBar
+            type="energy"
+            value={matchConditions[playerId]?.energy || 100}
+            showValue={false}
+          />
         </div>
       </div>
 
@@ -335,11 +350,24 @@ export default function BowlingPlansPanel() {
   const bowlingTeamTactics = teamTactics[bowlingTeam.id];
   const playingXI = bowlingTeamTactics?.squadSelection || bowlingTeam.squad;
 
-  // Get all bowlers from playing XI (filter players who have bowling attributes)
+  // Get all bowlers from playing XI (primary bowlers + part-timers with bowling rating > 40)
   const getPlayer = usePlayerStore(state => state.getPlayer);
+
+  // Helper to calculate primary bowling rating
+  const getPrimaryBowlingRating = (player) => {
+    if (!player?.attributes?.bowling) return 0;
+    const bowlingAttrs = player.attributes.bowling;
+    return Object.values(bowlingAttrs).reduce((a, b) => a + b, 0) / Object.keys(bowlingAttrs).length;
+  };
+
   const bowlers = playingXI
     .map(playerId => getPlayer(playerId))
-    .filter(player => player && player.bowlingType && player.bowlingType !== 'none')
+    .filter(player => {
+      if (!player) return false;
+      const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
+      const bowlingRating = getPrimaryBowlingRating(player);
+      return isPrimary || bowlingRating > 40;
+    })
     .sort((a, b) => {
       // Sort: current bowler first, then by role (bowlers before all-rounders)
       if (a.id === currentBowler) return -1;

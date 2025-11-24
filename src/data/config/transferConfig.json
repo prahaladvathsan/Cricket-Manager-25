@@ -12,12 +12,21 @@
     },
     "midSeason": {
       "name": "Mid-Season Transfer Window",
-      "description": "Main transfer window during league stage",
+      "description": "Disabled - transfers only available during off-season",
       "startAfterMatchday": 45,
       "startAfterMatchWeek": 10,
       "duration": 14,
       "timing": "mid_season",
       "maxTransfersPerTeam": 5,
+      "enabled": false
+    },
+    "offSeason": {
+      "name": "Off-Season Transfer Window",
+      "description": "Extended transfer window during off-season (weeks 22-26)",
+      "startAfterMatchWeek": 22,
+      "duration": 35,
+      "timing": "off_season",
+      "maxTransfersPerTeam": 10,
       "enabled": true
     },
     "emergency": {

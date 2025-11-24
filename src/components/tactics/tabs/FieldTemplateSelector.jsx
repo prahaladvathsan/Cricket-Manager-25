@@ -1,18 +1,18 @@
 /**
  * @file FieldTemplateSelector.jsx
- * @description Component for selecting from 18 professional field templates
+ * @description Component for selecting from professional field formation templates
  */
 
 import React, { useState } from 'react';
 import { Zap, Shield, Activity, CheckCircle2 } from 'lucide-react';
-import fieldConfig from '../../../data/config/field-positioning-config.json';
+import { formationsConfig } from '../../../utils/fieldingFormationResolver.js';
 
 const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) => {
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all', 'attacking', 'balanced', 'defensive'
 
-  const formations = fieldConfig.formations;
+  const formations = formationsConfig.formations;
 
-  // Categorize templates
+  // Categorize templates based on formationStyle
   const categorizeTemplates = () => {
     const categories = {
       attacking: [],
@@ -21,17 +21,12 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) =>
     };
 
     Object.entries(formations).forEach(([id, template]) => {
-      // Filter by phase appropriateness
-      const isPhaseAppropriate =
-        phase === 'powerplay'
-          ? (template.phase === 'powerplay' || template.phase === 'any')
-          : (template.phase !== 'powerplay'); // Post-powerplay can use middle, death, any
+      // Categorize by formationStyle
+      const style = template.formationStyle || 'neutral';
 
-      if (!isPhaseAppropriate) return;
-
-      if (template.isAttacking) {
+      if (style === 'attacking') {
         categories.attacking.push({ id, ...template });
-      } else if (template.phase === 'death' || template.name.toLowerCase().includes('defensive')) {
+      } else if (style === 'defensive') {
         categories.defensive.push({ id, ...template });
       } else {
         categories.balanced.push({ id, ...template });
@@ -108,9 +103,7 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) =>
   };
 
   const getTemplateCategory = (template) => {
-    if (template.isAttacking) return 'attacking';
-    if (template.phase === 'death' || template.name.toLowerCase().includes('defensive')) return 'defensive';
-    return 'balanced';
+    return template.formationStyle || 'neutral';
   };
 
   return (

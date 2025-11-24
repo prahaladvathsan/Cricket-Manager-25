@@ -1,0 +1,297 @@
+{
+  "version": "3.0.0",
+  "description": "Fielding formations referencing master position IDs. 11 Players per formation (Bowler + WK + 9 Fielders).",
+  "lastUpdated": "2025-11-19",
+  "fieldDimensions": {
+    "boundaryRadius": 70,
+    "circleRadius": 30,
+    "description": "Reference dimensions only. Coordinates derived from fielding-positions-complete.json"
+  },
+  "formations": {
+    "attacking_pace_cordon": {
+      "id": "attacking_pace_cordon",
+      "name": "Attacking: Classic Pace Cordon",
+      "formationStyle": "attacking",
+      "description": "Aggressive new ball field. 3 Slips and a Gully. Only 2 fielders on boundary.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "second_slip",
+        "third_slip",
+        "gully",
+        "point",
+        "cover",
+        "mid_off",
+        "third_man",
+        "fine_leg"
+      ]
+    },
+    "attacking_off_trap": {
+      "id": "attacking_off_trap",
+      "name": "Attacking: Off-Side Trap",
+      "formationStyle": "attacking",
+      "description": "Heavy off-side presence for swing bowling. 2 Slips and a packed off-side ring.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "second_slip",
+        "gully",
+        "backward_point",
+        "cover_point",
+        "mid_off",
+        "mid_on",
+        "third_man",
+        "fine_leg"
+      ]
+    },
+    "attacking_spin_web": {
+      "id": "attacking_spin_web",
+      "name": "Attacking: Subcontinental Spin",
+      "formationStyle": "attacking",
+      "description": "Close catchers for turning ball. Slip, Silly Point, and Short Leg active.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "silly_point",
+        "short_leg",
+        "cover",
+        "mid_off",
+        "mid_on",
+        "mid_wicket",
+        "deep_mid_wicket",
+        "long_on"
+      ]
+    },
+    "attacking_bouncer_trap": {
+      "id": "attacking_bouncer_trap",
+      "name": "Attacking: Bodyline Press",
+      "formationStyle": "attacking",
+      "description": "Short ball strategy. Leg slip and Leg Gully in place to catch gloved pulls.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "leg_slip",
+        "short_leg",
+        "first_slip",
+        "short_third_man",
+        "mid_on",
+        "mid_off",
+        "point",
+        "fine_leg",
+        "deep_square_leg"
+      ]
+    },
+    "attacking_powerplay_press": {
+      "id": "attacking_powerplay_press",
+      "name": "Attacking: Powerplay Press",
+      "formationStyle": "attacking",
+      "description": "Modern T20 Powerplay. 1 Slip, energetic ring fielders stopping singles.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "backward_point",
+        "cover_point",
+        "cover",
+        "mid_off",
+        "mid_on",
+        "mid_wicket",
+        "third_man",
+        "fine_leg"
+      ]
+    },
+    "neutral_orthodox": {
+      "id": "neutral_orthodox",
+      "name": "Neutral: Orthodox",
+      "formationStyle": "neutral",
+      "description": "Balanced Test/ODI field. 1 Slip, 3 boundary riders for control.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "gully",
+        "cover",
+        "mid_off",
+        "mid_on",
+        "mid_wicket",
+        "third_man",
+        "deep_square_leg",
+        "long_off"
+      ]
+    },
+    "neutral_spin_squeeze": {
+      "id": "neutral_spin_squeeze",
+      "name": "Neutral: Spin Squeeze",
+      "formationStyle": "neutral",
+      "description": "Middle overs spin. 4 boundary riders to encourage risk, no close catchers.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "first_slip",
+        "point",
+        "cover",
+        "short_leg",
+        "short_fine_leg",
+        "deep_mid_wicket",
+        "long_on",
+        "deep_cover",
+        "deep_square_leg"
+      ]
+    },
+    "neutral_ring_field": {
+      "id": "neutral_ring_field",
+      "name": "Neutral: The Ring",
+      "formationStyle": "neutral",
+      "description": "No slips. Spread fielders on the 30-yard circle to cut off singles.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "backward_point",
+        "cover",
+        "extra_cover",
+        "mid_off",
+        "mid_on",
+        "mid_wicket",
+        "square_leg",
+        "third_man",
+        "deep_mid_wicket"
+      ]
+    },
+    "neutral_angle_control": {
+      "id": "neutral_angle_control",
+      "name": "Neutral: Angle Control",
+      "formationStyle": "neutral",
+      "description": "For angled seamers. Protection behind square on both sides.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "gully",
+        "point",
+        "mid_off",
+        "mid_on",
+        "mid_wicket",
+        "third_man",
+        "fine_leg",
+        "deep_cover",
+        "deep_square_leg"
+      ]
+    },
+    "neutral_middle_overs": {
+      "id": "neutral_middle_overs",
+      "name": "Neutral: Middle Overs",
+      "formationStyle": "neutral",
+      "description": "Standard containment. 4 deep, strong V protection.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "point",
+        "cover",
+        "mid_off",
+        "short_leg",
+        "short_fine_leg",
+        "long_on",
+        "long_off",
+        "deep_mid_wicket",
+        "deep_square_leg"
+      ]
+    },
+    "defensive_wide_yorker": {
+      "id": "defensive_wide_yorker",
+      "name": "Defensive: Off-Side Wide",
+      "formationStyle": "defensive",
+      "description": "Death overs strategy for wide yorkers. Packed off-side boundary.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "short_third_man",
+        "point",
+        "extra_cover",
+        "mid_on",
+        "third_man",
+        "deep_point",
+        "deep_point",
+        "long_off",
+        "long_on"
+      ]
+    },
+    "defensive_straight_lines": {
+      "id": "defensive_straight_lines",
+      "name": "Defensive: Straight Hit",
+      "formationStyle": "defensive",
+      "description": "Protection against straight lofted drives. Long On, Long Off, and Cow Corner.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "short_third_man",
+        "backward_point",
+        "cover",
+        "short_fine_leg",
+        "long_off",
+        "long_on",
+        "cow_corner",
+        "deep_mid_wicket",
+        "deep_square_leg"
+      ]
+    },
+    "defensive_short_ball": {
+      "id": "defensive_short_ball",
+      "name": "Defensive: Back of a Length",
+      "formationStyle": "defensive",
+      "description": "Protection against pulls and hooks. Leg side boundary packed.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "point",
+        "cover",
+        "mid_off",
+        "mid_on",
+        "fine_leg",
+        "long_leg",
+        "deep_square_leg",
+        "deep_mid_wicket",
+        "third_man"
+      ]
+    },
+    "defensive_round_wicket": {
+      "id": "defensive_round_wicket",
+      "name": "Defensive: Round the Wicket",
+      "formationStyle": "defensive",
+      "description": "Anti-slog field. Sweepers on both sides of the wicket.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "short_third_man",
+        "extra_cover",
+        "mid_wicket",
+        "short_fine_leg",
+        "deep_point",
+        "deep_point",
+        "long_on",
+        "deep_mid_wicket",
+        "deep_square_leg"
+      ]
+    },
+    "defensive_ring_fence": {
+      "id": "defensive_ring_fence",
+      "name": "Defensive: The Ring Fence",
+      "formationStyle": "defensive",
+      "description": "Total defense. 5 fielders deep spread evenly to prevent boundaries.",
+      "positionIds": [
+        "bowler",
+        "wicketkeeper",
+        "short_third_man",
+        "cover",
+        "mid_off",
+        "short_fine_leg",
+        "third_man",
+        "deep_cover",
+        "long_off",
+        "long_on",
+        "deep_mid_wicket"
+      ]
+    }
+  }
+}

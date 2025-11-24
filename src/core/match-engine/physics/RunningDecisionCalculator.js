@@ -32,23 +32,11 @@ class RunningDecisionCalculator {
     this.wicketDistance = this.config.runningSpeed.wicketDistance;
     this.turningPenalty = this.config.runningSpeed.turningPenalty;
 
-    // Initialize mentality effects for running decisions
     this.mentalityEffects = {
-      attacking: {
-        riskTolerance: 0.6,
-        description: 'Aggressive running, more likely to take risky runs'
-      },
-      neutral: {
-        riskTolerance: 0.3,
-        description: 'Balanced running approach'
-      },
-      defensive: {
-        riskTolerance: 0.1,
-        description: 'Conservative running, prioritizes safety'
-      }
+      attacking: { riskTolerance: 0.6 },
+      neutral: { riskTolerance: 0.3 },
+      defensive: { riskTolerance: 0.1 }
     };
-
-    // console.log('✅ RunningDecisionCalculator initialized'); // Suppressed for cleaner output
   }
 
   /**
@@ -60,15 +48,6 @@ class RunningDecisionCalculator {
    * @returns {RunningDecision} Running decision and outcome
    */
   calculateRunningDecision(striker, nonStriker, fieldingTime, battingMentality = 'neutral') {
-    const DEBUG_ENTRY = false;
-
-    if (DEBUG_ENTRY) {
-      console.log('\n[RUNNING DECISION ENTRY]');
-      console.log(`  fieldingTime type: ${typeof fieldingTime}`);
-      console.log(`  fieldingTime value: ${JSON.stringify(fieldingTime)}`);
-      console.log(`  fieldingTime.totalTime: ${fieldingTime?.totalTime}`);
-    }
-
     // Calculate running speeds for both batsmen
     const strikerSpeed = this.calculateRunningSpeed(striker);
     const nonStrikerSpeed = this.calculateRunningSpeed(nonStriker);
@@ -97,6 +76,11 @@ class RunningDecisionCalculator {
       nonStriker
     );
 
+    // Calculate time for next run (maxSafeRuns + 1)
+    const timeForCurrentRuns = this.calculateRunningTime(maxSafeRuns, strikerSpeed, nonStrikerSpeed);
+    const timeForNextRun = this.calculateRunningTime(maxSafeRuns + 1, strikerSpeed, nonStrikerSpeed);
+    const additionalTimeForNextRun = timeForNextRun - timeForCurrentRuns;
+
     return {
       runsAttempted,
       maxSafeRuns,
@@ -112,7 +96,8 @@ class RunningDecisionCalculator {
         calculation: {
           timeAvailable: fieldingTime.totalTime,
           timeRequired: this.calculateRunningTime(runsAttempted, strikerSpeed, nonStrikerSpeed),
-          safetyMargin: fieldingTime.totalTime - this.calculateRunningTime(maxSafeRuns, strikerSpeed, nonStrikerSpeed)
+          remainingTimeBuffer: fieldingTime.totalTime - timeForCurrentRuns,
+          timeForNextRun: additionalTimeForNextRun
         }
       }
     };
@@ -125,9 +110,6 @@ class RunningDecisionCalculator {
    */
   calculateRunningSpeed(batsman) {
     const speed = batsman.attributes?.physical?.speed || 10;
-
-    // Formula: baseSpeed + speed/10 (m/s)
-    // Range: baseSpeed to baseSpeed+2.0 m/s for speed attributes 0-20
     return this.baseRunningSpeed + (speed / 10);
   }
 
@@ -163,10 +145,9 @@ class RunningDecisionCalculator {
     let runs = 0;
     let timeUsed = 0;
     let iterations = 0;
-    const MAX_ITERATIONS = 10; // Safety limit
+    const MAX_ITERATIONS = 10;
     let turningPenalty = this.turningPenalty;
 
-    // Calculate time for each run
     while (timeUsed < totalFieldingTime && iterations < MAX_ITERATIONS) {
       iterations++;
       let nextRunTime = this.calculateRunningTime(runs + 1, strikerSpeed, nonStrikerSpeed);
@@ -202,11 +183,8 @@ class RunningDecisionCalculator {
    */
   calculateRunningTime(runs, strikerSpeed, nonStrikerSpeed) {
     if (runs === 0) return 0;
-
     const avgSpeed = (strikerSpeed + nonStrikerSpeed) / 2;
     const timePerRun = this.wicketDistance / avgSpeed;
-
-    // Simple calculation: just time to run the required distance
     return runs * timePerRun;
   }
 
@@ -219,9 +197,7 @@ class RunningDecisionCalculator {
   calculateCombinedJudgment(striker, nonStriker) {
     const strikerJudgment = striker.attributes?.mental?.judgement || 10;
     const nonStrikerJudgment = nonStriker.attributes?.mental?.judgement || 10;
-
-    // Weight striker judgment more heavily as they make the call
-    return (strikerJudgment * 0.7) + (nonStrikerJudgment * 0.3);
+    return strikerJudgment + nonStrikerJudgment;
   }
 
   /**
@@ -230,8 +206,6 @@ class RunningDecisionCalculator {
    * @returns {number} Error probability (0-1)
    */
   calculateErrorProbability(combinedJudgment) {
-    // Formula: errorProbabilityBase * (1 - combinedJudgment/40)
-    // With base=0.1 and average judgment=20: 0.1 * (1 - 20/40) = 0.1 * 0.5 = 0.05 (5%)
     const errorProbability = this.config.decisionFactors.errorProbabilityBase *
                              (1 - (combinedJudgment / this.config.decisionFactors.combinedJudgmentDivisor));
     return Math.max(0.001, Math.min(0.99, errorProbability));
@@ -247,21 +221,16 @@ class RunningDecisionCalculator {
    */
   determineRunsAttempted(maxSafeRuns, combinedJudgment, battingMentality, fieldingTime) {
     const mentalityEffects = this.mentalityEffects[battingMentality] || this.mentalityEffects.neutral;
-
-    // Base decision: usually take safe runs
     let runsAttempted = maxSafeRuns;
 
-    // Factor in mentality and judgment for risky running
     const riskTolerance = mentalityEffects.riskTolerance;
-    const judgmentFactor = combinedJudgment / 20; // 0-1
+    const judgmentFactor = combinedJudgment / 40;
 
-    // Sometimes attempt one more run if close and risk tolerance allows
     if (maxSafeRuns < 3 && fieldingTime.totalTime > 2.0) {
       const riskRoll = Math.random();
       const riskThreshold = (1 - judgmentFactor) * riskTolerance;
-
       if (riskRoll < riskThreshold) {
-        runsAttempted = maxSafeRuns; // + 1;
+        runsAttempted = maxSafeRuns;
       }
     }
 
@@ -281,21 +250,16 @@ class RunningDecisionCalculator {
     let isRunOut = false;
     let runOutPlayer = null;
 
-    // Run-out occurs if attempting more than safe runs OR making an error
     if (runsAttempted > maxSafeRuns) {
       isRunOut = true;
     } else if (runsAttempted > 0) {
-      // Even safe runs can result in run-out due to errors
       const errorRoll = Math.random();
       if (errorRoll < errorProbability) {
         isRunOut = true;
       }
     }
 
-    // Determine which batsman gets run out (usually the one running to danger end)
     if (isRunOut) {
-      // For now, randomly choose between striker and non-striker
-      // In real cricket, this depends on which end the throw comes to
       runOutPlayer = Math.random() < 0.6 ? striker.name : nonStriker.name;
     }
 

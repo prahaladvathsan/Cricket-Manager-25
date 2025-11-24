@@ -18,10 +18,13 @@ import useMatchStore from '../../../stores/matchStore';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import useLeagueStore from '../../../stores/leagueStore';
+import useFinanceStore from '../../../stores/financeStore';
 import useGameStore from '../../../stores/gameStore';
 import { ArrowLeft, Play, Pause, FastForward, ArrowRight, ChevronDown } from 'lucide-react';
 import TeamName from '../../shared/TeamName';
 import PlayerName from '../../shared/PlayerName';
+import ConditionBar from '../../shared/ConditionBar';
+import ModifierBreakdownPanel from './ModifierBreakdownPanel';
 import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
 import StatsHub from './StatsHub/StatsHub';
@@ -44,8 +47,13 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
   const firstBattingTeamId = useMatchStore(state => state.firstBattingTeamId);
   const homeTeamId = useMatchStore(state => state.homeTeamId);
   const awayTeamId = useMatchStore(state => state.awayTeamId);
+  const matchConditions = useMatchStore(state => state.matchConditions);
+  const currentModifierBreakdown = useMatchStore(state => state.currentModifierBreakdown);
+  const tacticsState = useMatchStore(state => state.tacticsState);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showSkipDropdown, setShowSkipDropdown] = useState(false);
+  const [showModifierBreakdown, setShowModifierBreakdown] = useState(false);
+  const [isBreakdownPinned, setIsBreakdownPinned] = useState(false);
   const skipDropdownRef = React.useRef(null);
 
   // Debug: Log status changes
@@ -280,7 +288,12 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
   const handleSkipOver = async () => {
     if (!matchEngine || isPlaying) return;
     setShowSkipDropdown(false);
+
+    // Save original speed and switch to instant for skipping
+    const originalSpeed = matchEngine.config.simulationSpeed;
+    matchEngine.config.simulationSpeed = 'instant';
     matchEngine.isPaused = false;
+
     const startOver = matchEngine.matchStore.getState().currentBall?.over || 0;
     try {
       while (!matchEngine.isInningsComplete()) {
@@ -292,13 +305,21 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     } catch (error) {
       console.error('Error skipping over:', error);
       matchEngine.isPaused = true;
+    } finally {
+      // Restore original speed
+      matchEngine.config.simulationSpeed = originalSpeed;
     }
   };
 
   const handleSkipOvers = async (count) => {
     if (!matchEngine || isPlaying) return;
     setShowSkipDropdown(false);
+
+    // Save original speed and switch to instant for skipping
+    const originalSpeed = matchEngine.config.simulationSpeed;
+    matchEngine.config.simulationSpeed = 'instant';
     matchEngine.isPaused = false;
+
     const startOver = matchEngine.matchStore.getState().currentBall?.over || 0;
     const targetOver = startOver + count;
     try {
@@ -311,13 +332,21 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     } catch (error) {
       console.error('Error skipping overs:', error);
       matchEngine.isPaused = true;
+    } finally {
+      // Restore original speed
+      matchEngine.config.simulationSpeed = originalSpeed;
     }
   };
 
   const handleSkipInnings = async () => {
     if (!matchEngine || isPlaying) return;
     setShowSkipDropdown(false);
+
+    // Save original speed and switch to instant for skipping
+    const originalSpeed = matchEngine.config.simulationSpeed;
+    matchEngine.config.simulationSpeed = 'instant';
     matchEngine.isPaused = false;
+
     const startInnings = matchEngine.matchStore.getState().innings?.number || 1;
     try {
       while (!matchEngine.isInningsComplete()) {
@@ -331,6 +360,9 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     } catch (error) {
       console.error('Error skipping innings:', error);
       matchEngine.isPaused = true;
+    } finally {
+      // Restore original speed
+      matchEngine.config.simulationSpeed = originalSpeed;
     }
   };
 
@@ -386,9 +418,12 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
 
           <div className="w-px h-14 bg-white/20" />
 
-          {/* Center: Batsmen, Metrics, Bowler */}
-          <div className="flex items-center gap-3 flex-1 justify-center min-w-0">
-
+          {/* Center: Batsmen, Metrics, Bowler - Hover for modifier breakdown */}
+          <div
+            className="relative flex items-center gap-3 flex-1 justify-center min-w-0"
+            onMouseEnter={() => !isBreakdownPinned && setShowModifierBreakdown(true)}
+            onMouseLeave={() => !isBreakdownPinned && setShowModifierBreakdown(false)}
+          >
             {/* Batsmen - Fixed positions (fixed width) */}
             <div className="w-48 flex flex-col gap-0.5 flex-shrink-0">
               {/* Top batsman (always shows first batsman, star moves) */}
@@ -486,6 +521,26 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
                 </>
               )}
             </div>
+
+            {/* Modifier Breakdown Panel */}
+            {(showModifierBreakdown || isBreakdownPinned) && currentModifierBreakdown && innings && (
+              <ModifierBreakdownPanel
+                strikerBreakdown={currentModifierBreakdown.striker}
+                bowlerBreakdown={currentModifierBreakdown.bowler}
+                strikerName={currentModifierBreakdown.strikerName || 'Striker'}
+                bowlerName={currentModifierBreakdown.bowlerName || 'Bowler'}
+                striker={innings.striker ? getPlayer(innings.striker) : null}
+                bowler={innings.bowler ? getPlayer(innings.bowler) : null}
+                strikerTier={tacticsState?.currentAcceleration?.striker || 'Rotate'}
+                bowlerPlans={tacticsState?.bowlingPlans?.[innings.bowler]}
+                isPinned={isBreakdownPinned}
+                onPin={() => setIsBreakdownPinned(!isBreakdownPinned)}
+                onClose={() => {
+                  setIsBreakdownPinned(false);
+                  setShowModifierBreakdown(false);
+                }}
+              />
+            )}
           </div>
 
           <div className="w-px h-14 bg-white/20" />
@@ -612,7 +667,8 @@ export default function MatchdayUI() {
   const matchStoreId = useMatchStore(state => state.matchId);
   const getPlayersByTeam = usePlayerStore(state => state.getPlayersByTeam);
   const players = usePlayerStore(state => state.players);
-  const { getClub, recordResult, recalculateStandings, advanceToNextMatch } = useLeagueStore();
+  const { getClub, recordResult, recalculateStandings, advanceToNextMatch, standings } = useLeagueStore();
+  const { processMatchFinancials } = useFinanceStore();
   const { advanceDay } = useGameStore();
 
   // Match data from navigation state
@@ -654,38 +710,31 @@ export default function MatchdayUI() {
         const homeTeam = navMatchData.homeTeam;
         const awayTeam = navMatchData.awayTeam;
 
-        // Get player squads for both teams
-        const homePlayers = getPlayersByTeam(homeTeam.id);
-        const awayPlayers = getPlayersByTeam(awayTeam.id);
+        // Get playing XI from team tactics (NOT from all players!)
+        const homeTactics = useTeamStore.getState().getTeamTactics(homeTeam.id);
+        const awayTactics = useTeamStore.getState().getTeamTactics(awayTeam.id);
 
-        // Also check squadLists as fallback
-        const homeSquadList = useTeamStore.getState().squadLists?.[homeTeam.id] || [];
-        const awaySquadList = useTeamStore.getState().squadLists?.[awayTeam.id] || [];
+        // Use squadSelection from tactics as playing XI
+        let homePlayingXI = homeTactics?.squadSelection || [];
+        let awayPlayingXI = awayTactics?.squadSelection || [];
 
-        let finalHomePlayers = homePlayers;
-        let finalAwayPlayers = awayPlayers;
-
-        if (homePlayers.length < 11 && homeSquadList.length >= 11) {
-          finalHomePlayers = homeSquadList
-            .slice(0, 11)
-            .map(playerId => players[playerId])
-            .filter(Boolean);
+        // Fallback to squadLists if tactics not set
+        if (homePlayingXI.length < 11) {
+          const homeSquadList = useTeamStore.getState().squadLists?.[homeTeam.id] || [];
+          homePlayingXI = homeSquadList.slice(0, 11);
+          console.warn(`⚠ Home team ${homeTeam.name} has no tactics squadSelection, using first 11 from squadList`);
         }
 
-        if (awayPlayers.length < 11 && awaySquadList.length >= 11) {
-          finalAwayPlayers = awaySquadList
-            .slice(0, 11)
-            .map(playerId => players[playerId])
-            .filter(Boolean);
+        if (awayPlayingXI.length < 11) {
+          const awaySquadList = useTeamStore.getState().squadLists?.[awayTeam.id] || [];
+          awayPlayingXI = awaySquadList.slice(0, 11);
+          console.warn(`⚠ Away team ${awayTeam.name} has no tactics squadSelection, using first 11 from squadList`);
         }
 
-        if (finalHomePlayers.length < 11 || finalAwayPlayers.length < 11) {
-          throw new Error(`Insufficient players: ${homeTeam.name} has ${finalHomePlayers.length}, ${awayTeam.name} has ${finalAwayPlayers.length} (need 11 each)`);
+        // Validate we have 11 players for each team
+        if (homePlayingXI.length < 11 || awayPlayingXI.length < 11) {
+          throw new Error(`Insufficient players: ${homeTeam.name} has ${homePlayingXI.length}, ${awayTeam.name} has ${awayPlayingXI.length} (need 11 each)`);
         }
-
-        // Select playing XI (first 11 players)
-        const homePlayingXI = finalHomePlayers.slice(0, 11).map(p => p.id);
-        const awayPlayingXI = finalAwayPlayers.slice(0, 11).map(p => p.id);
 
         // Create match config
         const matchConfig = {
@@ -1012,6 +1061,10 @@ export default function MatchdayUI() {
       });
       recordResult(leagueResult, fullScorecard);
       recalculateStandings();
+
+      // Process match financials (revenue and performance tracking)
+      processMatchFinancials(leagueResult, standings);
+
       advanceToNextMatch();
 
       // Show result modal using hook - data will be formatted automatically

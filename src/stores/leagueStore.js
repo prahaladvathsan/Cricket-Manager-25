@@ -6,6 +6,9 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import PlayoffGenerator from '../core/league/PlayoffGenerator.js';
+import MatchWeekScheduleGenerator from '../core/league/MatchWeekScheduleGenerator.js';
+import useGameStore from './gameStore';
 
 /**
  * @typedef {Object} LeagueState
@@ -157,9 +160,90 @@ const useLeagueStore = create(
 
     newStats.completedMatches = newResults.length;
 
+    // Update playoff fixtures and results if in playoff stage
+    let updatedPlayoffFixtures = state.playoffFixtures;
+    let updatedPlayoffResults = state.playoffResults;
+
+    // Check if this is a playoff match (either by result.type or by matchId prefix)
+    const isPlayoffMatch = state.stage === 'playoffs' &&
+      (result.type === 'playoff' || result.matchId?.startsWith('playoff_'));
+
+    if (isPlayoffMatch) {
+      console.log(`🏆 Recording playoff result for ${result.matchId}`);
+
+      // Add to playoff results array
+      updatedPlayoffResults = [...state.playoffResults, result];
+
+      // Update playoff fixtures with winner/loser info
+      const playoffGenerator = new PlayoffGenerator();
+      updatedPlayoffFixtures = playoffGenerator.updatePlayoffFixtures(
+        state.playoffFixtures,
+        result,
+        state.clubs // Pass clubs for team name lookup
+      );
+      console.log(`✅ Updated playoff fixtures after ${result.matchId}`);
+
+      // Log the updated Q2 and Final fixtures for debugging
+      const q2 = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_q2');
+      const final = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_final');
+      console.log('Q2:', q2?.homeTeamName, 'vs', q2?.awayTeamName, '- Status:', q2?.status);
+      console.log('Final:', final?.homeTeamName, 'vs', final?.awayTeamName, '- Status:', final?.status);
+
+      // CRITICAL: If this is the Final match, set champion and trigger season-end flow
+      if (result.matchId === 'playoff_final') {
+        console.log('🏆 FINAL MATCH COMPLETED - Setting champion and scheduling season end...');
+
+        // Determine champion and runner-up
+        const championId = result.winner;
+        const runnerUpId = result.winner === result.homeTeam ? result.awayTeam : result.homeTeam;
+
+        // Get team names from clubs
+        const championTeam = state.clubs[championId];
+        const runnerUpTeam = state.clubs[runnerUpId];
+
+        // Calculate victory margin
+        let margin = '';
+        if (result.winByRuns) {
+          margin = `${result.margin} runs`;
+        } else if (result.winByWickets) {
+          margin = `${result.margin} wickets`;
+        }
+
+        // Create champion info object
+        const championInfo = {
+          championId,
+          runnerUpId,
+          championName: championTeam?.name || 'Unknown',
+          runnerUpName: runnerUpTeam?.name || 'Unknown',
+          margin,
+          finalResult: result
+        };
+
+        // Set the champion in store
+        get().setChampion(championInfo);
+        console.log(`✅ Champion set: ${championInfo.championName} defeated ${championInfo.runnerUpName}`);
+
+        // Schedule season_end event for the next day
+        const gameStore = useGameStore.getState();
+        const nextDay = gameStore.currentDay + 1;
+        gameStore.scheduleEvent(nextDay, 'season_end', {
+          season: gameStore.currentSeason,
+          championId,
+          finalMatchId: result.matchId
+        });
+        console.log(`📅 Season end event scheduled for day ${nextDay}`);
+
+        // Set league stage to completed
+        set({ stage: 'completed' });
+        console.log('🏁 League stage set to completed');
+      }
+    }
+
     return {
       results: newResults,
-      stats: newStats
+      stats: newStats,
+      playoffFixtures: updatedPlayoffFixtures,
+      playoffResults: updatedPlayoffResults
     };
   }),
 
@@ -232,20 +316,28 @@ const useLeagueStore = create(
         if (innings.ballsFaced !== undefined && innings.ballsFaced !== null && innings.ballsFaced > 0) {
           return innings.ballsFaced;
         }
-        // 3. Calculate from overs (e.g., 19.4 -> 19*6 + 4 = 118)
+        // 3. CRITICAL: Check if we have separate overs and balls fields (from matchStore)
+        // In this case, overs is an integer (completed overs) and balls is balls in current over (0-5)
+        if (innings.overs !== undefined && innings.overs !== null &&
+            innings.balls !== undefined && innings.balls !== null) {
+          const completeOvers = parseInt(innings.overs, 10) || 0;
+          const ballsInOver = parseInt(innings.balls, 10) || 0;
+          return completeOvers * 6 + ballsInOver;
+        }
+        // 4. Calculate from overs in cricket notation (e.g., 19.4 -> 19*6 + 4 = 118)
         if (innings.overs !== undefined && innings.overs !== null) {
           const oversFloat = parseFloat(innings.overs);
           const completeOvers = Math.floor(oversFloat);
           const ballsInOver = Math.round((oversFloat - completeOvers) * 10);
           return completeOvers * 6 + ballsInOver;
         }
-        // 4. oversCompleted + ballsInCurrentOver
+        // 5. oversCompleted + ballsInCurrentOver
         if (innings.oversCompleted !== undefined && innings.oversCompleted !== null) {
           const ballsInCurrentOver = innings.ballsInCurrentOver || 0;
           const calculated = innings.oversCompleted * 6 + ballsInCurrentOver;
           return calculated;
         }
-        // 5. Last resort: use balls field (might be ballsInCurrentOver)
+        // 6. Last resort: use balls field alone (might be ballsInCurrentOver - unreliable!)
         if (innings.balls !== undefined && innings.balls !== null && innings.balls > 0) {
           return innings.balls;
         }
@@ -255,30 +347,35 @@ const useLeagueStore = create(
       const innings1Balls = calculateBalls(innings1);
       const innings2Balls = calculateBalls(innings2);
 
+      // CRITICAL NRR RULE: If team was all out (10 wickets), use full quota (120 balls for T20)
+      // This prevents teams that get bowled out from having artificially inflated run rates
+      const innings1BallsForNRR = innings1.wickets === 10 ? 120 : innings1Balls;
+      const innings2BallsForNRR = innings2.wickets === 10 ? 120 : innings2Balls;
+
       // Home team stats
       if (homeTeamBattedFirst) {
         homeTeam.runsScored += innings1.totalScore;
-        homeTeam.ballsFaced += innings1Balls;
+        homeTeam.ballsFaced += innings1BallsForNRR;
         homeTeam.runsConceded += innings2.totalScore;
-        homeTeam.ballsBowled += innings2Balls;
+        homeTeam.ballsBowled += innings2BallsForNRR;
       } else {
         homeTeam.runsScored += innings2.totalScore;
-        homeTeam.ballsFaced += innings2Balls;
+        homeTeam.ballsFaced += innings2BallsForNRR;
         homeTeam.runsConceded += innings1.totalScore;
-        homeTeam.ballsBowled += innings1Balls;
+        homeTeam.ballsBowled += innings1BallsForNRR;
       }
 
       // Away team stats (opposite of home team)
       if (homeTeamBattedFirst) {
         awayTeam.runsScored += innings2.totalScore;
-        awayTeam.ballsFaced += innings2Balls;
+        awayTeam.ballsFaced += innings2BallsForNRR;
         awayTeam.runsConceded += innings1.totalScore;
-        awayTeam.ballsBowled += innings1Balls;
+        awayTeam.ballsBowled += innings1BallsForNRR;
       } else {
         awayTeam.runsScored += innings1.totalScore;
-        awayTeam.ballsFaced += innings1Balls;
+        awayTeam.ballsFaced += innings1BallsForNRR;
         awayTeam.runsConceded += innings2.totalScore;
-        awayTeam.ballsBowled += innings2Balls;
+        awayTeam.ballsBowled += innings2BallsForNRR;
       }
 
       // Update win/loss/tie
@@ -451,12 +548,18 @@ const useLeagueStore = create(
    */
   getNextFixture: () => {
     const state = get();
-    if (state.currentFixtureIndex >= state.fixtures.length) {
-      // Check if there are playoff fixtures
-      if (state.stage === 'league' && state.playoffFixtures.length > 0) {
-        return state.playoffFixtures[0];
+
+    // If in playoffs stage, return playoff fixtures
+    if (state.stage === 'playoffs') {
+      if (state.currentFixtureIndex < state.playoffFixtures.length) {
+        return state.playoffFixtures[state.currentFixtureIndex];
       }
-      return null; // Season complete
+      return null; // Playoffs complete
+    }
+
+    // Otherwise return league fixtures
+    if (state.currentFixtureIndex >= state.fixtures.length) {
+      return null; // League complete
     }
     return state.fixtures[state.currentFixtureIndex];
   },
@@ -473,7 +576,7 @@ const useLeagueStore = create(
   },
 
   /**
-   * Advance to the next fixture
+   * Advance to the next fixture and check if playoffs should be triggered
    * @returns {Object|null} Next fixture after advancing, or null if season complete
    */
   advanceToNextMatch: () => {
@@ -481,6 +584,23 @@ const useLeagueStore = create(
       currentFixtureIndex: state.currentFixtureIndex + 1,
       currentMatchday: state.currentMatchday + 1
     }));
+
+    // Check if we just completed the last group stage match
+    const state = get();
+    if (state.stage === 'league') {
+      const groupStageFixtures = state.fixtures.filter(f => !f.type || f.type === 'league');
+      const groupStageResults = state.results.filter(r => {
+        const fixture = state.fixtures.find(f => f.matchId === r.matchId);
+        return fixture && (!fixture.type || fixture.type === 'league');
+      });
+
+      // Trigger playoffs if all group matches are complete
+      if (groupStageResults.length >= groupStageFixtures.length) {
+        console.log('🏆 Last group stage match complete! Triggering playoffs from advanceToNextMatch...');
+        // Trigger playoffs synchronously (matches SimulationEngine behavior)
+        get().checkAndTriggerPlayoffs();
+      }
+    }
 
     return get().getNextFixture();
   },
@@ -522,6 +642,123 @@ const useLeagueStore = create(
       currentWeek: state.currentWeek,
       stage: state.stage
     };
+  },
+
+  /**
+   * Populate playoff fixtures with top 4 teams (fixtures already exist with TBD teams)
+   */
+  checkAndTriggerPlayoffs: () => {
+    const state = get();
+
+    // Only trigger if still in league stage
+    if (state.stage !== 'league') {
+      console.log('Already past league stage, skipping playoff population');
+      return;
+    }
+
+    // Check if all GROUP STAGE matches are complete (exclude playoff fixtures)
+    const groupStageFixtures = state.fixtures.filter(f => !f.type || f.type === 'league');
+    const groupStageResults = state.results.filter(r => {
+      const fixture = state.fixtures.find(f => f.matchId === r.matchId);
+      return fixture && (!fixture.type || fixture.type === 'league');
+    });
+
+    const allLeagueMatchesComplete = groupStageResults.length >= groupStageFixtures.length;
+    if (!allLeagueMatchesComplete) {
+      console.log(`League not complete yet: ${groupStageResults.length}/${groupStageFixtures.length} group stage matches played`);
+      return;
+    }
+
+    console.log('🏆 League complete! Populating playoff fixtures with top 4 teams...');
+
+    // Get top 4 teams from standings
+    const sortedStandings = [...state.standings].sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return b.netRunRate - a.netRunRate;
+    });
+
+    const top4Teams = sortedStandings.slice(0, 4);
+
+    console.log('Playoff qualifiers:', top4Teams.map((t, i) => `${i + 1}. ${t.clubName} (${t.points} pts)`).join(', '));
+
+    // Update existing playoff fixtures in state with team info
+    // Do NOT create new fixtures or reschedule - just populate the existing TBD teams
+    const updatedFixtures = state.fixtures.map(fixture => {
+      if (fixture.matchId === 'playoff_q1') {
+        // Qualifier 1: 1st vs 2nd
+        return {
+          ...fixture,
+          homeTeam: top4Teams[0].clubId,
+          homeTeamName: top4Teams[0].clubName,
+          awayTeam: top4Teams[1].clubId,
+          awayTeamName: top4Teams[1].clubName,
+          status: 'scheduled'
+        };
+      } else if (fixture.matchId === 'playoff_eliminator') {
+        // Eliminator: 3rd vs 4th
+        return {
+          ...fixture,
+          homeTeam: top4Teams[2].clubId,
+          homeTeamName: top4Teams[2].clubName,
+          awayTeam: top4Teams[3].clubId,
+          awayTeamName: top4Teams[3].clubName,
+          status: 'scheduled'
+        };
+      }
+      return fixture;
+    });
+
+    // Also update calendar events with team info
+    const gameStore = useGameStore.getState();
+    const updatedEvents = gameStore.calendarEvents.map(event => {
+      if (event.type === 'match' && event.data) {
+        if (event.data.matchId === 'playoff_q1') {
+          return {
+            ...event,
+            data: {
+              ...event.data,
+              homeTeam: top4Teams[0].clubId,
+              homeTeamName: top4Teams[0].clubName,
+              awayTeam: top4Teams[1].clubId,
+              awayTeamName: top4Teams[1].clubName,
+              status: 'scheduled'
+            }
+          };
+        } else if (event.data.matchId === 'playoff_eliminator') {
+          return {
+            ...event,
+            data: {
+              ...event.data,
+              homeTeam: top4Teams[2].clubId,
+              homeTeamName: top4Teams[2].clubName,
+              awayTeam: top4Teams[3].clubId,
+              awayTeamName: top4Teams[3].clubName,
+              status: 'scheduled'
+            }
+          };
+        }
+      }
+      return event;
+    });
+
+    // Update calendar events
+    gameStore.clearEvents();
+    gameStore.scheduleEvents(updatedEvents);
+
+    console.log('✅ Playoff fixtures populated with teams (Q1 and Eliminator ready to play)');
+    console.log(`   Q1: ${top4Teams[0].clubName} vs ${top4Teams[1].clubName}`);
+    console.log(`   Eliminator: ${top4Teams[2].clubName} vs ${top4Teams[3].clubName}`);
+
+    // Update state with populated fixtures
+    set({
+      stage: 'playoffs',
+      fixtures: updatedFixtures,
+      playoffFixtures: updatedFixtures.filter(f => f.type === 'playoff')
+    });
+
+    console.log('🏁 League stage complete - Playoffs ready!');
   },
 
   /**

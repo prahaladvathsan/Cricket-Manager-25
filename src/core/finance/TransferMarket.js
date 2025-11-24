@@ -5,6 +5,7 @@
  */
 
 import transferConfig from '../../data/config/transferConfig.json';
+import { getPlayerRating } from '../../utils/ratingHelper.js';
 
 export default class TransferMarket {
   constructor(financeStore = null, teamStore = null) {
@@ -20,14 +21,16 @@ export default class TransferMarket {
     this.currentWindow = null;
     this.windowOpen = false;
     this.currentWeek = 0;
+    this.listingDurationDays = 7; // Default 7 days, can be 14 for off-season
   }
 
   /**
    * Open a transfer window
-   * @param {string} windowType - Type of window ('preAuction', 'midSeason', 'emergency')
+   * @param {string} windowType - Type of window ('preAuction', 'midSeason', 'emergency', 'offSeason')
    * @param {number} currentWeek - Current match week
+   * @param {number} listingDurationDays - Duration for listings in days (default: 7)
    */
-  openTransferWindow(windowType, currentWeek = 0) {
+  openTransferWindow(windowType, currentWeek = 0, listingDurationDays = 7) {
     const window = this.config.transferWindows[windowType];
 
     if (!window || !window.enabled) {
@@ -38,14 +41,17 @@ export default class TransferMarket {
     this.currentWindow = {
       type: windowType,
       ...window,
-      openedAt: Date.now()
+      openedAt: Date.now(),
+      listingDurationDays
     };
 
     this.windowOpen = true;
     this.currentWeek = currentWeek;
+    this.listingDurationDays = listingDurationDays;
 
     console.log(`\n🔓 TRANSFER WINDOW OPENED: ${window.name}`);
     console.log(`   Duration: ${window.duration} days`);
+    console.log(`   Listing Duration: ${listingDurationDays} days`);
     console.log(`   Current Week: ${currentWeek}`);
     console.log();
 
@@ -93,10 +99,11 @@ export default class TransferMarket {
       return { success: false, error: 'Transfer window is closed' };
     }
 
-    // Create listing with 7-day expiry
+    // Create listing with configurable expiry (7 or 14 days)
     const listingId = `listing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const listedAt = Date.now();
-    const expiresAt = listedAt + (7 * 24 * 60 * 60 * 1000); // 7 days
+    const durationDays = this.listingDurationDays || 7;
+    const expiresAt = listedAt + (durationDays * 24 * 60 * 60 * 1000);
 
     const listing = {
       id: listingId,
@@ -106,7 +113,7 @@ export default class TransferMarket {
         id: player.id,
         name: player.name,
         role: player.role,
-        rating: player.rating,
+        rating: getPlayerRating(player),
         playstyles: player.playstyles || {},
         playstyleRatings: player.playstyleRatings || {}
       },

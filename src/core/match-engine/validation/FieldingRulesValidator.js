@@ -10,6 +10,7 @@
  * - No off-side limit
  */
 
+// ICC T20 fielding circle is 30 yards = 27.43 meters from PITCH CENTER
 const CIRCLE_RADIUS = 27.43; // 30-yard circle in meters
 const POWERPLAY_OVERS = 6;
 const MAX_FIELDERS_OUTSIDE_POWERPLAY = 2;
@@ -18,16 +19,16 @@ const MAX_FIELDERS_LEG_SIDE = 5;
 const MAX_FIELDERS_BEHIND_SQUARE_LEG = 2;
 
 /**
- * Calculate distance from striker position
- * Striker is at (0, +strikerOffset) - TOP of screen where keeper stands behind
+ * Calculate distance from pitch center
+ * IMPORTANT: The 30-yard fielding circle is measured from PITCH CENTER (0, 0),
+ * NOT from the striker position. This is the official ICC rule.
  * @param {Object} position - Position with x, y coordinates
- * @param {number} strikerOffset - Striker offset from center (default 11m)
- * @returns {number} Distance in meters
+ * @returns {number} Distance in meters from pitch center
  */
-function calculateDistanceFromStriker(position, strikerOffset = 11) {
-  // Striker is at (0, +strikerOffset) - TOP (positive Y)
+function calculateDistanceFromPitchCenter(position) {
+  // Circle is centered at (0, 0) - pitch center
   const dx = position.x - 0;
-  const dy = position.y - strikerOffset;
+  const dy = position.y - 0;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
@@ -37,7 +38,7 @@ function calculateDistanceFromStriker(position, strikerOffset = 11) {
  * @returns {boolean} True if outside circle
  */
 export function isOutsideCircle(position) {
-  const distance = calculateDistanceFromStriker(position);
+  const distance = calculateDistanceFromPitchCenter(position);
   return distance > CIRCLE_RADIUS;
 }
 
@@ -53,15 +54,16 @@ export function isLegSide(position) {
 
 /**
  * Check if position is behind square leg
- * Behind square leg quadrant: leg side (x > 0) AND behind square (y > +11)
- * Striker is at (0, +11) TOP, so behind square means y > +11 (towards keeper at y=+20)
+ * Behind square leg quadrant: leg side (x > 0) AND behind square (y > striker position)
+ * Striker is at (0, +10.06) TOP, so behind square means y > +10.06 (towards keeper)
  * @param {Object} position - Position with x, y coordinates
  * @returns {boolean} True if behind square leg
  */
 export function isBehindSquareLeg(position) {
-  // Square leg is at 90° to the striker (y = +11, striker position at TOP)
-  // Behind square means y > +11 (towards the keeper at +20)
-  return position.x > 0 && position.y > 11;
+  const STRIKER_Y = 10.06; // Striker position on y-axis
+  // Square leg is perpendicular to pitch at striker's y-position
+  // Behind square means y > striker_y (towards the keeper)
+  return position.x > 0 && position.y > STRIKER_Y;
 }
 
 /**
@@ -93,11 +95,15 @@ export function validatePowerplayRestrictions(positions) {
     });
   }
 
-  // Count close catchers (within 15 yards / 13.7m, excluding keeper and bowler)
+  // Count close catchers (within 15 yards / 13.7m from STRIKER, excluding keeper and bowler)
+  // Note: Close catchers are measured from striker, not pitch center
   const closeCatchers = positions.filter((pos, index) => {
     if (index === 0 || index === 1) return false;
-    const distance = calculateDistanceFromStriker(pos);
-    return distance <= 13.7; // 15 yards in meters
+    const STRIKER_Y = 10.06;
+    const dx = pos.x - 0;
+    const dy = pos.y - STRIKER_Y;
+    const distanceFromStriker = Math.sqrt(dx * dx + dy * dy);
+    return distanceFromStriker <= 13.7; // 15 yards in meters
   });
 
   if (closeCatchers.length < 2) {

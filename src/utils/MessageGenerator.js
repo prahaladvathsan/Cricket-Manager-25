@@ -138,9 +138,9 @@ The auction has concluded, and your squad is now finalized for the season.
 
 **Auction Summary:**
 - Players Acquired: ${squad.length}
-- Total Spent: ₹${(totalSpent / 10000000).toFixed(2)} Cr
-- Average Price: ₹${(avgPrice / 10000000).toFixed(2)} Cr
-- Remaining Budget: ₹${(remaining / 10000000).toFixed(2)} Cr
+- Total Spent: $${(totalSpent / 1000000).toFixed(2)}M
+- Average Price: $${(avgPrice / 1000000).toFixed(2)}M
+- Remaining Budget: $${(remaining / 1000000).toFixed(2)}M
 
 **Next Steps:**
 1. Review your squad composition
@@ -233,6 +233,103 @@ ${won ? 'Keep up the momentum!' : 'Learn from this and come back stronger.'}`,
         matchId: result.id,
         won,
         link: `/game/match/${result.id}`
+      }
+    };
+  }
+
+  /**
+   * Generate season summary message with prize money breakdown
+   * @param {number} season - Completed season number
+   * @param {Object} userTeam - User's team
+   * @param {number} finalPosition - User's final league position
+   * @param {number} prizeMoney - Prize money won
+   * @param {Object} champion - Champion details
+   * @param {Object} stats - Season statistics
+   * @returns {Object} Message data
+   */
+  static generateSeasonSummaryMessage(season, userTeam, finalPosition, prizeMoney, champion, stats) {
+    const formatMoney = (amount) => `$${(amount / 1000000).toFixed(2)}M`;
+    const getPositionSuffix = (pos) => {
+      const j = pos % 10;
+      const k = pos % 100;
+      if (j === 1 && k !== 11) return `${pos}st`;
+      if (j === 2 && k !== 12) return `${pos}nd`;
+      if (j === 3 && k !== 13) return `${pos}rd`;
+      return `${pos}th`;
+    };
+
+    const wasChampion = champion && champion.championId === userTeam.id;
+    const qualifiedPlayoffs = finalPosition <= 4;
+
+    let performanceReview = '';
+    if (wasChampion) {
+      performanceReview = '🏆 **OUTSTANDING!** You led the team to championship glory! The board is absolutely thrilled with this performance.';
+    } else if (finalPosition === 2) {
+      performanceReview = '🥈 **EXCELLENT!** Runner-up finish is a fantastic achievement. Just one step away from the championship!';
+    } else if (qualifiedPlayoffs) {
+      performanceReview = '✅ **GOOD!** You successfully qualified for the playoffs. The board is satisfied with your performance.';
+    } else if (finalPosition <= 7) {
+      performanceReview = '⚠️ **AVERAGE.** Mid-table finish. The board expected better results given the squad investment.';
+    } else {
+      performanceReview = '❌ **DISAPPOINTING.** This finish is below expectations. The board will review your position for next season.';
+    }
+
+    return {
+      type: 'season_summary',
+      subject: `Season ${season} Complete - Final Report`,
+      sender: 'Chairman',
+      body: `Manager,
+
+Season ${season} of the World Premier League has concluded.
+
+**${userTeam.name} - Season ${season} Final Report**
+
+**League Position:** ${getPositionSuffix(finalPosition)} place
+${wasChampion ? '**Status:** 🏆 **WPL CHAMPIONS!**\n' : ''}
+**Prize Money Awarded:** ${formatMoney(prizeMoney)}
+
+**Performance Review:**
+${performanceReview}
+
+**Season Statistics:**
+- Total Matches Played: ${stats.matchesPlayed || 0}
+- Victories: ${stats.wins || 0}
+- Defeats: ${stats.losses || 0}
+- Points: ${stats.points || 0}
+- Net Run Rate: ${stats.nrr >= 0 ? '+' : ''}${stats.nrr?.toFixed(3) || '0.000'}
+
+**Champion:** ${champion ? champion.championName : 'TBD'}
+${champion && !wasChampion ? `Defeated ${champion.runnerUpName} in the Final (${champion.margin})\n` : ''}
+**Total Prize Pool Distributed:** $14.65M across all teams
+
+**Prize Money Distribution (Top 5):**
+- 1st: $5.00M 🏆
+- 2nd: $3.00M
+- 3rd: $2.00M
+- 4th: $1.50M
+- 5th: $1.00M
+
+**Next Steps:**
+1. Review the full season summary in the Off-Season hub
+2. Plan for the transfer window (opening soon)
+3. Prepare squad building strategy for next season
+
+${qualifiedPlayoffs ?
+  'The playoff run was exciting! Let\'s build on this momentum for next season.' :
+  'Use the off-season to strengthen your squad and come back stronger next season.'}
+
+The prize money has been added to your team finances.
+
+Best regards,
+**${userTeam.name} Chairman**`,
+      metadata: {
+        season,
+        team: userTeam.id,
+        finalPosition,
+        prizeMoney,
+        wasChampion,
+        qualifiedPlayoffs,
+        link: '/game/offseason'
       }
     };
   }

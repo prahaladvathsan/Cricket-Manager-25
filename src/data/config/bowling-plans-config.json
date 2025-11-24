@@ -14,12 +14,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "swing": 1,
-            "attackingBowling": 1
+            "swing": 2
           },
           "penalties": {
-            "accuracy": -1,
-            "stamina": -1
+            "accuracy": -2
           }
         },
         "playstyleBoosted": ["Swing Bowler"]
@@ -33,12 +31,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "defensiveBowling": 1
+            "accuracy": 2
           },
           "penalties": {
-            "attackingBowling": -1,
-            "variations": -1
+            "attackingBowling": -2
           }
         },
         "playstyleBoosted": ["Hit-the-Deck Seamer"]
@@ -52,12 +48,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "bowlingSpeed": 1,
-            "attackingBowling": 1
+            "bowlingSpeed": 2
           },
           "penalties": {
-            "accuracy": -1,
-            "stamina": -1
+            "accuracy": -2
           }
         },
         "playstyleBoosted": ["Short-Ball Specialist"]
@@ -71,12 +65,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "variations": 1
+            "accuracy": 2
           },
           "penalties": {
-            "bowlingSpeed": -1,
-            "stamina": -1
+            "bowlingSpeed": -2
           }
         },
         "playstyleBoosted": ["Death Specialist"]
@@ -95,8 +87,7 @@
             "variations": 2
           },
           "penalties": {
-            "bowlingSpeed": -1,
-            "accuracy": -1
+            "accuracy": -2
           }
         },
         "playstyleBoosted": ["Death Specialist"]
@@ -113,8 +104,7 @@
             "swing": 2
           },
           "penalties": {
-            "bowlingSpeed": -1,
-            "variations": -1
+            "variations": -2
           }
         },
         "playstyleBoosted": ["Swing Bowler"]
@@ -128,8 +118,7 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "bowlingSpeed": 1,
-            "attackingBowling": 1
+            "bowlingSpeed": 2
           },
           "penalties": {
             "accuracy": -2
@@ -146,12 +135,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "temperament": 1
+            "accuracy": 2
           },
           "penalties": {
-            "attackingBowling": -1,
-            "bowlingSpeed": -1
+            "attackingBowling": -2
           }
         },
         "playstyleBoosted": ["Hit-the-Deck Seamer"]
@@ -170,12 +157,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "flight": 1,
-            "attackingBowling": 1
+            "flight": 2
           },
           "penalties": {
-            "accuracy": -1,
-            "defensiveBowling": -1
+            "accuracy": -2
           }
         },
         "playstyleBoosted": ["Classical Spinner"]
@@ -189,12 +174,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "defensiveBowling": 1
+            "accuracy": 2
           },
           "penalties": {
-            "flight": -1,
-            "attackingBowling": -1
+            "flight": -2
           }
         },
         "playstyleBoosted": ["Flat Spinner"]
@@ -208,15 +191,13 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "defensiveBowling": 1
+            "accuracy": 2
           },
           "penalties": {
-            "turn": -1,
-            "attackingBowling": -1
+            "turn": -2
           }
         },
-        "playstyleBoosted": ["Mystery Spinner"]
+        "playstyleBoosted": ["Containment Spinner"]
       },
       "Stumps Attack": {
         "description": "Attacking the stumps",
@@ -227,15 +208,13 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "turn": 1,
-            "attackingBowling": 1
+            "turn": 2
           },
           "penalties": {
-            "accuracy": -1,
-            "stamina": -1
+            "accuracy": -2
           }
         },
-        "playstyleBoosted": ["Classical Spinner"]
+        "playstyleBoosted": ["Mystery Spinner"]
       }
     },
     "variationPlans": {
@@ -248,12 +227,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "turn": 1,
-            "variations": 1
+            "variations": 2
           },
           "penalties": {
-            "accuracy": -1,
-            "stamina": -1
+            "accuracy": -2
           }
         },
         "playstyleBoosted": ["Mystery Spinner"]
@@ -267,12 +244,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "flight": 1,
-            "variations": 1
+            "flight": 2
           },
           "penalties": {
-            "turn": -1,
-            "defensiveBowling": -1
+            "turn": -2
           }
         },
         "playstyleBoosted": ["Classical Spinner"]
@@ -286,12 +261,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "variations": 1,
-            "intelligence": 1
+            "variations": 2
           },
           "penalties": {
-            "turn": -1,
-            "flight": -1
+            "turn": -2
           }
         },
         "playstyleBoosted": ["Flat Spinner"]
@@ -305,12 +278,10 @@
         },
         "attributeModifiers": {
           "bonuses": {
-            "accuracy": 1,
-            "temperament": 1
+            "accuracy": 2
           },
           "penalties": {
-            "attackingBowling": -1,
-            "variations": -1
+            "variations": -2
           }
         },
         "playstyleBoosted": ["Containment Spinner"]

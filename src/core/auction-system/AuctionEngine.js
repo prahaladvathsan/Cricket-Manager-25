@@ -28,6 +28,34 @@ class AuctionEngine {
   }
 
   /**
+   * Get player's primary playstyle rating based on their role
+   * @param {Object} player - Player object
+   * @returns {number} Primary playstyle rating (0-100)
+   */
+  getPrimaryPlaystyleRating(player) {
+    if (!player.topPlaystyles) return 0;
+
+    // Get the highest rated playstyle based on role
+    switch (player.role) {
+      case 'batsman':
+        return player.topPlaystyles.batting?.[0]?.rating || 0;
+      case 'bowler':
+        return player.topPlaystyles.bowling?.[0]?.rating || 0;
+      case 'wicket-keeper':
+        // Wicket-keepers: use fielding if available, otherwise batting
+        return player.topPlaystyles.fielding?.[0]?.rating ||
+               player.topPlaystyles.batting?.[0]?.rating || 0;
+      case 'all-rounder':
+        // All-rounders: use the higher of batting or bowling
+        const battingRating = player.topPlaystyles.batting?.[0]?.rating || 0;
+        const bowlingRating = player.topPlaystyles.bowling?.[0]?.rating || 0;
+        return Math.max(battingRating, bowlingRating);
+      default:
+        return 0;
+    }
+  }
+
+  /**
    * Initialize auction with teams and player pool
    * @param {Array} teams - Array of team objects { id, name, budget }
    * @param {Array} players - Array of player objects from master database
@@ -42,7 +70,8 @@ class AuctionEngine {
     }));
 
     // Filter and prepare player pool
-    this.playerPool = players.filter(p => p.rating >= 4.0).map(p => ({
+    // Use primary playstyle rating >= 30 (on 0-100 scale) as minimum quality threshold
+    this.playerPool = players.filter(p => this.getPrimaryPlaystyleRating(p) >= 30).map(p => ({
       ...p,
       basePrice: this.valuation.calculateBasePrice(p),
       isMarquee: this.valuation.isMarqueePlayer(p),

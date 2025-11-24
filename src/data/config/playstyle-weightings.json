@@ -1,17 +1,17 @@
 {
   "version": "1.0.0",
   "description": "Playstyle attribute weightings for calculating PlaystyleRatings (0-100 scale)",
-  "lastUpdated": "2025-01-10",
+  "lastUpdated": "2025-11-23",
   "notes": [
-    "PlaystyleRating formula: Σ(attribute × weight) / max_possible × 100",
-    "Max possible = Σ(weight × 20) for attributes on 1-20 scale",
+    "PlaystyleRating formula: \u03a3(attribute \u00d7 weight) / max_possible \u00d7 100",
+    "Max possible = \u03a3(weight \u00d7 20) for attributes on 1-20 scale",
     "All weightages are editable - adjust to change playstyle calculations",
-    "Higher weight = more important for that playstyle"
+    "Higher weight = more important for that playstyle",
+    "AUTO-GENERATED from role_weightage.xlsx - DO NOT EDIT MANUALLY"
   ],
-
   "batting": {
     "Opener - Slogger": {
-      "description": "Aggressive powerplay hitter, excels with new ball",
+      "description": "Batting playstyle: Opener - Slogger",
       "attributes": {
         "technique": 2,
         "timing": 2,
@@ -32,7 +32,7 @@
       }
     },
     "Opener - Balanced": {
-      "description": "Solid opening batsman, builds platform while scoring steadily",
+      "description": "Batting playstyle: Opener - Balanced",
       "attributes": {
         "technique": 2,
         "timing": 2,
@@ -53,7 +53,7 @@
       }
     },
     "Opener - Anchor": {
-      "description": "Defensive opener, builds innings with low risk",
+      "description": "Batting playstyle: Opener - Anchor",
       "attributes": {
         "technique": 2,
         "timing": 2,
@@ -74,7 +74,7 @@
       }
     },
     "Top Order - Slogger": {
-      "description": "Aggressive middle overs batsman, targets spinners",
+      "description": "Batting playstyle: Top Order - Slogger",
       "attributes": {
         "technique": 2,
         "timing": 1,
@@ -95,7 +95,7 @@
       }
     },
     "Top Order - Balanced": {
-      "description": "Versatile top order batsman, adapts to situation",
+      "description": "Batting playstyle: Top Order - Balanced",
       "attributes": {
         "technique": 2,
         "timing": 1,
@@ -116,7 +116,7 @@
       }
     },
     "Top Order - Anchor": {
-      "description": "Steady accumulator, builds innings in top order",
+      "description": "Batting playstyle: Top Order - Anchor",
       "attributes": {
         "technique": 2,
         "timing": 1,
@@ -137,7 +137,7 @@
       }
     },
     "Middle Order - Slogger": {
-      "description": "Power hitter in middle overs, accelerates scoring",
+      "description": "Batting playstyle: Middle Order - Slogger",
       "attributes": {
         "technique": 1,
         "timing": 1,
@@ -158,7 +158,7 @@
       }
     },
     "Middle Order - Balanced": {
-      "description": "Versatile middle order batsman, handles pace and spin",
+      "description": "Batting playstyle: Middle Order - Balanced",
       "attributes": {
         "technique": 1,
         "timing": 1,
@@ -179,7 +179,7 @@
       }
     },
     "Middle Order - Anchor": {
-      "description": "Consolidates middle order, partners with hitters",
+      "description": "Batting playstyle: Middle Order - Anchor",
       "attributes": {
         "technique": 1,
         "timing": 1,
@@ -200,7 +200,7 @@
       }
     },
     "Lower Order - Slogger": {
-      "description": "Tail-end power hitter, maximizes boundaries",
+      "description": "Batting playstyle: Lower Order - Slogger",
       "attributes": {
         "technique": 0,
         "timing": 1,
@@ -221,7 +221,7 @@
       }
     },
     "Lower Order - Balanced": {
-      "description": "Capable tail-ender, supports main batsmen",
+      "description": "Batting playstyle: Lower Order - Balanced",
       "attributes": {
         "technique": 0,
         "timing": 1,
@@ -242,7 +242,7 @@
       }
     },
     "Lower Order - Anchor": {
-      "description": "Defensive tail-ender, prolongs innings",
+      "description": "Batting playstyle: Lower Order - Anchor",
       "attributes": {
         "technique": 0,
         "timing": 1,
@@ -263,7 +263,7 @@
       }
     },
     "Finisher": {
-      "description": "Death overs specialist, closes innings with power",
+      "description": "Batting playstyle: Finisher",
       "attributes": {
         "technique": 0,
         "timing": 0,
@@ -284,7 +284,7 @@
       }
     },
     "Runner": {
-      "description": "Strike rotator, excels at running between wickets",
+      "description": "Batting playstyle: Runner",
       "attributes": {
         "technique": 0,
         "timing": 0,
@@ -305,7 +305,7 @@
       }
     },
     "Pinch-Hitter": {
-      "description": "Promoted hitter for quick impact, disrupts bowling",
+      "description": "Batting playstyle: Pinch-Hitter",
       "attributes": {
         "technique": 0,
         "timing": 0,
@@ -326,7 +326,7 @@
       }
     },
     "Wall": {
-      "description": "Ultra-defensive batsman, blocks everything",
+      "description": "Batting playstyle: Wall",
       "attributes": {
         "technique": 0,
         "timing": 0,
@@ -347,7 +347,6 @@
       }
     }
   },
-
   "bowling": {
     "pace": {
       "Swing Bowler": {
@@ -366,7 +365,6 @@
           "temperament": 1
         }
       },
-
       "Hit-the-Deck Seamer": {
         "description": "Hard length specialist, relentless pressure bowler",
         "attributes": {
@@ -383,7 +381,6 @@
           "temperament": 0
         }
       },
-
       "Short-Ball Specialist": {
         "description": "Intimidating pace bowler using short-pitched deliveries",
         "attributes": {
@@ -400,7 +397,6 @@
           "temperament": 1
         }
       },
-
       "Death Specialist": {
         "description": "Death overs yorker specialist, calm under pressure",
         "attributes": {
@@ -418,7 +414,6 @@
         }
       }
     },
-
     "spin": {
       "Classical Spinner": {
         "description": "Traditional spinner with flight, dip, and deceptive loop",
@@ -427,6 +422,7 @@
           "bowlingSpeed": 0,
           "swing": 0,
           "turn": 1,
+          "flight": 1,
           "variations": 1,
           "intelligence": 1,
           "defensiveBowling": 1,
@@ -436,7 +432,6 @@
           "temperament": 1
         }
       },
-
       "Flat Spinner": {
         "description": "Quick, skiddy spinner focused on accuracy and economy",
         "attributes": {
@@ -444,6 +439,7 @@
           "bowlingSpeed": 0,
           "swing": 0,
           "turn": 0,
+          "flight": 2,
           "variations": 1,
           "intelligence": 0,
           "defensiveBowling": 2,
@@ -453,7 +449,6 @@
           "temperament": 1
         }
       },
-
       "Mystery Spinner": {
         "description": "Deceptive spinner with multiple variations and trick balls",
         "attributes": {
@@ -461,6 +456,7 @@
           "bowlingSpeed": 0,
           "swing": 0,
           "turn": 1,
+          "flight": 1,
           "variations": 2,
           "intelligence": 2,
           "defensiveBowling": 0,
@@ -470,7 +466,6 @@
           "temperament": 1
         }
       },
-
       "Containment Spinner": {
         "description": "Metronomic line and length specialist, dot ball pressure",
         "attributes": {
@@ -478,6 +473,7 @@
           "bowlingSpeed": 0,
           "swing": 0,
           "turn": 0,
+          "flight": 1,
           "variations": 0,
           "intelligence": 2,
           "defensiveBowling": 2,
@@ -489,7 +485,6 @@
       }
     }
   },
-
   "fielding": {
     "Wicketkeeper": {
       "description": "Specialist wicketkeeper - glovework, stumping ability, and catching behind the stumps",
@@ -501,14 +496,43 @@
       }
     }
   },
-
   "roleCategories": {
-    "batsman": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor", "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor", "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor", "Finisher", "Runner", "Pinch-Hitter", "Wall"],
+    "batsman": [
+      "Opener - Slogger",
+      "Opener - Balanced",
+      "Opener - Anchor",
+      "Top Order - Slogger",
+      "Top Order - Balanced",
+      "Top Order - Anchor",
+      "Middle Order - Slogger",
+      "Middle Order - Balanced",
+      "Middle Order - Anchor",
+      "Finisher",
+      "Runner",
+      "Pinch-Hitter",
+      "Wall"
+    ],
     "bowler": {
-      "pace": ["Swing Bowler", "Hit-the-Deck Seamer", "Short-Ball Specialist", "Death Specialist"],
-      "spin": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner"]
+      "pace": [
+        "Swing Bowler",
+        "Hit-the-Deck Seamer",
+        "Short-Ball Specialist",
+        "Death Specialist"
+      ],
+      "spin": [
+        "Classical Spinner",
+        "Flat Spinner",
+        "Mystery Spinner",
+        "Containment Spinner"
+      ]
     },
-    "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced"],
-    "wicket-keeper": ["Wicketkeeper"]
+    "all-rounder": [
+      "Opener - Balanced",
+      "Top Order - Balanced",
+      "Middle Order - Balanced"
+    ],
+    "wicket-keeper": [
+      "Wicketkeeper"
+    ]
   }
 }

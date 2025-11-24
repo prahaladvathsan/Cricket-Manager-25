@@ -4,6 +4,8 @@
  * Centralizes team building and composition logic
  */
 
+import { getPlayerRating } from '../../../utils/ratingHelper.js';
+
 class TeamSelectionManager {
   /**
    * Select a balanced squad from available players
@@ -388,7 +390,7 @@ class TeamSelectionManager {
       const bowlerPlaystyle = b.player.primaryPlaystyle?.bowling || '';
       const playstyleRatings = b.player.playstyleRatings?.bowling || {};
       // Base score from bowler's own rating for their primary playstyle
-      let score = (playstyleRatings[bowlerPlaystyle] || b.player.rating * 5) / 10; // Adjusted fallback
+      let score = (playstyleRatings[bowlerPlaystyle] || getPlayerRating(b.player)) / 10; // Adjusted fallback
 
       // 1. Phase-based scoring
       const phaseBonuses = {

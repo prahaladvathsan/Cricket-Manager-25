@@ -27,12 +27,15 @@ import usePlayerStore from '../../stores/playerStore';
 import useFinanceStore from '../../stores/financeStore';
 import useMatchStore from '../../stores/matchStore';
 import useAuctionStore from '../../stores/auctionStore';
+import useInboxStore from '../../stores/inboxStore';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import { getPlayerRating } from '../../utils/ratingHelper';
 import TeamName from '../shared/TeamName';
 import MatchResultModal from '../shared/MatchResultModal';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 import FinancialSummary from '../board/FinancialSummary';
+import FinancialDetailsModal from '../board/FinancialDetailsModal';
+import MessageGenerator from '../../utils/MessageGenerator';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -51,12 +54,14 @@ const Home = () => {
   } = useGameStore();
   const { getUserTeam, initializeAllTeamsTactics } = useTeamStore();
   const userTeam = getUserTeam();
-  const { auctionState } = useAuctionStore();
+  const { auctionState, soldPlayers } = useAuctionStore();
+  const { addMessage } = useInboxStore();
 
   // Component state
   const [showResultModal, setShowResultModal] = useState(false);
   const [matchResult, setMatchResult] = useState(null);
   const [simError, setSimError] = useState(null);
+  const [showFinancialModal, setShowFinancialModal] = useState(false);
 
   // Get league data
   const standings = useLeagueStore(state => state.standings);
@@ -76,9 +81,24 @@ const Home = () => {
   );
 
   // Get finances
-  const finances = useFinanceStore(state =>
-    userTeam ? state.getTeamFinances(userTeam.id) : null
-  );
+  const financeStoreState = useFinanceStore();
+  const finances = userTeam ? financeStoreState.getTeamFinances(userTeam.id) : null;
+
+  // Migration: Initialize finances if not already initialized
+  useEffect(() => {
+    if (userTeam && !financeStoreState.initialized) {
+      console.log('💰 Home - Initializing finances for existing save...');
+      const allTeams = Object.values(useTeamStore.getState().teams).map(team => ({
+        id: team.id,
+        name: team.name
+      }));
+
+      if (allTeams.length > 0) {
+        financeStoreState.initializeSeason(allTeams, `season_${currentSeason}`, null);
+        console.log('✅ Home - Finances initialized for', allTeams.length, 'teams');
+      }
+    }
+  }, [userTeam, financeStoreState.initialized]);
 
   // Get current event (could be today's match or upcoming)
   const todayEvent = getCurrentEvent();
@@ -141,19 +161,99 @@ const Home = () => {
         // Generate fixtures using MatchWeekScheduleGenerator
         const scheduleGenerator = new MatchWeekScheduleGenerator();
         const seasonStartDate = new Date(currentDate);
-        const { fixtures: generatedFixtures } = scheduleGenerator.generateMatchWeekSchedule(
+        const { fixtures: leagueFixtures, seasonEnd: leagueEndDate } = scheduleGenerator.generateMatchWeekSchedule(
           clubs,
           seasonStartDate
         );
 
-        console.log(`✅ Generated ${generatedFixtures.length} fixtures`);
+        console.log(`✅ Generated ${leagueFixtures.length} league fixtures`);
 
-        // Initialize league season
+        // Generate playoff fixtures WITH dates (TBD teams)
+        // Use a placeholder top 4 for structure (teams will be populated later)
+        const placeholderTop4 = clubs.slice(0, 4).map(club => ({
+          clubId: null,
+          clubName: 'TBD'
+        }));
+
+        const playoffSchedule = scheduleGenerator.generatePlayoffSchedule(leagueEndDate, placeholderTop4);
+
+        // Create playoff fixtures with TBD teams but real dates
+        const playoffFixtures = [
+          {
+            matchId: 'playoff_q1',
+            matchday: 91,
+            round: 'Qualifier 1',
+            homeTeam: null,
+            homeTeamName: 'TBD (1st)',
+            awayTeam: null,
+            awayTeamName: 'TBD (2nd)',
+            venue: 'WPL Championship Stadium',
+            status: 'pending',
+            type: 'playoff',
+            description: '1st vs 2nd - Winner to Final',
+            date: playoffSchedule.week1.date,
+            dateObj: playoffSchedule.week1.dateObj
+          },
+          {
+            matchId: 'playoff_eliminator',
+            matchday: 92,
+            round: 'Eliminator',
+            homeTeam: null,
+            homeTeamName: 'TBD (3rd)',
+            awayTeam: null,
+            awayTeamName: 'TBD (4th)',
+            venue: 'WPL Championship Stadium',
+            status: 'pending',
+            type: 'playoff',
+            description: '3rd vs 4th - Loser eliminated',
+            date: playoffSchedule.week1.date,
+            dateObj: playoffSchedule.week1.dateObj
+          },
+          {
+            matchId: 'playoff_q2',
+            matchday: 93,
+            round: 'Qualifier 2',
+            homeTeam: null,
+            homeTeamName: 'TBD (Loser Q1)',
+            awayTeam: null,
+            awayTeamName: 'TBD (Winner Eliminator)',
+            venue: 'WPL Championship Stadium',
+            status: 'pending',
+            type: 'playoff',
+            description: 'Loser of Q1 vs Winner of Eliminator - Winner to Final',
+            date: playoffSchedule.week2.date,
+            dateObj: playoffSchedule.week2.dateObj
+          },
+          {
+            matchId: 'playoff_final',
+            matchday: 94,
+            round: 'Final',
+            homeTeam: null,
+            homeTeamName: 'TBD (Winner Q1)',
+            awayTeam: null,
+            awayTeamName: 'TBD (Winner Q2)',
+            venue: 'WPL Championship Stadium',
+            status: 'pending',
+            type: 'playoff',
+            description: 'Championship Final',
+            date: playoffSchedule.week2.date,
+            dateObj: playoffSchedule.week2.dateObj
+          }
+        ];
+
+        console.log(`✅ Generated ${playoffFixtures.length} playoff fixtures (TBD teams)`);
+        console.log(`   Playoff Week 1: ${playoffSchedule.week1.date}`);
+        console.log(`   Playoff Week 2: ${playoffSchedule.week2.date}`);
+
+        // Combine league and playoff fixtures
+        const allFixtures = [...leagueFixtures, ...playoffFixtures];
+
+        // Initialize league season with ALL fixtures
         initializeSeason({
           seasonId: `season_${currentSeason}`,
           seasonName: `Season ${currentSeason}`,
           clubs: clubs,
-          fixtures: generatedFixtures,
+          fixtures: allFixtures,
           useMatchWeeks: false
         });
 
@@ -165,8 +265,8 @@ const Home = () => {
         const gameStartDate = new Date(currentGameDate);
         gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
 
-        // Calculate game days for each fixture based on their dates
-        const matchEvents = generatedFixtures.map(fixture => {
+        // Calculate game days for ALL fixtures (league + playoffs) based on their dates
+        const matchEvents = allFixtures.map(fixture => {
           const matchDate = new Date(fixture.dateObj);
           // Calculate game day number: days since game start + 1
           const daysSinceStart = Math.ceil((matchDate - gameStartDate) / (1000 * 60 * 60 * 24));
@@ -180,7 +280,65 @@ const Home = () => {
         });
 
         scheduleEvents(matchEvents);
-        console.log(`📅 Scheduled ${matchEvents.length} match events in calendar`);
+        console.log(`📅 Scheduled ${matchEvents.length} match events in calendar (${leagueFixtures.length} league + ${playoffFixtures.length} playoff)`);
+
+        // Schedule additional seasonal events (offseason, transfers, season end)
+        // Calculate season parity and dates
+        const isOddSeason = currentSeason % 2 === 1;
+        const leagueStartDate = new Date(seasonStartDate);
+
+        // Estimate playoff end date (90 league matches ~45 days + playoffs ~10 days = 55 days)
+        const estimatedSeasonEndDate = new Date(leagueStartDate);
+        estimatedSeasonEndDate.setDate(estimatedSeasonEndDate.getDate() + 65); // Buffer for playoffs
+
+        // Offseason starts day after estimated season end
+        const offseasonStartDate = new Date(estimatedSeasonEndDate);
+        offseasonStartDate.setDate(offseasonStartDate.getDate() + 1);
+        const offseasonStartDay = Math.ceil((offseasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+        // Transfer window: June 1-30 for odd seasons, Dec 1-31 for even seasons
+        const transferWindowStartDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, 1);
+        const transferWindowEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31);
+        const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+        // Season ends on transfer window close date
+        const seasonEndDay = transferWindowEndDay;
+
+        // Next season auction (first day after current season ends)
+        const nextSeasonStartDate = new Date(transferWindowEndDate);
+        nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
+        const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+        const additionalEvents = [
+          { day: offseasonStartDay, type: 'offseason_start' },
+          { day: transferWindowStartDay, type: 'transfer_window_open' },
+          { day: transferWindowEndDay, type: 'transfer_window_close' },
+          { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } },
+          { day: nextSeasonStartDay, type: 'auction', data: { season: currentSeason + 1 } }
+        ];
+
+        scheduleEvents(additionalEvents);
+        console.log(`📅 Scheduled ${additionalEvents.length} additional seasonal events`);
+
+        // Generate inbox messages (welcome, expectations, tutorial, auction summary)
+        if (userTeam) {
+          addMessage(MessageGenerator.generateWelcomeMessage(userTeam, currentSeason));
+          addMessage(MessageGenerator.generateExpectationsMessage(userTeam, currentSeason));
+          addMessage(MessageGenerator.generateTutorialMessage());
+
+          // Generate auction summary
+          const userSquadIds = useTeamStore.getState().squadLists[userTeam.id] || [];
+          const userSquad = userSquadIds.map(id => usePlayerStore.getState().players[id]).filter(Boolean);
+          const userTeamSales = soldPlayers.filter(sale => sale.teamId === userTeam.id);
+          const finances = {
+            totalSpent: userTeamSales.reduce((sum, sale) => sum + sale.price, 0),
+            budgetRemaining: 0 // Will be calculated by finance store
+          };
+          addMessage(MessageGenerator.generateAuctionSummaryMessage(userSquad, finances));
+
+          console.log('📬 Generated 4 inbox messages (welcome, expectations, tutorial, auction summary)');
+        }
 
         // Initialize tactics for all teams
         console.log('🎯 Initializing tactics for all teams...');
@@ -213,6 +371,12 @@ const Home = () => {
           matchResult={matchResult}
         />
       )}
+
+      {/* Financial Details Modal */}
+      <FinancialDetailsModal
+        isOpen={showFinancialModal}
+        onClose={() => setShowFinancialModal(false)}
+      />
 
       <div className="space-y-2">
         {/* Error Alert */}
@@ -420,7 +584,7 @@ const Home = () => {
           {/* Financial Summary */}
           <FinancialSummary
             compact={true}
-            onClick={() => navigate('/game/board')}
+            onClick={() => setShowFinancialModal(true)}
           />
 
           {/* Objectives */}

@@ -32,22 +32,69 @@ const BallTrajectoryLayer = ({ animationMode = 'instant' }) => {
   // Extract trajectory from latest ball
   const trajectoryData = useMemo(() => {
     if (!ballByBall || ballByBall.length === 0) {
+      console.log('🏏 [TRAJECTORY] No balls yet');
       return null;
     }
 
     const latestBall = ballByBall[ballByBall.length - 1];
-    const trajectory = latestBall?.metadata?.trajectoryResult;
+    const trajectoryResult = latestBall?.metadata?.trajectoryResult;
+    const fieldingResult = latestBall?.metadata?.fieldingResult;
+
+    console.log('🏏 [TRAJECTORY] Latest ball:', {
+      ballNumber: ballByBall.length,
+      over: latestBall.over,
+      ball: latestBall.ball,
+      runs: latestBall.runs,
+      hasMetadata: !!latestBall.metadata,
+      hasTrajectoryResult: !!trajectoryResult,
+      hasFieldingResult: !!fieldingResult,
+      trajectoryResult,
+      fieldingResult
+    });
 
     // Don't render trajectory for these shot types
-    if (!trajectory ||
-        trajectory.shotType === 'missed' ||
-        trajectory.shotType === 'edged_behind' ||
-        !trajectory.direction ||
-        trajectory.expectedDistance === 0) {
+    if (!trajectoryResult) {
+      console.log('🏏 [TRAJECTORY] ❌ No trajectory data in metadata');
       return null;
     }
 
-    return trajectory;
+    if (trajectoryResult.shotType === 'missed' || trajectoryResult.shotType === 'edged_behind') {
+      console.log('🏏 [TRAJECTORY] ❌ Filtered out shot type:', trajectoryResult.shotType);
+      return null;
+    }
+
+    if (!trajectoryResult.direction) {
+      console.log('🏏 [TRAJECTORY] ❌ No direction:', trajectoryResult.direction);
+      return null;
+    }
+
+    // Get actual shot data from fieldingResult
+    if (!fieldingResult || !fieldingResult.trajectory) {
+      console.log('🏏 [TRAJECTORY] ❌ No fielding result trajectory data');
+      return null;
+    }
+
+    const trajectory = fieldingResult.trajectory;
+
+    if (!trajectory.shotDistance || trajectory.shotDistance === 0) {
+      console.log('🏏 [TRAJECTORY] ❌ Zero or missing shotDistance:', trajectory.shotDistance);
+      return null;
+    }
+
+    console.log('🏏 [TRAJECTORY] ✅ Valid trajectory:', {
+      shotType: trajectoryResult.shotType,
+      direction: trajectory.direction,
+      shotDistance: trajectory.shotDistance,
+      bouncePoint: trajectory.bouncePoint
+    });
+
+    return {
+      shotType: trajectoryResult.shotType,
+      direction: trajectory.direction,
+      shotDistance: trajectory.shotDistance,
+      bouncePoint: trajectory.bouncePoint, // For aerial shots
+      shotSpeed: trajectory.shotSpeed
+    };
   }, [ballByBall]);
 
   // Render based on animation mode (extensible switch)
@@ -72,54 +119,131 @@ const BallTrajectoryLayer = ({ animationMode = 'instant' }) => {
 const InstantPathRenderer = ({ trajectory }) => {
   const pathData = useMemo(() => {
     if (!trajectory) {
+      console.log('📐 [PATH] No trajectory provided to renderer');
       return null;
     }
 
-    // Validate trajectory data has valid numbers
-    const distance = trajectory.expectedDistance;
+    // Use shotDistance (actual ball travel distance) instead of expectedDistance
+    const distance = trajectory.shotDistance;
     const direction = trajectory.direction;
+    const bouncePoint = trajectory.bouncePoint; // For aerial shots
+
+    // console.log('📐 [PATH] Input values:', {
+    //   shotDistance: distance,
+    //   direction,
+    //   shotType: trajectory.shotType,
+    //   bouncePoint
+    // });
 
     if (typeof distance !== 'number' || isNaN(distance) ||
         typeof direction !== 'number' || isNaN(direction)) {
+      // console.log('📐 [PATH] ❌ Invalid number types');
       return null;
     }
 
-    // Striker position (batting end)
+    // Striker position (batting end) - POSITIVE Y in CricketFieldSVG coordinate system
+    // CricketFieldSVG: "Positive Y = keeper/striker end, Negative Y = bowler end"
+    // After scale(1,-1) flip: Positive Y data → Positive Y visual (UP) = TOP of screen
     const strikerX = 0;
-    const strikerY = -10.06;
+    const strikerY = 10.06; // POSITIVE Y = striker at TOP (after flip)
 
-    // Convert direction (degrees) to radians
+    // console.log('📐 [PATH] Striker position (data coords):', { strikerX, strikerY });
+    // console.log('📐 [PATH] ⚠️ Parent SVG has scale(1, -1) - Y flipped for rendering');
+    // console.log('📐 [PATH] Visual: striker at TOP (y=+10.06), bowler at BOTTOM (y=-10.06)');
+
+    // Convert direction to radians
+    // Match engine uses counter-clockwise from 0°=leg side (positive X axis)
     const angleRad = (direction * Math.PI) / 180;
 
     // Calculate end point from trajectory
     const endX = strikerX + distance * Math.cos(angleRad);
     const endY = strikerY + distance * Math.sin(angleRad);
 
-    // Final validation - ensure calculated values are valid
+    // console.log('📐 [PATH] Shot direction:', direction, '° counter-clockwise from leg side (0°=+X)');
+    // console.log('📐 [PATH] Angle negated for Y-flip:', (-direction), '°');
+    console.log('📐 [PATH] Calculated end point (data coords):', {
+      endX: endX.toFixed(2),
+      endY: endY.toFixed(2),
+      visualY: (-endY).toFixed(2) // What it looks like after flip
+    });
+
+    // Calculate distance from center (striker is offset from center)
+    const strikerDistanceFromCenter = Math.abs(strikerY);
+    const endDistanceFromCenter = Math.sqrt(endX * endX + endY * endY);
+    const ballTraveledFromCenter = endDistanceFromCenter - strikerDistanceFromCenter;
+
+    // console.log('📐 [PATH] Distance analysis:', {
+    //   shotDistance: distance.toFixed(2) + 'm',
+    //   strikerFromCenter: strikerDistanceFromCenter.toFixed(2) + 'm',
+    //   endFromCenter: endDistanceFromCenter.toFixed(2) + 'm',
+    //   ballTravelFromCenter: ballTraveledFromCenter.toFixed(2) + 'm',
+    //   crossedInnerCircle: endDistanceFromCenter > 30,
+    //   crossedBoundary: endDistanceFromCenter > 70
+    // });
+
+    // Final validation
     if (isNaN(endX) || isNaN(endY)) {
+      // console.log('📐 [PATH] ❌ Calculated NaN values');
       return null;
     }
 
     // Generate SVG path based on shot type
-    let path = '';
+    let aerialPath = null;
+    let groundPath = null;
+    let bounceX = null;
+    let bounceY = null;
 
-    if (trajectory.shotType === 'aerial') {
-      // Aerial shot: Parabolic curve (dashed)
-      // Use quadratic Bezier curve for approximation
+    if (trajectory.shotType === 'aerial' && bouncePoint) {
+      // Aerial shot with bounce point: TWO segments
+      // Segment 1: Curved/dashed from striker to bounce point (aerial phase)
+      // Segment 2: Straight solid from bounce point to end (ground phase)
+
+      // Calculate bounce point position (bouncePoint.r is in polar from striker)
+      // Use same negated angle as end point
+      const bounceDistance = bouncePoint.r;
+      bounceX = strikerX + bounceDistance * Math.cos(angleRad);
+      bounceY = strikerY + bounceDistance * Math.sin(angleRad);
+
+      // Aerial segment (curved, dashed)
+      // Arc should go "up" visually - since Y is flipped, subtract from midY to go up
+      const midX = (strikerX + bounceX) / 2;
+      const midY = (strikerY + bounceY) / 2 - Math.min(bounceDistance * 0.2, 15); // MINUS makes arc go "up" after Y-flip
+      aerialPath = `M ${strikerX},${strikerY} Q ${midX},${midY} ${bounceX},${bounceY}`;
+
+      // Ground segment (straight, solid) - only if ball continues after bounce
+      if (distance > bounceDistance) {
+        groundPath = `M ${bounceX},${bounceY} L ${endX},${endY}`;
+      }
+
+      // console.log('📐 [PATH] Aerial shot with bounce:', {
+      //   phase1: 'Curved (striker → bounce)',
+      //   bouncePoint: `(${bounceX.toFixed(2)}, ${bounceY.toFixed(2)})`,
+      //   bounceDistance: bounceDistance.toFixed(2) + 'm',
+      //   phase2: groundPath ? 'Straight (bounce → end)' : 'None (caught/six)',
+      //   finalDistance: distance.toFixed(2) + 'm'
+      // });
+    } else if (trajectory.shotType === 'aerial') {
+      // Aerial shot without bounce point data (fallback: simple curve)
       const midX = (strikerX + endX) / 2;
-      const midY = (strikerY + endY) / 2 - Math.min(distance * 0.2, 15); // Arc height
+      const midY = (strikerY + endY) / 2 - Math.min(distance * 0.2, 15); // MINUS makes arc go "up" after Y-flip
+      aerialPath = `M ${strikerX},${strikerY} Q ${midX},${midY} ${endX},${endY}`;
 
-      path = `M ${strikerX},${strikerY} Q ${midX},${midY} ${endX},${endY}`;
-    } else if (trajectory.shotType === 'grounded') {
-      // Grounded shot: Straight line (solid)
-      path = `M ${strikerX},${strikerY} L ${endX},${endY}`;
+      // console.log('📐 [PATH] Aerial shot (no bounce data - fallback curve)');
     } else {
-      // Fallback: straight line
-      path = `M ${strikerX},${strikerY} L ${endX},${endY}`;
+      // Grounded shot: Single straight line
+      groundPath = `M ${strikerX},${strikerY} L ${endX},${endY}`;
+
+      // console.log('📐 [PATH] Grounded shot: straight line');
     }
 
+    // console.log('📐 [PATH] ✅ Path generated successfully');
+    // console.log('═'.repeat(80));
+
     return {
-      path,
+      aerialPath,    // Curved/dashed segment (striker to bounce)
+      groundPath,    // Straight segment (bounce to end OR full grounded shot)
+      bounceX,       // Bounce point X (for marker)
+      bounceY,       // Bounce point Y (for marker)
       endX,
       endY,
       shotType: trajectory.shotType,
@@ -131,20 +255,46 @@ const InstantPathRenderer = ({ trajectory }) => {
     return null;
   }
 
-  const isAerial = pathData.shotType === 'aerial';
-
   return (
     <g id="ball-trajectory">
-      {/* Trajectory path */}
-      <path
-        d={pathData.path}
-        fill="none"
-        stroke="#EA4335"
-        strokeWidth="0.4"
-        strokeDasharray={isAerial ? "1.5 1" : "none"}
-        opacity="0.9"
-        strokeLinecap="round"
-      />
+      {/* Aerial segment (curved, dashed) - striker to bounce point */}
+      {pathData.aerialPath && (
+        <path
+          d={pathData.aerialPath}
+          fill="none"
+          stroke="#EA4335"
+          strokeWidth="0.4"
+          strokeDasharray="1.5 1"
+          opacity="0.9"
+          strokeLinecap="round"
+        />
+      )}
+
+      {/* Ground segment (straight, solid) - bounce to end OR full grounded shot */}
+      {pathData.groundPath && (
+        <path
+          d={pathData.groundPath}
+          fill="none"
+          stroke="#EA4335"
+          strokeWidth="0.4"
+          strokeDasharray="none"
+          opacity="0.9"
+          strokeLinecap="round"
+        />
+      )}
+
+      {/* Bounce point marker (for aerial shots) */}
+      {pathData.bounceX !== null && pathData.bounceY !== null && (
+        <circle
+          cx={pathData.bounceX}
+          cy={pathData.bounceY}
+          r="0.8"
+          fill="#FF69B4"
+          stroke="white"
+          strokeWidth="0.15"
+          opacity="0.8"
+        />
+      )}
 
       {/* End point circle */}
       <circle
@@ -156,22 +306,6 @@ const InstantPathRenderer = ({ trajectory }) => {
         strokeWidth="0.2"
         opacity="0.9"
       />
-
-      {/* Distance label (optional) */}
-      {pathData.distance > 10 && (
-        <text
-          x={pathData.endX}
-          y={pathData.endY + 3}
-          textAnchor="middle"
-          fontSize="1.8"
-          fill="white"
-          fontWeight="bold"
-          opacity="0.8"
-          style={{ pointerEvents: 'none' }}
-        >
-          {Math.round(pathData.distance)}m
-        </text>
-      )}
     </g>
   );
 };

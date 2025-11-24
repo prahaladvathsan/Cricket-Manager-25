@@ -9,11 +9,12 @@ import physicsConfig from '../../../data/config/physics-config.json';
 /**
  * @typedef {Object} FielderInterception
  * @property {Object} fielder - Fielder object with position and attributes
- * @property {number} distance - Distance fielder needs to travel
+ * @property {number} distance - Ball's travel distance to interception point (used for fielding time)
  * @property {number} timeToReach - Time for fielder to reach interception point
- * @property {{x: number, y: number}} interceptionPoint - Where fielder intercepts ball
+ * @property {{x: number, y: number}} interceptionPoint - Where fielder intercepts ball (polar coordinates)
  * @property {boolean} canIntercept - Whether fielder can reach in time
- * @property {number} expectedDistance - Total shot distance if this fielder intercepts
+ * @property {number} shotDistance - Ball's travel distance to interception point (same as distance)
+ * @property {number} fielderMovementDistance - Fielder's movement distance from starting position (aerial only, via distanceFromBounce)
  */
 
 /**
@@ -62,17 +63,12 @@ class FielderMovementCalculator {
         }
       }
     } else {
-      // Aerial: Find fielder with minimum distance from bounce point
+      // Aerial: Find fielder with minimum distance from bounce point (search ALL fielders)
       if (bouncePoint) {
         const bounceDistance = bouncePoint.r; // Use pre-calculated polar distance
         const bounceAngle = shotDirection;
 
-        // Track both in-field (can catch) and deep fielders (post-bounce only)
-        let closestInFielder = null;
-        let minInFieldDistance = Infinity;
-        let closestDeepFielder = null;
-        let minDeepFieldDistance = Infinity;
-
+        // Search ALL fielders for closest to bounce point (don't categorize yet)
         for (const fielderPosition of fielderPositions) {
           // Law of cosines: distance from fielder to bounce point
           const r = fielderPosition.r;
@@ -81,29 +77,11 @@ class FielderMovementCalculator {
           const thetaRad = theta * Math.PI / 180;
           const distanceToBounce = Math.sqrt(r * r + d * d - 2 * r * d * Math.cos(thetaRad));
 
-          // Categorize fielders: in-field (r < bounceDistance) vs deep (r >= bounceDistance)
-          if (r < bounceDistance) {
-            // In-field fielder - can potentially catch
-            if (distanceToBounce < minInFieldDistance) {
-              minInFieldDistance = distanceToBounce;
-              closestInFielder = fielderPosition;
-            }
-          } else {
-            // Deep fielder - can only intercept post-bounce
-            if (distanceToBounce < minDeepFieldDistance) {
-              minDeepFieldDistance = distanceToBounce;
-              closestDeepFielder = fielderPosition;
-            }
+          // Find absolute closest fielder (for catch evaluation)
+          if (distanceToBounce < minHeuristicValue) {
+            minHeuristicValue = distanceToBounce;
+            closestFielderPosition = fielderPosition;
           }
-        }
-
-        // Prefer in-field fielder (catch opportunity), fallback to deep fielder
-        if (closestInFielder) {
-          closestFielderPosition = closestInFielder;
-          minHeuristicValue = minInFieldDistance;
-        } else if (closestDeepFielder) {
-          closestFielderPosition = closestDeepFielder;
-          minHeuristicValue = minDeepFieldDistance;
         }
       } else {
         // No bounce point (six) - use angle difference as fallback
@@ -137,46 +115,50 @@ class FielderMovementCalculator {
       boundaryDistance
     );
 
-    // AERIAL SHOT FALLBACK: If closest fielder cannot intercept post-bounce due to positioning,
-    // try to find a deep fielder who can intercept after bounce
-    if (shotType === 'aerial' && bouncePoint && !closestFielder.canIntercept) {
+    // AERIAL SHOT FALLBACK: If closest fielder is in-field and cannot intercept post-bounce,
+    // re-evaluate using deep fielders (positioned beyond bounce) with minimum angle difference
+    if (shotType === 'aerial' && bouncePoint && !closestFielder.canIntercept && closestFielder.needsDeepFielderEvaluation) {
       const bounceDistance = bouncePoint.r;
 
-      // Find deep fielders (fielderDistance > bounceDistance) who can intercept post-bounce
+      // Find deep fielder with minimum angle difference from shot direction
       let bestDeepFielder = null;
-      let shortestInterceptionDistance = Infinity;
+      let minAngleDiff = Infinity;
 
       for (const fielderPosition of fielderPositions) {
-        // Only consider fielders positioned beyond bounce point
+        // Only consider fielders positioned beyond bounce point (deep fielders)
         if (fielderPosition.r >= bounceDistance) {
-          const deepFielderResult = this.calculateFielderInterceptionAlgebraic(
-            shotDirection,
-            shotSpeed,
-            fielderPosition,
-            shotType,
-            bouncePoint,
-            boundaryDistance
-          );
+          const angleDiff = Math.abs(this.normalizeAngle(fielderPosition.theta - shotDirection));
 
-          // Check if this deep fielder can intercept and at what distance
-          if (deepFielderResult.canIntercept) {
-            const interceptionDist = deepFielderResult.expectedDistance;
-            if (interceptionDist < shortestInterceptionDistance) {
-              shortestInterceptionDistance = interceptionDist;
+          // Track fielder with minimum angle difference
+          if (angleDiff < minAngleDiff) {
+            minAngleDiff = angleDiff;
+
+            // Calculate full interception for this deep fielder
+            const deepFielderResult = this.calculateFielderInterceptionAlgebraic(
+              shotDirection,
+              shotSpeed,
+              fielderPosition,
+              shotType,
+              bouncePoint,
+              boundaryDistance
+            );
+
+            // Use this fielder if they can intercept (otherwise keep searching)
+            if (deepFielderResult.canIntercept) {
               bestDeepFielder = deepFielderResult;
             }
           }
         }
       }
 
-      // If we found a valid deep fielder, use them instead
+      // If we found a valid deep fielder, use them instead of in-field fielder
       if (bestDeepFielder) {
         closestFielder = bestDeepFielder;
       }
     }
 
     // Determine shot outcome
-    let expectedShotDistance;
+    let shotDistance;
     let isBoundary = ballTrajectory.isBoundary;
     let isCatch = false;
 
@@ -186,30 +168,30 @@ class FielderMovementCalculator {
         const bounceDistance = bouncePoint.r; // Use pre-calculated polar distance
 
         // For aerial shots with canIntercept=true, the fielder can reach bounce point during aerial time
-        // In this case, expectedDistance should be the bounce distance (where the catch occurs)
-        if (closestFielder.expectedDistance === -1) {
+        // In this case, shotDistance should be the bounce distance (where the catch occurs)
+        if (closestFielder.shotDistance === -1) {
           // -1 indicates catch opportunity
           isCatch = true;
-          expectedShotDistance = bounceDistance;
+          shotDistance = bounceDistance;
         } else {
           // Fielder intercepts after bounce - not a catch
           isCatch = false;
-          expectedShotDistance = closestFielder.expectedDistance || bounceDistance;
+          shotDistance = closestFielder.shotDistance || bounceDistance;
         }
       } else {
         // Grounded shot - use polar distance directly (all interception points are in polar coordinates)
         const interceptionPoint = closestFielder.interceptionPoint;
-        expectedShotDistance = interceptionPoint?.r || closestFielder.expectedDistance || boundaryDistance;
+        shotDistance = interceptionPoint?.r || closestFielder.shotDistance || boundaryDistance;
       }
     } else {
       // Fielder cannot intercept - ball reaches boundary
-      expectedShotDistance = boundaryDistance;
+      shotDistance = boundaryDistance;
       isBoundary = true;
     }
 
     return {
       closestFielder, // Single fielder for both gameplay and diagnostics
-      expectedShotDistance: isCatch ? -1 : expectedShotDistance, // -1 for catches
+      expectedShotDistance: isCatch ? -1 : shotDistance, // -1 for catches
       isBoundary,
       isCatch
     };
@@ -253,14 +235,17 @@ class FielderMovementCalculator {
 
     return {
       fielder: fielderPosition.fielder,
+      positionName: fielderPosition.name, // Position name from formation (e.g., "Mid Off")
       position: { r: fielderDistance, theta: fielderAngle },
       distance: interceptionResult.distance,
       timeToReach: interceptionResult.timeToReach,
       interceptionPoint: interceptionResult.interceptionPoint,
       canIntercept: interceptionResult.canIntercept,
-      expectedDistance: interceptionResult.expectedDistance,
+      shotDistance: interceptionResult.shotDistance,
+      expectedDistance: interceptionResult.shotDistance, // Same as shotDistance (backward compatibility)
       angleDiff: angleDifference, // Angle diff between shot and fielder (degrees)
-      distanceFromBounce: interceptionResult.distanceFromBounce // Distance from bounce point (aerial shots only)
+      distanceFromBounce: interceptionResult.distanceFromBounce, // Fielder's movement distance (aerial only)
+      needsDeepFielderEvaluation: interceptionResult.needsDeepFielderEvaluation // Flag for re-evaluation
     };
   }
 
@@ -301,7 +286,8 @@ class FielderMovementCalculator {
         timeToReach: Infinity,
         interceptionPoint: null,
         canIntercept: false,
-        expectedDistance: boundaryDistance,
+        shotDistance: boundaryDistance,
+        expectedDistance: boundaryDistance, // Backward compatibility
         distanceFromBounce: null // Not applicable for grounded shots
       };
     }
@@ -321,7 +307,8 @@ class FielderMovementCalculator {
         timeToReach: Infinity,
         interceptionPoint: null,
         canIntercept: false,
-        expectedDistance: boundaryDistance,
+        shotDistance: boundaryDistance,
+        expectedDistance: boundaryDistance, // Backward compatibility
         distanceFromBounce: null // Not applicable for grounded shots
       };
     }
@@ -345,7 +332,8 @@ class FielderMovementCalculator {
         timeToReach: Infinity,
         interceptionPoint: null,
         canIntercept: false,
-        expectedDistance: boundaryDistance,
+        shotDistance: boundaryDistance,
+        expectedDistance: boundaryDistance, // Backward compatibility
         distanceFromBounce: null // Not applicable for grounded shots
       };
     }
@@ -359,7 +347,8 @@ class FielderMovementCalculator {
       timeToReach: timeToIntercept,
       interceptionPoint: { r: ballTravelDistance, theta: shotDirection }, // Polar coordinates
       canIntercept: true,
-      expectedDistance: ballTravelDistance,
+      shotDistance: ballTravelDistance,
+      expectedDistance: ballTravelDistance, // Backward compatibility
       distanceFromBounce: null // Not applicable for grounded shots
     };
   }
@@ -417,8 +406,9 @@ class FielderMovementCalculator {
         timeToReach: timeToReachBounce,
         interceptionPoint: { r: bounceDistance, theta: shotDirection },
         canIntercept: true,
-        expectedDistance: -1, // Indicates potential catch
-        distanceFromBounce: distanceToBounce // Distance from fielder to bounce point
+        shotDistance: -1, // Indicates potential catch
+        expectedDistance: -1, // Backward compatibility
+        distanceFromBounce: distanceToBounce // Fielder's movement distance to bounce point
       };
     } else {
       // After bounce, treat as grounded shot from bounce point
@@ -426,16 +416,19 @@ class FielderMovementCalculator {
 
       if (remainingDistance > 0) {
         // For post-bounce interception, fielder must be positioned beyond bounce point
-        // Otherwise they're in-field and would have caught it (already handled above)
+        // If fielder is in-field (closer to striker than bounce), mark as unable to intercept
+        // The caller will re-evaluate for deep fielders
         if (fielderDistance < bounceDistance) {
-          // Fielder is closer to striker than bounce point - cannot intercept post-bounce
+          // In-field fielder cannot intercept post-bounce - signal for re-evaluation
           return {
             distance: bounceDistance,
             timeToReach: aerialTime,
             interceptionPoint: { r: bounceDistance, theta: shotDirection },
             canIntercept: false,
-            expectedDistance: boundaryDistance,  // Will reach boundary
-            distanceFromBounce: distanceToBounce
+            shotDistance: boundaryDistance,  // Will reach boundary unless deep fielder intercepts
+            expectedDistance: boundaryDistance, // Backward compatibility
+            distanceFromBounce: distanceToBounce,
+            needsDeepFielderEvaluation: true  // Flag for re-evaluation
           };
         }
 
@@ -464,7 +457,8 @@ class FielderMovementCalculator {
               timeToReach: aerialTime,
               interceptionPoint: { r: bounceDistance, theta: shotDirection },
               canIntercept: false,
-              expectedDistance: boundaryDistance,
+              shotDistance: boundaryDistance,
+              expectedDistance: boundaryDistance, // Backward compatibility
               distanceFromBounce: distanceToBounce
             };
           }
@@ -476,7 +470,8 @@ class FielderMovementCalculator {
               timeToReach: Infinity,
               interceptionPoint: null,
               canIntercept: false,
-              expectedDistance: boundaryDistance,
+              shotDistance: boundaryDistance,
+              expectedDistance: boundaryDistance, // Backward compatibility
               distanceFromBounce: distanceToBounce
             };
           }
@@ -487,7 +482,8 @@ class FielderMovementCalculator {
             timeToReach: aerialTime + postBounceResult.timeToReach,
             interceptionPoint: postBounceResult.interceptionPoint,
             canIntercept: true,
-            expectedDistance: interceptionDistance,
+            shotDistance: interceptionDistance,
+            expectedDistance: interceptionDistance, // Backward compatibility
             distanceFromBounce: distanceToBounce
           };
         } else {
@@ -497,7 +493,8 @@ class FielderMovementCalculator {
             timeToReach: Infinity,
             interceptionPoint: null,
             canIntercept: false,
-            expectedDistance: boundaryDistance,
+            shotDistance: boundaryDistance,
+            expectedDistance: boundaryDistance, // Backward compatibility
             distanceFromBounce: distanceToBounce
           };
         }
@@ -508,7 +505,8 @@ class FielderMovementCalculator {
           timeToReach: aerialTime,
           interceptionPoint: { r: bounceDistance, theta: shotDirection },
           canIntercept: false,
-          expectedDistance: boundaryDistance,
+          shotDistance: boundaryDistance,
+          expectedDistance: boundaryDistance, // Backward compatibility
           distanceFromBounce: distanceToBounce
         };
       }
@@ -530,18 +528,6 @@ class FielderMovementCalculator {
     // Formula: baseSpeed + speed/10 (m/s)
     // Range: baseSpeed to baseSpeed+2.0 m/s for speed attributes 0-20
     return this.baseFielderSpeed + (speed / 10);
-  }
-
-  /**
-   * Calculate distance between two points
-   * @param {number} x1 - First point X
-   * @param {number} y1 - First point Y
-   * @param {number} x2 - Second point X
-   * @param {number} y2 - Second point Y
-   * @returns {number} Distance
-   */
-  calculateDistance(x1, y1, x2, y2) {
-    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
   }
 
   /**
@@ -626,42 +612,6 @@ class FielderMovementCalculator {
     return Math.max(0.1, Math.min(0.95, finalProbability));
   }
 
-  /**
-   * Evaluate multiple shot directions for placement logic
-   * @param {number[]} directions - Array of possible shot directions
-   * @param {number} speed - Shot speed
-   * @param {string} shotType - Shot type
-   * @param {Object[]} fielderPositions - Fielder positions
-   * @param {Object} ballPhysics - Ball physics calculator
-   * @returns {Object[]} Array of direction evaluations with expected distances
-   */
-  evaluateDirections(directions, speed, shotType, fielderPositions, ballPhysics) {
-    const evaluations = [];
-
-    for (const direction of directions) {
-      const trajectory = ballPhysics.calculateTrajectory(direction, speed, shotType);
-      const interceptionAnalysis = this.analyzeInterception(trajectory, fielderPositions, shotType);
-
-      evaluations.push({
-        direction,
-        expectedDistance: interceptionAnalysis.expectedDistance,
-        isBoundary: interceptionAnalysis.isBoundary,
-        isCatch: interceptionAnalysis.isCatch,
-        closestFielder: interceptionAnalysis.closestFielder,
-        trajectory
-      });
-    }
-
-    // Sort by expected distance (descending) - longer distances are better
-    return evaluations.sort((a, b) => {
-      // Boundaries are best (-1 for catches is worst)
-      if (a.isBoundary && !b.isBoundary) return -1;
-      if (b.isBoundary && !a.isBoundary) return 1;
-      if (a.isCatch && !b.isCatch) return 1;
-      if (b.isCatch && !a.isCatch) return -1;
-      return b.expectedDistance - a.expectedDistance;
-    });
-  }
 }
 
 export default FielderMovementCalculator;

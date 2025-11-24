@@ -14,10 +14,11 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
-  const { getTeamTactics, updateSquadSelection, updatePlaystyleOverride } = useTeamStore();
+  const { updateSquadSelection, updatePlaystyleOverride } = useTeamStore();
   const { players } = usePlayerStore();
 
-  const teamTactics = getTeamTactics(teamId);
+  // Subscribe to team tactics changes to ensure UI updates reactively
+  const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
   const selectedPlayerIds = teamTactics?.squadSelection || [];
 
   // Filter available players
@@ -217,10 +218,10 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
               const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);
               const availableFieldingPlaystyles = getAvailableFieldingPlaystyles(player);
-              const overrides = teamTactics?.playstyleOverrides[player.id];
-              const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
-              const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
-              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding;
+              const overrides = teamTactics?.playstyleOverrides?.[player.id];
+              const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting || '';
+              const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling || '';
+              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding || '';
               const isBattingPrimary = currentBattingPlaystyle === player.primaryPlaystyle?.batting;
               const isBowlingPrimary = currentBowlingPlaystyle === player.primaryPlaystyle?.bowling;
               const isFieldingPrimary = currentFieldingPlaystyle === player.primaryPlaystyle?.fielding;
@@ -255,7 +256,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     {/* Batting Playstyle */}
                     <div>
                       <label className="block text-xs text-text-secondary mb-0.5">
-                        Batting {!isBattingPrimary && <span className="text-yellow-400">(Override)</span>}
+                        Batting
                       </label>
                       <select
                         value={currentBattingPlaystyle}
@@ -286,7 +287,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     ) : (
                       <div>
                         <label className="block text-xs text-text-secondary mb-0.5">
-                          Bowling {!isBowlingPrimary && <span className="text-yellow-400">(Override)</span>}
+                          Bowling
                         </label>
                         {availableBowlingPlaystyles.length > 0 ? (
                           <select
@@ -356,10 +357,10 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
               const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);
               const availableFieldingPlaystyles = getAvailableFieldingPlaystyles(player);
-              const overrides = teamTactics?.playstyleOverrides[player.id];
-              const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
-              const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
-              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding;
+              const overrides = teamTactics?.playstyleOverrides?.[player.id];
+              const currentBattingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting || '';
+              const currentBowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling || '';
+              const currentFieldingPlaystyle = overrides?.fielding || player.primaryPlaystyle?.fielding || '';
               const isBattingPrimary = currentBattingPlaystyle === player.primaryPlaystyle?.batting;
               const isBowlingPrimary = currentBowlingPlaystyle === player.primaryPlaystyle?.bowling;
               const isFieldingPrimary = currentFieldingPlaystyle === player.primaryPlaystyle?.fielding;
@@ -397,7 +398,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     {/* Batting Playstyle */}
                     <div>
                       <label className="block text-xs text-text-secondary mb-0.5">
-                        Batting {!isBattingPrimary && <span className="text-yellow-400">(Override)</span>}
+                        Batting
                       </label>
                       <select
                         value={currentBattingPlaystyle}
@@ -428,7 +429,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     ) : (
                       <div>
                         <label className="block text-xs text-text-secondary mb-0.5">
-                          Bowling {!isBowlingPrimary && <span className="text-yellow-400">(Override)</span>}
+                          Bowling
                         </label>
                         {availableBowlingPlaystyles.length > 0 ? (
                           <select

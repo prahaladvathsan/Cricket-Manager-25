@@ -14,13 +14,13 @@
 
   "decisionFactors": {
     "judgmentWeight": 1,
-    "errorProbabilityBase": 0.03,
+    "errorProbabilityBase": 0.12,
     "combinedJudgmentDivisor": 40,
-    "description": "Factors affecting running decisions"
+    "description": "Factors affecting running decisions. Formula: errorProbabilityBase * (1 - combinedJudgment/40). At combinedJudgment=30 (average), errorProbability=3%."
   },
 
   "riskAssessment": {
-    "safeMargin": 0.5,
+    "safeMargin": 0.1,
     "riskyMargin": 0.2,
     "conservativeBonus": 0.3,
     "aggressiveBonus": -0.2,

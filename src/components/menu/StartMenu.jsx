@@ -14,7 +14,8 @@ import {
   Download,
   BookOpen,
   Info,
-  Trophy
+  Trophy,
+  FlaskConical
 } from 'lucide-react';
 
 const StartMenu = () => {
@@ -35,6 +36,13 @@ const StartMenu = () => {
       icon: FolderOpen,
       description: 'Continue from a saved game',
       action: () => navigate('/load-game')
+    },
+    {
+      id: 'test-mode',
+      label: 'Test Mode',
+      icon: FlaskConical,
+      description: 'AI-only simulation for testing - all teams controlled by AI',
+      action: () => navigate('/game/test')
     },
     {
       id: 'quick-match',

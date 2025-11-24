@@ -6,15 +6,23 @@
 import React, { useState } from 'react';
 import ObjectivesPanel from '../board/ObjectivesPanel';
 import FinancialSummary from '../board/FinancialSummary';
+import FinancialDetailsModal from '../board/FinancialDetailsModal';
 
 const Board = () => {
   const [showFinancialModal, setShowFinancialModal] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-semibold text-text-primary">Board</h1>
+    <>
+      {/* Financial Details Modal */}
+      <FinancialDetailsModal
+        isOpen={showFinancialModal}
+        onClose={() => setShowFinancialModal(false)}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="space-y-4">
+        <h1 className="text-3xl font-semibold text-text-primary">Board</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Objectives */}
         <div>
           <h3 className="text-lg font-semibold text-text-primary mb-3">Season Objectives</h3>
@@ -25,10 +33,7 @@ const Board = () => {
         <div>
           <h3 className="text-lg font-semibold text-text-primary mb-3">Finances</h3>
           <FinancialSummary
-            onClick={() => {
-              // TODO: Open financial details modal
-              console.log('Open financial details modal');
-            }}
+            onClick={() => setShowFinancialModal(true)}
           />
 
           <div className="mt-3 card p-3 bg-bg-secondary">
@@ -39,7 +44,8 @@ const Board = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

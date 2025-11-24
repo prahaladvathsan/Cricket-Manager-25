@@ -27,11 +27,11 @@ const Layout = ({ children }) => {
       <Sidebar currentPath={location.pathname} />
       
       <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        preferences.sidebarCollapsed ? 'ml-16' : 'ml-64'
+        preferences.sidebarCollapsed ? 'ml-16' : 'ml-48'
       }`}>
         <Header />
-        
-        <main className="flex-1 overflow-auto p-6 bg-bg-primary">
+
+        <main className="flex-1 overflow-auto p-3 bg-bg-primary">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

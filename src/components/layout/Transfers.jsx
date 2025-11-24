@@ -25,7 +25,7 @@ import { useTransferSystem } from '../../hooks/useTransferSystem';
 
 const Transfers = () => {
   const { teams, userTeamId, getUserTeam, addPlayerToSquad, initializeAllTeamsTactics } = useTeamStore();
-  const { players, assignPlayerToTeam } = usePlayerStore();
+  const { players, assignPlayerToTeam, setPlayerSoldPrice } = usePlayerStore();
   const { currentSeason, currentDate, gameDay, scheduleEvents, advancePhase, clearEvents, currentWeek, currentPhase } = useGameStore();
   const { initializeSeason } = useLeagueStore();
   const { initializeSeason: initializeFinances, processAuctionSpending } = useFinanceStore();
@@ -515,6 +515,7 @@ const Transfers = () => {
         if (player.id) {
           addPlayerToSquad(winner.team.id, player.id);
           assignPlayerToTeam(player.id, winner.team.id);
+          setPlayerSoldPrice(player.id, highestBid);
         }
         addToLog(`${player.name} → ${winner.team.name} (${valuation.formatPrice(highestBid)})`, 'sold');
       } else {
@@ -597,6 +598,7 @@ const Transfers = () => {
           if (player.id) {
             addPlayerToSquad(winner.team.id, player.id);
             assignPlayerToTeam(player.id, winner.team.id);
+            setPlayerSoldPrice(player.id, highestBid);
           }
 
           if (processed % 5 === 0) {
@@ -652,6 +654,7 @@ const Transfers = () => {
       if (player.id) {
         addPlayerToSquad(team.id, player.id);
         assignPlayerToTeam(player.id, team.id);
+        setPlayerSoldPrice(player.id, finalPrice);
       }
 
       savedAuction.recordSale(player.id, winner.id, finalPrice);

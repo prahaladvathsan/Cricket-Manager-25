@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
-  Clipboard
+  Clipboard,
+  Calendar
 } from 'lucide-react';
 import useUIStore from '../../stores/uiStore';
 import useTeamStore from '../../stores/teamStore';
@@ -37,6 +38,7 @@ const Sidebar = ({ currentPath }) => {
     { path: '/game/squad', label: 'Squad', icon: Users },
     { path: '/game/tactics', label: 'Tactics', icon: Clipboard },
     { path: '/game/matches', label: 'Matches', icon: Target },
+    { path: '/game/calendar', label: 'Calendar', icon: Calendar },
     { path: '/game/league', label: 'League', icon: Trophy },
     { path: '/game/transfers', label: 'Transfers', icon: ArrowRightLeft },
     { path: '/game/board', label: 'Board', icon: Building2 }
@@ -44,10 +46,10 @@ const Sidebar = ({ currentPath }) => {
 
   return (
     <div className={`fixed left-0 top-0 h-full bg-cricket-surface border-r border-gray-700 transition-all duration-300 z-10 ${
-      sidebarCollapsed ? 'w-16' : 'w-64'
+      sidebarCollapsed ? 'w-16' : 'w-48'
     }`}>
       {/* Header */}
-      <div className="p-3 border-b border-gray-700">
+      <div className="p-2 border-b border-gray-700">
         <div className="flex items-center justify-between">
           {!sidebarCollapsed && (
             <div>
@@ -64,8 +66,8 @@ const Sidebar = ({ currentPath }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="p-3">
-        <ul className="space-y-1.5">
+      <nav className="p-2">
+        <ul className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const hasBadge = item.badge && item.badge > 0;

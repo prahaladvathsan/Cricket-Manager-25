@@ -12,10 +12,11 @@ import { getPrimaryBattingRating, formatRating } from '../../../utils/ratingHelp
 import PlayerName from '../../shared/PlayerName';
 
 const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { getTeamTactics, updateBattingOrder, updateAccelerationTier, updatePlaystyleOverride } = useTeamStore();
+  const { updateBattingOrder, updateAccelerationTier, updatePlaystyleOverride } = useTeamStore();
   const { players } = usePlayerStore();
 
-  const teamTactics = getTeamTactics(teamId);
+  // Subscribe to team tactics changes to ensure UI updates reactively
+  const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
   const battingOrder = teamTactics?.battingOrder || [];
 
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -152,7 +153,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           {orderedPlayers.map((player, index) => {
             const currentTier = teamTactics?.accelerationTiers[player.id] || 'Rotate';
             const overrides = teamTactics?.playstyleOverrides?.[player.id];
-            const battingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting;
+            const battingPlaystyle = overrides?.batting || player.primaryPlaystyle?.batting || '';
             const battingRating = getPrimaryBattingRating(player);
             const isBattingPrimary = battingPlaystyle === player.primaryPlaystyle?.batting;
             const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);

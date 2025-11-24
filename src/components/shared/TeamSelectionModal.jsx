@@ -74,6 +74,23 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
         console.log('🔄 Reset finance store for new game');
       }
 
+      // Initialize finances for all teams at game start (with $10M each)
+      const teamsForFinances = Object.values(teams).map(team => ({
+        id: team.id,
+        name: team.name
+      }));
+      console.log('💰 TeamSelectionModal - Initializing finances for teams:', teamsForFinances);
+      if (financeStore.initializeSeason) {
+        const result = financeStore.initializeSeason(teamsForFinances, `season_${gameState.currentSeason}`, null);
+        console.log('💰 Initialized finances for all teams, result:', result);
+
+        // Verify initialization worked
+        const testFinances = financeStore.getTeamFinances(selectedTeamId);
+        console.log('💰 Test finances for selected team:', selectedTeamId, ':', testFinances);
+      } else {
+        console.error('❌ financeStore.initializeSeason is not available!');
+      }
+
       // Reset all team tactics (IMPORTANT: clears stale playing XI data)
       resetAllTactics();
       console.log('🔄 Reset all team tactics for new game');
@@ -149,7 +166,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
                 
                 <div className="text-sm text-cricket-text-secondary space-y-1">
                   <p><span className="font-medium">Coach:</span> {team.coachName}</p>
-                  <p><span className="font-medium">Budget:</span> ₹{team.finances.salaryCap} crores</p>
+                  <p><span className="font-medium">Budget:</span> ${team.finances.salaryCap}M</p>
                 </div>
 
                 {selectedTeamId === team.id && (

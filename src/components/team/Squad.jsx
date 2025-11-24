@@ -4,15 +4,19 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Tag } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
+import useGameStore from '../../stores/gameStore';
+import useFinanceStore from '../../stores/financeStore';
+import useTransferStore from '../../stores/transferStore';
+import { useTransferSystem } from '../../hooks/useTransferSystem';
 import PlayerCard from '../shared/PlayerCard';
 import SetTacticsModal from '../tactics/SetTacticsModal';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
-import { getPrimaryBattingRating, getPrimaryBowlingRating, formatRating } from '../../utils/ratingHelper';
+import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
 
 const Squad = () => {
   const [selectedTab, setSelectedTab] = useState('squad');
@@ -33,14 +37,62 @@ const Squad = () => {
   const [statsRoleFilter, setStatsRoleFilter] = useState('all');
   const [minQualifying, setMinQualifying] = useState(1);
 
+  // Transfer listing modal state
+  const [showListingModal, setShowListingModal] = useState(false);
+  const [selectedPlayerForListing, setSelectedPlayerForListing] = useState(null);
+  const [listingPrice, setListingPrice] = useState('');
+
   const { getUserTeam } = useTeamStore();
   const players = usePlayerStore(state => state.players);
   const careerStats = usePlayerStore(state => state.careerStats);
   const currentSeasonId = usePlayerStore(state => state.currentSeasonId);
   const { getPlayersByTeam } = usePlayerStore();
+  const currentWeek = useGameStore(state => state.currentWeek);
+  const getTeamFinances = useFinanceStore(state => state.getTeamFinances);
+  const transferWindow = useTransferStore(state => state.transferWindow);
+  const { transferHandler, transferMarket, isReady } = useTransferSystem();
 
   const userTeam = getUserTeam();
   const squadPlayers = userTeam ? getPlayersByTeam(userTeam.id) : [];
+  const finances = userTeam ? getTeamFinances(userTeam.id) : null;
+
+  // Check if transfer window is open
+  const isTransferWindowOpen = transferWindow?.isOpen && currentWeek >= 22 && currentWeek <= 26;
+
+  // Handle listing player for transfer
+  const handleListPlayer = (player) => {
+    setSelectedPlayerForListing(player);
+    setListingPrice(''); // Reset price
+    setShowListingModal(true);
+  };
+
+  // Confirm listing
+  const confirmListing = () => {
+    if (!selectedPlayerForListing || !userTeam || !listingPrice || !transferMarket) return;
+
+    const price = parseFloat(listingPrice) * 1000; // Convert from K to actual value
+    if (isNaN(price) || price < 50000) {
+      alert('Minimum listing price is $50K');
+      return;
+    }
+
+    // Ensure backend transfer window is open
+    if (!transferMarket.windowOpen && isTransferWindowOpen) {
+      console.log('🔓 Opening backend transfer window from Squad page');
+      transferMarket.openTransferWindow('offSeason', currentWeek, 14);
+    }
+
+    const result = transferHandler.listPlayerForSale(userTeam.id, selectedPlayerForListing.id, price);
+
+    if (result.success) {
+      setShowListingModal(false);
+      setSelectedPlayerForListing(null);
+      setListingPrice('');
+      alert('Player listed successfully!');
+    } else {
+      alert(result.error || 'Failed to list player');
+    }
+  };
 
   // Toggle category collapse
   const toggleCategory = (categoryName) => {
@@ -122,9 +174,13 @@ const Squad = () => {
           aVal = getPrimaryBowlingRating(a);
           bVal = getPrimaryBowlingRating(b);
           break;
+        case 'fieldingPlaystyle':
+          aVal = getPrimaryFieldingRating(a);
+          bVal = getPrimaryFieldingRating(b);
+          break;
         case 'value':
-          aVal = a.auctionValue || 0;
-          bVal = b.auctionValue || 0;
+          aVal = a.soldPrice || 0;
+          bVal = b.soldPrice || 0;
           break;
         default:
           return 0;
@@ -353,7 +409,7 @@ const Squad = () => {
                 </th>
                 <th
                   onClick={() => handleSort('nationality')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                  className="px-2 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors w-16"
                 >
                   <div className="flex items-center gap-1">
                     Nation <SortIndicator column="nationality" />
@@ -372,15 +428,15 @@ const Squad = () => {
                   className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    Bat <SortIndicator column="battingHand" />
+                    Bat Hand <SortIndicator column="battingHand" />
                   </div>
                 </th>
                 <th
                   onClick={() => handleSort('bowlingStyle')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
                 >
-                  <div className="flex items-center gap-1">
-                    Bowling <SortIndicator column="bowlingStyle" />
+                  <div className="flex items-center justify-center gap-1">
+                    Bowling Style <SortIndicator column="bowlingStyle" />
                   </div>
                 </th>
                 <th
@@ -400,6 +456,14 @@ const Squad = () => {
                   </div>
                 </th>
                 <th
+                  onClick={() => handleSort('fieldingPlaystyle')}
+                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    Fielding Playstyle <SortIndicator column="fieldingPlaystyle" />
+                  </div>
+                </th>
+                <th
                   onClick={() => handleSort('value')}
                   className="px-3 py-2 text-right font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
                 >
@@ -407,6 +471,11 @@ const Squad = () => {
                     Value <SortIndicator column="value" />
                   </div>
                 </th>
+                {isTransferWindowOpen && (
+                  <th className="px-3 py-2 text-center font-semibold text-text-primary">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -421,10 +490,10 @@ const Squad = () => {
                     <PlayerName playerId={player.id} player={player} className="font-medium" />
                   </td>
                   <td className="px-3 py-2 text-center text-text-secondary">{player.age || '-'}</td>
-                  <td className="px-3 py-2 text-text-secondary">{player.nationality || '-'}</td>
+                  <td className="px-2 py-2 text-text-secondary text-xs">{player.nationality || '-'}</td>
                   <td className="px-3 py-2 text-text-secondary capitalize">{player.role || '-'}</td>
                   <td className="px-3 py-2 text-center text-text-secondary uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</td>
-                  <td className="px-3 py-2 text-text-secondary text-xs">{player.bowlingStyle || '-'}</td>
+                  <td className="px-3 py-2 text-center text-text-secondary text-xs">{player.bowlingStyleAbbrev || '-'}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col">
                       <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.batting || '-'}</span>
@@ -437,9 +506,30 @@ const Squad = () => {
                       <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBowlingRating(player))}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-trophy-gold">
-                    ₹{player.auctionValue ? player.auctionValue.toFixed(1) : '0.0'} Cr
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col">
+                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.fielding || '-'}</span>
+                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryFieldingRating(player))}</span>
+                    </div>
                   </td>
+                  <td className="px-3 py-2 text-right font-mono text-trophy-gold">
+                    {player.soldPrice ? (
+                      player.soldPrice >= 1000000
+                        ? `$${(player.soldPrice / 1000000).toFixed(1)}M`
+                        : `$${(player.soldPrice / 1000).toFixed(0)}K`
+                    ) : '$0K'}
+                  </td>
+                  {isTransferWindowOpen && (
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => handleListPlayer(player)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors mx-auto"
+                      >
+                        <Tag className="w-3 h-3" />
+                        <span>List</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -483,38 +573,40 @@ const Squad = () => {
         </div>
 
         {/* Financial Information */}
-        <div className="card p-2">
-          <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
-            <DollarSign className="w-4 h-4 text-cricket-accent" />
-            <h3 className="text-lg font-semibold text-text-primary">Financial Overview</h3>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-text-secondary">Budget Used</span>
-                <span className="text-text-primary font-mono">
-                  ₹{userTeam.finances.usedCap} / ₹{userTeam.finances.salaryCap} Cr
-                </span>
+        {finances && (
+          <div className="card p-2">
+            <div className="flex items-center gap-2 mb-3 border-b border-border-primary pb-2">
+              <DollarSign className="w-4 h-4 text-cricket-accent" />
+              <h3 className="text-lg font-semibold text-text-primary">Financial Overview</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-text-secondary">Budget Used</span>
+                  <span className="text-text-primary font-mono">
+                    ${(finances.totalExpenses / 1000000).toFixed(1)}M / ${((finances.initialBudget + finances.totalRevenue) / 1000000).toFixed(1)}M
+                  </span>
+                </div>
+                <div className="w-full bg-bg-tertiary rounded-full h-1.5">
+                  <div
+                    className="bg-cricket-primary h-1.5 rounded-full transition-all"
+                    style={{ width: `${((finances.totalExpenses / (finances.initialBudget + finances.totalRevenue)) * 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-bg-tertiary rounded-full h-1.5">
-                <div
-                  className="bg-cricket-primary h-1.5 rounded-full transition-all"
-                  style={{ width: `${(userTeam.finances.usedCap / userTeam.finances.salaryCap) * 100}%` }}
-                />
+              <div className="pt-2 space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Available Budget:</span>
+                  <span className="text-status-win font-mono">${(finances.currentBudget / 1000000).toFixed(1)}M</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Squad Size:</span>
+                  <span className="text-text-primary font-mono">{squadStats.totalPlayers}/25</span>
+                </div>
               </div>
             </div>
-            <div className="pt-2 space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Available Budget:</span>
-                <span className="text-status-win font-mono">₹{userTeam.finances.remainingBudget} Cr</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Squad Size:</span>
-                <span className="text-text-primary font-mono">{squadStats.totalPlayers}/25</span>
-              </div>
-            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -692,6 +784,54 @@ const Squad = () => {
         }}
         playerId={selectedPlayerId}
       />
+
+      {/* List for Transfer Modal */}
+      {showListingModal && selectedPlayerForListing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card p-4 max-w-md w-full">
+            <h3 className="text-lg font-bold text-text-primary mb-3">List Player for Transfer</h3>
+
+            <div className="mb-4">
+              <div className="text-sm text-text-secondary mb-2">Player:</div>
+              <div className="text-base font-semibold text-text-primary">{selectedPlayerForListing.name}</div>
+              <div className="text-xs text-text-tertiary mt-1">{selectedPlayerForListing.role} • ${selectedPlayerForListing.auctionValue?.toFixed(1)}M Value</div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-text-secondary mb-2">Asking Price (in $K)</label>
+              <input
+                type="number"
+                value={listingPrice}
+                onChange={(e) => setListingPrice(e.target.value)}
+                placeholder="e.g. 500 for $500K"
+                min="50"
+                className="w-full card border border-border-primary px-3 py-2 text-text-primary focus:outline-none focus:border-cricket-accent"
+              />
+              <div className="text-xs text-text-tertiary mt-1">Minimum: $50K</div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={confirmListing}
+                disabled={!listingPrice || parseFloat(listingPrice) < 50}
+                className="flex-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm Listing
+              </button>
+              <button
+                onClick={() => {
+                  setShowListingModal(false);
+                  setSelectedPlayerForListing(null);
+                  setListingPrice('');
+                }}
+                className="flex-1 card border border-border-primary text-text-secondary hover:text-text-primary py-2 rounded font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

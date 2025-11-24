@@ -16,7 +16,7 @@ class MatchOrchestrator {
     this.matchStore = matchStore;
     this.leagueStore = leagueStore;
 
-    this.preMatchSetup = new PreMatchSetup();
+    this.preMatchSetup = new PreMatchSetup(teamStore);
     // V2: Pass teamStore and playerStore to PostMatchProcessor for stats tracking
     this.postMatchProcessor = new PostMatchProcessor(leagueStore, teamStoreForStats || teamStore, playerStoreForStats || playerStore);
     this.displayFormatter = new MatchDisplayFormatter(playerStore);

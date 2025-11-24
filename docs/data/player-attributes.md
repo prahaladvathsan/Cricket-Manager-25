@@ -73,13 +73,14 @@ All attributes use a **1-20 scale** where:
 | **groundFielding** | Field movement and stopping | Fielding effectiveness |
 | **throwPower** | Throw distance | Long throws to stumps |
 | **throwAccuracy** | Throw accuracy | Run-out probability |
-| **keeping** (keeper) | Wicket-keeping technique | Wicketkeeping rating (40% weight) |
-| **collecting** (keeper) | Ball collection cleanness | Wicketkeeping rating (25% weight) |
-| **stumping** (keeper) | Stumping ability | Wicketkeeping rating (20% weight) |
+| **keeping** (keeper) | Wicket-keeping technique | Fielding rating (40% weight) |
+| **collecting** (keeper) | Ball collection cleanness | Fielding rating (25% weight) |
+| **stumping** (keeper) | Stumping ability | Fielding rating (20% weight) |
 
 **Wicket-Keeper Attribute Ranges:**
 - **Keepers**: keeping, collecting, stumping = 10-20 (elite)
 - **Non-keepers**: keeping, collecting, stumping = 1-4 (minimal)
+- **Note**: Reflexes attribute (from fielding) also contributes 15% weight to fielding rating
 
 ## Condition Attributes (0-100 Scale)
 
@@ -163,7 +164,12 @@ Players have playstyle ratings (0-100) for 25 different playstyles that apply dy
 
 - **16 Batting Playstyles**: Opener-Slogger, Finisher, Wall, Runner, etc.
 - **8 Bowling Playstyles**: Death Specialist, Swing Bowler, Classical Spinner, etc. (segregated by pace/spin)
-- **1 Wicketkeeping Playstyle**: Wicketkeeper (specialist glovework rating)
+- **1 Fielding Playstyle**: Wicketkeeper (specialist glovework rating, extensible for future fielding playstyles)
+
+**Fielding Playstyle Structure:**
+- **`playstyleRatings.fielding`**: All players have fielding ratings calculated
+- **`topPlaystyles.fielding`**: Only wicket-keepers have populated array; non-keepers have empty `[]`
+- **`primaryPlaystyle.fielding`**: Only wicket-keepers have non-null value; non-keepers have `null`
 
 See [`docs/core-systems/playstyle-system.md`] for complete playstyle documentation.
 

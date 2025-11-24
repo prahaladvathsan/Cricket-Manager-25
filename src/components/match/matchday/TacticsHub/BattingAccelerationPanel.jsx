@@ -17,6 +17,7 @@ import usePlayerStore from '../../../../stores/playerStore';
 import useTeamStore from '../../../../stores/teamStore';
 import { TrendingUp, Zap, Shield, GripVertical, Star } from 'lucide-react';
 import PlayerName from '../../../shared/PlayerName';
+import ConditionBar from '../../../shared/ConditionBar';
 
 // Acceleration tiers in order
 const ACCELERATION_TIERS = [
@@ -233,6 +234,7 @@ export default function BattingAccelerationPanel() {
   const innings = useMatchStore(state => state.innings);
   const tacticsState = useMatchStore(state => state.tacticsState);
   const ballByBall = useMatchStore(state => state.ballByBall);
+  const matchConditions = useMatchStore(state => state.matchConditions);
   const updateTacticsState = useMatchStore(state => state.updateTacticsState);
   const getPlayer = usePlayerStore(state => state.getPlayer);
 
@@ -247,11 +249,11 @@ export default function BattingAccelerationPanel() {
   const battingOrder = teamTactics?.battingOrder || [];
   const accelerationTiers = teamTactics?.accelerationTiers || {};
 
-  console.log('BattingAccelerationPanel - userTeamId:', userTeamId);
-  console.log('BattingAccelerationPanel - battingOrder:', battingOrder);
-  console.log('BattingAccelerationPanel - striker:', striker, 'nonStriker:', nonStriker);
-  console.log('BattingAccelerationPanel - battedPlayers:', battedPlayers);
-  console.log('BattingAccelerationPanel - accelerationTiers:', accelerationTiers);
+  //console.log('BattingAccelerationPanel - userTeamId:', userTeamId);
+  //console.log('BattingAccelerationPanel - battingOrder:', battingOrder);
+  //console.log('BattingAccelerationPanel - striker:', striker, 'nonStriker:', nonStriker);
+  //console.log('BattingAccelerationPanel - battedPlayers:', battedPlayers);
+  //console.log('BattingAccelerationPanel - accelerationTiers:', accelerationTiers);
 
   // Drag-and-drop state
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -405,9 +407,22 @@ export default function BattingAccelerationPanel() {
                   {position}
                 </span>
 
-                {/* Player name */}
-                <div className="flex-1 min-w-0">
+                {/* Player name and condition bars */}
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                   <PlayerName playerId={playerId} />
+                  {/* Condition bars */}
+                  <div className="flex gap-1.5">
+                    <ConditionBar
+                      type="confidence"
+                      value={matchConditions[playerId]?.confidence || 50}
+                      showValue={false}
+                    />
+                    <ConditionBar
+                      type="energy"
+                      value={matchConditions[playerId]?.energy || 100}
+                      showValue={false}
+                    />
+                  </div>
                 </div>
 
                 {/* Status indicator for dismissed */}

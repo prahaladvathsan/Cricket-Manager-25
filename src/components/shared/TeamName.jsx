@@ -35,6 +35,7 @@ import useTeamStore from '../../stores/teamStore';
  * @param {boolean} inline - Display inline without wrapping (default: false)
  * @param {string} className - Additional CSS classes
  * @param {boolean} showHoverEffect - Show hover underline effect (default: true)
+ * @param {boolean} disableClick - Disable click handling (useful when inside clickable parent) (default: false)
  * @param {function} onBeforeOpen - Callback to execute before opening modal (e.g., to close parent modal)
  */
 const TeamName = ({
@@ -44,6 +45,7 @@ const TeamName = ({
   inline = false,
   className = '',
   showHoverEffect = true,
+  disableClick = false,
   onBeforeOpen = null
 }) => {
   const [showModal, setShowModal] = useState(false);
@@ -79,7 +81,7 @@ const TeamName = ({
   return (
     <>
       <ElementType
-        onClick={(e) => {
+        onClick={disableClick ? undefined : (e) => {
           e.stopPropagation();
           if (onBeforeOpen) {
             onBeforeOpen();
@@ -88,22 +90,24 @@ const TeamName = ({
         }}
         className={`
           text-cricket-accent
-          cursor-pointer
-          ${showHoverEffect ? 'hover:underline' : ''}
+          ${disableClick ? '' : 'cursor-pointer'}
+          ${showHoverEffect && !disableClick ? 'hover:underline' : ''}
           transition-colors
           ${className}
         `}
-        title={`View ${teamData.name} details`}
+        title={disableClick ? undefined : `View ${teamData.name} details`}
       >
         {displayName}
       </ElementType>
 
-      <TeamCardModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        teamId={teamId}
-        team={teamData}
-      />
+      {!disableClick && (
+        <TeamCardModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          teamId={teamId}
+          team={teamData}
+        />
+      )}
     </>
   );
 };

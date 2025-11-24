@@ -1,6 +1,6 @@
 /**
  * @file validateFieldTemplates.js
- * @description Test script to validate all field templates against T20 rules
+ * @description Test script to validate all field formations against T20 rules
  */
 
 import { readFileSync } from 'fs';
@@ -11,19 +11,36 @@ import { validateFieldingSetup, getViolationMessages } from '../core/match-engin
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const fieldConfig = JSON.parse(
-  readFileSync(join(__dirname, '../data/config/field-positioning-config.json'), 'utf-8')
+// Load both config files
+const formationsConfig = JSON.parse(
+  readFileSync(join(__dirname, '../data/config/field-formations-config.json'), 'utf-8')
+);
+const positionsDatabase = JSON.parse(
+  readFileSync(join(__dirname, '../data/config/fielding-positions-complete.json'), 'utf-8')
 );
 
+// Create position lookup
+const positionLookup = {};
+positionsDatabase.positions.forEach(pos => {
+  positionLookup[pos.id] = pos;
+});
+
+// Resolve position IDs to full position data
+function resolveFormationPositions(positionIds) {
+  return positionIds
+    .map(posId => positionLookup[posId])
+    .filter(pos => pos !== null);
+}
+
 console.log('='.repeat(80));
-console.log('FIELD TEMPLATE VALIDATION TEST');
+console.log('FIELD FORMATION VALIDATION TEST');
 console.log('='.repeat(80));
 console.log('');
 
-const formations = fieldConfig.formations;
+const formations = formationsConfig.formations;
 const formationNames = Object.keys(formations);
 
-console.log(`Testing ${formationNames.length} field templates...\n`);
+console.log(`Testing ${formationNames.length} field formations...\n`);
 
 let totalTemplates = 0;
 let validPowerplay = 0;
@@ -33,16 +50,18 @@ let totalViolations = 0;
 // Test each formation
 formationNames.forEach((formationKey) => {
   const formation = formations[formationKey];
-  const positions = formation.positions;
+  // Resolve position IDs to full position data
+  const positions = resolveFormationPositions(formation.positionIds);
 
   console.log(`\n${'─'.repeat(80)}`);
-  console.log(`📋 Template: ${formation.name || formationKey}`);
-  console.log(`   Phase: ${formation.phase || 'any'} | Bowling: ${formation.bowlingType || 'any'} | Attacking: ${formation.isAttacking || false}`);
+  console.log(`📋 Formation: ${formation.name || formationKey}`);
+  console.log(`   Style: ${formation.formationStyle || 'neutral'}`);
   console.log(`   Description: ${formation.description || 'N/A'}`);
   console.log(`${'─'.repeat(80)}`);
 
   if (!positions || positions.length !== 11) {
-    console.log(`❌ ERROR: Invalid template - ${positions?.length || 0} positions (need 11)`);
+    console.log(`❌ ERROR: Invalid formation - ${positions?.length || 0} positions (need 11)`);
+    console.log(`   Missing positions: ${formation.positionIds.filter(id => !positionLookup[id]).join(', ')}`);
     return;
   }
 

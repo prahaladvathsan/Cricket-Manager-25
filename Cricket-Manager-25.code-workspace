@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../claude-showcase"
+		},
+		{
+			"path": "../cricket-data-processor"
 		}
 	],
 	"settings": {}

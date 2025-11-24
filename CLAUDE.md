@@ -96,6 +96,34 @@ See `docs/dev/active/README.md` for templates and `docs/dev/completed/developmen
 - **NEVER hardcode probabilities** in code - import from configs
 - Test outcomes with `node src/test/diagnosticBallTest.js`
 
+### Game Progression Standardization (CRITICAL)
+
+The game has **two progression modes** that must produce identical outcomes:
+1. **Normal UI Mode**: User manually clicks "Continue" (components/layout/Header.jsx)
+2. **Sim-to-Date Mode**: Automated simulation via calendar (core/simulation/SimulationEngine.js)
+
+**MANDATORY: When modifying automated game processes, update BOTH modes:**
+
+**Automated processes** (must be identical):
+- Match simulation (`quickSimMatch()`)
+- Financial processing (`processMatchFinancials()`)
+- League standings updates (`recordResult()`, `recalculateStandings()`)
+- Calendar event scheduling (matches, offseason, transfers, season end)
+- Inbox message generation (welcome, expectations, tutorial, summaries)
+- Playoff triggering and fixture population
+
+**UI-specific logic** (intentionally different):
+- User match handling (Normal: play/quick-sim choice, Sim: auto quick-sim)
+- Result modals (Normal: shows modals, Sim: no modals)
+- Auction flow (Normal: playthrough with skip, Sim: auto-complete)
+
+**Files to update together:**
+- `src/components/layout/Header.jsx` (Normal UI continue button logic)
+- `src/core/simulation/SimulationEngine.js` (Sim-to-date logic)
+- Any shared store actions (gameStore, leagueStore, financeStore)
+
+**Testing requirement**: Any change to game flow must be verified in both modes to ensure identical outcomes.
+
 ### Clickable Entity Components (CRITICAL)
 
 **NEVER hardcode `player.name` or `team.name`. ALWAYS use:**

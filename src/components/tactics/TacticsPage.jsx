@@ -160,28 +160,32 @@ const TacticsPage = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 px-4 pt-3 border-b border-border-primary bg-bg-secondary">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setValidationErrors([]); // Clear errors when switching tabs
-                setShowSuccess(false);
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-cricket-accent text-cricket-accent'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className="border-b border-border-primary">
+        <nav className="flex gap-2">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setValidationErrors([]); // Clear errors when switching tabs
+                  setShowSuccess(false);
+                }}
+                className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-cricket-accent text-cricket-accent'
+                    : 'border-transparent text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
       {/* Tab Content */}

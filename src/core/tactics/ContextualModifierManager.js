@@ -24,8 +24,13 @@ class ContextualModifierManager {
    * @returns {boolean} True if left-right combo
    */
   checkLeftRightCombo(striker, nonStriker) {
-    const strikerHand = striker.battingHand || 'right'; // Default to right if not specified
-    const nonStrikerHand = nonStriker.battingHand || 'right';
+    const strikerHand = striker.battingHand;
+    const nonStrikerHand = nonStriker.battingHand;
+
+    if (!strikerHand || !nonStrikerHand) {
+      console.warn(`Missing battingHand data - striker: ${strikerHand}, nonStriker: ${nonStrikerHand}`);
+      return false;
+    }
 
     return (strikerHand === 'left' && nonStrikerHand === 'right') ||
            (strikerHand === 'right' && nonStrikerHand === 'left');

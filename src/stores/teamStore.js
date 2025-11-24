@@ -22,7 +22,7 @@ import usePlayerStore from './playerStore';
  * @property {Object.<string, string>} accelerationTiers - Player ID → acceleration tier name
  * @property {Object.<string, BowlingPlans>} bowlingPlans - Player ID → bowling plans
  * @property {number[]} bowlingRotation - Array of player IDs in preferred bowling order
- * @property {string} fieldFormation - Field formation ('attacking', 'neutral', or 'defensive')
+ * @property {string} fieldFormation - Field formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
  */
 
 /**
@@ -73,6 +73,31 @@ const useTeamStore = create(
    * @param {string} teamId - ID of team to control
    */
   setUserTeam: (teamId) => set({ userTeamId: teamId }),
+
+  /**
+   * Initialize a random team for test mode
+   * Randomly selects one of the available teams
+   * @returns {string} The selected team ID
+   */
+  initializeRandomTeam: () => {
+    const state = get();
+    const teamIds = Object.keys(state.teams);
+
+    if (teamIds.length === 0) {
+      console.error('No teams available for selection');
+      return null;
+    }
+
+    // Randomly select a team
+    const randomIndex = Math.floor(Math.random() * teamIds.length);
+    const selectedTeamId = teamIds[randomIndex];
+
+    set({ userTeamId: selectedTeamId });
+
+    console.log(`🎲 Test mode: Randomly selected ${state.teams[selectedTeamId]?.shortName || selectedTeamId}`);
+
+    return selectedTeamId;
+  },
 
   /**
    * Get team by ID
@@ -295,6 +320,65 @@ const useTeamStore = create(
   // ==================== TACTICS ACTIONS ====================
 
   /**
+   * Get default bowling plans based on player's primary bowling playstyle
+   * @param {Object} player - Player object
+   * @returns {Object} Default bowling plans {lineLength, variation}
+   */
+  getDefaultBowlingPlansForPlaystyle: (player) => {
+    const primaryBowlingPlaystyle = player.primaryPlaystyle?.bowling;
+
+    // Mapping from bowling playstyles to their optimal bowling plans
+    const playstyleToPlans = {
+      // Pace bowlers
+      'Swing Bowler': {
+        lineLength: 'Attacking Line',
+        variation: 'Swing/Seam Focus'
+      },
+      'Hit-the-Deck Seamer': {
+        lineLength: 'Wide Line',
+        variation: 'Consistent Accuracy'
+      },
+      'Short-Ball Specialist': {
+        lineLength: 'Short-Pitched',
+        variation: 'Bouncer Barrage'
+      },
+      'Death Specialist': {
+        lineLength: 'Yorker Execution',
+        variation: 'Pace Variation Mix'
+      },
+      // Spin bowlers
+      'Classical Spinner': {
+        lineLength: 'Flight & Loop',
+        variation: 'Flight Variation'
+      },
+      'Flat Spinner': {
+        lineLength: 'Flat & Fast',
+        variation: 'Pace Variation'
+      },
+      'Mystery Spinner': {
+        lineLength: 'Wide of Off',
+        variation: 'Turn Candy Bag'
+      },
+      'Containment Spinner': {
+        lineLength: 'Flat & Fast', // Default for containment
+        variation: 'Consistent Line'
+      }
+    };
+
+    // Return plans for the playstyle, or fallback based on bowling type
+    if (primaryBowlingPlaystyle && playstyleToPlans[primaryBowlingPlaystyle]) {
+      return playstyleToPlans[primaryBowlingPlaystyle];
+    }
+
+    // Fallback based on bowlingType if no primary playstyle
+    if (player.bowlingType === 'spin') {
+      return { lineLength: 'Flight & Loop', variation: 'Flight Variation' };
+    } else {
+      return { lineLength: 'Wide Line', variation: 'Consistent Accuracy' };
+    }
+  },
+
+  /**
    * Initialize default tactics for a team from player data
    * @param {string} teamId - Team ID
    * @param {Object[]} players - Array of player objects
@@ -312,7 +396,7 @@ const useTeamStore = create(
       accelerationTiers: {},
       bowlingPlans: {},
       bowlingRotation: [],
-      fieldFormation: 'neutral'
+      fieldFormation: 'neutral_orthodox'
     };
 
     // Set default acceleration tiers and bowling plans from player data
@@ -323,10 +407,9 @@ const useTeamStore = create(
 
         // Set default bowling plans for bowlers/all-rounders
         if (player.role === 'bowler' || player.role === 'all-rounder') {
-          tactics.bowlingPlans[player.id] = {
-            lineLength: player.tactics?.defaultBowlingPlans?.lineLength || 'Wide Line',
-            variation: player.tactics?.defaultBowlingPlans?.variation || 'Consistent Accuracy'
-          };
+          // Use player's preset plans if they exist, otherwise use playstyle-based defaults
+          tactics.bowlingPlans[player.id] = player.tactics?.defaultBowlingPlans
+            || get().getDefaultBowlingPlansForPlaystyle(player);
 
           // Add to bowling rotation
           tactics.bowlingRotation.push(player.id);
@@ -410,6 +493,7 @@ const useTeamStore = create(
       const newAccelerationTiers = { ...(currentTactics?.accelerationTiers || {}) };
       const newBowlingPlans = { ...(currentTactics?.bowlingPlans || {}) };
       const newPlaystyleOverrides = { ...(currentTactics?.playstyleOverrides || {}) };
+      const currentBowlingRotation = currentTactics?.bowlingRotation || [];
 
       // Remove data for players no longer in squad
       Object.keys(newAccelerationTiers).forEach(playerId => {
@@ -428,6 +512,11 @@ const useTeamStore = create(
         }
       });
 
+      // Filter bowling rotation to only include players in the new squad
+      const newBowlingRotation = currentBowlingRotation.filter(playerId =>
+        playerIds.includes(playerId)
+      );
+
       return {
         teamTactics: {
           ...state.teamTactics,
@@ -437,7 +526,8 @@ const useTeamStore = create(
             battingOrder: newBattingOrder,
             accelerationTiers: newAccelerationTiers,
             bowlingPlans: newBowlingPlans,
-            playstyleOverrides: newPlaystyleOverrides
+            playstyleOverrides: newPlaystyleOverrides,
+            bowlingRotation: newBowlingRotation
           }
         }
       };
@@ -562,7 +652,7 @@ const useTeamStore = create(
   /**
    * Update field formation
    * @param {string} teamId - Team ID
-   * @param {string} formation - Formation name ('attacking', 'neutral', or 'defensive')
+   * @param {string} formation - Formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
    */
   updateFieldFormation: (teamId, formation) => {
     set((state) => ({
@@ -591,6 +681,202 @@ const useTeamStore = create(
         }
       }
     }));
+  },
+
+  /**
+   * Auto-assign bowling rotation using intelligent selection algorithm
+   * Assigns all 20 overs to bowlers from playing XI based on their attributes and playstyles
+   * @param {string} teamId - Team ID
+   * @returns {string[]} Array of 20 player IDs (one per over)
+   */
+  autoAssignBowlingRotation: (teamId) => {
+    const state = get();
+    const playerStore = usePlayerStore.getState();
+    const tactics = state.teamTactics[teamId];
+
+    if (!tactics || !tactics.squadSelection) {
+      console.warn(`Cannot auto-assign bowling rotation for team ${teamId}: no tactics or squad`);
+      return [];
+    }
+
+    // Get all players from playing XI
+    const playingXI = tactics.squadSelection
+      .map(id => playerStore.players[id])
+      .filter(Boolean);
+
+    // Helper function to get bowling rating
+    const getBowlingRating = (player) => {
+      const bowlingAttrs = player.attributes?.bowling || {};
+      const values = Object.values(bowlingAttrs);
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    };
+
+    // Categorize into primary bowlers and part-timers
+    const primaryBowlers = [];
+    const partTimers = [];
+
+    playingXI.forEach(player => {
+      const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
+      const bowlingRating = getBowlingRating(player);
+
+      if (isPrimary) {
+        primaryBowlers.push({ player, bowlingRating });
+      } else if (bowlingRating > 40) {
+        partTimers.push({ player, bowlingRating });
+      }
+    });
+
+    // Sort by bowling rating
+    primaryBowlers.sort((a, b) => b.bowlingRating - a.bowlingRating);
+    partTimers.sort((a, b) => b.bowlingRating - a.bowlingRating);
+
+    // Combine eligible bowlers
+    const eligibleBowlers = [...primaryBowlers.map(b => b.player), ...partTimers.map(b => b.player)];
+
+    if (eligibleBowlers.length === 0) {
+      console.warn(`No eligible bowlers found for team ${teamId}`);
+      return [];
+    }
+
+    // Auto-assign algorithm
+    const newAssignments = [];
+    const oversBowled = {};
+    const maxOversPerBowler = 4;
+    let previousBowler = null;
+
+    // Initialize overs bowled
+    eligibleBowlers.forEach(bowler => {
+      oversBowled[bowler.id] = 0;
+    });
+
+    // Assign each over (0-19)
+    for (let overIndex = 0; overIndex < 20; overIndex++) {
+      // Determine phase for this over
+      let phase = 'powerplay';
+      if (overIndex >= 6 && overIndex < 12) phase = 'middle';
+      else if (overIndex >= 12 && overIndex < 16) phase = 'middle';
+      else if (overIndex >= 16) phase = 'death';
+
+      // Score each eligible bowler
+      const scoredBowlers = eligibleBowlers
+        .filter(bowler =>
+          bowler.id !== previousBowler &&
+          oversBowled[bowler.id] < maxOversPerBowler
+        )
+        .map(bowler => {
+          const bowlerPlaystyle = bowler.primaryPlaystyle?.bowling || '';
+          const bowlingRating = getBowlingRating(bowler);
+
+          // Base score from bowling rating
+          let score = bowlingRating / 10;
+
+          // Phase-based bonuses
+          const phaseBonuses = {
+            powerplay: { 'Swing Bowler': 3, 'Wicket-Taker': 3 },
+            middle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
+            death: { 'Death Specialist': 4, 'Yorker Specialist': 3 },
+          };
+          score += phaseBonuses[phase]?.[bowlerPlaystyle] || 0;
+
+          // Rotation bonus - prefer bowlers with fewer overs bowled
+          score += (maxOversPerBowler - oversBowled[bowler.id]) * 1.5;
+
+          // Penalty for part-timers (prefer primary bowlers)
+          if (bowler.role !== 'bowler' && bowler.role !== 'all-rounder') {
+            score -= 2;
+          }
+
+          return { bowler, score };
+        });
+
+      // Sort by score and select best
+      scoredBowlers.sort((a, b) => b.score - a.score);
+
+      if (scoredBowlers.length > 0) {
+        const selectedBowler = scoredBowlers[0].bowler;
+        newAssignments[overIndex] = selectedBowler.id;
+        oversBowled[selectedBowler.id]++;
+        previousBowler = selectedBowler.id;
+      } else {
+        // Fallback: try to assign any bowler even if it means consecutive overs
+        if (eligibleBowlers.length > 0) {
+          const available = eligibleBowlers.filter(b => oversBowled[b.id] < maxOversPerBowler);
+          if (available.length > 0) {
+            newAssignments[overIndex] = available[0].id;
+            oversBowled[available[0].id]++;
+          } else {
+            newAssignments[overIndex] = null;
+          }
+        } else {
+          newAssignments[overIndex] = null;
+        }
+      }
+    }
+
+    return newAssignments;
+  },
+
+  /**
+   * Ensure bowling rotation has all 20 overs assigned
+   * Auto-completes any missing assignments before match starts
+   * Also validates that all assigned bowlers are in the current playing XI
+   * @param {string} teamId - Team ID
+   */
+  ensureCompleteBowlingRotation: (teamId) => {
+    const state = get();
+    const tactics = state.teamTactics[teamId];
+
+    if (!tactics) {
+      console.warn(`Cannot ensure bowling rotation for team ${teamId}: no tactics found`);
+      return;
+    }
+
+    const currentRotation = tactics.bowlingRotation || [];
+    const playingXI = tactics.squadSelection || [];
+
+    // Check if we need to complete/re-assign the rotation
+    let needsReassignment = false;
+
+    // Check 1: Are there 20 overs?
+    if (currentRotation.length < 20) {
+      needsReassignment = true;
+      console.log(`Bowling rotation for team ${teamId} has ${currentRotation.length} overs, needs 20`);
+    }
+
+    // Check 2: Are any overs unassigned (null)?
+    if (!needsReassignment) {
+      const hasNulls = currentRotation.some((bowlerId, index) => index < 20 && !bowlerId);
+      if (hasNulls) {
+        needsReassignment = true;
+        console.log(`Bowling rotation for team ${teamId} has unassigned overs`);
+      }
+    }
+
+    // Check 3: Are all assigned bowlers in the current playing XI?
+    if (!needsReassignment) {
+      const invalidBowlers = currentRotation
+        .filter((bowlerId, index) => index < 20 && bowlerId) // Only check first 20 overs, skip nulls
+        .filter(bowlerId => !playingXI.includes(bowlerId));
+
+      if (invalidBowlers.length > 0) {
+        needsReassignment = true;
+        console.log(`Bowling rotation for team ${teamId} contains ${invalidBowlers.length} bowler(s) not in playing XI - re-assigning`);
+      }
+    }
+
+    if (needsReassignment) {
+      // Auto-assign complete rotation
+      const completeRotation = get().autoAssignBowlingRotation(teamId);
+
+      if (completeRotation.length === 20) {
+        get().updateBowlingRotation(teamId, completeRotation);
+        console.log(`✓ Auto-completed bowling rotation for team ${teamId}`);
+      } else {
+        console.warn(`⚠ Failed to auto-complete bowling rotation for team ${teamId}`);
+      }
+    } else {
+      console.log(`✓ Bowling rotation for team ${teamId} is complete and valid`);
+    }
   },
 
   /**

@@ -51,16 +51,18 @@ export default class TransferManager {
   /**
    * Open transfer window
    * @param {string} windowType - Type of window (default: 'midSeason')
+   * @param {number} listingDurationDays - Duration for listings in days (7 mid-season, 14 off-season)
    * @returns {boolean} Success status
    */
-  openWindow(windowType = 'midSeason') {
-    const success = this.transferMarket.openTransferWindow(windowType, this.currentWeek);
+  openWindow(windowType = 'midSeason', listingDurationDays = 7) {
+    const success = this.transferMarket.openTransferWindow(windowType, this.currentWeek, listingDurationDays);
 
     if (success) {
       this.transferWindowHistory.push({
         type: windowType,
         week: this.currentWeek,
-        openedAt: Date.now()
+        openedAt: Date.now(),
+        listingDuration: listingDurationDays
       });
     }
 

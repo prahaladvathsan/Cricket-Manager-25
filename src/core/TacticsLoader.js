@@ -77,56 +77,66 @@ export function applyTacticsToMatch(matchStore, teamId, teamTactics, players) {
 
 /**
  * Apply playstyle overrides to players in match
+ * Sets selectedPlaystyle for match duration without mutating original player data
  * @param {Object} playerStore - Player store instance
- * @param {Object} playstyleOverrides - Map of playerId -> playstyle name
+ * @param {Object} playstyleOverrides - Map of playerId -> {batting?: string, bowling?: string}
  */
 export function applyPlaystyleOverrides(playerStore, playstyleOverrides) {
   if (!playstyleOverrides || Object.keys(playstyleOverrides).length === 0) {
     return;
   }
 
-  Object.entries(playstyleOverrides).forEach(([playerId, playstyle]) => {
-    // Store original playstyle if not already stored
+  Object.entries(playstyleOverrides).forEach(([playerId, playstyles]) => {
     const player = playerStore.getState().players[playerId];
-    if (player && !player._originalPrimaryPlaystyle) {
-      player._originalPrimaryPlaystyle = { ...player.primaryPlaystyle };
-    }
+    if (!player) return;
 
-    // Override primary playstyle for match
+    // Build selectedPlaystyle object
+    const selectedPlaystyle = {
+      batting: playstyles.batting || player.primaryPlaystyle?.batting,
+      bowling: playstyles.bowling || player.primaryPlaystyle?.bowling
+    };
+
+    // Set selectedPlaystyle for match (this is what AttributeModifierSystem checks)
     playerStore.setState((state) => ({
       players: {
         ...state.players,
         [playerId]: {
           ...state.players[playerId],
-          primaryPlaystyle: {
-            ...state.players[playerId].primaryPlaystyle,
-            batting: playstyle
-          }
+          selectedPlaystyle: selectedPlaystyle,
+          _hasPlaystyleOverride: true // Mark for cleanup later
         }
       }
     }));
+
+    console.log(
+      `✓ Applied playstyle override for ${player.name}: ` +
+      (playstyles.batting ? `Batting=${playstyles.batting} ` : '') +
+      (playstyles.bowling ? `Bowling=${playstyles.bowling}` : '')
+    );
   });
 }
 
 /**
  * Restore original playstyles after match
+ * Clears selectedPlaystyle overrides set during match
  * @param {Object} playerStore - Player store instance
  * @param {string[]} playerIds - Array of player IDs to restore
  */
 export function restoreOriginalPlaystyles(playerStore, playerIds) {
   playerIds.forEach(playerId => {
     const player = playerStore.getState().players[playerId];
-    if (player && player._originalPrimaryPlaystyle) {
+    if (player && player._hasPlaystyleOverride) {
       playerStore.setState((state) => ({
         players: {
           ...state.players,
           [playerId]: {
             ...state.players[playerId],
-            primaryPlaystyle: player._originalPrimaryPlaystyle,
-            _originalPrimaryPlaystyle: undefined
+            selectedPlaystyle: undefined,
+            _hasPlaystyleOverride: undefined
           }
         }
       }));
+      console.log(`✓ Cleared playstyle override for ${player.name}`);
     }
   });
 }
@@ -163,12 +173,12 @@ export function getBowlingRotation(teamId, getTeamTactics) {
  * Get field formation from tactics
  * @param {string} teamId - Team ID
  * @param {Function} getTeamTactics - teamStore.getTeamTactics function
- * @returns {string} Field formation ('attacking', 'neutral', or 'defensive')
+ * @returns {string} Field formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
  */
 export function getFieldFormation(teamId, getTeamTactics) {
   const tactics = getTeamTactics(teamId);
   if (!tactics || !tactics.fieldFormation) {
-    return 'neutral';
+    return 'neutral_orthodox';
   }
   return tactics.fieldFormation;
 }

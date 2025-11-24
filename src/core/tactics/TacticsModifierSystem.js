@@ -80,7 +80,9 @@ class TacticsModifierSystem {
       stage: 3,
       name: 'Tier/Plan',
       strikerTier: tierPlanResult.strikerTier,
-      bowlerPlans: tierPlanResult.bowlerPlans
+      bowlerPlans: tierPlanResult.bowlerPlans,
+      strikerMetadata: modifiedStriker.tierMetadata,
+      bowlerMetadata: modifiedBowler.planMetadata
     });
 
     // ========== STAGE 4: Confidence Modifiers ==========
@@ -113,7 +115,9 @@ class TacticsModifierSystem {
       stage: 6,
       name: 'Pressure',
       battingPressure: tacticsState.pressureIndex.batting,
-      bowlingPressure: tacticsState.pressureIndex.bowling
+      bowlingPressure: tacticsState.pressureIndex.bowling,
+      strikerMetadata: pressureResult.strikerPressureMetadata,
+      bowlerMetadata: pressureResult.bowlerPressureMetadata
     });
 
     // ========== STAGE 7: Contextual Modifiers ==========
@@ -127,14 +131,322 @@ class TacticsModifierSystem {
     });
 
     // ========== Calculate Mentalities ==========
-    const { battingMentality, bowlingMentality } = this.calculateMentalities(tierPlanResult.strikerTier, tierPlanResult.bowlerPlans, modifiedBowler);
+    const { battingMentality, bowlingMentality} = this.calculateMentalities(tierPlanResult.strikerTier, tierPlanResult.bowlerPlans, modifiedBowler);
+
+    // ========== Create UI Breakdown ==========
+    const breakdown = this.createModifierBreakdown(modifierMetadata, modifiedStriker, modifiedBowler, tierPlanResult, matchupResult);
 
     return {
       striker: modifiedStriker,
       bowler: modifiedBowler,
       battingMentality,
       bowlingMentality,
-      metadata: modifierMetadata
+      metadata: modifierMetadata,
+      breakdown: breakdown  // New: UI-friendly breakdown
+    };
+  }
+
+  /**
+   * Format conditions array into a human-readable string
+   * @param {Array} conditions - Array of condition objects
+   * @returns {string} Formatted condition string
+   */
+  formatConditions(conditions) {
+    if (!conditions || conditions.length === 0) return null;
+
+    return conditions.map(cond => {
+      const { field, operator, value } = cond;
+      // Convert field names to more readable format
+      const fieldName = field.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      return `${fieldName} ${operator} ${value}`;
+    }).join(' and ');
+  }
+
+  /**
+   * Create UI-friendly modifier breakdown showing active effects
+   * @param {Object} metadata - Raw modifier metadata
+   * @param {Object} striker - Modified striker
+   * @param {Object} bowler - Modified bowler
+   * @param {Object} tierPlanResult - Tier/plan information
+   * @param {Object} matchupResult - Matchup information
+   * @returns {Object} Breakdown for UI display
+   */
+  createModifierBreakdown(metadata, striker, bowler, tierPlanResult, matchupResult) {
+    const strikerBreakdown = {
+      playstyleModifiers: [],
+      tacticalModifiers: [],
+      matchupModifiers: [],
+      confidenceModifiers: [],
+      energyModifiers: [],
+      pressureModifiers: [],
+      contextModifiers: []
+    };
+
+    const bowlerBreakdown = {
+      playstyleModifiers: [],
+      tacticalModifiers: [],
+      matchupModifiers: [],
+      confidenceModifiers: [],
+      energyModifiers: [],
+      pressureModifiers: [],
+      contextModifiers: []
+    };
+
+    // Process each stage
+    metadata.stages.forEach(stage => {
+      switch (stage.stage) {
+        case 1: // Playstyle
+          // Striker playstyle - show each applied modifier with its effects
+          if (stage.striker?.appliedModifiers && stage.striker.appliedModifiers.length > 0) {
+            stage.striker.appliedModifiers.forEach(modifier => {
+              // Format effect details into a readable string
+              const effectStrings = modifier.effectDetails.map(eff => {
+                const sign = eff.value > 0 ? '+' : '';
+                return `${sign}${eff.value.toFixed(1)} ${eff.attribute}`;
+              });
+
+              strikerBreakdown.playstyleModifiers.push({
+                name: modifier.name,
+                value: modifier.sideEffect ? 0 : 1, // Just for color coding (positive/negative)
+                description: effectStrings.join(', '),
+                condition: this.formatConditions(modifier.conditions)
+              });
+            });
+          }
+
+          // Bowler playstyle - show each applied modifier with its effects
+          if (stage.bowler?.appliedModifiers && stage.bowler.appliedModifiers.length > 0) {
+            stage.bowler.appliedModifiers.forEach(modifier => {
+              // Format effect details into a readable string
+              const effectStrings = modifier.effectDetails.map(eff => {
+                const sign = eff.value > 0 ? '+' : '';
+                return `${sign}${eff.value.toFixed(1)} ${eff.attribute}`;
+              });
+
+              bowlerBreakdown.playstyleModifiers.push({
+                name: modifier.name,
+                value: modifier.sideEffect ? 0 : 1, // Just for color coding
+                description: effectStrings.join(', '),
+                condition: this.formatConditions(modifier.conditions)
+              });
+            });
+          }
+          break;
+
+        case 2: // Matchup
+          if (stage.matchup?.effect && stage.matchup.effect !== 'neutral') {
+            const { effect, modifiers, bowlerStyle, rank } = stage.matchup;
+
+            const modifierDescriptions = Object.entries(modifiers || {})
+              .map(([attr, value]) => {
+                const sign = value > 0 ? '+' : '';
+                return `${sign}${value} ${attr}`;
+              })
+              .join(', ');
+
+            const effectNames = {
+              majorStrength: 'Major Strength',
+              strength: 'Strength',
+              weakness: 'Weakness',
+              majorWeakness: 'Major Weakness'
+            };
+
+            const modifierValue = modifiers?.timing || 0;
+
+            strikerBreakdown.matchupModifiers.push({
+              name: effectNames[effect] || effect,
+              value: modifierValue,
+              description: modifierDescriptions || `${effectNames[effect]} vs ${bowlerStyle}`,
+              condition: `Rank ${rank} vs ${bowlerStyle}`
+            });
+          }
+          break;
+
+        case 3: // Tier/Plan
+          if (stage.strikerMetadata && stage.strikerMetadata.appliedModifiers) {
+            const { bonuses = {}, penalties = {} } = stage.strikerMetadata.appliedModifiers;
+            const allModifiers = { ...bonuses, ...penalties };
+
+            if (Object.keys(allModifiers).length > 0) {
+              const modifierDescriptions = Object.entries(allModifiers)
+                .map(([attr, value]) => {
+                  const sign = value > 0 ? '+' : '';
+                  return `${sign}${value} ${attr}`;
+                })
+                .join(', ');
+
+              strikerBreakdown.tacticalModifiers.push({
+                name: `${stage.strikerTier} Acceleration`,
+                value: Object.values(bonuses).reduce((sum, val) => sum + val, 0) -
+                       Math.abs(Object.values(penalties).reduce((sum, val) => sum + val, 0)),
+                description: modifierDescriptions,
+                condition: `Tier: ${stage.strikerTier}`
+              });
+            }
+          }
+
+          if (stage.bowlerMetadata && stage.bowlerMetadata.appliedModifiers) {
+            const { lineLengthModifiers, variationModifiers } = stage.bowlerMetadata.appliedModifiers;
+            const allModifiers = {};
+
+            if (lineLengthModifiers?.bonuses) Object.assign(allModifiers, lineLengthModifiers.bonuses);
+            if (lineLengthModifiers?.penalties) Object.assign(allModifiers, lineLengthModifiers.penalties);
+            if (variationModifiers?.bonuses) Object.assign(allModifiers, variationModifiers.bonuses);
+            if (variationModifiers?.penalties) Object.assign(allModifiers, variationModifiers.penalties);
+
+            if (Object.keys(allModifiers).length > 0) {
+              const modifierDescriptions = Object.entries(allModifiers)
+                .map(([attr, value]) => {
+                  const sign = value > 0 ? '+' : '';
+                  return `${sign}${value} ${attr}`;
+                })
+                .join(', ');
+
+              const { lineLength, variation } = stage.bowlerMetadata;
+              bowlerBreakdown.tacticalModifiers.push({
+                name: `${lineLength} / ${variation}`,
+                value: Object.values(allModifiers).reduce((sum, val) => sum + val, 0),
+                description: modifierDescriptions,
+                condition: `Plans: ${lineLength}, ${variation}`
+              });
+            }
+          }
+          break;
+
+        case 4: // Confidence
+          const strikerConfidence = stage.strikerConfidence;
+          const bowlerConfidence = stage.bowlerConfidence;
+
+          if (strikerConfidence > 60 || strikerConfidence < 40) {
+            const level = strikerConfidence >= 81 ? 'Sky-High' : strikerConfidence >= 61 ? 'High' : strikerConfidence >= 41 ? 'Normal' : strikerConfidence >= 21 ? 'Low' : 'Shattered';
+            const modifier = strikerConfidence >= 81 ? 2 : strikerConfidence >= 61 ? 1 : strikerConfidence >= 41 ? 0 : strikerConfidence >= 21 ? -1 : -2;
+            let conditionStr = null;
+            if (strikerConfidence >= 81) conditionStr = 'confidence >= 81';
+            else if (strikerConfidence >= 61) conditionStr = 'confidence >= 61';
+            else if (strikerConfidence >= 21) conditionStr = 'confidence >= 21';
+            else conditionStr = 'confidence < 21';
+
+            if (modifier !== 0) {
+              strikerBreakdown.confidenceModifiers.push({
+                name: `${level} Confidence`,
+                value: modifier,
+                description: `${modifier > 0 ? '+' : ''}${modifier} to all attributes`,
+                condition: conditionStr
+              });
+            }
+          }
+
+          if (bowlerConfidence > 60 || bowlerConfidence < 40) {
+            const level = bowlerConfidence >= 81 ? 'Sky-High' : bowlerConfidence >= 61 ? 'High' : bowlerConfidence >= 41 ? 'Normal' : bowlerConfidence >= 21 ? 'Low' : 'Shattered';
+            const modifier = bowlerConfidence >= 81 ? 2 : bowlerConfidence >= 61 ? 1 : bowlerConfidence >= 41 ? 0 : bowlerConfidence >= 21 ? -1 : -2;
+            let conditionStr = null;
+            if (bowlerConfidence >= 81) conditionStr = 'confidence >= 81';
+            else if (bowlerConfidence >= 61) conditionStr = 'confidence >= 61';
+            else if (bowlerConfidence >= 21) conditionStr = 'confidence >= 21';
+            else conditionStr = 'confidence < 21';
+
+            if (modifier !== 0) {
+              bowlerBreakdown.confidenceModifiers.push({
+                name: `${level} Confidence`,
+                value: modifier,
+                description: `${modifier > 0 ? '+' : ''}${modifier} to all attributes`,
+                condition: conditionStr
+              });
+            }
+          }
+          break;
+
+        case 5: // Energy
+          const strikerEnergy = stage.strikerEnergy;
+          const bowlerEnergy = stage.bowlerEnergy;
+
+          if (strikerEnergy < 80) {
+            const level = strikerEnergy >= 60 ? 'Slightly Tired' : strikerEnergy >= 40 ? 'Tired' : strikerEnergy >= 20 ? 'Exhausted' : 'Gassed';
+            const modifier = strikerEnergy >= 60 ? -1 : strikerEnergy >= 40 ? -2 : strikerEnergy >= 20 ? -1 : -2;
+            const scope = strikerEnergy >= 40 ? 'physical' : 'all';
+            let conditionStr = null;
+            if (strikerEnergy >= 60) conditionStr = 'energy >= 60 and < 80';
+            else if (strikerEnergy >= 40) conditionStr = 'energy >= 40 and < 60';
+            else if (strikerEnergy >= 20) conditionStr = 'energy >= 20 and < 40';
+            else conditionStr = 'energy < 20';
+
+            strikerBreakdown.energyModifiers.push({
+              name: `${level}`,
+              value: modifier,
+              description: `${modifier} to ${scope} attributes`,
+              condition: conditionStr
+            });
+          }
+
+          if (bowlerEnergy < 80) {
+            const level = bowlerEnergy >= 60 ? 'Slightly Tired' : bowlerEnergy >= 40 ? 'Tired' : bowlerEnergy >= 20 ? 'Exhausted' : 'Gassed';
+            const modifier = bowlerEnergy >= 60 ? -1 : bowlerEnergy >= 40 ? -2 : bowlerEnergy >= 20 ? -1 : -2;
+            const scope = bowlerEnergy >= 40 ? 'physical' : 'all';
+            let conditionStr = null;
+            if (bowlerEnergy >= 60) conditionStr = 'energy >= 60 and < 80';
+            else if (bowlerEnergy >= 40) conditionStr = 'energy >= 40 and < 60';
+            else if (bowlerEnergy >= 20) conditionStr = 'energy >= 20 and < 40';
+            else conditionStr = 'energy < 20';
+
+            bowlerBreakdown.energyModifiers.push({
+              name: `${level}`,
+              value: modifier,
+              description: `${modifier} to ${scope} attributes`,
+              condition: conditionStr
+            });
+          }
+          break;
+
+        case 6: // Pressure
+          if (stage.strikerMetadata && stage.strikerMetadata.penaltyApplied > 0) {
+            const penalty = stage.strikerMetadata.penaltyApplied;
+            const pressure = stage.battingPressure || 50;
+
+            strikerBreakdown.pressureModifiers.push({
+              name: 'High Pressure',
+              value: -Math.round(penalty),
+              description: `-${penalty.toFixed(1)} to playstyle rating`,
+              condition: `pressure = ${pressure.toFixed(0)}`
+            });
+          }
+
+          if (stage.bowlerMetadata && stage.bowlerMetadata.penaltyApplied > 0) {
+            const penalty = stage.bowlerMetadata.penaltyApplied;
+            const pressure = stage.bowlingPressure || 50;
+
+            bowlerBreakdown.pressureModifiers.push({
+              name: 'High Pressure',
+              value: -Math.round(penalty),
+              description: `-${penalty.toFixed(1)} to playstyle rating`,
+              condition: `pressure = ${pressure.toFixed(0)}`
+            });
+          }
+          break;
+
+        case 7: // Contextual
+          if (stage.leftRightActive) {
+            bowlerBreakdown.contextModifiers.push({
+              name: 'Left-Right Partnership',
+              value: -2,
+              description: '-2 accuracy',
+              condition: 'left-right hand partnership'
+            });
+          }
+          if (stage.newBallActive) {
+            bowlerBreakdown.contextModifiers.push({
+              name: 'New Ball Bonus',
+              value: 2,
+              description: '+2 swing',
+              condition: 'over <= 6 (new ball)'
+            });
+          }
+          break;
+      }
+    });
+
+    return {
+      striker: strikerBreakdown,
+      bowler: bowlerBreakdown
     };
   }
 
@@ -145,11 +457,28 @@ class TacticsModifierSystem {
     const strikerResult = attributeModifierSystem.applyBattingModifiers(striker, matchContext, bowler);
     const bowlerResult = attributeModifierSystem.applyBowlingModifiers(bowler, matchContext, strikerResult.player || strikerResult);
 
+    // Extract the actual player objects
+    const modifiedStriker = strikerResult.player || strikerResult;
+    const modifiedBowler = bowlerResult.player || bowlerResult;
+
+    // Extract metadata from matchMetadata (where AttributeModifierSystem stores it)
+    const strikerMetadata = modifiedStriker.matchMetadata ? {
+      activePlaystyle: modifiedStriker.matchMetadata.activePlaystyle,
+      playstyleRating: modifiedStriker.matchMetadata.playstyleRating,
+      appliedModifiers: modifiedStriker.matchMetadata.appliedModifiers || []
+    } : {};
+
+    const bowlerMetadata = modifiedBowler.matchMetadata ? {
+      activePlaystyle: modifiedBowler.matchMetadata.activePlaystyle,
+      playstyleRating: modifiedBowler.matchMetadata.playstyleRating,
+      appliedModifiers: modifiedBowler.matchMetadata.appliedModifiers || []
+    } : {};
+
     return {
-      striker: strikerResult.player || strikerResult,
-      bowler: bowlerResult.player || bowlerResult,
-      strikerMetadata: strikerResult.metadata || {},
-      bowlerMetadata: bowlerResult.metadata || {}
+      striker: modifiedStriker,
+      bowler: modifiedBowler,
+      strikerMetadata,
+      bowlerMetadata
     };
   }
 
@@ -158,7 +487,13 @@ class TacticsModifierSystem {
    */
   applyMatchupModifiers(striker, bowler) {
     const modifiedStriker = matchupEvaluator.applyMatchupModifiers(striker, bowler);
-    const matchupSummary = matchupEvaluator.evaluateMatchup(striker, bowler);
+
+    const matchupSummary = modifiedStriker.matchupMetadata ? {
+      rank: modifiedStriker.matchupMetadata.rank,
+      effect: modifiedStriker.matchupMetadata.effect,
+      modifiers: modifiedStriker.matchupMetadata.modifiersApplied,
+      bowlerStyle: modifiedStriker.matchupMetadata.bowlerStyle
+    } : matchupEvaluator.evaluateMatchup(striker, bowler);
 
     return {
       striker: modifiedStriker,
@@ -194,8 +529,8 @@ class TacticsModifierSystem {
    * Stage 4: Apply confidence modifiers
    */
   applyConfidenceModifiers(striker, bowler) {
-    const strikerConfidence = striker.condition?.confidence || 50;
-    const bowlerConfidence = bowler.condition?.confidence || 50;
+    const strikerConfidence = striker.condition?.confidence ?? 50;
+    const bowlerConfidence = bowler.condition?.confidence ?? 50;
 
     const modifiedStriker = confidenceManager.applyConfidenceModifiers(striker, strikerConfidence);
     const modifiedBowler = confidenceManager.applyConfidenceModifiers(bowler, bowlerConfidence);
@@ -212,8 +547,8 @@ class TacticsModifierSystem {
    * Stage 5: Apply energy modifiers
    */
   applyEnergyModifiers(striker, bowler) {
-    const strikerEnergy = striker.condition?.energy || 100;
-    const bowlerEnergy = bowler.condition?.energy || 100;
+    const strikerEnergy = striker.condition?.energy ?? 100;
+    const bowlerEnergy = bowler.condition?.energy ?? 100;
 
     const modifiedStriker = energyManager.applyEnergyModifiers(striker, strikerEnergy);
     const modifiedBowler = energyManager.applyEnergyModifiers(bowler, bowlerEnergy);
@@ -230,15 +565,17 @@ class TacticsModifierSystem {
    * Stage 6: Apply pressure modifiers (playstyle rating ONLY)
    */
   applyPressureModifiers(striker, bowler, tacticsState) {
-    const battingPressure = tacticsState.pressureIndex?.batting || 50;
-    const bowlingPressure = tacticsState.pressureIndex?.bowling || 50;
+    const battingPressure = tacticsState.pressureIndex?.batting ?? 50;
+    const bowlingPressure = tacticsState.pressureIndex?.bowling ?? 50;
 
     const modifiedStriker = pressureCalculator.applyPressureToPlaystyleRating(striker, battingPressure, 'batting');
     const modifiedBowler = pressureCalculator.applyPressureToPlaystyleRating(bowler, bowlingPressure, 'bowling');
 
     return {
       striker: modifiedStriker,
-      bowler: modifiedBowler
+      bowler: modifiedBowler,
+      strikerPressureMetadata: modifiedStriker.pressureMetadata || null,
+      bowlerPressureMetadata: modifiedBowler.pressureMetadata || null
     };
   }
 
@@ -246,7 +583,7 @@ class TacticsModifierSystem {
    * Stage 7: Apply contextual modifiers
    */
   applyContextualModifiers(bowler, striker, nonStriker, matchSituation) {
-    const over = matchSituation.over || 1;
+    const over = matchSituation.over;
 
     const leftRightActive = contextualModifierManager.checkLeftRightCombo(striker, nonStriker);
     const newBallActive = contextualModifierManager.checkNewBallBoost(over, bowler.bowlingType);
@@ -301,41 +638,32 @@ class TacticsModifierSystem {
    * Build match context for playstyle modifier evaluation
    */
   buildMatchContext(ballContext, matchSituation) {
-    const striker = ballContext.striker || {};
-    const bowler = ballContext.bowler || {};
+    const striker = ballContext.striker;
+    const bowler = ballContext.bowler;
+
+    if (!striker) throw new Error('striker is required');
+    if (!bowler) throw new Error('bowler is required');
+    if (!matchSituation) throw new Error('matchSituation is required');
 
     return {
-      // Match phase
       phase: matchSituation.phase || this.determinePhase(matchSituation.over),
-      over: matchSituation.over || 1,
-      ball: matchSituation.ball || 1,
-
-      // Team state
-      wicketsInHand: matchSituation.wicketsInHand || 10,
-      currentRunRate: matchSituation.currentRunRate || 0,
-      requiredRunRate: matchSituation.requiredRunRate || 0,
-
-      // Innings state
-      ballsLeft: matchSituation.ballsLeft || 120,
+      over: matchSituation.over,
+      ball: matchSituation.ball,
+      wicketsInHand: matchSituation.wicketsInHand,
+      currentRunRate: matchSituation.currentRunRate,
+      requiredRunRate: matchSituation.requiredRunRate,
+      ballsLeft: matchSituation.ballsLeft,
       target: matchSituation.target || null,
-
-      // Partnership state
-      currentPartnership: matchSituation.currentPartnership || 0,
-      currentPartnershipBalls: matchSituation.currentPartnershipBalls || 0,
-
-      // Player state
-      ballsFaced: matchSituation.ballsFaced || 0,
-      oversBowled: matchSituation.oversBowled || 0,
-
-      // Batsman attributes
-      batsmanTechnique: striker.attributes?.batting?.technique || 0,
-      batsmanFootwork: striker.attributes?.batting?.footwork || 0,
-      batsmanConcentration: striker.attributes?.mental?.concentration || 0,
-
-      // Bowler attributes
-      bowlerAccuracy: bowler.attributes?.bowling?.accuracy || 0,
-      bowlerSwing: bowler.attributes?.bowling?.swing || 0,
-      bowlerTurn: bowler.attributes?.bowling?.turn || 0
+      currentPartnership: matchSituation.currentPartnership,
+      currentPartnershipBalls: matchSituation.currentPartnershipBalls,
+      ballsFaced: matchSituation.ballsFaced,
+      oversBowled: matchSituation.oversBowled,
+      batsmanTechnique: striker.attributes?.batting?.technique,
+      batsmanFootwork: striker.attributes?.batting?.footwork,
+      batsmanConcentration: striker.attributes?.mental?.concentration,
+      bowlerAccuracy: bowler.attributes?.bowling?.accuracy,
+      bowlerSwing: bowler.attributes?.bowling?.swing,
+      bowlerTurn: bowler.attributes?.bowling?.turn
     };
   }
 

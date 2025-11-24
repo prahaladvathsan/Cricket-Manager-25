@@ -58,12 +58,13 @@ class AccelerationTierManager {
     }
 
     const modifiedPlayer = JSON.parse(JSON.stringify(player)); // Deep copy
+    const appliedModifiers = { bonuses: {}, penalties: {} };
 
     // Apply bonuses
     if (tier.attributeModifiers.bonuses) {
       Object.entries(tier.attributeModifiers.bonuses).forEach(([attr, value]) => {
-        // Find attribute in player structure
         this.applyAttributeModifier(modifiedPlayer, attr, value);
+        appliedModifiers.bonuses[attr] = value;
       });
     }
 
@@ -71,8 +72,14 @@ class AccelerationTierManager {
     if (tier.attributeModifiers.penalties) {
       Object.entries(tier.attributeModifiers.penalties).forEach(([attr, value]) => {
         this.applyAttributeModifier(modifiedPlayer, attr, value);
+        appliedModifiers.penalties[attr] = value;
       });
     }
+
+    modifiedPlayer.tierMetadata = {
+      tierName,
+      appliedModifiers
+    };
 
     return modifiedPlayer;
   }

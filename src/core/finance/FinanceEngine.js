@@ -130,15 +130,20 @@ export default class FinanceEngine {
    * @returns {boolean} - Success status
    */
   processAuctionSpending(teamId, amount, playersPurchased = []) {
+    console.log(`💰 FinanceEngine.processAuctionSpending: teamId=${teamId}, amount=${amount}`);
+
     const finance = this.teamFinances.get(teamId);
     if (!finance) {
-      console.error(`Team ${teamId} not found in finance system`);
+      console.error(`💰 Team ${teamId} not found in finance system`);
+      console.error(`💰 Available teams:`, Array.from(this.teamFinances.keys()));
       return false;
     }
 
+    console.log(`💰 Team ${teamId} current budget before spending: $${(finance.currentBudget / 1000000).toFixed(1)}M`);
+
     // Validate budget
     if (amount > finance.currentBudget) {
-      console.error(`Team ${teamId} cannot afford auction spending of $${amount} (budget: $${finance.currentBudget})`);
+      console.error(`💰 Team ${teamId} cannot afford auction spending of $${(amount / 1000000).toFixed(1)}M (budget: $${(finance.currentBudget / 1000000).toFixed(1)}M)`);
       return false;
     }
 
@@ -147,15 +152,17 @@ export default class FinanceEngine {
     finance.auctionSpending += amount;
     finance.totalExpenses += amount;
 
+    console.log(`💰 Team ${teamId} budget after spending: $${(finance.currentBudget / 1000000).toFixed(1)}M`);
+
     // Record transaction
     this.recordTransaction({
       type: 'expense_auction',
       teamId,
-      amount: -amount, // Negative for expense
+      amount: amount, // Store as positive, type indicates it's an expense
       description: `Auction spending: ${playersPurchased.length} players purchased`,
       metadata: {
         playerCount: playersPurchased.length,
-        playerIds: playersPurchased.map(p => p.id)
+        playerIds: playersPurchased
       }
     });
 

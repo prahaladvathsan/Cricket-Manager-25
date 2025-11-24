@@ -48,10 +48,9 @@ class ConfidenceManager {
    * @returns {number} Updated confidence value
    */
   updateBattingConfidence(player, ballResult, overResult, matchSituation) {
-    let currentConfidence = player.condition?.confidence || 50;
+    let currentConfidence = player.condition?.confidence ?? 50;
     let delta = 0;
 
-    // Ball-level triggers
     if (ballResult.runs === 4) {
       delta += this.battingTriggers.ballLevel.score4.change;
     }
@@ -59,19 +58,16 @@ class ConfidenceManager {
       delta += this.battingTriggers.ballLevel.score6.change;
     }
 
-    // Track consecutive dot balls (need to pass from matchSituation or ball metadata)
     if (ballResult.runs === 0 && !ballResult.isWicket && matchSituation.consecutiveDots >= 3) {
       delta += this.battingTriggers.ballLevel.every3Dots.change;
     }
 
-    // Every 10 balls survived trigger
-    const ballsFaced = matchSituation.ballsFaced || 0;
+    const ballsFaced = matchSituation.ballsFaced;
     if (ballsFaced > 0 && ballsFaced % 10 === 0) {
       delta += this.battingTriggers.ballLevel.every10Balls.change;
     }
 
-    // Milestone triggers
-    const playerScore = matchSituation.playerScore || 0;
+    const playerScore = matchSituation.playerScore;
     if (playerScore === 25) {
       delta += this.battingTriggers.milestones.reach25.change;
     }
@@ -79,26 +75,22 @@ class ConfidenceManager {
       delta += this.battingTriggers.milestones.reach50.change;
     }
 
-    // Over-level triggers (if end of over)
     if (overResult && overResult.isEndOfOver) {
-      const overRuns = overResult.runsScored || 0;
-      const targetRuns = overResult.targetRuns || 0;
+      const overRuns = overResult.runsScored ?? 0;
+      const targetRuns = overResult.targetRuns ?? 0;
 
       if (overRuns >= targetRuns) {
-        // Met or exceeded target
         const bonus = overRuns - targetRuns;
         delta += this.battingTriggers.overLevel.targetMet.baseChange;
         delta += bonus * this.battingTriggers.overLevel.targetMet.bonusPerRun;
       } else {
-        // Missed target
         const shortfall = targetRuns - overRuns;
         delta += this.battingTriggers.overLevel.targetMissed.baseChange;
         delta -= shortfall * this.battingTriggers.overLevel.targetMissed.penaltyPerRun;
       }
 
-      // CRR vs RRR/TRR check
-      const currentRunRate = matchSituation.currentRunRate || 0;
-      const requiredRunRate = matchSituation.requiredRunRate || matchSituation.targetRunRate || 0;
+      const currentRunRate = matchSituation.currentRunRate;
+      const requiredRunRate = matchSituation.requiredRunRate ?? matchSituation.targetRunRate;
 
       if (currentRunRate < requiredRunRate) {
         delta += this.battingTriggers.overLevel.crrCheck.change;
@@ -118,10 +110,9 @@ class ConfidenceManager {
    * @returns {number} Updated confidence value
    */
   updateBowlingConfidence(bowler, ballResult, overResult, matchSituation) {
-    let currentConfidence = bowler.condition?.confidence || 50;
+    let currentConfidence = bowler.condition?.confidence ?? 50;
     let delta = 0;
 
-    // Ball-level triggers
     if (ballResult.isWicket) {
       delta += this.bowlingTriggers.ballLevel.takeWicket.change;
     }
@@ -130,22 +121,18 @@ class ConfidenceManager {
       delta += this.bowlingTriggers.ballLevel.concedeBoundary.change;
     }
 
-    // Every 3 dot balls (need tracker)
     if (ballResult.runs === 0 && !ballResult.isWicket && matchSituation.bowlerDotBalls >= 3) {
       delta += this.bowlingTriggers.ballLevel.every3Dots.change;
     }
 
-    // Over-level triggers (if end of over)
     if (overResult && overResult.isEndOfOver) {
-      const overRuns = overResult.runsConceded || 0;
-      const targetRuns = overResult.targetRunsToDefend || 0;
+      const overRuns = overResult.runsConceded ?? 0;
+      const targetRuns = overResult.targetRunsToDefend ?? 0;
 
-      // Maiden over
       if (overRuns === 0) {
         delta += this.bowlingTriggers.overLevel.maidenOver.change;
       }
 
-      // Target defended/failed
       if (targetRuns > 0) {
         if (overRuns <= targetRuns) {
           const saved = targetRuns - overRuns;
@@ -158,17 +145,15 @@ class ConfidenceManager {
         }
       }
 
-      // CRR vs RRR/TRR check
-      const currentRunRate = matchSituation.currentRunRate || 0;
-      const requiredRunRate = matchSituation.requiredRunRate || matchSituation.targetRunRate || 0;
+      const currentRunRate = matchSituation.currentRunRate;
+      const requiredRunRate = matchSituation.requiredRunRate ?? matchSituation.targetRunRate;
 
       if (currentRunRate > requiredRunRate) {
         delta += this.bowlingTriggers.overLevel.crrCheck.change;
       }
     }
 
-    // Milestone: wicket haul (need to track wickets in match)
-    const wicketsInMatch = matchSituation.bowlerWickets || 0;
+    const wicketsInMatch = matchSituation.bowlerWickets;
     if (wicketsInMatch === 3 || wicketsInMatch === 4 || wicketsInMatch >= 5) {
       delta += this.bowlingTriggers.milestones.wicketHaul.change;
     }

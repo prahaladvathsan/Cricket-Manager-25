@@ -5,6 +5,8 @@
  * Auction-style logic for purchase valuation
  */
 
+import { getPlayerRating } from '../../utils/ratingHelper.js';
+
 export default class PerformanceValuation {
   constructor() {
     // Base prices by rating (from auction system)
@@ -196,8 +198,9 @@ export default class PerformanceValuation {
    * @returns {number} Purchase value willing to pay
    */
   calculatePurchaseValue(player, team, teamFinances, categoryGaps) {
-    // Base price
-    const rating = Math.floor(player.rating || 5);
+    // Base price - convert 0-100 rating to 0-10 scale, then floor
+    const ratingValue = getPlayerRating(player);
+    const rating = Math.max(3, Math.min(9, Math.floor(ratingValue / 10)));
     let value = this.basePriceByRating[rating] || 80000;
 
     // Gap-based fitscore value

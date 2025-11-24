@@ -11,10 +11,11 @@ import { getPrimaryBattingRating, getPrimaryBowlingRating } from '../../../utils
 import PlayerName from '../../shared/PlayerName';
 
 const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { getTeamTactics, updateCaptain, updateViceCaptain, updateWicketKeeper } = useTeamStore();
+  const { updateCaptain, updateViceCaptain, updateWicketKeeper } = useTeamStore();
   const { players } = usePlayerStore();
 
-  const teamTactics = getTeamTactics(teamId);
+  // Subscribe to team tactics changes to ensure UI updates reactively
+  const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
   const battingOrder = teamTactics?.battingOrder || [];
   const overAssignments = useMemo(() => {
     const assignments = teamTactics?.bowlingRotation || [];
@@ -28,8 +29,26 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       .filter(Boolean);
   }, [battingOrder, players]);
 
-  // Get assigned bowlers with their overs
-  const bowlersWithOvers = useMemo(() => {
+  // Get all bowlers from playing XI with their over assignments
+  const allBowlers = useMemo(() => {
+    const selectedIds = teamTactics?.squadSelection || [];
+    const allPlayers = selectedIds.map(id => players[id]).filter(Boolean);
+
+    // Categorize bowlers
+    const bowlers = [];
+    allPlayers.forEach(player => {
+      const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
+      const bowlingRating = getPrimaryBowlingRating(player);
+
+      if (isPrimary || bowlingRating > 40) {
+        bowlers.push(player);
+      }
+    });
+
+    // Sort by bowling rating
+    bowlers.sort((a, b) => getPrimaryBowlingRating(b) - getPrimaryBowlingRating(a));
+
+    // Calculate overs for each bowler
     const bowlerOvers = {};
     overAssignments.forEach((playerId, index) => {
       if (playerId) {
@@ -40,11 +59,12 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       }
     });
 
-    return Object.entries(bowlerOvers).map(([playerId, overs]) => ({
-      player: players[playerId],
-      overs: overs.sort((a, b) => a - b)
-    })).filter(b => b.player);
-  }, [overAssignments, players]);
+    // Return bowlers with their overs
+    return bowlers.map(player => ({
+      player,
+      overs: (bowlerOvers[player.id] || []).sort((a, b) => a - b)
+    }));
+  }, [teamTactics?.squadSelection, overAssignments, players]);
 
   const getPositionLabel = (index) => {
     if (index < 2) return 'Opener';
@@ -162,7 +182,10 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               }
             }
 
-            const battingRating = battingPlaystyle ? getPrimaryBattingRating(player) : 0;
+            // Get rating for the active playstyle (not just primary)
+            const battingRating = battingPlaystyle && player.playstyleRatings?.batting?.[battingPlaystyle]
+              ? player.playstyleRatings.batting[battingPlaystyle]
+              : 0;
 
             return (
               <div key={player.id} className="grid grid-cols-[auto_1fr_1fr_auto] gap-1 p-0.5 bg-bg-tertiary rounded text-xs">
@@ -189,19 +212,26 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           <h3 className="text-sm font-semibold text-text-primary">Bowling Rotation</h3>
         </div>
         <div className="space-y-1">
-          {bowlersWithOvers.length === 0 ? (
+          {allBowlers.length === 0 ? (
             <p className="text-xs text-text-secondary text-center py-4">
-              No bowling rotation assigned
+              No bowlers in playing XI
             </p>
           ) : (
-            bowlersWithOvers.map(({ player, overs }) => {
+            allBowlers.map(({ player, overs }) => {
               const overrides = teamTactics?.playstyleOverrides?.[player.id];
               const bowlingPlaystyle = overrides?.bowling || player.primaryPlaystyle?.bowling;
-              const bowlingRating = getPrimaryBowlingRating(player);
-              const currentPlans = teamTactics?.bowlingPlans[player.id] || {
-                lineLength: player.tactics?.defaultBowlingPlans?.lineLength || 'Wide Line',
-                variation: player.tactics?.defaultBowlingPlans?.variation || 'Consistent Accuracy'
-              };
+
+              // Get rating for the active playstyle (not just primary)
+              const bowlingRating = bowlingPlaystyle && player.playstyleRatings?.bowling?.[bowlingPlaystyle]
+                ? player.playstyleRatings.bowling[bowlingPlaystyle]
+                : 0;
+
+              const currentPlans = teamTactics?.bowlingPlans[player.id];
+
+              // If no plans, skip this bowler
+              if (!currentPlans) {
+                return null;
+              }
 
               return (
                 <div
@@ -216,8 +246,8 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     <div className="text-text-secondary truncate">
                       {bowlingPlaystyle} ({bowlingRating.toFixed(0)})
                     </div>
-                    <div className="font-mono text-cricket-accent whitespace-nowrap">
-                      {overs.length} ov
+                    <div className={`font-mono whitespace-nowrap ${overs.length > 0 ? 'text-cricket-accent' : 'text-text-tertiary'}`}>
+                      {overs.length > 0 ? `${overs.length} ov` : '—'}
                     </div>
                   </div>
 
@@ -230,7 +260,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       {currentPlans.variation}
                     </div>
                     <div className="text-text-tertiary whitespace-nowrap">
-                      {overs.join(', ')}
+                      {overs.length > 0 ? overs.join(', ') : 'None'}
                     </div>
                   </div>
                 </div>

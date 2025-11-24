@@ -110,12 +110,19 @@ class BowlingPlanManager {
     }
 
     const modifiedBowler = JSON.parse(JSON.stringify(bowler)); // Deep copy
+    const appliedModifiers = { lineLengthModifiers: {}, variationModifiers: {} };
 
     // Apply line-length plan modifiers
-    this.applyPlanSet(modifiedBowler, llPlan);
+    this.applyPlanSet(modifiedBowler, llPlan, appliedModifiers.lineLengthModifiers);
 
     // Apply variation plan modifiers
-    this.applyPlanSet(modifiedBowler, varPlan);
+    this.applyPlanSet(modifiedBowler, varPlan, appliedModifiers.variationModifiers);
+
+    modifiedBowler.planMetadata = {
+      lineLengthPlan,
+      variationPlan,
+      appliedModifiers
+    };
 
     return modifiedBowler;
   }
@@ -124,12 +131,17 @@ class BowlingPlanManager {
    * Apply a single plan's modifiers to bowler
    * @param {Object} bowler - Bowler object (will be mutated)
    * @param {Object} plan - Plan configuration
+   * @param {Object} modifiersTracker - Object to track applied modifiers
    */
-  applyPlanSet(bowler, plan) {
+  applyPlanSet(bowler, plan, modifiersTracker) {
+    if (!modifiersTracker) modifiersTracker = {};
+
     // Apply bonuses
     if (plan.attributeModifiers.bonuses) {
       Object.entries(plan.attributeModifiers.bonuses).forEach(([attr, value]) => {
         this.applyAttributeModifier(bowler, attr, value);
+        if (!modifiersTracker.bonuses) modifiersTracker.bonuses = {};
+        modifiersTracker.bonuses[attr] = value;
       });
     }
 
@@ -137,6 +149,8 @@ class BowlingPlanManager {
     if (plan.attributeModifiers.penalties) {
       Object.entries(plan.attributeModifiers.penalties).forEach(([attr, value]) => {
         this.applyAttributeModifier(bowler, attr, value);
+        if (!modifiersTracker.penalties) modifiersTracker.penalties = {};
+        modifiersTracker.penalties[attr] = value;
       });
     }
   }

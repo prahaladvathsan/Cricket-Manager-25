@@ -30,12 +30,23 @@ const useGameStore = create(
   gameDay: 1,
   calendarEvents: [],
   isSimulating: false,
+
+  // Test Mode State
+  testMode: false,
+  testModeProgress: {
+    totalWeeks: 0,
+    completedWeeks: 0,
+    totalMatches: 0,
+    completedMatches: 0,
+    transferActivity: 0,
+    isRunning: false
+  },
   
   // Game Settings
   settings: {
     difficulty: 'normal',
     simulationSpeed: 'normal',
-    currency: 'INR',
+    currency: 'USD',
     nameProtection: false,
     autosave: true
   },
@@ -174,7 +185,95 @@ const useGameStore = create(
     currentDate: new Date('2025-01-01').toISOString(),
     calendarEvents: [],
     isSimulating: false
-  })
+  }),
+
+  // Test Mode Actions
+
+  /**
+   * Enable test mode
+   */
+  enableTestMode: () => set({
+    testMode: true,
+    testModeProgress: {
+      totalWeeks: 26,
+      completedWeeks: 0,
+      totalMatches: 94, // 90 league + 4 playoffs
+      completedMatches: 0,
+      transferActivity: 0,
+      isRunning: false
+    }
+  }),
+
+  /**
+   * Disable test mode and return to normal
+   */
+  disableTestMode: () => set({
+    testMode: false,
+    testModeProgress: {
+      totalWeeks: 0,
+      completedWeeks: 0,
+      totalMatches: 0,
+      completedMatches: 0,
+      transferActivity: 0,
+      isRunning: false
+    }
+  }),
+
+  /**
+   * Update test mode progress
+   * @param {Object} updates - Progress updates
+   */
+  updateTestProgress: (updates) => set((state) => ({
+    testModeProgress: { ...state.testModeProgress, ...updates }
+  })),
+
+  /**
+   * Simulate one week in test mode
+   * Requires leagueStore to be passed in to avoid circular dependency
+   * @param {Object} leagueStore - The league store instance
+   * @returns {Object} Summary of simulated events
+   */
+  simulateWeek: (leagueStore) => {
+    const state = get();
+    const summary = {
+      matchesPlayed: 0,
+      transfersCompleted: 0,
+      phase: state.currentPhase,
+      week: state.currentWeek
+    };
+
+    // Get all matches scheduled for this week
+    const weekStart = state.gameDay;
+    const weekEnd = weekStart + 7;
+
+    const weekMatches = state.calendarEvents.filter(
+      event => event.type === 'match' &&
+               event.day >= weekStart &&
+               event.day < weekEnd
+    );
+
+    // Simulate each match in the week
+    weekMatches.forEach(matchEvent => {
+      const fixture = matchEvent.data;
+
+      // Import and use the quick-sim logic
+      // This will be implemented when we integrate with match engine
+      // For now, just advance the day
+      summary.matchesPlayed++;
+    });
+
+    // Advance week
+    set((state) => ({
+      currentWeek: state.currentWeek + 1,
+      testModeProgress: {
+        ...state.testModeProgress,
+        completedWeeks: state.currentWeek,
+        completedMatches: state.testModeProgress.completedMatches + summary.matchesPlayed
+      }
+    }));
+
+    return summary;
+  }
     }),
     {
       name: 'cm25-game-store',

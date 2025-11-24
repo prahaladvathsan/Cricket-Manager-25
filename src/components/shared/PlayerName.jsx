@@ -24,6 +24,7 @@
 import React, { useState, useMemo } from 'react';
 import PlayerCardModal from './PlayerCardModal';
 import usePlayerStore from '../../stores/playerStore';
+import useMatchStore from '../../stores/matchStore';
 
 /**
  * PlayerName Component - Clickable player name that opens player card modal
@@ -45,6 +46,7 @@ const PlayerName = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
   const { players } = usePlayerStore();
+  const matchConditions = useMatchStore(state => state.matchConditions);
 
   // Get player data from store
   const playerData = useMemo(() => {
@@ -55,6 +57,19 @@ const PlayerName = ({
     return null;
   }, [player, playerId, players]);
 
+  // Get condition info for tooltip
+  const conditionInfo = useMemo(() => {
+    const actualPlayerId = playerId || playerData?.id;
+    if (!actualPlayerId || !matchConditions || !matchConditions[actualPlayerId]) {
+      return null;
+    }
+    const conditions = matchConditions[actualPlayerId];
+    return {
+      confidence: Math.round(conditions.confidence || 50),
+      energy: Math.round(conditions.energy || 100)
+    };
+  }, [playerId, playerData, matchConditions]);
+
   if (!playerData) {
     // Fallback for missing player data
     return (
@@ -63,6 +78,11 @@ const PlayerName = ({
       </span>
     );
   }
+
+  // Create tooltip text
+  const tooltipText = conditionInfo
+    ? `${playerData.name} | Confidence: ${conditionInfo.confidence} | Energy: ${conditionInfo.energy}`
+    : `View ${playerData.name} details`;
 
   // Determine element type
   const ElementType = inline ? 'span' : 'div';
@@ -84,7 +104,7 @@ const PlayerName = ({
           transition-colors
           ${className}
         `}
-        title={`View ${playerData.name} details`}
+        title={tooltipText}
       >
         {playerData.name}
       </ElementType>

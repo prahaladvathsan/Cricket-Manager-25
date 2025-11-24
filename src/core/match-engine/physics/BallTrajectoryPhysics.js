@@ -6,17 +6,17 @@
 
 import physicsConfig from '../../../data/config/physics-config.json';
 
-// Pre-calculate boundary distances for each degree (0-359) accounting for pitch offset
+// Pre-calculate boundary distances for each degree (0-359) accounting for striker position
 const boundaryCache = {};
 const initializeBoundaryCache = () => {
   const boundaryRadius = physicsConfig.fieldDimensions.boundaryRadius;
-  const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2; // Striker is 11 yards from center
+  const strikerOffset = physicsConfig.fieldDimensions.strikerOffset; // Striker at 10.06m from center on +Y axis
 
   for (let degree = 0; degree < 360; degree++) {
     const radians = degree * Math.PI / 180;
-    // Account for striker position offset from center
+    // Striker position: (0, +strikerOffset) on positive Y axis
     const strikerX = 0;
-    const strikerY = -pitchOffset;
+    const strikerY = strikerOffset;
 
     // Calculate boundary distance in this direction from striker position
     const boundaryX = boundaryRadius * Math.cos(radians);
@@ -52,6 +52,7 @@ initializeBoundaryCache();
 class BallTrajectoryPhysics {
   constructor() {
     this.boundaryRadius = physicsConfig.fieldDimensions.boundaryRadius;
+    this.strikerOffset = physicsConfig.fieldDimensions.strikerOffset; // Striker position: (0, +strikerOffset)
     this.aerialBounceDistance = physicsConfig.shotTypes.aerial.bounceDistance;
     this.aerialTime = physicsConfig.ballMovement.aerialTime;
     this.groundDeceleration = physicsConfig.ballMovement.groundDeceleration;
@@ -87,15 +88,14 @@ class BallTrajectoryPhysics {
    */
   calculateAerialTrajectoryAlgebraic(direction, speed, boundaryDistance) {
     const directionRadians = direction * Math.PI / 180;
-    const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
 
     // Fixed 45° launch angle assumption: bounce distance = speed² / g
     const gravity = physicsConfig.ballMovement.gravity || 10; // m/s²
     const bounceDistance = Math.min(boundaryDistance, speed * speed / gravity);
 
-    // Calculate bounce point from striker position
+    // Calculate bounce point from striker position (0, +strikerOffset)
     const bounceX = bounceDistance * Math.cos(directionRadians);
-    const bounceY = -pitchOffset + bounceDistance * Math.sin(directionRadians);
+    const bounceY = this.strikerOffset + bounceDistance * Math.sin(directionRadians);
 
     // Aerial time to reach bounce point (simplified)
     const aerialTime = speed / (gravity * Math.sqrt(2));
@@ -117,7 +117,7 @@ class BallTrajectoryPhysics {
     if (isBeyondBoundary) {
       // Six - ball crosses boundary in air
       const boundaryX = boundaryDistance * Math.cos(directionRadians);
-      const boundaryY = -pitchOffset + boundaryDistance * Math.sin(directionRadians);
+      const boundaryY = this.strikerOffset + boundaryDistance * Math.sin(directionRadians);
 
       stopPoint = {
         x: boundaryX,
@@ -136,7 +136,7 @@ class BallTrajectoryPhysics {
         // Ball reaches boundary on ground after bounce
         stopPoint = {
           x: boundaryDistance * Math.cos(directionRadians),
-          y: -pitchOffset + boundaryDistance * Math.sin(directionRadians),
+          y: this.strikerOffset + boundaryDistance * Math.sin(directionRadians),
           time: aerialTime + groundTime,
           speed: speed // No deceleration
         };
@@ -169,8 +169,7 @@ class BallTrajectoryPhysics {
    */
   calculateGroundTrajectoryAlgebraic(direction, speed, boundaryDistance, startPoint = null) {
     const directionRadians = direction * Math.PI / 180;
-    const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
-    const start = startPoint || { x: 0, y: -pitchOffset, time: 0, speed };
+    const start = startPoint || { x: 0, y: this.strikerOffset, time: 0, speed };
 
     // Simplified: ball travels at constant speed until boundary or stopped by fielder
     const actualDistance = boundaryDistance; // Ball will travel to boundary unless fielded
@@ -202,144 +201,6 @@ class BallTrajectoryPhysics {
 
 
   /**
-   * Get ball position at specific time - simplified constant speed calculation
-   * @param {BallTrajectory} trajectory - Ball trajectory
-   * @param {number} time - Time to check
-   * @param {number} initialSpeed - Initial shot speed (constant)
-   * @param {string} shotType - Shot type for calculation method
-   * @returns {TrajectoryPoint|null} Ball position at time
-   */
-  getBallPositionAtTime(trajectory, time, initialSpeed, shotType) {
-    if (time <= 0) {
-      const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
-      return { x: 0, y: -pitchOffset, time: 0, speed: initialSpeed };
-    }
-
-    if (time >= trajectory.totalTime) {
-      return trajectory.stopPoint;
-    }
-
-    const directionRadians = trajectory.direction * Math.PI / 180;
-    const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
-
-    if (shotType === 'aerial' && trajectory.bouncePoint && time <= trajectory.bouncePoint.time) {
-      // Aerial phase - projectile motion to bounce point
-      const gravity = physicsConfig.ballMovement.gravity || 10;
-      const horizontalDistance = initialSpeed * Math.cos(Math.PI/4) * time; // 45° angle
-
-      return {
-        x: horizontalDistance * Math.cos(directionRadians),
-        y: -pitchOffset + horizontalDistance * Math.sin(directionRadians),
-        time: time,
-        speed: initialSpeed // Simplified - constant speed
-      };
-    } else {
-      // Ground movement - constant speed straight line
-      const distance = initialSpeed * time;
-
-      return {
-        x: distance * Math.cos(directionRadians),
-        y: -pitchOffset + distance * Math.sin(directionRadians),
-        time: time,
-        speed: initialSpeed // Constant speed
-      };
-    }
-  }
-
-  /**
-   * Calculate distance between two points
-   * @param {number} x1 - First point X
-   * @param {number} y1 - First point Y
-   * @param {number} x2 - Second point X
-   * @param {number} y2 - Second point Y
-   * @returns {number} Distance
-   */
-  calculateDistance(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  }
-
-  /**
-   * Check if trajectory passes through a point within radius using algebraic approach
-   * @param {BallTrajectory} trajectory - Ball trajectory
-   * @param {number} x - Point X coordinate
-   * @param {number} y - Point Y coordinate
-   * @param {number} radius - Check radius
-   * @param {number} initialSpeed - Initial shot speed
-   * @param {string} shotType - Shot type
-   * @returns {{intersects: boolean, time: number, point: TrajectoryPoint}} Intersection info
-   */
-  checkTrajectoryIntersection(trajectory, x, y, radius, initialSpeed, shotType) {
-    const directionRadians = trajectory.direction * Math.PI / 180;
-    const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
-
-    // For straight-line trajectory (grounded shots)
-    if (shotType === 'grounded') {
-      // Calculate perpendicular distance from line to point
-      const a = Math.sin(directionRadians);
-      const b = -Math.cos(directionRadians);
-      const c = pitchOffset * Math.cos(directionRadians);
-      const perpendicularDistance = Math.abs(a * x + b * y + c) / Math.sqrt(a * a + b * b);
-
-      if (perpendicularDistance <= radius) {
-        // Find intersection time
-        const projectionDistance = (x - 0) * Math.cos(directionRadians) + (y - (-pitchOffset)) * Math.sin(directionRadians);
-        if (projectionDistance >= 0) {
-          const time = this.calculateTimeToReachDistance(initialSpeed, projectionDistance, physicsConfig.ballMovement.groundDeceleration);
-          if (time <= trajectory.totalTime) {
-            return {
-              intersects: true,
-              time: time,
-              point: this.getBallPositionAtTime(trajectory, time, initialSpeed, shotType)
-            };
-          }
-        }
-      }
-    }
-
-    return {
-      intersects: false,
-      time: -1,
-      point: null
-    };
-  }
-
-  /**
-   * Calculate time to reach specific distance with deceleration
-   * @param {number} initialSpeed - Initial speed
-   * @param {number} distance - Target distance
-   * @param {number} deceleration - Deceleration factor
-   * @returns {number} Time to reach distance
-   */
-  calculateTimeToReachDistance(initialSpeed, distance, deceleration) {
-    // Solve for time in: distance = initialSpeed * (1 - decel^time) / (1 - decel)
-    const decelerationRate = 1 - deceleration;
-    const ratio = 1 - (distance * decelerationRate) / initialSpeed;
-    if (ratio <= 0) return Infinity;
-    return Math.log(ratio) / Math.log(deceleration);
-  }
-
-  /**
-   * Get trajectory summary for debugging
-   * @param {BallTrajectory} trajectory - Ball trajectory
-   * @returns {Object} Summary information
-   */
-  getTrajectoryInfo(trajectory) {
-    const pitchOffset = physicsConfig.fieldDimensions.pitchLength / 2;
-    return {
-      calculationType: 'algebraic',
-      totalTime: trajectory.totalTime,
-      isBoundary: trajectory.isBoundary,
-      direction: trajectory.direction,
-      boundaryDistance: trajectory.boundaryDistance,
-      stopDistance: this.calculateDistance(0, -pitchOffset, trajectory.stopPoint.x, trajectory.stopPoint.y),
-      bouncePoint: trajectory.bouncePoint ? {
-        distance: this.calculateDistance(0, -pitchOffset, trajectory.bouncePoint.x, trajectory.bouncePoint.y),
-        time: trajectory.bouncePoint.time
-      } : null
-    };
-  }
-
-  /**
    * Get boundary distance for specific direction (from cache)
    * @param {number} direction - Direction in degrees
    * @returns {number} Distance to boundary in that direction
@@ -347,14 +208,6 @@ class BallTrajectoryPhysics {
   getBoundaryDistance(direction) {
     const normalizedDirection = Math.floor(direction) % 360;
     return boundaryCache[normalizedDirection];
-  }
-
-  /**
-   * Get boundary cache for all directions (for debugging)
-   * @returns {Object} Boundary cache object
-   */
-  getBoundaryCache() {
-    return { ...boundaryCache };
   }
 }
 

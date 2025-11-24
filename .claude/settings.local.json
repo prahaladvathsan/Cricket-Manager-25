@@ -39,7 +39,15 @@
       "Bash(nul)",
       "WebSearch",
       "WebFetch(domain:australiancricketinstitute.com)",
-      "Bash($null)"
+      "Bash($null)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:www.omnicalculator.com)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(Select-String -Pattern \"src/\")",
+      "Bash(npm run build:*)",
+      "Bash(pip install:*)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }

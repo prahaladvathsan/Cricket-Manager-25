@@ -9,36 +9,40 @@ import useTeamStore from '../../../stores/teamStore';
 import FieldTemplateSelector from './FieldTemplateSelector';
 import FieldVisualEditor from './FieldVisualEditor';
 import { validateFieldingSetup, getViolationMessages } from '../../../core/match-engine/validation/FieldingRulesValidator';
-import fieldConfig from '../../../data/config/field-positioning-config.json';
+import { getFormationWithPositions } from '../../../utils/fieldingFormationResolver.js';
 
 const FieldingTab = ({ teamId, onPlayerClick }) => {
-  const { getTeamTactics, updateFieldingSetup } = useTeamStore();
+  const { updateFieldingSetup } = useTeamStore();
 
   const [phase, setPhase] = useState('powerplay'); // 'powerplay' or 'postPowerplay'
   const [showVisualEditor, setShowVisualEditor] = useState(true);
   const [validationResult, setValidationResult] = useState(null);
 
-  const teamTactics = getTeamTactics(teamId);
+  // Subscribe to team tactics changes to ensure UI updates reactively
+  const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
 
   // Get current field setup for selected phase
   const currentSetup = phase === 'powerplay'
     ? teamTactics?.fielding?.powerplay
     : teamTactics?.fielding?.postPowerplay;
 
-  const currentTemplateId = currentSetup?.template || 'standard_powerplay';
-  const currentTemplate = fieldConfig.formations[currentTemplateId];
+  const currentTemplateId = currentSetup?.template || 'attacking_powerplay_press';
+  const currentTemplate = getFormationWithPositions(currentTemplateId);
 
   // Initialize default fielding setup if not exists
   useEffect(() => {
     if (teamId && teamTactics && !teamTactics.fielding) {
+      const powerplayFormation = getFormationWithPositions('attacking_powerplay_press');
+      const deathFormation = getFormationWithPositions('defensive_ring_fence');
+
       updateFieldingSetup(teamId, {
         powerplay: {
-          template: 'standard_powerplay',
-          positions: fieldConfig.formations.standard_powerplay.positions
+          template: 'attacking_powerplay_press',
+          positions: powerplayFormation?.positions || []
         },
         postPowerplay: {
-          template: 'death_standard',
-          positions: fieldConfig.formations.death_standard.positions
+          template: 'defensive_ring_fence',
+          positions: deathFormation?.positions || []
         }
       });
     }
@@ -57,7 +61,7 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
   }, [currentPositions, phase]);
 
   const handleTemplateSelect = (templateId) => {
-    const template = fieldConfig.formations[templateId];
+    const template = getFormationWithPositions(templateId);
     if (!template) return;
 
     const newSetup = {
@@ -83,15 +87,18 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
 
   const handleResetToDefaults = () => {
     if (window.confirm('Reset fielding setups to defaults? This cannot be undone.')) {
+      const powerplayFormation = getFormationWithPositions('attacking_powerplay_press');
+      const deathFormation = getFormationWithPositions('defensive_ring_fence');
+
       updateFieldingSetup(teamId, {
         powerplay: {
-          template: 'standard_powerplay',
-          positions: fieldConfig.formations.standard_powerplay.positions,
+          template: 'attacking_powerplay_press',
+          positions: powerplayFormation?.positions || [],
           playerAssignments: {}
         },
         postPowerplay: {
-          template: 'death_standard',
-          positions: fieldConfig.formations.death_standard.positions,
+          template: 'defensive_ring_fence',
+          positions: deathFormation?.positions || [],
           playerAssignments: {}
         }
       });

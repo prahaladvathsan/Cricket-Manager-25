@@ -77,11 +77,12 @@ class SimpleBallSimulator {
         matchSituation
       );
 
-      // Extract modified players and mentalities
+      // Extract modified players, mentalities, and breakdown
       const modifiedStriker = tacticsResult.striker;
       const modifiedBowler = tacticsResult.bowler;
       const battingMentality = tacticsResult.battingMentality || 'neutral';
       const bowlingMentality = tacticsResult.bowlingMentality || 'neutral';
+      const modifierBreakdown = tacticsResult.breakdown || null; // Store for UI
 
       // Step 1: Decision Calculation (with modified attributes)
       const decisionResult = this.decisionCalculator.calculateDecision({
@@ -142,6 +143,7 @@ class SimpleBallSimulator {
       return {
         ...finalOutcome,
         commentary,
+        modifierBreakdown, // UI-friendly breakdown of all modifiers
         metadata: {
           decisionResult,
           contactResult,
@@ -268,43 +270,34 @@ class SimpleBallSimulator {
    * @returns {Object} Match context
    */
   buildMatchContext(ballContext) {
-    const matchSituation = ballContext.matchSituation || {};
-    const striker = ballContext.striker || {};
-    const bowler = ballContext.bowler || {};
+    const matchSituation = ballContext.matchSituation;
+    const striker = ballContext.striker;
+    const bowler = ballContext.bowler;
+
+    if (!matchSituation) throw new Error('matchSituation is required');
+    if (!striker) throw new Error('striker is required');
+    if (!bowler) throw new Error('bowler is required');
 
     return {
-      // Match phase
       phase: matchSituation.phase || this.determinePhase(matchSituation.over),
-      over: matchSituation.over || 1,
-      ball: matchSituation.ball || 1,
-
-      // Team state
-      wicketsInHand: matchSituation.wicketsInHand || 10,
-      currentRunRate: matchSituation.currentRunRate || 0,
-      requiredRunRate: matchSituation.requiredRunRate || 0,
-
-      // Innings state
-      ballsLeft: matchSituation.ballsLeft || 120,
+      over: matchSituation.over,
+      ball: matchSituation.ball,
+      wicketsInHand: matchSituation.wicketsInHand,
+      currentRunRate: matchSituation.currentRunRate,
+      requiredRunRate: matchSituation.requiredRunRate,
+      ballsLeft: matchSituation.ballsLeft,
       target: matchSituation.target || null,
-
-      // Partnership state
-      currentPartnership: matchSituation.currentPartnership || 0,
-      currentPartnershipBalls: matchSituation.currentPartnershipBalls || 0,
-
-      // Player state
-      ballsFaced: matchSituation.ballsFaced || 0,
-      oversBowled: matchSituation.oversBowled || 0,
-
-      // Batsman attributes (for bowling playstyle conditions)
-      batsmanTechnique: striker.attributes?.batting?.technique || 0,
-      batsmanFootwork: striker.attributes?.batting?.footwork || 0,
-      batsmanConcentration: striker.attributes?.mental?.concentration || 0,
-      batsmanDefensiveShots: striker.attributes?.batting?.defensiveShots || 0,
-
-      // Bowler attributes (for batting playstyle conditions)
-      bowlerAccuracy: bowler.attributes?.bowling?.accuracy || 0,
-      bowlerSwing: bowler.attributes?.bowling?.swing || 0,
-      bowlerTurn: bowler.attributes?.bowling?.turn || 0
+      currentPartnership: matchSituation.currentPartnership,
+      currentPartnershipBalls: matchSituation.currentPartnershipBalls,
+      ballsFaced: matchSituation.ballsFaced,
+      oversBowled: matchSituation.oversBowled,
+      batsmanTechnique: striker.attributes?.batting?.technique,
+      batsmanFootwork: striker.attributes?.batting?.footwork,
+      batsmanConcentration: striker.attributes?.mental?.concentration,
+      batsmanDefensiveShots: striker.attributes?.batting?.defensiveShots,
+      bowlerAccuracy: bowler.attributes?.bowling?.accuracy,
+      bowlerSwing: bowler.attributes?.bowling?.swing,
+      bowlerTurn: bowler.attributes?.bowling?.turn
     };
   }
 

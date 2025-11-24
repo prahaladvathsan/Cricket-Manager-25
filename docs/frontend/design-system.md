@@ -145,6 +145,78 @@ Move standalone action buttons into tab bars or navigation elements to save vert
 <div className="tabs">{/* Tabs */}</div>
 ```
 
+#### 7. **Standard Tab Navigation Pattern**
+All pages with multiple views should use the **consistent tab navigation pattern** for visual uniformity.
+
+**✅ Standard Tab Pattern:**
+```jsx
+{/* Container with bottom border */}
+<div className="border-b border-border-primary">
+  <nav className="flex gap-2">
+    {tabs.map(tab => {
+      const Icon = tab.icon;
+      return (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+            activeTab === tab.id
+              ? 'border-cricket-accent text-cricket-accent'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Icon className="w-4 h-4" />
+            <span>{tab.label}</span>
+          </div>
+        </button>
+      );
+    })}
+  </nav>
+</div>
+```
+
+**Key properties:**
+- **Container**: `border-b border-border-primary` (single bottom border)
+- **Nav wrapper**: `flex gap-2` (horizontal flex with 8px gap)
+- **Button**: `px-4 py-2 border-b-2` (padding + 2px bottom border indicator)
+- **Active state**: `border-cricket-accent text-cricket-accent`
+- **Inactive state**: `border-transparent text-text-secondary hover:text-text-primary`
+- **Icon + Label**: Wrapped in `<div className="flex items-center gap-2">`
+- **Text size**: `text-sm font-medium`
+
+**With action buttons:**
+```jsx
+<div className="border-b border-border-primary">
+  <nav className="flex items-center justify-between gap-2">
+    <div className="flex gap-2">
+      {/* Tabs */}
+    </div>
+    <div className="flex gap-2 pb-2">
+      {/* Action buttons */}
+    </div>
+  </nav>
+</div>
+```
+
+**Examples in codebase:**
+- `src/components/layout/League.jsx` (lines 767-790)
+- `src/components/team/Squad.jsx` (lines 704-737)
+- `src/components/tactics/TacticsPage.jsx` (lines 163-189)
+- `src/components/layout/Transfers.jsx` (auction tabs)
+
+**❌ Wrong - Inconsistent patterns:**
+```jsx
+// Different spacing
+<div className="flex gap-1 px-4 pt-3 border-b">
+
+// Background color on container (creates visual weight)
+<div className="bg-bg-secondary border-b">
+
+// Inconsistent active state colors
+className={activeTab === tab.id ? 'text-blue-500' : ''}
+```
+
 ### Spacing Migration Guide
 
 When updating existing components, follow these replacements:

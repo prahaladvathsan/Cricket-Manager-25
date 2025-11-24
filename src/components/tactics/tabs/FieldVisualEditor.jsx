@@ -16,8 +16,7 @@ import fieldPositionsComplete from '../../../data/config/fielding-positions-comp
 
 const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, onUpdateSetup }) => {
   const [customizeMode, setCustomizeMode] = useState(false);
-  const [draggingIndex, setDraggingIndex] = useState(null);
-  const [dragOverPosition, setDragOverPosition] = useState(null);
+  const [selectedFielderIndex, setSelectedFielderIndex] = useState(null);
 
   const { getUserTeam, getTeamTactics } = useTeamStore();
   const { players } = usePlayerStore();
@@ -73,59 +72,52 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   // Get all available positions for customize mode
   const allPositions = fieldPositionsComplete.positions;
 
-  // Get fielder color based on zone (distance from center)
+  // Get fielder color based on zone (from position data)
   const getFielderColor = (position) => {
-    const distance = Math.sqrt(
-      position.x * position.x +
-      position.y * position.y
-    );
-
-    if (distance > INNER_CIRCLE_RADIUS) {
-      return '#60a5fa'; // blue-400 - Outside circle (>30m)
-    } else if (distance < 15) {
-      return '#f87171'; // red-400 - Close catcher (<15m)
-    } else {
-      return '#4ade80'; // green-400 - In circle (15-30m)
+    // Use zone property from fielding-positions-complete.json (4 zones)
+    switch (position.zone) {
+      case 'silly':
+        return '#EF4444'; // Red - very close (<12m), high risk
+      case 'close':
+        return '#F97316'; // Orange - close catching (12-20m), medium risk
+      case 'ring':
+        return '#EAB308'; // Yellow - 30-yard circle (20-30m), low risk
+      case 'boundary':
+        return '#3B82F6'; // Blue - deep/boundary (30-70m), defensive
+      default:
+        return '#FFFFFF'; // White fallback
     }
   };
 
-  // Handle drag start
-  const handleDragStart = (e, index) => {
+  // Handle fielder click (select fielder to move)
+  const handleFielderClick = (index) => {
     if (!customizeMode) return;
-    setDraggingIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
+    // Don't allow selecting bowler (0) or keeper (1)
+    if (index === 0 || index === 1) return;
 
-  // Handle drag over available position
-  const handleDragOverPosition = (e, positionId) => {
-    if (!customizeMode || draggingIndex === null) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverPosition(positionId);
-  };
-
-  // Handle drop on new position
-  const handleDrop = (e, newPositionData) => {
-    if (!customizeMode || draggingIndex === null) return;
-    e.preventDefault();
-
-    // Don't allow moving keeper or bowler
-    if (draggingIndex === 0 || draggingIndex === 1) {
-      setDraggingIndex(null);
-      setDragOverPosition(null);
-      return;
+    // Toggle selection
+    if (selectedFielderIndex === index) {
+      setSelectedFielderIndex(null); // Deselect if clicking same fielder
+    } else {
+      setSelectedFielderIndex(index);
     }
+  };
+
+  // Handle position click (move selected fielder to this position)
+  const handlePositionClick = (newPositionData) => {
+    if (!customizeMode || selectedFielderIndex === null) return;
 
     // Find nearest available position
     const newPosition = {
       name: newPositionData.id,
       x: newPositionData.x,
-      y: newPositionData.y
+      y: newPositionData.y,
+      zone: newPositionData.zone
     };
 
     // Update positions array
     const newPositions = [...positions];
-    newPositions[draggingIndex] = newPosition;
+    newPositions[selectedFielderIndex] = newPosition;
 
     // Call update handler
     if (onUpdateSetup) {
@@ -135,8 +127,8 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
       });
     }
 
-    setDraggingIndex(null);
-    setDragOverPosition(null);
+    // Clear selection after moving
+    setSelectedFielderIndex(null);
   };
 
   // Handle player assignment change
@@ -181,11 +173,15 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
             Field Setup
           </h4>
           <p className="text-xs text-text-secondary">
-            {customizeMode ? 'Drag fielders to customize positions' : 'Visual representation with player assignments'}
+            {customizeMode ? 'Click a fielder, then click a position to move' : 'Visual representation with player assignments'}
           </p>
         </div>
         <button
-          onClick={() => setCustomizeMode(!customizeMode)}
+          onClick={() => {
+            setCustomizeMode(!customizeMode);
+            // Reset selection when toggling off
+            if (customizeMode) setSelectedFielderIndex(null);
+          }}
           className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
             customizeMode
               ? 'bg-cricket-primary text-white'
@@ -260,6 +256,8 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
                   Math.abs(p.x - pos.x) < 1 && Math.abs(p.y - pos.y) < 1
                 );
 
+                const isClickable = selectedFielderIndex !== null;
+
                 return (
                   <circle
                     key={pos.id}
@@ -267,11 +265,15 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
                     cy={pos.y}
                     r={isOccupied ? 0 : 1.5}
                     fill="white"
-                    opacity={dragOverPosition === pos.id ? 0.8 : 0.3}
-                    className={customizeMode ? 'cursor-pointer' : ''}
-                    onDragOver={(e) => handleDragOverPosition(e, pos.id)}
-                    onDrop={(e) => handleDrop(e, pos)}
-                  />
+                    opacity={isClickable ? 0.6 : 0.2}
+                    stroke={isClickable ? '#D4AF37' : 'none'}
+                    strokeWidth={isClickable ? 0.2 : 0}
+                    className={isClickable ? 'cursor-pointer' : ''}
+                    style={{ pointerEvents: 'all' }}
+                    onClick={() => handlePositionClick(pos)}
+                  >
+                    <title>{isClickable ? 'Click to move fielder here' : 'Select a fielder first'}</title>
+                  </circle>
                 );
               })}
 
@@ -279,27 +281,68 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
               {positions.map((position, index) => {
                 const isKeeper = index === 1;
                 const isBowler = index === 0;
+                const isBowlerOrKeeper = isBowler || isKeeper;
                 const color = getFielderColor(position);
                 const playerName = getPlayerName(index);
-                const isDragging = draggingIndex === index;
+                const isClickable = customizeMode && !isBowlerOrKeeper;
+                const isSelected = selectedFielderIndex === index;
+
+                // Stroke: selected > default
+                let stroke = 'white';
+                let strokeWidth = 0.4;
+                if (isSelected) {
+                  stroke = '#D4AF37'; // Gold for selected
+                  strokeWidth = 0.6;
+                }
 
                 return (
-                  <g
-                    key={index}
-                    opacity={isDragging ? 0.3 : 1}
-                    className={customizeMode && !isKeeper && !isBowler ? 'cursor-move' : ''}
-                    draggable={customizeMode && !isKeeper && !isBowler}
-                    onDragStart={(e) => handleDragStart(e, index)}
-                  >
+                  <g key={index}>
                     {/* Fielder marker */}
                     <circle
                       cx={position.x}
                       cy={position.y}
                       r={isBowler ? 2.5 : isKeeper ? 2.5 : 2}
                       fill={color}
-                      stroke="white"
-                      strokeWidth="0.4"
-                    />
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
+                      className={isClickable ? 'cursor-pointer' : ''}
+                      style={{ pointerEvents: 'all' }}
+                      onClick={() => handleFielderClick(index)}
+                    >
+                      <title>
+                        {playerName || position.name}
+                        {isClickable && ' - Click to select'}
+                        {isBowlerOrKeeper && ' - Locked'}
+                      </title>
+                    </circle>
+
+                    {/* Selection ring for selected fielder */}
+                    {isSelected && (
+                      <circle
+                        cx={position.x}
+                        cy={position.y}
+                        r={3}
+                        fill="none"
+                        stroke="#D4AF37"
+                        strokeWidth={0.3}
+                        opacity={0.8}
+                      >
+                        <animate
+                          attributeName="r"
+                          from="2.5"
+                          to="3.5"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                        <animate
+                          attributeName="opacity"
+                          from="0.8"
+                          to="0.3"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                      </circle>
+                    )}
 
                     {/* Player name below */}
                     {playerName && (
@@ -369,19 +412,23 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
             </svg>
           </div>
 
-          {/* Legend */}
-          <div className="flex gap-4 text-xs mt-2 justify-center">
+          {/* Zone Legend */}
+          <div className="flex gap-3 text-xs mt-2 justify-center flex-wrap">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <span className="text-text-secondary">Close Catcher (&lt;15m)</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
+              <span className="text-text-secondary">Silly (&lt;12m)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
-              <span className="text-text-secondary">In Circle (15-30m)</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F97316' }}></div>
+              <span className="text-text-secondary">Close (12-20m)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-              <span className="text-text-secondary">Outside Circle (&gt;30m)</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EAB308' }}></div>
+              <span className="text-text-secondary">Ring (20-30m)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
+              <span className="text-text-secondary">Boundary (30-70m)</span>
             </div>
           </div>
         </div>

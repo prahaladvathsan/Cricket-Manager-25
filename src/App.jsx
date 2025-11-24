@@ -12,7 +12,6 @@ import Matches from './components/match/Matches';
 import MatchdayUI from './components/match/matchday/MatchdayUI';
 import MatchPreview from './components/match/MatchPreview';
 import PreMatchFlow from './components/match/PreMatchFlow';
-import Auction from './components/auction/Auction';
 import League from './components/layout/League';
 import Transfers from './components/layout/Transfers';
 import Board from './components/layout/Board';
@@ -24,6 +23,8 @@ import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
 import Credits from './components/menu/Credits';
+import TestMode from './components/test/TestMode';
+import CalendarPage from './components/calendar/CalendarPage';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
@@ -88,6 +89,9 @@ function App() {
           <Route path="/player-browser" element={<PlayerBrowser />} />
           <Route path="/credits" element={<Credits />} />
 
+          {/* Test Mode (Full-screen, No Layout) */}
+          <Route path="/game/test" element={<TestMode />} />
+
           {/* Team Selection (Transition to Game) */}
           <Route
             path="/team-selection"
@@ -119,7 +123,7 @@ function App() {
                   <Route path="match/:matchId/preview" element={<MatchPreview />} />
                   {/* Redirect old match route to preview screen */}
                   <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
-                  <Route path="auction" element={<Auction />} />
+                  <Route path="calendar" element={<CalendarPage />} />
                   <Route path="league" element={<League />} />
                   <Route path="transfers" element={<Transfers />} />
                   <Route path="board" element={<Board />} />

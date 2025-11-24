@@ -8,8 +8,9 @@ import TeamSelectionManager from '../match-engine/interactive/TeamSelectionManag
 import AIMatchController from '../match-engine/interactive/AIMatchController.js';
 
 class PreMatchSetup {
-  constructor() {
+  constructor(teamStore = null) {
     this.teamSelector = new TeamSelectionManager();
+    this.teamStore = teamStore; // Optional: for accessing team tactics
   }
 
   /**
@@ -54,6 +55,7 @@ class PreMatchSetup {
 
   /**
    * Select playing XI from 25-player squad
+   * Checks team tactics first, falls back to auto-selection
    * @param {Object} club - Club with full squad
    * @param {Object} playerStore - Player store
    * @returns {Object} Team object with playing XI
@@ -66,15 +68,58 @@ class PreMatchSetup {
       throw new Error(`${club.name} has no players in squad`);
     }
 
-    // Select best 11 using TeamSelectionManager
-    const playing11 = this.teamSelector.selectBalancedTeam(fullSquad, 11);
+    let playing11;
+    let optimizedOrder;
 
-    if (!playing11 || playing11.length !== 11) {
-      throw new Error(`Failed to select 11 players for ${club.name}. Selected: ${playing11?.length || 0}`);
+    // Check if team has tactics with squadSelection (user-configured playing XI)
+    if (this.teamStore) {
+      const tactics = this.teamStore.getState().getTeamTactics(club.id);
+      if (tactics?.squadSelection && tactics.squadSelection.length === 11) {
+        // Use tactics squadSelection (user or AI-configured)
+        const squadIds = tactics.squadSelection;
+
+        // Get player objects in squad order
+        playing11 = squadIds
+          .map(id => fullSquad.find(p => p.id === id))
+          .filter(Boolean);
+
+        // Verify we got all 11 players
+        if (playing11.length === 11) {
+          // Use batting order from tactics if available
+          if (tactics.battingOrder && tactics.battingOrder.length === 11) {
+            const battingOrderIds = tactics.battingOrder;
+            optimizedOrder = battingOrderIds
+              .map(id => playing11.find(p => p.id === id))
+              .filter(Boolean);
+
+            // If batting order is complete, use it; otherwise optimize below
+            if (optimizedOrder.length !== 11) {
+              optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+            }
+          } else {
+            // Optimize batting order
+            optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+          }
+        } else {
+          // Tactics squadSelection is invalid, fall back to auto-selection
+          console.warn(`${club.name} tactics squadSelection is invalid (${playing11.length}/11 valid players), using auto-selection`);
+          playing11 = null; // Trigger fallback
+        }
+      }
     }
 
-    // Optimize batting order
-    const optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+    // Fallback: Auto-select if no tactics or invalid tactics
+    if (!playing11) {
+      // Select best 11 using TeamSelectionManager
+      playing11 = this.teamSelector.selectBalancedTeam(fullSquad, 11);
+
+      if (!playing11 || playing11.length !== 11) {
+        throw new Error(`Failed to select 11 players for ${club.name}. Selected: ${playing11?.length || 0}`);
+      }
+
+      // Optimize batting order
+      optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+    }
 
     // Create team object with squad IDs
     const team = {
@@ -125,7 +170,7 @@ class PreMatchSetup {
       tactics: {
         battingParScore: 160,
         accelerationMode: 'auto',
-        fieldFormation: 'neutral'
+        fieldFormation: 'neutral_orthodox'
       }
     };
   }

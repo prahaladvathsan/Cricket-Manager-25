@@ -3,7 +3,7 @@
  * @description League standings, fixtures, results, and player leaderboards
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Trophy,
@@ -20,6 +20,7 @@ import SeasonProgress from '../league/SeasonProgress';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import TeamName from '../shared/TeamName';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
+import PlayoffView from '../Playoffs/PlayoffView';
 
 const League = () => {
   const navigate = useNavigate();
@@ -36,6 +37,13 @@ const League = () => {
   const { seasonName, standings, fixtures, results, clubs, stage, champion } = useLeagueStore();
   const { currentSeasonId } = usePlayerStore();
   const { currentSeason, currentWeek, currentDate } = useGameStore();
+
+  // Auto-switch to playoffs tab when playoffs start
+  useEffect(() => {
+    if (stage === 'playoffs') {
+      setActiveTab('playoffs');
+    }
+  }, [stage]);
 
   // Sort standings by points and NRR
   const sortedStandings = useMemo(() => {
@@ -549,6 +557,25 @@ const League = () => {
               }
             };
 
+            // CRITICAL: Match innings to teams by battingTeam field, not by home/away assumption
+            // The toss determines batting order, so we must check innings1.battingTeam
+            const innings1Team = result.innings1?.battingTeam;
+            const innings2Team = result.innings2?.battingTeam;
+
+            // First innings display (team that batted first)
+            const firstInnings = {
+              teamId: innings1Team,
+              score: result.innings1?.totalScore || 0,
+              wickets: result.innings1?.wickets || 0
+            };
+
+            // Second innings display (team that batted second)
+            const secondInnings = {
+              teamId: innings2Team,
+              score: result.innings2?.totalScore || 0,
+              wickets: result.innings2?.wickets || 0
+            };
+
             return (
               <div
                 key={idx}
@@ -562,30 +589,32 @@ const League = () => {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1 space-y-1">
+                    {/* First Innings */}
                     <div className="flex items-center justify-between text-sm">
                       <span className={`font-medium ${
-                        result.winner === result.homeTeam ? 'text-text-primary' : 'text-text-secondary'
+                        result.winner === firstInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
                       }`}>
-                        <TeamName teamId={result.homeTeam} inline={true} showHoverEffect={result.winner === result.homeTeam} />
+                        <TeamName teamId={firstInnings.teamId} inline={true} showHoverEffect={result.winner === firstInnings.teamId} disableClick={hasFullScorecard} />
                       </span>
                       <span className="font-mono text-text-primary">
-                        {result.innings1?.totalScore || 0}/{result.innings1?.wickets || 0}
+                        {firstInnings.score}/{firstInnings.wickets}
                       </span>
                     </div>
+                    {/* Second Innings */}
                     <div className="flex items-center justify-between text-sm">
                       <span className={`font-medium ${
-                        result.winner === result.awayTeam ? 'text-text-primary' : 'text-text-secondary'
+                        result.winner === secondInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
                       }`}>
-                        <TeamName teamId={result.awayTeam} inline={true} showHoverEffect={result.winner === result.awayTeam} />
+                        <TeamName teamId={secondInnings.teamId} inline={true} showHoverEffect={result.winner === secondInnings.teamId} disableClick={hasFullScorecard} />
                       </span>
                       <span className="font-mono text-text-primary">
-                        {result.innings2?.totalScore || 0}/{result.innings2?.wickets || 0}
+                        {secondInnings.score}/{secondInnings.wickets}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="text-xs text-cricket-accent border-t border-border-primary pt-2">
-                  <TeamName teamId={result.winner} inline={true} /> won by {result.margin}
+                  <TeamName teamId={result.winner} inline={true} disableClick={hasFullScorecard} /> won by {result.margin}
                 </div>
               </div>
             );
@@ -809,6 +838,22 @@ const League = () => {
             <span>Leaderboards</span>
           </div>
         </button>
+        {/* Playoffs Tab - Show when stage is playoffs or completed */}
+        {(stage === 'playoffs' || stage === 'completed') && (
+          <button
+            onClick={() => setActiveTab('playoffs')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'playoffs'
+                ? 'border-cricket-accent text-cricket-accent'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              <span>Playoffs</span>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -817,6 +862,7 @@ const League = () => {
         {activeTab === 'fixtures' && <FixturesView />}
         {activeTab === 'results' && <ResultsView />}
         {activeTab === 'leaderboards' && <LeaderboardsView />}
+        {activeTab === 'playoffs' && <PlayoffView />}
       </div>
 
       {/* Player Card Modal */}

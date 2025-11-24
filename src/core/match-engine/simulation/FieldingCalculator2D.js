@@ -38,6 +38,7 @@ class FieldingCalculator2D {
     this.fieldPositioning = new FieldPositioningSystem();
     this.fielderMovement = new FielderMovementCalculator();
     this.runningDecision = new RunningDecisionCalculator();
+    this.strikerOffset = physicsConfig.fieldDimensions.strikerOffset; // Striker position: (0, +strikerOffset)
 
     // console.log('✅ FieldingCalculator2D initialized with 2D simulation'); // Suppressed for cleaner output
   }
@@ -74,6 +75,13 @@ class FieldingCalculator2D {
         theta: shotDirection,
         time: aerialTime
       };
+
+      console.log('🎾 [BOUNCE] Calculated bounce point for aerial shot:', {
+        bounceDistance: bounceDistance.toFixed(2),
+        direction: shotDirection,
+        shotSpeed: shotSpeed.toFixed(2),
+        bouncePoint
+      });
     }
 
     // Analyze fielder interception using polar coordinates (ALWAYS - even for boundaries)
@@ -109,7 +117,7 @@ class FieldingCalculator2D {
     // Check for sixes (aerial shots that clear the boundary in air)
     // Six = when bounceDistance >= boundaryDistance (ball clears boundary before bouncing)
     if (shotType === 'aerial' && bouncePoint && bouncePoint.r >= boundaryDistance) {
-      return this.handleSix(shotDirection, boundaryDistance, shotSpeed, interceptionAnalysis.closestFielder);
+      return this.handleSix(shotDirection, boundaryDistance, shotSpeed, interceptionAnalysis.closestFielder, bouncePoint);
     }
 
     // Handle catches for aerial shots
@@ -164,6 +172,12 @@ class FieldingCalculator2D {
       console.log(`  Running decision: ${runningResult.runsAttempted} runs (isRunOut: ${runningResult.isRunOut})`);
     }
 
+    console.log('🎾 [BOUNCE] Passing to determineFinalOutcome:', {
+      shotType,
+      bouncePoint,
+      hasBouncePoint: !!bouncePoint
+    });
+
     // Determine final outcome
     return this.determineFinalOutcome(
       runningResult,
@@ -171,7 +185,9 @@ class FieldingCalculator2D {
       shotDirection,
       boundaryDistance,
       shotSpeed,
-      trajectoryResult
+      trajectoryResult,
+      shotType,
+      bouncePoint // Pass bouncePoint for aerial shots
     );
   }
 
@@ -181,39 +197,24 @@ class FieldingCalculator2D {
    * @returns {Object[]} Fielder positions in polar coordinates
    */
   convertFieldersToPolar(fielderPositions) {
-    const strikerOffset = 11; // From physics config
     const polarFielders = [];
-    const DEBUG_CONVERSION = false;
-
-    if (DEBUG_CONVERSION) {
-      console.log('\n[POLAR CONVERSION DEBUG]');
-      console.log(`  Converting ${fielderPositions.length} fielders from Cartesian to Polar`);
-      console.log(`  Striker position: (0, -${strikerOffset})`);
-    }
 
     for (const fielder of fielderPositions) {
-      // Calculate polar coordinates from striker position (0, -11)
+      // Calculate polar coordinates from striker position (0, +strikerOffset)
       const dx = fielder.x - 0;
-      const dy = fielder.y - (-strikerOffset);
+      const dy = fielder.y - this.strikerOffset;
       const r = Math.sqrt(dx * dx + dy * dy);
       let theta = Math.atan2(dy, dx) * 180 / Math.PI;
       if (theta < 0) theta += 360;
 
-      if (DEBUG_CONVERSION) {
-        console.log(`  ${fielder.name || 'fielder'}: (x=${fielder.x}, y=${fielder.y}) → (r=${r.toFixed(1)}m, θ=${theta.toFixed(1)}°)`);
-      }
-
       polarFielders.push({
         fielder: fielder.fielder,
+        name: fielder.name, // Position name (e.g., "Mid Off", "Third Man")
         r: r,
         theta: theta,
         x: fielder.x, // Keep for backward compatibility
         y: fielder.y
       });
-    }
-
-    if (DEBUG_CONVERSION) {
-      console.log('');
     }
 
     return polarFielders;
@@ -225,9 +226,13 @@ class FieldingCalculator2D {
    * @param {number} boundaryDistance - Distance to boundary
    * @param {number} shotSpeed - Shot speed in m/s
    * @param {Object} closestFielder - Closest fielder for diagnostics
+   * @param {Object} bouncePoint - Bounce point (optional, for aerial shots)
    * @returns {FieldingResult2D} Six result
    */
-  handleSix(shotDirection, boundaryDistance, shotSpeed, closestFielder = null) {
+  handleSix(shotDirection, boundaryDistance, shotSpeed, closestFielder = null, bouncePoint = null) {
+    // Calculate actual shot distance (ball clears boundary in air)
+    const shotDistance = bouncePoint?.r || boundaryDistance;
+
     return {
       outcome: 'SIX',
       runs: 6,
@@ -238,7 +243,14 @@ class FieldingCalculator2D {
         fielder: null,
         success: false
       },
-      trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: true },
+      trajectory: {
+        direction: shotDirection,
+        boundaryDistance,
+        shotSpeed,
+        isBoundary: true,
+        shotDistance, // Actual ball travel distance
+        bouncePoint // For aerial animation
+      },
       runningDecision: null,
       closestFielder: closestFielder // Include for diagnostics
     };
@@ -334,7 +346,7 @@ class FieldingCalculator2D {
 
     if (!closestFielder) {
       // No fielder can reach - treat as four
-      return this.handleFour(shotDirection, boundaryDistance, shotSpeed, null);
+      return this.handleFour(shotDirection, boundaryDistance, shotSpeed, null, bouncePoint);
     }
 
     // IMPORTANT: Check if bounce point is beyond boundary
@@ -346,13 +358,16 @@ class FieldingCalculator2D {
         console.log(`  Bounce distance: ${bouncePoint.r.toFixed(1)}m, Boundary: ${boundaryDistance.toFixed(1)}m`);
         console.log(`  Closest fielder could intercept: ${closestFielder?.canIntercept}`);
       }
-      return this.handleSix(shotDirection, boundaryDistance, shotSpeed, closestFielder);
+      return this.handleSix(shotDirection, boundaryDistance, shotSpeed, closestFielder, bouncePoint);
     }
 
     // Calculate catch probability using simplified formula
     const catching = closestFielder.fielder.attributes?.fielding?.catching || 10;
     const catchProbability = catching / 20; // Simple probability
     const catchSuccess = Math.random() < catchProbability;
+
+    // Shot distance = bounce distance (caught at bounce point or dropped at bounce point)
+    const shotDistance = bouncePoint?.r || 0;
 
     if (catchSuccess) {
       return {
@@ -366,12 +381,20 @@ class FieldingCalculator2D {
           success: true,
           probability: catchProbability
         },
-        trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: false },
+        trajectory: {
+          direction: shotDirection,
+          boundaryDistance,
+          shotSpeed,
+          isBoundary: false,
+          shotDistance, // Ball caught at bounce point
+          bouncePoint // For aerial animation
+        },
         runningDecision: null,
         closestFielder: closestFielder // Include for diagnostics
       };
     } else {
-      // Catch dropped - usually results in single
+      // Catch dropped - ball continues, treat as post-bounce grounded shot
+      // For now, simplified to single run
       return {
         outcome: 'RUNS',
         runs: 1,
@@ -382,7 +405,14 @@ class FieldingCalculator2D {
           fielder: closestFielder.fielder,
           success: false
         },
-        trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: false },
+        trajectory: {
+          direction: shotDirection,
+          boundaryDistance,
+          shotSpeed,
+          isBoundary: false,
+          shotDistance, // Ball dropped at bounce point, then fielded nearby
+          bouncePoint // For aerial animation
+        },
         runningDecision: { runsAttempted: 1, maxSafeRuns: 1, isRunOut: false },
         closestFielder: closestFielder // Include for diagnostics
       };
@@ -395,9 +425,13 @@ class FieldingCalculator2D {
    * @param {number} boundaryDistance - Distance to boundary
    * @param {number} shotSpeed - Shot speed in m/s
    * @param {Object} closestFielder - Closest fielder for diagnostics
+   * @param {Object} bouncePoint - Bounce point (optional, for aerial shots that reach boundary)
    * @returns {FieldingResult2D} Four result
    */
-  handleFour(shotDirection, boundaryDistance, shotSpeed, closestFielder = null) {
+  handleFour(shotDirection, boundaryDistance, shotSpeed, closestFielder = null, bouncePoint = null) {
+    // Shot distance = boundary distance (ball reaches boundary)
+    const shotDistance = boundaryDistance;
+
     return {
       outcome: 'FOUR',
       runs: 4,
@@ -408,94 +442,19 @@ class FieldingCalculator2D {
         fielder: null,
         success: false
       },
-      trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: true },
+      trajectory: {
+        direction: shotDirection,
+        boundaryDistance,
+        shotSpeed,
+        isBoundary: true,
+        shotDistance, // Ball reaches boundary
+        bouncePoint // For aerial animation (if aerial shot)
+      },
       runningDecision: null,
       closestFielder: closestFielder // Include for diagnostics
     };
   }
 
-  /**
-   * Handle dropped catch - ball continues from catch position
-   * @param {Object} interceptionAnalysis - Interception analysis
-   * @param {Object} ballTrajectory - Original ball trajectory
-   * @returns {FieldingResult2D} Dropped catch result
-   */
-  handleDroppedCatch(interceptionAnalysis, ballTrajectory) {
-    // Simplified: treat as if ball was fielded at catch position with delay
-    const catchPosition = interceptionAnalysis.closestFielder.interceptionPoint;
-    const fieldingTime = {
-      totalTime: interceptionAnalysis.closestFielder.timeToReach + 1.0, // +1 second for drop and recovery
-      fieldingTime: interceptionAnalysis.closestFielder.timeToReach + 1.0,
-      throwTime: 0.5
-    };
-
-    return {
-      outcome: 'RUNS',
-      runs: 1, // Usually single run on dropped catch
-      isWicket: false,
-      dismissalType: null,
-      fieldingAction: {
-        type: 'dropped_catch',
-        fielder: interceptionAnalysis.closestFielder.fielder,
-        success: false
-      },
-      trajectory: ballTrajectory,
-      runningDecision: {
-        runsAttempted: 1,
-        maxSafeRuns: 1,
-        isRunOut: false,
-        breakdown: { droppedCatch: true }
-      }
-    };
-  }
-
-  /**
-   * Handle grounded fielding
-   * @param {Object} interceptionAnalysis - Interception analysis
-   * @param {Object} ballTrajectory - Ball trajectory
-   * @returns {FieldingResult2D} Grounded fielding result
-   */
-  handleGroundedFielding(interceptionAnalysis, ballTrajectory) {
-    if (!interceptionAnalysis.closestFielder) {
-      // No fielder can intercept - ball rolls to boundary
-      return this.handleBoundaryShot(ballTrajectory, 'grounded');
-    }
-
-    const fieldingTime = this.calculateFieldingTime(interceptionAnalysis, ballTrajectory);
-
-    return {
-      outcome: 'RUNS',
-      runs: Math.min(3, Math.max(1, Math.floor(fieldingTime.totalTime / 3))), // Rough estimate
-      isWicket: false,
-      dismissalType: null,
-      fieldingAction: {
-        type: 'field',
-        fielder: interceptionAnalysis.closestFielder.fielder,
-        success: true
-      },
-      trajectory: ballTrajectory,
-      runningDecision: null // Will be calculated separately
-    };
-  }
-
-  /**
-   * Calculate total fielding time including throw
-   * @param {Object} interceptionAnalysis - Interception analysis
-   * @param {Object} ballTrajectory - Ball trajectory
-   * @returns {{totalTime: number, fieldingTime: number, throwTime: number}} Fielding time
-   */
-  calculateFieldingTime(interceptionAnalysis, ballTrajectory) {
-    if (!interceptionAnalysis.closestFielder) {
-      return { totalTime: Infinity, fieldingTime: Infinity, throwTime: 0 };
-    }
-
-    const interception = interceptionAnalysis.closestFielder;
-    const throwDistance = Math.sqrt(
-      interception.interceptionPoint.x ** 2 + interception.interceptionPoint.y ** 2
-    );
-
-    return this.fielderMovement.calculateFieldingTime(interception, throwDistance);
-  }
 
   /**
    * Determine final outcome based on running decision - simplified
@@ -505,13 +464,34 @@ class FieldingCalculator2D {
    * @param {number} boundaryDistance - Distance to boundary
    * @param {number} shotSpeed - Shot speed in m/s
    * @param {Object} trajectoryResult - Original trajectory result
+   * @param {string} shotType - Shot type ('aerial' or 'grounded')
+   * @param {Object} bouncePoint - Bounce point for aerial shots (null for grounded)
    * @returns {FieldingResult2D} Final fielding result
    */
-  determineFinalOutcome(runningResult, interceptionAnalysis, shotDirection, boundaryDistance, shotSpeed, trajectoryResult) {
+  determineFinalOutcome(runningResult, interceptionAnalysis, shotDirection, boundaryDistance, shotSpeed, trajectoryResult, shotType, bouncePoint = null) {
+    console.log('🎯 [OUTCOME] determineFinalOutcome called:', {
+      shotType,
+      bouncePoint,
+      runs: runningResult.runsAttempted,
+      isRunOut: runningResult.isRunOut
+    });
+
     // Check if ball reached boundary (no interception)
     if (!interceptionAnalysis.closestFielder || !interceptionAnalysis.closestFielder.canIntercept) {
-      return this.handleFour(shotDirection, boundaryDistance, shotSpeed, interceptionAnalysis.closestFielder);
+      // Pass bouncePoint for aerial shots reaching boundary
+      console.log('🎯 [OUTCOME] Ball reached boundary (FOUR)');
+      return this.handleFour(shotDirection, boundaryDistance, shotSpeed, interceptionAnalysis.closestFielder, bouncePoint);
     }
+
+    // Get shot distance from interception analysis
+    // For grounded shots or aerial post-bounce interceptions, this is the actual ball travel distance
+    const shotDistance = interceptionAnalysis.closestFielder.expectedDistance || 0;
+
+    console.log('🎯 [OUTCOME] Ball fielded:', {
+      shotDistance: shotDistance.toFixed(2),
+      outcome: runningResult.isRunOut ? 'RUN_OUT' : runningResult.runsAttempted === 0 ? 'DOT' : 'RUNS',
+      addingBouncePoint: shotType === 'aerial' ? bouncePoint : null
+    });
 
     if (runningResult.isRunOut) {
       return {
@@ -524,7 +504,14 @@ class FieldingCalculator2D {
           fielder: interceptionAnalysis.closestFielder?.fielder,
           success: true
         },
-        trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: false },
+        trajectory: {
+          direction: shotDirection,
+          boundaryDistance,
+          shotSpeed,
+          isBoundary: false,
+          shotDistance, // Actual ball travel distance
+          bouncePoint: shotType === 'aerial' ? bouncePoint : null // Include bounce for aerial
+        },
         runningDecision: runningResult,
         closestFielder: interceptionAnalysis.closestFielder // Include for diagnostics
       };
@@ -541,7 +528,14 @@ class FieldingCalculator2D {
           fielder: interceptionAnalysis.closestFielder?.fielder,
           success: true
         },
-        trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: false },
+        trajectory: {
+          direction: shotDirection,
+          boundaryDistance,
+          shotSpeed,
+          isBoundary: false,
+          shotDistance, // Actual ball travel distance
+          bouncePoint: shotType === 'aerial' ? bouncePoint : null // Include bounce for aerial
+        },
         runningDecision: runningResult,
         closestFielder: interceptionAnalysis.closestFielder // Include for diagnostics
       };
@@ -557,7 +551,14 @@ class FieldingCalculator2D {
         fielder: interceptionAnalysis.closestFielder?.fielder,
         success: true
       },
-      trajectory: { direction: shotDirection, boundaryDistance, shotSpeed, isBoundary: false },
+      trajectory: {
+        direction: shotDirection,
+        boundaryDistance,
+        shotSpeed,
+        isBoundary: false,
+        shotDistance, // Actual ball travel distance
+        bouncePoint: shotType === 'aerial' ? bouncePoint : null // Include bounce for aerial
+      },
       runningDecision: runningResult,
       closestFielder: interceptionAnalysis.closestFielder // Include fielder interception data for diagnostics
     };
