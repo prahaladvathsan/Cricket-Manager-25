@@ -17,6 +17,7 @@ import {
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
 import TeamName from '../shared/TeamName';
+import { getTeamBadge } from '../../utils/assetHelpers';
 
 const MatchPreview = () => {
   const navigate = useNavigate();
@@ -147,12 +148,10 @@ const MatchPreview = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center mb-6">
           {/* Home Team */}
           <div className={`text-center ${isUserHomeTeam ? 'opacity-100' : 'opacity-90'}`}>
-            <div
-              className="w-24 h-24 rounded-full mx-auto mb-3 border-4 shadow-lg"
-              style={{
-                backgroundColor: homeTeam.colors?.primary || '#2D5F3F',
-                borderColor: isUserHomeTeam ? '#D4AF37' : homeTeam.colors?.secondary || '#D4AF37'
-              }}
+            <img
+              src={getTeamBadge(homeTeam.id)}
+              alt={homeTeam.name}
+              className={`w-24 h-24 mx-auto mb-3 drop-shadow-lg ${isUserHomeTeam ? 'ring-4 ring-trophy-gold rounded-full' : ''}`}
             />
             <h2 className="text-2xl font-bold mb-1">
               <TeamName teamId={homeTeam.id} inline={true} className="text-2xl font-bold" />
@@ -176,12 +175,10 @@ const MatchPreview = () => {
 
           {/* Away Team */}
           <div className={`text-center ${isUserAwayTeam ? 'opacity-100' : 'opacity-90'}`}>
-            <div
-              className="w-24 h-24 rounded-full mx-auto mb-3 border-4 shadow-lg"
-              style={{
-                backgroundColor: awayTeam.colors?.primary || '#2D5F3F',
-                borderColor: isUserAwayTeam ? '#D4AF37' : awayTeam.colors?.secondary || '#D4AF37'
-              }}
+            <img
+              src={getTeamBadge(awayTeam.id)}
+              alt={awayTeam.name}
+              className={`w-24 h-24 mx-auto mb-3 drop-shadow-lg ${isUserAwayTeam ? 'ring-4 ring-trophy-gold rounded-full' : ''}`}
             />
             <h2 className="text-2xl font-bold mb-1">
               <TeamName teamId={awayTeam.id} inline={true} className="text-2xl font-bold" />

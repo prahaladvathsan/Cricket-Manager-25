@@ -10,6 +10,7 @@ import usePlayerStore from '../../../stores/playerStore';
 import useTeamStore from '../../../stores/teamStore';
 import PlayerName from '../../shared/PlayerName';
 import TeamName from '../../shared/TeamName';
+import { getTeamBadge } from '../../../utils/assetHelpers';
 
 const LineupsTab = ({ matchData, tossState, onStartMatch }) => {
   const { homeTeam, awayTeam } = matchData;
@@ -72,12 +73,10 @@ const LineupsTab = ({ matchData, tossState, onStartMatch }) => {
         {battingFirstTeam && (
           <div className="card p-4">
             <div className="text-center pb-3 mb-3 border-b border-border-primary">
-              <div
-                className="w-16 h-16 rounded-full mx-auto mb-2 border-2"
-                style={{
-                  backgroundColor: battingFirstTeam.colors?.primary || '#2D5F3F',
-                  borderColor: battingFirstTeam.colors?.secondary || '#D4AF37'
-                }}
+              <img
+                src={getTeamBadge(battingFirstTeam.id)}
+                alt={battingFirstTeam.name}
+                className="w-16 h-16 mx-auto mb-2 drop-shadow-lg"
               />
               <h4 className="font-bold text-text-primary mb-1">
                 <TeamName teamId={battingFirstTeam.id} inline={true} className="font-bold" />
@@ -131,12 +130,10 @@ const LineupsTab = ({ matchData, tossState, onStartMatch }) => {
         {bowlingFirstTeam && (
           <div className="card p-4">
             <div className="text-center pb-3 mb-3 border-b border-border-primary">
-              <div
-                className="w-16 h-16 rounded-full mx-auto mb-2 border-2"
-                style={{
-                  backgroundColor: bowlingFirstTeam.colors?.primary || '#2D5F3F',
-                  borderColor: bowlingFirstTeam.colors?.secondary || '#D4AF37'
-                }}
+              <img
+                src={getTeamBadge(bowlingFirstTeam.id)}
+                alt={bowlingFirstTeam.name}
+                className="w-16 h-16 mx-auto mb-2 drop-shadow-lg"
               />
               <h4 className="font-bold text-text-primary mb-1">
                 <TeamName teamId={bowlingFirstTeam.id} inline={true} className="font-bold" />

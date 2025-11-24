@@ -3,8 +3,8 @@
  * @description Navigation sidebar component
  */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -22,8 +22,11 @@ import useUIStore from '../../stores/uiStore';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
 import useInboxStore from '../../stores/inboxStore';
+import { getTeamIcon, getGameLogo } from '../../utils/assetHelpers';
 
 const Sidebar = ({ currentPath }) => {
+  const navigate = useNavigate();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const { preferences, toggleSidebar } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
@@ -31,6 +34,15 @@ const Sidebar = ({ currentPath }) => {
   const { unreadCount } = useInboxStore();
 
   const userTeam = getUserTeam();
+
+  const handleLogoClick = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmReturnToMenu = () => {
+    setShowConfirmModal(false);
+    navigate('/');
+  };
 
   const navItems = [
     { path: '/game/home', label: 'Home', icon: LayoutDashboard },
@@ -49,16 +61,24 @@ const Sidebar = ({ currentPath }) => {
       sidebarCollapsed ? 'w-16' : 'w-48'
     }`}>
       {/* Header */}
-      <div className="p-2 border-b border-gray-700">
-        <div className="flex items-center justify-between">
+      <div className="px-4 py-2.5 border-b border-gray-700">
+        <div className="flex items-center justify-between h-10">
           {!sidebarCollapsed && (
-            <div>
-              <h1 className="text-base font-bold text-cricket-text-primary">Cricket Manager 25</h1>
-            </div>
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center justify-center flex-1 hover:opacity-80 transition-opacity"
+              title="Return to Start Menu"
+            >
+              <img
+                src={getGameLogo('light')}
+                alt="Cricket Manager 25"
+                className="h-8"
+              />
+            </button>
           )}
           <button
             onClick={toggleSidebar}
-            className="p-1.5 rounded hover:bg-cricket-primary transition-colors text-text-secondary hover:text-white"
+            className="p-1.5 rounded hover:bg-cricket-primary transition-colors text-text-secondary hover:text-white flex-shrink-0"
           >
             {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -108,15 +128,42 @@ const Sidebar = ({ currentPath }) => {
           <div className="text-xxs text-cricket-text-secondary space-y-0.5">
             {userTeam && (
               <div className="flex items-center space-x-1.5 mb-1.5">
-                <div
-                  className="w-2.5 h-2.5 rounded-full border"
-                  style={{ backgroundColor: userTeam.colors.primary, borderColor: userTeam.colors.secondary }}
+                <img
+                  src={getTeamIcon(userTeam.id)}
+                  alt={userTeam.shortName}
+                  className="w-4 h-4"
                 />
                 <span className="font-medium text-cricket-text-primary text-xs">{userTeam.shortName}</span>
               </div>
             )}
             <p>Season {currentSeason} • Week {currentWeek}</p>
             <p className="capitalize">{currentPhase} Phase</p>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-secondary border border-border-primary rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-text-primary mb-3">Return to Start Menu?</h3>
+            <p className="text-sm text-text-secondary mb-6">
+              Are you sure you want to return to the start menu? Make sure you've saved your game progress.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmReturnToMenu}
+                className="flex-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white py-2 rounded font-medium transition-colors"
+              >
+                Return to Menu
+              </button>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary py-2 rounded font-medium transition-colors border border-border-primary"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

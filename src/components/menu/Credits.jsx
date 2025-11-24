@@ -6,12 +6,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Code, Database, Zap, Heart } from 'lucide-react';
+import '../../styles/wallpaper.css';
 
 const Credits = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cricket-dark via-cricket-secondary to-cricket-dark p-6">
+    <div className="min-h-screen app-wallpaper p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

@@ -6,6 +6,7 @@
 import React from 'react';
 import { X, Trophy } from 'lucide-react';
 import PlayerName from './PlayerName';
+import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 
 const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
   if (!isOpen || !matchResult) return null;
@@ -56,26 +57,24 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
         <div className="p-4">
           <div className="space-y-3">
             {/* First Innings */}
-            <div
-              className="border border-border-primary rounded overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${innings1.teamColors?.primary || '#2D5F3F'}15, ${innings1.teamColors?.secondary || '#D4AF37'}10)`
-              }}
-            >
-              {/* Innings Header */}
+            <div className="relative border border-border-primary rounded overflow-hidden">
+              {/* Banner Background */}
               <div
-                className="flex items-center justify-between px-3 py-2 border-b border-border-primary"
+                className="absolute inset-0 opacity-70"
                 style={{
-                  background: `linear-gradient(to right, ${innings1.teamColors?.primary || '#2D5F3F'}40, ${innings1.teamColors?.secondary || '#D4AF37'}20)`
+                  backgroundImage: `url(${getTeamBanner(innings1.teamId)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
                 }}
-              >
+              />
+
+              {/* Innings Header */}
+              <div className="relative flex items-center justify-between px-3 py-2 border-b border-border-primary bg-bg-primary/90">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-6 h-6 rounded-full border-2"
-                    style={{
-                      backgroundColor: innings1.teamColors?.primary || '#2D5F3F',
-                      borderColor: innings1.teamColors?.secondary || '#D4AF37'
-                    }}
+                  <img
+                    src={getTeamBadge(innings1.teamId)}
+                    alt={innings1.teamName}
+                    className="w-8 h-8 drop-shadow-lg"
                   />
                   <span className="text-sm font-bold text-cricket-accent uppercase">
                     {innings1.teamName}
@@ -92,7 +91,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               </div>
 
               {/* Batting and Bowling Stats */}
-              <div className="grid grid-cols-2 divide-x divide-border-primary">
+              <div className="relative grid grid-cols-2 divide-x divide-border-primary bg-bg-primary/95">
                 {/* Top Batsmen */}
                 <div className="p-2">
                   {innings1.topBatsmen && innings1.topBatsmen.length > 0 ? (
@@ -140,26 +139,24 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
             </div>
 
             {/* Second Innings */}
-            <div
-              className="border border-border-primary rounded overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${innings2.teamColors?.primary || '#2D5F3F'}15, ${innings2.teamColors?.secondary || '#D4AF37'}10)`
-              }}
-            >
-              {/* Innings Header */}
+            <div className="relative border border-border-primary rounded overflow-hidden">
+              {/* Banner Background */}
               <div
-                className="flex items-center justify-between px-3 py-2 border-b border-border-primary"
+                className="absolute inset-0 opacity-70"
                 style={{
-                  background: `linear-gradient(to right, ${innings2.teamColors?.primary || '#2D5F3F'}40, ${innings2.teamColors?.secondary || '#D4AF37'}20)`
+                  backgroundImage: `url(${getTeamBanner(innings2.teamId)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
                 }}
-              >
+              />
+
+              {/* Innings Header */}
+              <div className="relative flex items-center justify-between px-3 py-2 border-b border-border-primary bg-bg-primary/90">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-6 h-6 rounded-full border-2"
-                    style={{
-                      backgroundColor: innings2.teamColors?.primary || '#2D5F3F',
-                      borderColor: innings2.teamColors?.secondary || '#D4AF37'
-                    }}
+                  <img
+                    src={getTeamBadge(innings2.teamId)}
+                    alt={innings2.teamName}
+                    className="w-8 h-8 drop-shadow-lg"
                   />
                   <span className="text-sm font-bold text-cricket-accent uppercase">
                     {innings2.teamName}
@@ -176,7 +173,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               </div>
 
               {/* Batting and Bowling Stats */}
-              <div className="grid grid-cols-2 divide-x divide-border-primary">
+              <div className="relative grid grid-cols-2 divide-x divide-border-primary bg-bg-primary/95">
                 {/* Top Batsmen */}
                 <div className="p-2">
                   {innings2.topBatsmen && innings2.topBatsmen.length > 0 ? (

@@ -17,6 +17,7 @@ import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
+import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 
 const Squad = () => {
   const [selectedTab, setSelectedTab] = useState('squad');
@@ -387,8 +388,17 @@ const Squad = () => {
           <button className="btn-primary">Go to Transfers</button>
         </div>
       ) : (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="relative overflow-x-auto rounded-lg border border-border-primary">
+          {/* Banner Background */}
+          <div
+            className="absolute inset-0 opacity-70"
+            style={{
+              backgroundImage: `url(${getTeamBanner(userTeam.id)})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          />
+          <table className="relative w-full text-sm bg-bg-primary/95">
             <thead>
               <tr className="border-b border-border-primary">
                 <th
@@ -726,7 +736,20 @@ const Squad = () => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Squad Header */}
+      <div className="flex items-center gap-3">
+        <img
+          src={getTeamBadge(userTeam.id)}
+          alt={userTeam.name}
+          className="w-12 h-12"
+        />
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">{userTeam.name}</h1>
+          <p className="text-sm text-text-secondary">Squad Management</p>
+        </div>
+      </div>
+
       {/* Tab Navigation */}
       <div className="border-b border-border-primary">
         <nav className="flex items-center justify-between gap-2">

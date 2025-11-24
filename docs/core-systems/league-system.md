@@ -484,35 +484,35 @@ await league.simulateLeague(null, (result, current, total) => {
 
 ### WPL Clubs
 
-**Location:** `src/data/clubs/wpl_clubs.json`
+**Location:** `src/data/teams/wpl-teams.json`
 
-**Club Structure:**
+**Team Structure:**
 ```json
 {
-  "id": "mumbai_thunders",
-  "name": "Mumbai Thunders",
-  "city": "Mumbai",
+  "id": "t_chennai",
+  "name": "Chennai Cobras",
+  "city": "Chennai",
   "country": "India",
-  "stadium": "Wankhede Stadium",
+  "stadium": "M.A. Chidambaram Stadium",
   "founded": 2025,
   "colors": {
-    "primary": "#004C93",
+    "primary": "#4B0082",
     "secondary": "#FFD700"
   }
 }
 ```
 
 **10 WPL Teams:**
-1. Mumbai Thunders (India)
+1. Chennai Cobras (India)
 2. London Lions (England)
-3. Melbourne Meteors (Australia)
-4. Cape Town Crusaders (South Africa)
-5. Karachi Kings (Pakistan)
-6. Colombo Cobras (Sri Lanka)
-7. Dhaka Dynamites (Bangladesh)
-8. Kingston Storm (West Indies)
-9. Wellington Warriors (New Zealand)
-10. Kabul Eagles (Afghanistan)
+3. Sydney Sharks (Australia)
+4. Pretoria Pythons (South Africa)
+5. Multan Markhors (Pakistan)
+6. Colombo Crocodiles (Sri Lanka)
+7. Dhaka Dolphins (Bangladesh)
+8. Georgetown Jaguars (West Indies)
+9. Auckland Orcas (New Zealand)
+10. Kabul Kites (Afghanistan)
 
 ### Squad Distribution Config
 

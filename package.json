@@ -20,6 +20,7 @@
     "build-player-db": "node scripts/build-final-player-database.js"
   },
   "dependencies": {
+    "country-flag-icons": "^1.6.4",
     "lucide-react": "^0.552.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

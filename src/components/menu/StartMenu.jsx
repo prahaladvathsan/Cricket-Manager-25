@@ -16,6 +16,8 @@ import {
   Info,
   Trophy
 } from 'lucide-react';
+import '../../styles/wallpaper.css';
+import { getGameLogo } from '../../utils/assetHelpers';
 
 const StartMenu = () => {
   const navigate = useNavigate();
@@ -85,24 +87,15 @@ const StartMenu = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cricket-dark via-cricket-secondary to-cricket-dark flex items-center justify-center p-4">
+    <div className="min-h-screen app-wallpaper flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
-        {/* Title */}
+        {/* Logo */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <Trophy className="w-16 h-16 text-cricket-accent" />
-            <div>
-              <h1 className="text-6xl font-bold text-cricket-text-primary tracking-tight">
-                Cricket Manager
-              </h1>
-              <p className="text-xl text-cricket-accent font-semibold mt-2">
-                2025 Edition
-              </p>
-            </div>
-          </div>
-          <p className="text-cricket-text-secondary text-sm">
-            World Premier League • Ball-by-Ball Simulation • 545 Players
-          </p>
+          <img
+            src={getGameLogo('light')}
+            alt="Cricket Manager 25"
+            className="h-32 mx-auto"
+          />
         </div>
 
         {/* Menu Options Grid */}

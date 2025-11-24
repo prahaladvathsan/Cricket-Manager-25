@@ -14,6 +14,7 @@ import {
   Activity
 } from 'lucide-react';
 import PlayerName from '../shared/PlayerName';
+import '../../styles/wallpaper.css';
 
 const PlayerBrowser = () => {
   const navigate = useNavigate();
@@ -126,7 +127,7 @@ const PlayerBrowser = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cricket-dark p-6">
+    <div className="min-h-screen app-wallpaper p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

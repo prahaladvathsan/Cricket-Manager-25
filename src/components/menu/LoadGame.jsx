@@ -26,6 +26,7 @@ import useUIStore from '../../stores/uiStore';
 import useInboxStore from '../../stores/inboxStore';
 import useNavigationStore from '../../stores/navigationStore';
 import GameController from '../../core/game/GameController';
+import '../../styles/wallpaper.css';
 
 const LoadGame = () => {
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ const LoadGame = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cricket-dark p-6">
+    <div className="min-h-screen app-wallpaper p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

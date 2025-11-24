@@ -31,6 +31,7 @@ import StatsHub from './StatsHub/StatsHub';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
 import { useMatchResultModal } from '../../../hooks/useMatchResultModal';
+import { getTeamIcon } from '../../../utils/assetHelpers';
 
 /**
  * MatchHeader - Broadcast-style HUD with 2-row layout
@@ -405,9 +406,16 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
         {/* Main content area */}
         <div className="flex-1 flex items-center px-4 py-2 gap-3 min-w-0">
           {/* Left Team Name + Score (fixed width) */}
-          <div className={`w-40 flex-shrink-0 ${battingTeam?.id === firstBattingTeamId ? 'opacity-100' : 'opacity-60'}`}>
-            <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg mb-1 truncate ${battingTeam?.id === firstBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
-              {leftTeam?.name || 'Team 1'}
+          <div className={`w-44 flex-shrink-0 ${battingTeam?.id === firstBattingTeamId ? 'opacity-100' : 'opacity-60'}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <img
+                src={getTeamIcon(firstBattingTeamId)}
+                alt={leftTeam?.name}
+                className="w-5 h-5 drop-shadow-lg"
+              />
+              <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg truncate ${battingTeam?.id === firstBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
+                {leftTeam?.name || 'Team 1'}
+              </div>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-white font-mono tracking-tight drop-shadow-lg">{leftTeamScore.runs}</span>
@@ -546,9 +554,16 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
           <div className="w-px h-14 bg-white/20" />
 
           {/* Right Team Score + Name (fixed width) */}
-          <div className={`w-40 flex-shrink-0 text-right ${battingTeam?.id === secondBattingTeamId ? 'opacity-100' : 'opacity-60'}`}>
-            <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg mb-1 truncate ${battingTeam?.id === secondBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
-              {rightTeam?.name || 'Team 2'}
+          <div className={`w-44 flex-shrink-0 text-right ${battingTeam?.id === secondBattingTeamId ? 'opacity-100' : 'opacity-60'}`}>
+            <div className="flex items-center gap-1.5 mb-1 justify-end">
+              <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg truncate ${battingTeam?.id === secondBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
+                {rightTeam?.name || 'Team 2'}
+              </div>
+              <img
+                src={getTeamIcon(secondBattingTeamId)}
+                alt={rightTeam?.name}
+                className="w-5 h-5 drop-shadow-lg"
+              />
             </div>
             {rightTeamScore ? (
               <div className="flex items-baseline gap-1 justify-end">

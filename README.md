@@ -79,16 +79,16 @@ src/
 
 The WPL features 10 teams representing major cricket cities worldwide:
 
-1. **Mumbai Thunders** (India)
+1. **Chennai Cobras** (India)
 2. **London Lions** (England)
-3. **Melbourne Meteors** (Australia)
-4. **Cape Town Crusaders** (South Africa)
-5. **Karachi Kings** (Pakistan)
-6. **Colombo Cobras** (Sri Lanka)
-7. **Dhaka Dynamites** (Bangladesh)
-8. **Kingston Storm** (West Indies)
-9. **Wellington Warriors** (New Zealand)
-10. **Kabul Eagles** (Afghanistan)
+3. **Sydney Sharks** (Australia)
+4. **Pretoria Pythons** (South Africa)
+5. **Multan Markhors** (Pakistan)
+6. **Colombo Crocodiles** (Sri Lanka)
+7. **Dhaka Dolphins** (Bangladesh)
+8. **Georgetown Jaguars** (West Indies)
+9. **Auckland Orcas** (New Zealand)
+10. **Kabul Kites** (Afghanistan)
 
 ## Testing
 

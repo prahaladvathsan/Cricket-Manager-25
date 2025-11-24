@@ -28,8 +28,8 @@ import useLeagueStore from '../stores/leagueStore.js';
 import useFinanceStore from '../stores/financeStore.js';
 import TransferManager from '../core/finance/TransferManager.js';
 
-// Import clubs data
-const clubsData = JSON.parse(fs.readFileSync('src/data/clubs/wpl_clubs.json', 'utf8'));
+// Import teams data
+const teamsData = JSON.parse(fs.readFileSync('src/data/teams/wpl-teams.json', 'utf8'));
 
 // Import player database
 const playerDb = JSON.parse(fs.readFileSync('src/data/players/master_player_database.json', 'utf8'));
@@ -553,15 +553,15 @@ async function runLeagueTest() {
   );
 
   try {
-    // Prepare clubs data with user control flag if auction mode
-    let preparedClubs = clubsData.clubs;
+    // Prepare teams data with user control flag if auction mode
+    let preparedClubs = teamsData;
     if (useAuction && !auctionAIOnly) {
-      // Mark Mumbai Thunders as user-controlled
-      preparedClubs = clubsData.clubs.map(club => ({
-        ...club,
-        isUserControlled: club.id === 'mumbai_thunders'
+      // Mark Chennai Cobras as user-controlled
+      preparedClubs = teamsData.map(team => ({
+        ...team,
+        isUserControlled: team.id === 't_chennai'
       }));
-      console.log('\n🎮 AUCTION MODE: You will control Mumbai Thunders');
+      console.log('\n🎮 AUCTION MODE: You will control Chennai Cobras');
       console.log('   Other teams will be controlled by AI\n');
     } else if (useAuction && auctionAIOnly) {
       console.log('\n🤖 AUCTION MODE (AI-ONLY): All teams controlled by AI\n');

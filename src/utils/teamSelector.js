@@ -51,7 +51,7 @@ class TeamSelector {
     const playersByRole = this.groupPlayersByRole(topPlayers);
 
     // Select Team A
-    const teamA = this.selectBalancedTeam(playersByRole, teamSize, 'Mumbai Thunders');
+    const teamA = this.selectBalancedTeam(playersByRole, teamSize, 'Chennai Cobras');
 
     // Remove selected players from pool
     const remainingPlayers = this.removeSelectedPlayers(topPlayers, teamA.players);

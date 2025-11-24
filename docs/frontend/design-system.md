@@ -824,7 +824,7 @@ If light theme is added later:
 ```jsx
 <tr className="border-b border-border-primary hover:bg-bg-hover transition-colors">
   <td className="px-3 py-2 text-text-primary font-mono text-center">1</td>
-  <td className="px-3 py-2 text-text-primary font-semibold">Mumbai Thunders</td>
+  <td className="px-3 py-2 text-text-primary font-semibold">Chennai Cobras</td>
   <td className="px-3 py-2 text-text-primary font-mono text-center">9</td>
   <td className="px-3 py-2 text-text-primary font-mono text-center">7</td>
   <td className="px-3 py-2 text-text-primary font-mono text-center">2</td>

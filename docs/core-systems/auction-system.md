@@ -11,7 +11,7 @@ The World Premier League (WPL) Auction System allows teams to acquire players th
 2. **Auction Mode** - Competitive bidding process with budget management
 
 ### Auction Modes
-1. **Interactive Auction** - User controls one team (Mumbai Thunders by default), others AI-controlled
+1. **Interactive Auction** - User controls one team (Chennai Cobras by default), others AI-controlled
 2. **AI-Only Auction** - All teams controlled by AI (automated simulation)
 
 ## Core Components
@@ -97,13 +97,13 @@ The auction uses **simultaneous bidding** where all eligible teams make decision
 **Example Flow:**
 ```
 Round 1: All 10 teams bid simultaneously
-  - Mumbai: $250K (timestamp: 100)
+  - Chennai: $250K (timestamp: 100)
   - London: $300K (timestamp: 150)
   - Colombo: $350K (timestamp: 120)
   → Winner: Colombo (timestamp 120 beats 150)
 
 Round 2: All teams EXCEPT Colombo bid
-  - Mumbai: $400K
+  - Chennai: $400K
   - London: $450K
   → Winner: London
 
@@ -286,7 +286,7 @@ node src/test/demoAuction.js
 node src/test/demoAuction.js --full
 ```
 
-#### 2. Interactive Auction (user controls Mumbai Thunders)
+#### 2. Interactive Auction (user controls Chennai Cobras)
 ```bash
 # Interactive mode
 node src/test/auctionTest.js

@@ -145,7 +145,7 @@ This ensures consistent clickable behavior across all screens (Football Manager 
   - Contact: Quality of bat-ball contact
   - Trajectory: Ball flight path (2D physics)
   - Fielding: 2D algebraic catch/boundary logic
-- **WPL Teams**: Mumbai Thunders, London Lions, Melbourne Meteors, Cape Town Crusaders, Karachi Kings, Colombo Cobras, Dhaka Dynamites, Kingston Storm, Wellington Warriors, Kabul Eagles
+- **WPL Teams**: Chennai Cobras, London Lions, Sydney Sharks, Pretoria Pythons, Multan Markhors, Colombo Crocodiles, Dhaka Dolphins, Georgetown Jaguars, Auckland Orcas, Kabul Kites
 
 ### UI Design Patterns
 - **Football Manager aesthetic**: Data-dense tables, compact cards, 14px base font

@@ -19,6 +19,7 @@ import useLeagueStore from '../../../stores/leagueStore';
 import useTeamStore from '../../../stores/teamStore';
 import TeamName from '../../shared/TeamName';
 import SetTacticsModal from '../../tactics/SetTacticsModal';
+import { getTeamBadge } from '../../../utils/assetHelpers';
 
 const PreviewTab = ({ matchData }) => {
   const [showTacticsModal, setShowTacticsModal] = useState(false);
@@ -107,12 +108,10 @@ const PreviewTab = ({ matchData }) => {
         <div className="grid grid-cols-3 gap-4 items-center mb-2">
           {/* Home Team */}
           <div className={`text-center ${isUserHomeTeam ? 'opacity-100' : 'opacity-90'}`}>
-            <div
-              className="w-16 h-16 rounded-full mx-auto mb-2 border-2 shadow-lg"
-              style={{
-                backgroundColor: homeTeam.colors?.primary || '#2D5F3F',
-                borderColor: isUserHomeTeam ? '#D4AF37' : homeTeam.colors?.secondary || '#D4AF37'
-              }}
+            <img
+              src={getTeamBadge(homeTeam.id)}
+              alt={homeTeam.name}
+              className={`w-16 h-16 mx-auto mb-2 drop-shadow-lg ${isUserHomeTeam ? 'ring-2 ring-trophy-gold rounded-full' : ''}`}
             />
             <h3 className="text-lg font-bold mb-0.5">
               <TeamName teamId={homeTeam.id} inline={true} className="text-lg font-bold" />
@@ -136,12 +135,10 @@ const PreviewTab = ({ matchData }) => {
 
           {/* Away Team */}
           <div className={`text-center ${isUserAwayTeam ? 'opacity-100' : 'opacity-90'}`}>
-            <div
-              className="w-16 h-16 rounded-full mx-auto mb-2 border-2 shadow-lg"
-              style={{
-                backgroundColor: awayTeam.colors?.primary || '#2D5F3F',
-                borderColor: isUserAwayTeam ? '#D4AF37' : awayTeam.colors?.secondary || '#D4AF37'
-              }}
+            <img
+              src={getTeamBadge(awayTeam.id)}
+              alt={awayTeam.name}
+              className={`w-16 h-16 mx-auto mb-2 drop-shadow-lg ${isUserAwayTeam ? 'ring-2 ring-trophy-gold rounded-full' : ''}`}
             />
             <h3 className="text-lg font-bold mb-0.5">
               <TeamName teamId={awayTeam.id} inline={true} className="text-lg font-bold" />

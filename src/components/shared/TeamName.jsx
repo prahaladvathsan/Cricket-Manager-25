@@ -25,6 +25,7 @@ import React, { useState, useMemo } from 'react';
 import TeamCardModal from './TeamCardModal';
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
+import { getTeamIcon, getTeamBadge } from '../../utils/assetHelpers';
 
 /**
  * TeamName Component - Clickable team name that opens team card modal
@@ -37,6 +38,7 @@ import useTeamStore from '../../stores/teamStore';
  * @param {boolean} showHoverEffect - Show hover underline effect (default: true)
  * @param {boolean} disableClick - Disable click handling (useful when inside clickable parent) (default: false)
  * @param {function} onBeforeOpen - Callback to execute before opening modal (e.g., to close parent modal)
+ * @param {boolean|'icon'|'badge'} showTeamAsset - Show team icon/badge before name (default: false)
  */
 const TeamName = ({
   teamId,
@@ -46,7 +48,8 @@ const TeamName = ({
   className = '',
   showHoverEffect = true,
   disableClick = false,
-  onBeforeOpen = null
+  onBeforeOpen = null,
+  showTeamAsset = false
 }) => {
   const [showModal, setShowModal] = useState(false);
   const { clubs } = useLeagueStore();
@@ -78,6 +81,11 @@ const TeamName = ({
   // Determine element type
   const ElementType = inline ? 'span' : 'div';
 
+  // Determine asset path if showing team asset
+  const assetPath = showTeamAsset
+    ? (showTeamAsset === 'badge' ? getTeamBadge(teamId) : getTeamIcon(teamId))
+    : null;
+
   return (
     <>
       <ElementType
@@ -89,6 +97,7 @@ const TeamName = ({
           setShowModal(true);
         }}
         className={`
+          ${showTeamAsset ? 'flex items-center gap-1.5' : ''}
           text-cricket-accent
           ${disableClick ? '' : 'cursor-pointer'}
           ${showHoverEffect && !disableClick ? 'hover:underline' : ''}
@@ -97,6 +106,13 @@ const TeamName = ({
         `}
         title={disableClick ? undefined : `View ${teamData.name} details`}
       >
+        {showTeamAsset && (
+          <img
+            src={assetPath}
+            alt={teamData.shortName}
+            className="w-4 h-4 inline-block"
+          />
+        )}
         {displayName}
       </ElementType>
 

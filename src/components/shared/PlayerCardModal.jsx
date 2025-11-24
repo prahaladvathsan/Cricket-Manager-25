@@ -8,6 +8,7 @@ import { X, BarChart3, Activity } from 'lucide-react';
 import PlayerCard from './PlayerCard';
 import usePlayerStore from '../../stores/playerStore';
 import TeamName from './TeamName';
+import CountryFlag from './CountryFlag';
 
 const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
   const { players } = usePlayerStore();
@@ -83,7 +84,10 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                       />
                     </span>
                   )}
-                  <span className="text-text-secondary">{player.nationality}</span>
+                  <span className="text-text-secondary flex items-center gap-1.5">
+                    <CountryFlag nationality={player.nationality} className="w-5 h-3" />
+                    {player.nationality}
+                  </span>
                   <span className="text-text-secondary">{player.age} years</span>
                   {player.battingHand && (
                     <span className="text-text-tertiary text-xs">Bats: {player.battingHand}</span>

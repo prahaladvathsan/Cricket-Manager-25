@@ -8,6 +8,7 @@ import { X, Trophy, Users } from 'lucide-react';
 import TeamCard from './TeamCard';
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
+import { getTeamBadge } from '../../utils/assetHelpers';
 
 const TeamCardModal = ({ isOpen, onClose, teamId, team }) => {
   const { clubs } = useLeagueStore();
@@ -49,11 +50,18 @@ const TeamCardModal = ({ isOpen, onClose, teamId, team }) => {
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-cricket-accent" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Team Profile
-            </h2>
+          <div className="flex items-center gap-3">
+            <img
+              src={getTeamBadge(teamData.id)}
+              alt={teamData.name}
+              className="w-10 h-10"
+            />
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary">
+                {teamData.name}
+              </h2>
+              <p className="text-xs text-text-secondary">{teamData.shortName} • Team Profile</p>
+            </div>
           </div>
           <button
             onClick={onClose}

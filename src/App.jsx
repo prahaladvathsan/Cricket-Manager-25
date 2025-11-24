@@ -27,6 +27,8 @@ import CalendarPage from './components/calendar/CalendarPage';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
+import './styles/wallpaper.css';
+import { getGameLogo } from './utils/assetHelpers';
 
 function App() {
   const [showTeamSelection, setShowTeamSelection] = useState(false);
@@ -68,6 +70,11 @@ function App() {
     return (
       <div className="min-h-screen bg-cricket-dark flex items-center justify-center">
         <div className="text-center">
+          <img
+            src={getGameLogo('light')}
+            alt="Cricket Manager 25"
+            className="h-24 mx-auto mb-6 animate-pulse"
+          />
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-primary mx-auto mb-4"></div>
           <p className="text-cricket-text-primary text-xl font-semibold">Loading Cricket Manager...</p>
           <p className="text-cricket-text-secondary text-sm mt-2">Initializing database...</p>
@@ -92,7 +99,7 @@ function App() {
           <Route
             path="/team-selection"
             element={
-              <div className="min-h-screen bg-cricket-dark flex items-center justify-center p-4">
+              <div className="min-h-screen app-wallpaper flex items-center justify-center p-4">
                 <TeamSelectionModal
                   isOpen={true}
                   onClose={() => window.location.href = '/game/home'}

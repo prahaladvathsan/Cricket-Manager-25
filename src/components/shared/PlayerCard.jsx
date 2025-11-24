@@ -8,6 +8,7 @@ import React, { useMemo } from 'react';
 import { Award, TrendingUp, Target, Zap } from 'lucide-react';
 import PlayerValuation from '../../core/auction-system/PlayerValuation';
 import TeamName from './TeamName';
+import CountryFlag from './CountryFlag';
 
 /**
  * PlayerCard Component
@@ -134,7 +135,8 @@ const PlayerCard = ({
                     onBeforeOpen={onTeamClick}
                   />
                 )}
-                <span className="text-xs text-text-secondary">
+                <span className="text-xs text-text-secondary flex items-center gap-1.5">
+                  <CountryFlag nationality={player.nationality} className="w-5 h-3" />
                   {player.nationality} • {player.age}y
                 </span>
               </div>
@@ -256,7 +258,10 @@ const PlayerCard = ({
                 />
               </span>
             )}
-            <span className="text-text-secondary">{player.nationality}</span>
+            <span className="text-text-secondary flex items-center gap-1.5">
+              <CountryFlag nationality={player.nationality} className="w-5 h-3" />
+              {player.nationality}
+            </span>
             <span className="text-text-secondary">{player.age} years</span>
             {player.battingHand && (
               <span className="text-text-tertiary text-xs">

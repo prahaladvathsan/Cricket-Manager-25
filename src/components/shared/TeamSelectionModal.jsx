@@ -16,6 +16,7 @@ import useInboxStore from '../../stores/inboxStore';
 import MessageGenerator from '../../utils/MessageGenerator';
 import { saveGame } from '../../utils/storage';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
+import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 
 const TeamSelectionModal = ({ isOpen, onClose }) => {
   const [selectedTeamId, setSelectedTeamId] = useState('');
@@ -142,35 +143,47 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
           {teamsList.map(team => (
             <div
               key={team.id}
-              className={`card cursor-pointer transition-all duration-300 hover:scale-105 border-2 ${
-                selectedTeamId === team.id 
-                  ? 'border-cricket-accent bg-cricket-accent bg-opacity-20' 
+              className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 border-2 rounded-lg ${
+                selectedTeamId === team.id
+                  ? 'border-cricket-accent bg-cricket-accent bg-opacity-20'
                   : 'border-cricket-primary hover:border-cricket-accent'
               }`}
               onClick={() => handleTeamSelect(team.id)}
             >
-              <div className="p-4">
+              {/* Banner Background */}
+              <div
+                className="absolute inset-0 opacity-70"
+                style={{
+                  backgroundImage: `url(${getTeamBanner(team.id)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: 'blur(2px)'
+                }}
+              />
+
+              <div className="relative p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div 
-                    className="w-4 h-4 rounded-full border-2"
-                    style={{ backgroundColor: team.colors.primary, borderColor: team.colors.secondary }}
+                  <img
+                    src={getTeamBadge(team.id)}
+                    alt={team.name}
+                    className="w-12 h-12 drop-shadow-lg"
                   />
-                  <span className="text-sm font-medium text-cricket-text-secondary">
+                  <span className="text-sm font-medium text-cricket-text-secondary bg-bg-primary/80 px-2 py-1 rounded">
                     {team.shortName}
                   </span>
                 </div>
-                
-                <h3 className="text-xl font-bold text-cricket-text-primary mb-2">
+
+                <h3 className="text-xl font-bold text-cricket-text-primary mb-2 bg-bg-primary/80 px-2 py-1 rounded">
                   {team.name}
                 </h3>
-                
-                <div className="text-sm text-cricket-text-secondary space-y-1">
+
+                <div className="text-sm text-cricket-text-secondary space-y-1 bg-bg-primary/80 px-2 py-2 rounded">
                   <p><span className="font-medium">Coach:</span> {team.coachName}</p>
                   <p><span className="font-medium">Budget:</span> ${team.finances.salaryCap}M</p>
                 </div>
 
                 {selectedTeamId === team.id && (
-                  <div className="mt-4 flex items-center text-cricket-accent">
+                  <div className="mt-4 flex items-center text-cricket-accent bg-cricket-accent/20 px-2 py-2 rounded">
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>

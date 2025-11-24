@@ -173,7 +173,7 @@ const Matches = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-text-secondary text-sm font-medium">vs</span>
-                            <TeamName teamId={isHome ? fixture.awayTeam : fixture.homeTeam} inline={true} className="font-semibold" />
+                            <TeamName teamId={isHome ? fixture.awayTeam : fixture.homeTeam} inline={true} showTeamAsset="icon" className="font-semibold" />
                           </div>
                           {fixture.venue && (
                             <div className="flex items-center gap-1 text-xs text-text-secondary mt-1">
@@ -254,7 +254,7 @@ const Matches = () => {
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
-                          <TeamName teamId={userTeam?.id} inline={true} className="font-medium" />
+                          <TeamName teamId={userTeam?.id} inline={true} showTeamAsset="icon" className="font-medium" />
                           <span className="font-mono text-text-primary">
                             {ourInnings?.totalScore || 0}/{ourInnings?.wickets || 0}
                             {ourInnings?.ballsBowled && (
@@ -265,7 +265,7 @@ const Matches = () => {
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <TeamName teamId={isHome ? result.awayTeam : result.homeTeam} inline={true} className={won ? 'text-text-secondary' : ''} showHoverEffect={!won} />
+                          <TeamName teamId={isHome ? result.awayTeam : result.homeTeam} inline={true} showTeamAsset="icon" className={won ? 'text-text-secondary' : ''} showHoverEffect={!won} />
                           <span className="font-mono text-text-secondary">
                             {theirInnings?.totalScore || 0}/{theirInnings?.wickets || 0}
                             {theirInnings?.ballsBowled && (

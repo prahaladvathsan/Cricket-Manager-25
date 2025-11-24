@@ -232,7 +232,7 @@ const League = () => {
                         {idx + 1}
                       </td>
                       <td className="py-2 px-3 text-text-primary font-medium">
-                        <TeamName teamId={team.clubId} inline={true} />
+                        <TeamName teamId={team.clubId} inline={true} showTeamAsset="icon" />
                       </td>
                       <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
                         {team.played}
@@ -270,7 +270,7 @@ const League = () => {
               <div className="flex items-center gap-2 text-cricket-accent">
                 <Trophy className="w-5 h-5" />
                 <span className="font-semibold text-base">
-                  Season {currentSeason} Champion: <TeamName teamId={champion.id} inline={true} className="font-bold" />
+                  Season {currentSeason} Champion: <TeamName teamId={champion.id} inline={true} showTeamAsset="badge" className="font-bold" />
                 </span>
               </div>
             </div>

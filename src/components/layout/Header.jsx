@@ -21,6 +21,7 @@ import MessageGenerator from '../../utils/MessageGenerator';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PrizeDistributor from '../../core/offseason/PrizeDistributor';
 import SeasonSummaryView from '../OffSeason/SeasonSummaryView';
+import { getTeamBadge } from '../../utils/assetHelpers';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -493,6 +494,17 @@ const Header = () => {
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
+
+            {/* User Team Badge */}
+            {userTeam && (
+              <img
+                src={getTeamBadge(userTeam.id)}
+                alt={userTeam.name}
+                className="h-8 w-8"
+                title={userTeam.name}
+              />
+            )}
+
             <div>
               <h2 className="text-base font-semibold text-cricket-text-primary">
                 {userTeam ? userTeam.name : 'Select Team'}
