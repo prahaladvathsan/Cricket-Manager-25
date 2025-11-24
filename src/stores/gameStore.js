@@ -100,16 +100,20 @@ const useGameStore = create(
                   const userTeamId = teamStore.getState().userTeamId;
                   const players = playerStore.getState().players;
 
+                  // Check if today is a match day
+                  const isMatchDay = dayEvent && dayEvent.type === 'match';
+
                   Object.entries(players).forEach(([playerId, player]) => {
+                    const updates = {};
+
+                    // 1. INJURY COUNTDOWN (every day)
                     if (player.condition && player.condition.injuryDuration > 0) {
                       const newDuration = player.condition.injuryDuration - 1;
 
                       if (newDuration <= 0) {
                         // Player recovered - reset injury fields and send recovery message
-                        playerStore.getState().updatePlayerCondition(playerId, {
-                          injury: null,
-                          injuryDuration: null
-                        });
+                        updates.injury = null;
+                        updates.injuryDuration = null;
 
                         // Send recovery inbox message only for user's squad players
                         const isUserPlayer = player.currentTeam === userTeamId;
@@ -121,10 +125,29 @@ const useGameStore = create(
                         }
                       } else {
                         // Decrement injury duration
-                        playerStore.getState().updatePlayerCondition(playerId, {
-                          injuryDuration: newDuration
-                        });
+                        updates.injuryDuration = newDuration;
                       }
+                    }
+
+                    // 2. FITNESS RECOVERY (rest days only - not match days, not injured players)
+                    if (!isMatchDay && player.condition && !player.condition.injury) {
+                      const currentFitness = player.condition.fitness ?? 100;
+                      const endurance = player.attributes?.physical?.endurance ?? 10;
+                      const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
+
+                      // Recovery formula: fitness += endurance/2 (capped at maxFitness × 5)
+                      const recoveryAmount = endurance / 2;
+                      const maxFitnessCap = maxFitness * 5;
+                      const newFitness = Math.min(currentFitness + recoveryAmount, maxFitnessCap, 100);
+
+                      if (newFitness > currentFitness) {
+                        updates.fitness = newFitness;
+                      }
+                    }
+
+                    // Apply all updates if any exist
+                    if (Object.keys(updates).length > 0) {
+                      playerStore.getState().updatePlayerCondition(playerId, updates);
                     }
                   });
                 }).catch(error => {

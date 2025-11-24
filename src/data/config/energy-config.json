@@ -101,9 +101,13 @@
       "update": "player.condition.fitness = energy"
     },
     "recovery": {
-      "description": "Fitness recovers per rest day based on endurance",
-      "formula": "fitness += endurance (capped at maxFitness)",
-      "cap": "player.attributes.physical.maxFitness"
+      "description": "Fitness recovers per rest day (non-match days) based on endurance",
+      "formula": "fitness += endurance / 2",
+      "cap": "min(maxFitness × 5, 100)",
+      "conditions": [
+        "Only on rest days (not match days)",
+        "Player must not be injured"
+      ]
     }
   },
 
