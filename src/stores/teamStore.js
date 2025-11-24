@@ -379,14 +379,87 @@ const useTeamStore = create(
   },
 
   /**
+   * Select balanced playing XI from squad
+   * Ensures: 1 wicketkeeper, 5+ bowling options, rest batsmen
+   * @param {Object[]} players - Array of player objects in squad
+   * @returns {string[]} Array of 11 player IDs for balanced XI
+   */
+  selectBalancedPlayingXI: (players) => {
+    if (players.length < 11) {
+      console.error(`Cannot select XI from ${players.length} players (need at least 11)`);
+      return players.map(p => p.id);
+    }
+
+    const playingXI = [];
+
+    // Helper to get overall rating
+    const getOverallRating = (player) => {
+      const batting = player.attributes?.batting || {};
+      const bowling = player.attributes?.bowling || {};
+      const battingAvg = Object.values(batting).reduce((a, b) => a + b, 0) / Object.keys(batting).length || 0;
+      const bowlingAvg = Object.values(bowling).reduce((a, b) => a + b, 0) / Object.keys(bowling).length || 0;
+      return (battingAvg + bowlingAvg) / 2;
+    };
+
+    // 1. Select best wicketkeeper (MANDATORY)
+    const wicketkeepers = players
+      .filter(p => p.role === 'wicket-keeper')
+      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
+
+    if (wicketkeepers.length === 0) {
+      console.error('❌ CRITICAL: No wicketkeeper in squad! Squad composition is invalid.');
+      // Fallback: take first 11 players anyway
+      return players.slice(0, 11).map(p => p.id);
+    }
+
+    playingXI.push(wicketkeepers[0].id);
+
+    // 2. Select best bowlers and all-rounders (aim for 5-6)
+    const bowlers = players
+      .filter(p => (p.role === 'bowler' || p.role === 'all-rounder') && !playingXI.includes(p.id))
+      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
+
+    // Take top 5-6 bowlers/all-rounders
+    const bowlersToSelect = Math.min(6, bowlers.length);
+    for (let i = 0; i < bowlersToSelect && playingXI.length < 11; i++) {
+      playingXI.push(bowlers[i].id);
+    }
+
+    // 3. Fill remaining spots with best batsmen
+    const batsmen = players
+      .filter(p => p.role === 'batsman' && !playingXI.includes(p.id))
+      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
+
+    for (const batsman of batsmen) {
+      if (playingXI.length >= 11) break;
+      playingXI.push(batsman.id);
+    }
+
+    // 4. If still not 11, fill with anyone left
+    if (playingXI.length < 11) {
+      const remaining = players
+        .filter(p => !playingXI.includes(p.id))
+        .sort((a, b) => getOverallRating(b) - getOverallRating(a));
+
+      for (const player of remaining) {
+        if (playingXI.length >= 11) break;
+        playingXI.push(player.id);
+      }
+    }
+
+    console.log(`✅ Selected balanced XI: 1 WK, ${bowlers.filter(b => playingXI.includes(b.id)).length} bowlers/AR, ${batsmen.filter(b => playingXI.includes(b.id)).length} batsmen`);
+    return playingXI;
+  },
+
+  /**
    * Initialize default tactics for a team from player data
    * @param {string} teamId - Team ID
    * @param {Object[]} players - Array of player objects
-   * @param {string[]} squadIds - Array of 11 player IDs for playing XI
+   * @param {string[]} squadIds - Array of 11 player IDs for playing XI (optional, will auto-select if null)
    */
   initializeDefaultTactics: (teamId, players, squadIds = null) => {
-    // If no squad specified, take first 11 players
-    const playingXI = squadIds || players.slice(0, 11).map(p => p.id);
+    // If no squad specified, select balanced XI
+    const playingXI = squadIds || get().selectBalancedPlayingXI(players);
 
     // Initialize tactics with player defaults
     const tactics = {
@@ -453,12 +526,47 @@ const useTeamStore = create(
         .filter(p => p); // Filter out any undefined players
 
       if (players.length >= 11) {
-        // Use initializeDefaultTactics for each team
-        get().initializeDefaultTactics(teamId, players, squadIds.slice(0, 11));
+        // Use initializeDefaultTactics with auto-balanced XI selection
+        // Pass null for squadIds to trigger automatic balanced selection
+        get().initializeDefaultTactics(teamId, players, null);
       }
     });
 
     console.log(`✅ Initialized tactics for ${Object.keys(state.teams).length} teams`);
+  },
+
+  /**
+   * Validate that a playing XI has required roles
+   * @param {string[]} playerIds - Array of 11 player IDs
+   * @param {Object} playerStore - Player store to get player objects
+   * @returns {{valid: boolean, errors: string[]}} Validation result
+   */
+  validatePlayingXI: (playerIds, playerStore) => {
+    const errors = [];
+    const players = playerIds.map(id => playerStore.players[id]).filter(Boolean);
+
+    if (players.length !== 11) {
+      errors.push(`Playing XI must have exactly 11 players (has ${players.length})`);
+    }
+
+    // Check for wicketkeeper
+    const wicketkeepers = players.filter(p => p.role === 'wicket-keeper');
+    if (wicketkeepers.length === 0) {
+      errors.push('Playing XI must have at least 1 wicketkeeper');
+    } else if (wicketkeepers.length > 1) {
+      errors.push(`Playing XI should have only 1 wicketkeeper (has ${wicketkeepers.length})`);
+    }
+
+    // Check for bowling options
+    const bowlers = players.filter(p => p.role === 'bowler' || p.role === 'all-rounder');
+    if (bowlers.length < 5) {
+      errors.push(`Playing XI should have at least 5 bowlers/all-rounders (has ${bowlers.length})`);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
   },
 
   /**
