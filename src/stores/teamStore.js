@@ -712,6 +712,7 @@ const useTeamStore = create(
     };
 
     // Categorize into primary bowlers and part-timers
+    // Include ALL players from playing XI as potential bowlers
     const primaryBowlers = [];
     const partTimers = [];
 
@@ -721,7 +722,9 @@ const useTeamStore = create(
 
       if (isPrimary) {
         primaryBowlers.push({ player, bowlingRating });
-      } else if (bowlingRating > 40) {
+      } else {
+        // Include all non-bowlers as part-timers (batsmen, wicket-keepers)
+        // They'll be penalized in scoring but available as fallback
         partTimers.push({ player, bowlingRating });
       }
     });
@@ -730,7 +733,7 @@ const useTeamStore = create(
     primaryBowlers.sort((a, b) => b.bowlingRating - a.bowlingRating);
     partTimers.sort((a, b) => b.bowlingRating - a.bowlingRating);
 
-    // Combine eligible bowlers
+    // Combine eligible bowlers (primary first, then part-timers)
     const eligibleBowlers = [...primaryBowlers.map(b => b.player), ...partTimers.map(b => b.player)];
 
     if (eligibleBowlers.length === 0) {
@@ -767,10 +770,15 @@ const useTeamStore = create(
           const bowlerPlaystyle = bowler.primaryPlaystyle?.bowling || '';
           const bowlingRating = getBowlingRating(bowler);
 
-          // Base score from bowling rating
-          let score = bowlingRating / 10;
+          // Rotation bonus - MUST be dominant to ensure even distribution
+          // With 5 bowlers and 20 overs, we need 4-4-4-4-4 distribution
+          // Strong weight (×20) ensures rotation takes priority over quality
+          let score = (maxOversPerBowler - oversBowled[bowler.id]) * 20;
 
-          // Phase-based bonuses
+          // Base score from bowling rating (secondary consideration)
+          score += bowlingRating / 10;
+
+          // Phase-based bonuses (tertiary consideration)
           const phaseBonuses = {
             powerplay: { 'Swing Bowler': 3, 'Wicket-Taker': 3 },
             middle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
@@ -778,12 +786,10 @@ const useTeamStore = create(
           };
           score += phaseBonuses[phase]?.[bowlerPlaystyle] || 0;
 
-          // Rotation bonus - prefer bowlers with fewer overs bowled
-          score += (maxOversPerBowler - oversBowled[bowler.id]) * 1.5;
-
-          // Penalty for part-timers (prefer primary bowlers)
+          // Heavy penalty for part-timers (batsmen, wicket-keepers)
+          // This ensures they're only used as absolute last resort
           if (bowler.role !== 'bowler' && bowler.role !== 'all-rounder') {
-            score -= 2;
+            score -= 10;
           }
 
           return { bowler, score };
@@ -798,18 +804,18 @@ const useTeamStore = create(
         oversBowled[selectedBowler.id]++;
         previousBowler = selectedBowler.id;
       } else {
-        // Fallback: try to assign any bowler even if it means consecutive overs
-        if (eligibleBowlers.length > 0) {
-          const available = eligibleBowlers.filter(b => oversBowled[b.id] < maxOversPerBowler);
-          if (available.length > 0) {
-            newAssignments[overIndex] = available[0].id;
-            oversBowled[available[0].id]++;
-          } else {
-            newAssignments[overIndex] = null;
-          }
-        } else {
-          newAssignments[overIndex] = null;
-        }
+        // No valid bowler found - this should NEVER happen with 11 players
+        // (11 players × 4 overs each = 44 available overs, we only need 20)
+        console.error(
+          `❌ CRITICAL: Cannot assign bowler for over ${overIndex + 1}. ` +
+          `This violates cricket rules (no consecutive overs, max 4 overs per bowler). ` +
+          `Team ${teamId} squad composition may be invalid.`
+        );
+        console.error('Current overs bowled:', oversBowled);
+        console.error('Previous bowler:', previousBowler);
+
+        // Return incomplete rotation - match will fail at initialization
+        return newAssignments;
       }
     }
 
