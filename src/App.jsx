@@ -23,7 +23,6 @@ import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
 import Credits from './components/menu/Credits';
-import TestMode from './components/test/TestMode';
 import CalendarPage from './components/calendar/CalendarPage';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
@@ -88,9 +87,6 @@ function App() {
           <Route path="/load-game" element={<LoadGame />} />
           <Route path="/player-browser" element={<PlayerBrowser />} />
           <Route path="/credits" element={<Credits />} />
-
-          {/* Test Mode (Full-screen, No Layout) */}
-          <Route path="/game/test" element={<TestMode />} />
 
           {/* Team Selection (Transition to Game) */}
           <Route

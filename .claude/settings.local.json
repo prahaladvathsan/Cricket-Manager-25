@@ -47,7 +47,8 @@
       "Bash(Select-String -Pattern \"src/\")",
       "Bash(npm run build:*)",
       "Bash(pip install:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
