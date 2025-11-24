@@ -100,8 +100,28 @@ const useGameStore = create(
                   const userTeamId = teamStore.getState().userTeamId;
                   const players = playerStore.getState().players;
 
-                  // Check if today is a match day
-                  const isMatchDay = dayEvent && dayEvent.type === 'match';
+                  // Get match info for today (if any)
+                  const matchEvent = dayEvent && dayEvent.type === 'match' ? dayEvent : null;
+                  const matchTeamIds = new Set();
+                  const playingXIPlayerIds = new Set();
+
+                  if (matchEvent) {
+                    const fixture = matchEvent.data;
+                    // Track which teams are playing
+                    matchTeamIds.add(fixture.homeTeam);
+                    matchTeamIds.add(fixture.awayTeam);
+
+                    // Get playing XI for both teams (players who actually played)
+                    const homeTeamTactics = teamStore.getState().teamTactics?.[fixture.homeTeam];
+                    const awayTeamTactics = teamStore.getState().teamTactics?.[fixture.awayTeam];
+
+                    if (homeTeamTactics?.squadSelection) {
+                      homeTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
+                    }
+                    if (awayTeamTactics?.squadSelection) {
+                      awayTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
+                    }
+                  }
 
                   Object.entries(players).forEach(([playerId, player]) => {
                     const updates = {};
@@ -129,19 +149,25 @@ const useGameStore = create(
                       }
                     }
 
-                    // 2. FITNESS RECOVERY (rest days only - not match days, not injured players)
-                    if (!isMatchDay && player.condition && !player.condition.injury) {
-                      const currentFitness = player.condition.fitness ?? 100;
-                      const endurance = player.attributes?.physical?.endurance ?? 10;
-                      const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
+                    // 2. FITNESS RECOVERY
+                    // Condition: Player didn't participate in a match today (wasn't in playing XI)
+                    if (player.condition && !player.condition.injury) {
+                      const playerParticipatedInMatch = playingXIPlayerIds.has(playerId);
 
-                      // Recovery formula: fitness += endurance/2 (capped at maxFitness × 5)
-                      const recoveryAmount = endurance / 2;
-                      const maxFitnessCap = maxFitness * 5;
-                      const newFitness = Math.min(currentFitness + recoveryAmount, maxFitnessCap, 100);
+                      if (!playerParticipatedInMatch) {
+                        // Player didn't play - apply recovery
+                        const currentFitness = player.condition.fitness ?? 100;
+                        const endurance = player.attributes?.physical?.endurance ?? 10;
+                        const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
 
-                      if (newFitness > currentFitness) {
-                        updates.fitness = newFitness;
+                        // Recovery formula: fitness += endurance/2 (capped at maxFitness × 5)
+                        const recoveryAmount = endurance / 2;
+                        const maxFitnessCap = maxFitness * 5;
+                        const newFitness = Math.min(currentFitness + recoveryAmount, maxFitnessCap, 100);
+
+                        if (newFitness > currentFitness) {
+                          updates.fitness = newFitness;
+                        }
                       }
                     }
 
