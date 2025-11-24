@@ -22,6 +22,8 @@ import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PrizeDistributor from '../../core/offseason/PrizeDistributor';
 import SeasonSummaryView from '../OffSeason/SeasonSummaryView';
 import { getTeamBadge } from '../../utils/assetHelpers';
+import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
+import PlayoffGenerator from '../../core/league/PlayoffGenerator';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -51,8 +53,8 @@ const Header = () => {
     calendarEvents,
     resetForNewSeason
   } = useGameStore();
-  const { getUserTeam } = useTeamStore();
-  const { getClub, recordResult, recalculateStandings, advanceToNextMatch, standings, champion } = useLeagueStore();
+  const { getUserTeam, teams } = useTeamStore();
+  const { getClub, recordResult, recalculateStandings, advanceToNextMatch, standings, champion, initializeLeague: initializeLeagueStore } = useLeagueStore();
   const { processMatchFinancials } = useFinanceStore();
   const { goBack, canGoBack } = useNavigationStore();
   const { addMessage } = useInboxStore();
@@ -209,9 +211,131 @@ const Header = () => {
     }
   };
 
+  // Helper function to initialize league for new season
+  const initializeNewSeasonLeague = () => {
+    console.log('🏏 Initializing league for new season...');
+
+    const gameStartDate = new Date('2025-01-01');
+
+    // Create clubs array from teamStore
+    const allTeams = Object.values(teams);
+    const clubs = allTeams.map(team => ({
+      id: team.id,
+      name: team.name,
+      shortName: team.shortName || team.name.substring(0, 3).toUpperCase(),
+      homeVenue: team.homeGround || `${team.name} Stadium`,
+      homeGround: team.homeGround || `${team.name} Stadium`,
+      colors: team.colors || { primary: '#2D5F3F', secondary: '#D4AF37' }
+    }));
+
+    // Generate fixtures starting 7 days from current date
+    const leagueStartDate = new Date(currentDate);
+    leagueStartDate.setDate(leagueStartDate.getDate() + 7);
+
+    const scheduleGenerator = new MatchWeekScheduleGenerator();
+    const { fixtures } = scheduleGenerator.generateMatchWeekSchedule(clubs, leagueStartDate);
+
+    // Find last group match date
+    const lastGroupMatchDate = new Date(Math.max(...fixtures.map(f => new Date(f.dateObj))));
+
+    // Calculate playoff start date (next Monday after last group match)
+    const playoffStartDate = new Date(lastGroupMatchDate);
+    const dayOfWeek = playoffStartDate.getDay();
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+    playoffStartDate.setDate(playoffStartDate.getDate() + daysUntilMonday);
+
+    const playoffGenerator = new PlayoffGenerator();
+    const placeholderStandings = [
+      { clubId: null, clubName: 'TBD (1st)', position: 1 },
+      { clubId: null, clubName: 'TBD (2nd)', position: 2 },
+      { clubId: null, clubName: 'TBD (3rd)', position: 3 },
+      { clubId: null, clubName: 'TBD (4th)', position: 4 }
+    ];
+
+    const playoffFixturesRaw = playoffGenerator.generatePlayoffFixtures(placeholderStandings);
+
+    // Space playoffs over 10 days
+    const playoffFixtures = playoffFixturesRaw.map((fixture, index) => {
+      const dayOffset = index === 0 ? 0 : index === 1 ? 3 : index === 2 ? 6 : 10;
+      const fixtureDate = new Date(playoffStartDate);
+      fixtureDate.setDate(fixtureDate.getDate() + dayOffset);
+      const fixtureDay = Math.ceil((fixtureDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+      return {
+        ...fixture,
+        date: fixtureDate.toISOString().split('T')[0],
+        dateObj: fixtureDate,
+        gameDay: fixtureDay
+      };
+    });
+
+    const allFixtures = [...fixtures, ...playoffFixtures];
+
+    // Convert fixtures to calendar events
+    const matchEvents = fixtures.map(fixture => ({
+      day: fixture.gameDay,
+      type: 'match',
+      data: fixture
+    }));
+
+    // Calculate final match date and additional events
+    const finalMatchDate = new Date(Math.max(...fixtures.map(f => new Date(f.dateObj))));
+    const isOddSeason = currentSeason % 2 === 1;
+
+    const seasonEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31);
+    const seasonEndDay = Math.ceil((seasonEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    const offseasonStartDate = new Date(finalMatchDate);
+    offseasonStartDate.setDate(offseasonStartDate.getDate() + 1);
+    const offseasonStartDay = Math.ceil((offseasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    const transferWindowStartDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, 1);
+    const transferWindowEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31);
+
+    const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+    const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Next season start
+    const nextSeasonStartDate = new Date(transferWindowEndDate);
+    nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
+    const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    const additionalEvents = [
+      { day: offseasonStartDay, type: 'offseason_start' },
+      { day: transferWindowStartDay, type: 'transfer_window_open' },
+      { day: transferWindowEndDay, type: 'transfer_window_close' },
+      { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } }
+    ];
+
+    // Schedule next season event
+    const nextSeason = currentSeason + 1;
+    const isNextSeasonOdd = nextSeason % 2 === 1;
+    if (isNextSeasonOdd) {
+      additionalEvents.push({ day: nextSeasonStartDay, type: 'auction', data: { season: nextSeason } });
+    } else {
+      additionalEvents.push({ day: nextSeasonStartDay, type: 'preseason_start', data: { season: nextSeason } });
+    }
+
+    // Schedule all events
+    useGameStore.getState().scheduleEvents([...matchEvents, ...additionalEvents]);
+    useGameStore.getState().advancePhase('league');
+
+    // Initialize league store
+    initializeLeagueStore(allFixtures, clubs);
+
+    console.log(`✅ League initialized: ${fixtures.length} group matches, ${playoffFixtures.length} playoff matches`);
+  };
+
   // Handle Continue button click
   const handleContinue = async () => {
     if (isSimulating) return;
+
+    // CRITICAL FIX: If we're in preseason phase but have no scheduled events (league not initialized)
+    // This happens after auction completes on odd seasons
+    if (currentPhase === 'preseason' && calendarEvents.length === 0) {
+      console.log('⚠️ Detected preseason with no events - initializing league...');
+      initializeNewSeasonLeague();
+    }
 
     // Check for event on current day
     const event = getCurrentEvent();
@@ -357,10 +481,12 @@ const Header = () => {
 
       // Check if auction is already completed
       if (auctionState === 'completed') {
-        // Auction already done, just advance day
+        // Auction already done, initialize league and advance day
+        initializeNewSeasonLeague();
         advanceDay();
       } else {
-        // Navigate to transfers page (auction is now on transfers page)
+        // Navigate to transfers page for auction
+        // League will be initialized after auction completes
         navigate('/game/transfers');
       }
     } else if (event && event.type === 'preseason_start') {
@@ -369,8 +495,11 @@ const Header = () => {
       resetForNewSeason();
       console.log(`✅ Season transition complete - Now in Season ${currentSeason + 1}`);
 
-      // Navigate to transfers page which will initialize league
-      navigate('/game/transfers');
+      // Initialize league immediately (no auction for even seasons)
+      initializeNewSeasonLeague();
+
+      // Just advance day - don't navigate away
+      advanceDay();
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
       // SEASON END EVENT - Distribute prizes, show summary, send inbox message
       console.log('🏆 Season End Event Triggered!');
