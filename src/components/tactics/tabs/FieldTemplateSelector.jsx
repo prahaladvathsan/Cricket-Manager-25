@@ -1,18 +1,16 @@
 /**
  * @file FieldTemplateSelector.jsx
- * @description Component for selecting from professional field formation templates
+ * @description Compact field formation template selector - 3 rows by mentality
  */
 
-import React, { useState } from 'react';
-import { Zap, Shield, Activity, CheckCircle2 } from 'lucide-react';
+import React from 'react';
+import { Zap, Shield, Activity, Check } from 'lucide-react';
 import { formationsConfig } from '../../../utils/fieldingFormationResolver.js';
 
-const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) => {
-  const [categoryFilter, setCategoryFilter] = useState('all'); // 'all', 'attacking', 'balanced', 'defensive'
-
+const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase, compact = false }) => {
   const formations = formationsConfig.formations;
 
-  // Categorize templates based on formationStyle
+  // Categorize templates by formationStyle (mentality)
   const categorizeTemplates = () => {
     const categories = {
       attacking: [],
@@ -21,7 +19,6 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) =>
     };
 
     Object.entries(formations).forEach(([id, template]) => {
-      // Categorize by formationStyle
       const style = template.formationStyle || 'neutral';
 
       if (style === 'attacking') {
@@ -38,203 +35,123 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase }) =>
 
   const categories = categorizeTemplates();
 
-  // Get templates to display based on filter
-  const getDisplayTemplates = () => {
-    if (categoryFilter === 'all') {
-      return [
-        ...categories.attacking,
-        ...categories.balanced,
-        ...categories.defensive
-      ];
-    }
-    return categories[categoryFilter] || [];
-  };
-
-  const displayTemplates = getDisplayTemplates();
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'attacking':
-        return Zap;
-      case 'defensive':
-        return Shield;
-      case 'balanced':
-        return Activity;
-      default:
-        return Activity;
+  const mentalityConfig = {
+    attacking: {
+      label: 'Attacking',
+      icon: Zap,
+      color: 'text-red-400',
+      bgSelected: 'bg-red-500/20 border-red-500',
+      bgHover: 'hover:bg-red-500/10'
+    },
+    balanced: {
+      label: 'Balanced',
+      icon: Activity,
+      color: 'text-green-400',
+      bgSelected: 'bg-green-500/20 border-green-500',
+      bgHover: 'hover:bg-green-500/10'
+    },
+    defensive: {
+      label: 'Defensive',
+      icon: Shield,
+      color: 'text-blue-400',
+      bgSelected: 'bg-blue-500/20 border-blue-500',
+      bgHover: 'hover:bg-blue-500/10'
     }
   };
 
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'attacking':
-        return {
-          bg: 'bg-red-500/10',
-          border: 'border-red-500/30',
-          text: 'text-red-400',
-          activeBg: 'bg-red-500/20',
-          activeBorder: 'border-red-500'
-        };
-      case 'defensive':
-        return {
-          bg: 'bg-blue-500/10',
-          border: 'border-blue-500/30',
-          text: 'text-blue-400',
-          activeBg: 'bg-blue-500/20',
-          activeBorder: 'border-blue-500'
-        };
-      case 'balanced':
-        return {
-          bg: 'bg-green-500/10',
-          border: 'border-green-500/30',
-          text: 'text-green-400',
-          activeBg: 'bg-green-500/20',
-          activeBorder: 'border-green-500'
-        };
-      default:
-        return {
-          bg: 'bg-cricket-primary/10',
-          border: 'border-cricket-accent/30',
-          text: 'text-cricket-accent',
-          activeBg: 'bg-cricket-primary/20',
-          activeBorder: 'border-cricket-accent'
-        };
-    }
+  // Get all templates as flat array for compact mode
+  const getAllTemplates = () => {
+    return [
+      ...categories.attacking,
+      ...categories.balanced,
+      ...categories.defensive
+    ];
   };
 
-  const getTemplateCategory = (template) => {
-    return template.formationStyle || 'neutral';
-  };
+  const renderRow = (mentality, templates) => {
+    const config = mentalityConfig[mentality];
+    const Icon = config.icon;
 
-  return (
-    <div className="card p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h4 className="text-sm font-semibold text-text-primary mb-1">
-            Select Formation Template
-          </h4>
-          <p className="text-xs text-text-secondary">
-            {displayTemplates.length} template{displayTemplates.length !== 1 ? 's' : ''} available for {phase === 'powerplay' ? 'powerplay' : 'post-powerplay'} phase
-          </p>
+    return (
+      <div key={mentality} className="flex items-center gap-2">
+        {/* Row label */}
+        <div className={`flex items-center gap-1 w-24 flex-shrink-0 ${config.color}`}>
+          <Icon className="w-3.5 h-3.5" />
+          <span className="text-xs font-medium">{config.label}</span>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCategoryFilter('all')}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              categoryFilter === 'all'
-                ? 'bg-cricket-primary text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
-            }`}
-          >
-            All ({categories.attacking.length + categories.balanced.length + categories.defensive.length})
-          </button>
-          <button
-            onClick={() => setCategoryFilter('attacking')}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              categoryFilter === 'attacking'
-                ? 'bg-red-500 text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
-            }`}
-          >
-            <Zap className="w-3 h-3 inline mr-1" />
-            Attacking ({categories.attacking.length})
-          </button>
-          <button
-            onClick={() => setCategoryFilter('balanced')}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              categoryFilter === 'balanced'
-                ? 'bg-green-500 text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
-            }`}
-          >
-            <Activity className="w-3 h-3 inline mr-1" />
-            Balanced ({categories.balanced.length})
-          </button>
-          <button
-            onClick={() => setCategoryFilter('defensive')}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              categoryFilter === 'defensive'
-                ? 'bg-blue-500 text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
-            }`}
-          >
-            <Shield className="w-3 h-3 inline mr-1" />
-            Defensive ({categories.defensive.length})
-          </button>
+        {/* Template buttons - 5 columns */}
+        <div className="grid grid-cols-5 gap-1.5 flex-1">
+          {templates.slice(0, 5).map((template) => {
+            const isSelected = selectedTemplate === template.id;
+
+            return (
+              <button
+                key={template.id}
+                onClick={() => onSelectTemplate(template.id)}
+                title={template.description}
+                className={`relative px-2 py-1.5 rounded text-xs font-medium transition-colors truncate ${
+                  isSelected
+                    ? `${config.bgSelected} border ${config.color}`
+                    : `bg-bg-tertiary border border-border-primary text-text-secondary ${config.bgHover} hover:text-text-primary`
+                }`}
+              >
+                {isSelected && (
+                  <Check className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3" />
+                )}
+                <span className={isSelected ? 'pr-4' : ''}>
+                  {template.name.replace(' Formation', '').replace(' Setup', '')}
+                </span>
+              </button>
+            );
+          })}
+          {/* Fill empty slots if less than 5 templates */}
+          {templates.length < 5 && Array.from({ length: 5 - templates.length }).map((_, i) => (
+            <div key={`empty-${i}`} className="px-2 py-1.5" />
+          ))}
         </div>
       </div>
+    );
+  };
 
-      {/* Template Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {displayTemplates.map((template) => {
+  // Compact mode - flat grid, no row headings, no card wrapper
+  if (compact) {
+    const allTemplates = getAllTemplates();
+    return (
+      <div className="grid grid-cols-3 gap-1">
+        {allTemplates.map((template) => {
           const isSelected = selectedTemplate === template.id;
-          const category = getTemplateCategory(template);
-          const Icon = getCategoryIcon(category);
-          const colors = getCategoryColor(category);
+          const style = template.formationStyle || 'neutral';
+          const config = style === 'attacking' ? mentalityConfig.attacking :
+                        style === 'defensive' ? mentalityConfig.defensive :
+                        mentalityConfig.balanced;
 
           return (
             <button
               key={template.id}
               onClick={() => onSelectTemplate(template.id)}
-              className={`p-3 rounded border text-left transition-all hover:scale-[1.02] ${
+              title={template.description}
+              className={`px-1.5 py-1 rounded text-[10px] font-medium transition-colors truncate ${
                 isSelected
-                  ? `${colors.activeBorder} ${colors.activeBg} border-2`
-                  : `border-border-primary hover:border-border-secondary`
+                  ? `${config.bgSelected} border ${config.color}`
+                  : `bg-bg-tertiary border border-border-primary text-text-secondary ${config.bgHover} hover:text-text-primary`
               }`}
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-start gap-2 flex-1">
-                  <div className={`p-1.5 rounded ${colors.bg}`}>
-                    <Icon className={`w-4 h-4 ${colors.text}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h5 className={`text-sm font-semibold ${
-                      isSelected ? colors.text : 'text-text-primary'
-                    } truncate`}>
-                      {template.name}
-                    </h5>
-                    {isSelected && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <CheckCircle2 className={`w-3 h-3 ${colors.text}`} />
-                        <span className={`text-xs font-medium ${colors.text}`}>Selected</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-text-secondary mb-2 line-clamp-2">
-                {template.description}
-              </p>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
-                {template.bowlingType && (
-                  <span className="px-1.5 py-0.5 rounded text-xs bg-bg-tertiary text-text-secondary font-medium">
-                    {template.bowlingType}
-                  </span>
-                )}
-                {template.phase && (
-                  <span className="px-1.5 py-0.5 rounded text-xs bg-bg-tertiary text-text-secondary font-medium capitalize">
-                    {template.phase}
-                  </span>
-                )}
-              </div>
+              {template.name.replace(' Formation', '').replace(' Setup', '')}
             </button>
           );
         })}
       </div>
+    );
+  }
 
-      {displayTemplates.length === 0 && (
-        <div className="text-center py-8 text-text-secondary">
-          <p className="text-sm">No templates available for this category.</p>
-        </div>
-      )}
+  // Full mode - with card wrapper and row headings
+  return (
+    <div className="card p-3 space-y-2">
+      <h4 className="text-xs font-semibold text-text-primary mb-2">Formation Templates</h4>
+      {renderRow('attacking', categories.attacking)}
+      {renderRow('balanced', categories.balanced)}
+      {renderRow('defensive', categories.defensive)}
     </div>
   );
 };

@@ -15,6 +15,7 @@ import usePlayerStore from '../../stores/playerStore';
 import PreviewTab from './tabs/PreviewTab';
 import TossTab from './tabs/TossTab';
 import LineupsTab from './tabs/LineupsTab';
+import LoadingScreen from '../shared/LoadingScreen';
 
 const PreMatchFlow = () => {
   const navigate = useNavigate();
@@ -69,9 +70,10 @@ const PreMatchFlow = () => {
 
   if (!matchData) {
     return (
-      <div className="fixed inset-0 bg-bg-primary flex items-center justify-center">
-        <div className="text-text-secondary">Loading...</div>
-      </div>
+      <LoadingScreen
+        message="Preparing Match"
+        submessage="Loading match data..."
+      />
     );
   }
 

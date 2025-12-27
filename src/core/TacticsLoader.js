@@ -86,8 +86,12 @@ export function applyPlaystyleOverrides(playerStore, playstyleOverrides) {
     return;
   }
 
+  // Batch all player updates into a single setState call to avoid multiple localStorage writes
+  const currentPlayers = playerStore.getState().players;
+  const playerUpdates = {};
+
   Object.entries(playstyleOverrides).forEach(([playerId, playstyles]) => {
-    const player = playerStore.getState().players[playerId];
+    const player = currentPlayers[playerId];
     if (!player) return;
 
     // Build selectedPlaystyle object
@@ -96,24 +100,22 @@ export function applyPlaystyleOverrides(playerStore, playstyleOverrides) {
       bowling: playstyles.bowling || player.primaryPlaystyle?.bowling
     };
 
-    // Set selectedPlaystyle for match (this is what AttributeModifierSystem checks)
+    playerUpdates[playerId] = {
+      ...player,
+      selectedPlaystyle: selectedPlaystyle,
+      _hasPlaystyleOverride: true // Mark for cleanup later
+    };
+  });
+
+  // Single setState call with all updates (reduces localStorage writes)
+  if (Object.keys(playerUpdates).length > 0) {
     playerStore.setState((state) => ({
       players: {
         ...state.players,
-        [playerId]: {
-          ...state.players[playerId],
-          selectedPlaystyle: selectedPlaystyle,
-          _hasPlaystyleOverride: true // Mark for cleanup later
-        }
+        ...playerUpdates
       }
     }));
-
-    console.log(
-      `✓ Applied playstyle override for ${player.name}: ` +
-      (playstyles.batting ? `Batting=${playstyles.batting} ` : '') +
-      (playstyles.bowling ? `Bowling=${playstyles.bowling}` : '')
-    );
-  });
+  }
 }
 
 /**
@@ -123,22 +125,30 @@ export function applyPlaystyleOverrides(playerStore, playstyleOverrides) {
  * @param {string[]} playerIds - Array of player IDs to restore
  */
 export function restoreOriginalPlaystyles(playerStore, playerIds) {
+  // Batch all player updates into a single setState call to avoid multiple localStorage writes
+  const currentPlayers = playerStore.getState().players;
+  const playerUpdates = {};
+
   playerIds.forEach(playerId => {
-    const player = playerStore.getState().players[playerId];
+    const player = currentPlayers[playerId];
     if (player && player._hasPlaystyleOverride) {
-      playerStore.setState((state) => ({
-        players: {
-          ...state.players,
-          [playerId]: {
-            ...state.players[playerId],
-            selectedPlaystyle: undefined,
-            _hasPlaystyleOverride: undefined
-          }
-        }
-      }));
-      console.log(`✓ Cleared playstyle override for ${player.name}`);
+      playerUpdates[playerId] = {
+        ...player,
+        selectedPlaystyle: undefined,
+        _hasPlaystyleOverride: undefined
+      };
     }
   });
+
+  // Single setState call with all updates (reduces localStorage writes)
+  if (Object.keys(playerUpdates).length > 0) {
+    playerStore.setState((state) => ({
+      players: {
+        ...state.players,
+        ...playerUpdates
+      }
+    }));
+  }
 }
 
 /**

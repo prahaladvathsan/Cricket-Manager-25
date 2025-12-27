@@ -4,13 +4,102 @@
  * Prepares match configuration for SimpleBallSimulator
  */
 
-import TeamSelectionManager from '../match-engine/interactive/TeamSelectionManager.js';
 import AIMatchController from '../match-engine/interactive/AIMatchController.js';
+import aiTacticsManager from '../ai/AITacticsManager.js';
 
 class PreMatchSetup {
   constructor(teamStore = null) {
-    this.teamSelector = new TeamSelectionManager();
     this.teamStore = teamStore; // Optional: for accessing team tactics
+  }
+
+  /**
+   * Check if a team is controlled by AI (not the user)
+   * @param {string} teamId - Team ID to check
+   * @returns {boolean} True if AI team
+   */
+  isAITeam(teamId) {
+    if (!this.teamStore) return true; // No store = assume AI
+    const userTeamId = this.teamStore.getState().userTeamId;
+    return teamId !== userTeamId;
+  }
+
+  /**
+   * Generate AI tactics for a team before match
+   * - AI teams: Always regenerate full tactics
+   * - User team: Only regenerate if current tactics fail validation
+   * @param {Object} club - Club with full squad
+   * @param {Object} playerStore - Player store
+   */
+  generateAITactics(club, playerStore) {
+    // Get full squad with player objects
+    const squadIds = this.teamStore?.getState().squadLists?.[club.id] || [];
+    const squad = squadIds
+      .map(id => playerStore?.getState().getPlayer(id) || club.squad?.find(p => p.id === id))
+      .filter(Boolean);
+
+    if (squad.length < 11) {
+      console.warn(`[PreMatchSetup] ${club.name} has insufficient squad (${squad.length}/11)`);
+      return;
+    }
+
+    // AI teams: Always regenerate full tactics
+    if (this.isAITeam(club.id)) {
+      aiTacticsManager.generateTactics(club.id, squad, this.teamStore);
+      return;
+    }
+
+    // User team: Only regenerate if current tactics are invalid
+    const tactics = this.teamStore?.getState().getTeamTactics(club.id);
+
+    if (!tactics) {
+      // No tactics at all - generate fresh
+      console.log(`[PreMatchSetup] User team ${club.name} has no tactics - generating fresh`);
+      aiTacticsManager.generateTactics(club.id, squad, this.teamStore);
+      return;
+    }
+
+    // Validate user team tactics
+    const validationResult = this.validateUserTeamTactics(tactics, squadIds);
+
+    if (!validationResult.valid) {
+      console.log(`[PreMatchSetup] User team ${club.name} tactics invalid: ${validationResult.reason} - regenerating`);
+      aiTacticsManager.generateTactics(club.id, squad, this.teamStore);
+    }
+  }
+
+  /**
+   * Validate user team tactics to check if regeneration is needed
+   * Note: bowlingRotation is just a priority list of bowlers (5-8 entries), NOT per-over assignments
+   * Only overAssignments contains the actual per-over bowler mapping
+   * @param {Object} tactics - Team tactics object
+   * @param {string[]} squadIds - Full squad IDs
+   * @returns {{valid: boolean, reason: string}}
+   */
+  validateUserTeamTactics(tactics, squadIds) {
+    // Check 1: Valid squadSelection (11 players, all in squad)
+    if (!tactics.squadSelection || tactics.squadSelection.length !== 11) {
+      return { valid: false, reason: `squadSelection has ${tactics.squadSelection?.length || 0} players (need 11)` };
+    }
+
+    const invalidSquadPlayers = tactics.squadSelection.filter(id => !squadIds.includes(id));
+    if (invalidSquadPlayers.length > 0) {
+      return { valid: false, reason: `${invalidSquadPlayers.length} player(s) in squadSelection not in squad` };
+    }
+
+    const playingXI = tactics.squadSelection;
+
+    // Check 2: Valid overAssignments (20 overs, all in playing XI)
+    if (!tactics.overAssignments || Object.keys(tactics.overAssignments).length < 20) {
+      return { valid: false, reason: `overAssignments has ${Object.keys(tactics.overAssignments || {}).length} overs (need 20)` };
+    }
+
+    const invalidOverBowlers = Object.values(tactics.overAssignments)
+      .filter(id => id && !playingXI.includes(id));
+    if (invalidOverBowlers.length > 0) {
+      return { valid: false, reason: `${invalidOverBowlers.length} bowler(s) in overAssignments not in playing XI` };
+    }
+
+    return { valid: true, reason: '' };
   }
 
   /**
@@ -22,9 +111,12 @@ class PreMatchSetup {
    * @returns {Object} Complete match configuration for MatchEngine
    */
   prepareMatch(homeClub, awayClub, venue, playerStore) {
-    // Silently prepare match - no console logs for league simulation
+    // Generate AI tactics for each team BEFORE selecting playing XI
+    // This ensures AI teams have fresh tactics for each match
+    this.generateAITactics(homeClub, playerStore);
+    this.generateAITactics(awayClub, playerStore);
 
-    // Select playing XI for both teams
+    // Select playing XI for both teams (will use tactics from store)
     const homeTeam = this.selectPlayingXI(homeClub, playerStore);
     const awayTeam = this.selectPlayingXI(awayClub, playerStore);
 
@@ -92,13 +184,13 @@ class PreMatchSetup {
               .map(id => playing11.find(p => p.id === id))
               .filter(Boolean);
 
-            // If batting order is complete, use it; otherwise optimize below
+            // If batting order is incomplete, use squadSelection order
             if (optimizedOrder.length !== 11) {
-              optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+              optimizedOrder = playing11;
             }
           } else {
-            // Optimize batting order
-            optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+            // No batting order in tactics, use squadSelection order
+            optimizedOrder = playing11;
           }
         } else {
           // Tactics squadSelection is invalid, fall back to auto-selection
@@ -108,17 +200,31 @@ class PreMatchSetup {
       }
     }
 
-    // Fallback: Auto-select if no tactics or invalid tactics
+    // Fallback: Generate tactics using AITacticsManager if no tactics exist
     if (!playing11) {
-      // Select best 11 using TeamSelectionManager
-      playing11 = this.teamSelector.selectBalancedTeam(fullSquad, 11);
+      console.log(`[PreMatchSetup] No valid tactics for ${club.name}, generating via AITacticsManager`);
 
-      if (!playing11 || playing11.length !== 11) {
-        throw new Error(`Failed to select 11 players for ${club.name}. Selected: ${playing11?.length || 0}`);
+      // Generate tactics
+      aiTacticsManager.generateTactics(club.id, fullSquad, this.teamStore);
+
+      // Read the generated tactics
+      const newTactics = this.teamStore?.getState().getTeamTactics(club.id);
+      if (newTactics?.squadSelection && newTactics.squadSelection.length === 11) {
+        playing11 = newTactics.squadSelection
+          .map(id => fullSquad.find(p => p.id === id))
+          .filter(Boolean);
+
+        optimizedOrder = newTactics.battingOrder
+          .map(id => playing11.find(p => p.id === id))
+          .filter(Boolean);
       }
 
-      // Optimize batting order
-      optimizedOrder = this.teamSelector.optimizeBattingOrder(playing11);
+      // Final fallback if AITacticsManager failed
+      if (!playing11 || playing11.length !== 11) {
+        console.warn(`[PreMatchSetup] AITacticsManager fallback failed, using first 11 players`);
+        playing11 = fullSquad.slice(0, 11);
+        optimizedOrder = playing11;
+      }
     }
 
     // Create team object with squad IDs

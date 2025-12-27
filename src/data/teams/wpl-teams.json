@@ -3,7 +3,7 @@
     "id": "t_chennai",
     "name": "Chennai Cobras",
     "shortName": "CHE",
-    "homeVenue": "v_chepauk",
+    "homeVenue": "Chennai's Pit",
     "playerIds": [],
     "captainId": null,
     "coachName": "Kapil Dev",
@@ -15,13 +15,19 @@
     "colors": {
       "primary": "#4B0082",
       "secondary": "#FFD700"
+    },
+    "perk": {
+      "name": "Venom Strike",
+      "category": "spin",
+      "description": "Spinners extract extra turn from the pitch",
+      "icon": "spin"
     }
   },
   {
     "id": "t_london",
     "name": "London Lions",
     "shortName": "LON",
-    "homeVenue": "v_lords",
+    "homeVenue": "London's Den",
     "playerIds": [],
     "captainId": null,
     "coachName": "Ian Botham",
@@ -33,13 +39,19 @@
     "colors": {
       "primary": "#C41E3A",
       "secondary": "#FFFFFF"
+    },
+    "perk": {
+      "name": "Pride's Roar",
+      "category": "batting",
+      "description": "Batters thrive under pressure situations",
+      "icon": "batting"
     }
   },
   {
     "id": "t_sydney",
     "name": "Sydney Sharks",
     "shortName": "SYD",
-    "homeVenue": "v_scg",
+    "homeVenue": "Sydney's Reef",
     "playerIds": [],
     "captainId": null,
     "coachName": "Ricky Ponting",
@@ -51,13 +63,19 @@
     "colors": {
       "primary": "#C0C0C0",
       "secondary": "#000080"
+    },
+    "perk": {
+      "name": "Predator Instinct",
+      "category": "pace",
+      "description": "Fast bowlers sense weakness and strike hard",
+      "icon": "pace"
     }
   },
   {
     "id": "t_pretoria",
     "name": "Pretoria Pythons",
     "shortName": "PRE",
-    "homeVenue": "v_supersport",
+    "homeVenue": "Pretoria's Nest",
     "playerIds": [],
     "captainId": null,
     "coachName": "Jacques Kallis",
@@ -69,13 +87,19 @@
     "colors": {
       "primary": "#9ACD32",
       "secondary": "#000000"
+    },
+    "perk": {
+      "name": "Coiled Deception",
+      "category": "spin",
+      "description": "Slower ball variations are more effective",
+      "icon": "spin"
     }
   },
   {
     "id": "t_multan",
     "name": "Multan Markhors",
     "shortName": "MUL",
-    "homeVenue": "v_multan",
+    "homeVenue": "Multan's Mountains",
     "playerIds": [],
     "captainId": null,
     "coachName": "Wasim Akram",
@@ -87,13 +111,19 @@
     "colors": {
       "primary": "#006400",
       "secondary": "#B87333"
+    },
+    "perk": {
+      "name": "Mountain Resilience",
+      "category": "batting",
+      "description": "Batters show strong defensive technique",
+      "icon": "batting"
     }
   },
   {
     "id": "t_colombo",
     "name": "Colombo Crocodiles",
     "shortName": "COL",
-    "homeVenue": "v_premadasa",
+    "homeVenue": "Colombo's Swamp",
     "playerIds": [],
     "captainId": null,
     "coachName": "Sanath Jayasuriya",
@@ -105,13 +135,19 @@
     "colors": {
       "primary": "#3D2B1F",
       "secondary": "#7FFF00"
+    },
+    "perk": {
+      "name": "Snap Attack",
+      "category": "fielding",
+      "description": "Lightning-fast run-out conversions",
+      "icon": "fielding"
     }
   },
   {
     "id": "t_dhaka",
     "name": "Dhaka Dolphins",
     "shortName": "DHA",
-    "homeVenue": "v_sher_e_bangla",
+    "homeVenue": "Dhaka's Bay",
     "playerIds": [],
     "captainId": null,
     "coachName": "Shakib Al Hasan",
@@ -123,13 +159,19 @@
     "colors": {
       "primary": "#00FFFF",
       "secondary": "#CC5500"
+    },
+    "perk": {
+      "name": "River Flow",
+      "category": "batting",
+      "description": "Smooth stroke play with elegant timing",
+      "icon": "batting"
     }
   },
   {
     "id": "t_georgetown",
     "name": "Georgetown Jaguars",
     "shortName": "GEO",
-    "homeVenue": "v_providence",
+    "homeVenue": "Georgetown's Jungle",
     "playerIds": [],
     "captainId": null,
     "coachName": "Clive Lloyd",
@@ -141,13 +183,19 @@
     "colors": {
       "primary": "#FFBF00",
       "secondary": "#1A1A1A"
+    },
+    "perk": {
+      "name": "Jungle Reflexes",
+      "category": "fielding",
+      "description": "Enhanced catching and ground fielding",
+      "icon": "fielding"
     }
   },
   {
     "id": "t_auckland",
     "name": "Auckland Orcas",
     "shortName": "AUC",
-    "homeVenue": "v_eden_park",
+    "homeVenue": "Auckland's Ocean",
     "playerIds": [],
     "captainId": null,
     "coachName": "Richard Hadlee",
@@ -159,13 +207,19 @@
     "colors": {
       "primary": "#000000",
       "secondary": "#F0F8FF"
+    },
+    "perk": {
+      "name": "Deep Pressure",
+      "category": "pace",
+      "description": "Pacers maintain intensity in death overs",
+      "icon": "pace"
     }
   },
   {
     "id": "t_kabul",
     "name": "Kabul Kites",
     "shortName": "KAB",
-    "homeVenue": "v_kabul_stadium",
+    "homeVenue": "Kabul's Sky",
     "playerIds": [],
     "captainId": null,
     "coachName": "Don Bradman",
@@ -177,6 +231,12 @@
     "colors": {
       "primary": "#87CEEB",
       "secondary": "#DC143C"
+    },
+    "perk": {
+      "name": "Soaring Spirit",
+      "category": "batting",
+      "description": "Aggressive power hitting in the air",
+      "icon": "batting"
     }
   }
 ]

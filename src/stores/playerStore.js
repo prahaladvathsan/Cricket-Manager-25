@@ -5,8 +5,9 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import playstyleCalculator from '../utils/PlaystyleCalculator.js';
+import { compressedStorageOptions } from '../utils/compression.js';
 
 /**
  * @typedef {Object} PlayerStore
@@ -337,7 +338,15 @@ const usePlayerStore = create(
         notOuts: 0,
         highestScore: 0,
         highestScoreNotOut: false,
-        bestBowling: null
+        bestBowling: null,
+        // Fielding stats
+        catches: 0,
+        runOuts: 0,
+        // Impact metrics (DLS-based)
+        battingImpact: 0,
+        bowlingImpact: 0,
+        fieldingImpact: 0,
+        totalImpact: 0
       };
     }
 
@@ -418,6 +427,29 @@ const usePlayerStore = create(
       seasonStats.runsConceded += matchStats.runsConceded;
     }
 
+    // Update fielding stats
+    if (matchStats.catches !== undefined && matchStats.catches > 0) {
+      seasonStats.catches = (seasonStats.catches || 0) + matchStats.catches;
+    }
+    if (matchStats.runOuts !== undefined && matchStats.runOuts > 0) {
+      seasonStats.runOuts = (seasonStats.runOuts || 0) + matchStats.runOuts;
+    }
+
+    // Update impact stats (DLS-based metrics)
+    if (matchStats.battingImpact !== undefined) {
+      seasonStats.battingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+    }
+    if (matchStats.bowlingImpact !== undefined) {
+      seasonStats.bowlingImpact = (seasonStats.bowlingImpact || 0) + matchStats.bowlingImpact;
+    }
+    if (matchStats.fieldingImpact !== undefined) {
+      seasonStats.fieldingImpact = (seasonStats.fieldingImpact || 0) + matchStats.fieldingImpact;
+    }
+    // Calculate total impact
+    seasonStats.totalImpact = (seasonStats.battingImpact || 0) +
+                              (seasonStats.bowlingImpact || 0) +
+                              (seasonStats.fieldingImpact || 0);
+
     // Calculate averages for cumulative
     const dismissals = cumulative.totalMatches - cumulative.notOuts;
     cumulative.careerBattingAvg = dismissals > 0
@@ -465,6 +497,224 @@ const usePlayerStore = create(
         }
       }
     };
+  }),
+
+  /**
+   * Batch update career stats for multiple players in a single setState call
+   * This reduces localStorage writes significantly during match simulation
+   * @param {Object} allPlayerStats - Map of playerId -> matchStats
+   */
+  batchUpdateCareerStats: (allPlayerStats) => set((state) => {
+    const seasonId = state.currentSeasonId;
+    if (!seasonId) {
+      console.warn('No current season ID set, cannot batch update career stats');
+      return state;
+    }
+
+    const newCareerStats = { ...state.careerStats };
+
+    Object.entries(allPlayerStats).forEach(([playerId, matchStats]) => {
+      // Initialize if needed
+      if (!newCareerStats[playerId]) {
+        newCareerStats[playerId] = {
+          cumulative: {
+            totalMatches: 0,
+            totalRuns: 0,
+            totalBallsFaced: 0,
+            notOuts: 0,
+            totalWickets: 0,
+            totalBallsBowled: 0,
+            totalRunsConceded: 0,
+            centuries: 0,
+            fifties: 0,
+            fiveWickets: 0,
+            careerBattingAvg: 0,
+            careerStrikeRate: 0,
+            careerEconomy: 0,
+            careerBowlingAvg: 0
+          },
+          seasons: {}
+        };
+      }
+
+      const current = newCareerStats[playerId];
+      const cumulative = { ...current.cumulative };
+      const seasons = { ...current.seasons };
+
+      // Initialize season if needed
+      if (!seasons[seasonId]) {
+        seasons[seasonId] = {
+          matches: 0,
+          runs: 0,
+          ballsFaced: 0,
+          battingAvg: 0,
+          strikeRate: 0,
+          wickets: 0,
+          ballsBowled: 0,
+          runsConceded: 0,
+          economy: 0,
+          bowlingAvg: 0,
+          centuries: 0,
+          fifties: 0,
+          fiveWickets: 0,
+          fourWickets: 0,
+          notOuts: 0,
+          highestScore: 0,
+          highestScoreNotOut: false,
+          bestBowling: null,
+          catches: 0,
+          runOuts: 0,
+          battingImpact: 0,
+          bowlingImpact: 0,
+          fieldingImpact: 0,
+          totalImpact: 0
+        };
+      }
+
+      const seasonStats = { ...seasons[seasonId] };
+
+      // Update cumulative and season matches
+      cumulative.totalMatches += 1;
+      seasonStats.matches += 1;
+
+      // Update batting stats
+      if (matchStats.runs !== undefined && matchStats.runs !== null) {
+        cumulative.totalRuns += matchStats.runs;
+        seasonStats.runs += matchStats.runs;
+      }
+
+      if (matchStats.ballsFaced !== undefined && matchStats.ballsFaced !== null) {
+        cumulative.totalBallsFaced += matchStats.ballsFaced;
+        seasonStats.ballsFaced += matchStats.ballsFaced;
+      }
+
+      if (matchStats.dismissed !== undefined && matchStats.dismissed !== null) {
+        if (!matchStats.dismissed) {
+          cumulative.notOuts += 1;
+          seasonStats.notOuts += 1;
+        }
+      }
+
+      // Check for milestones
+      if (matchStats.runs >= 100) {
+        cumulative.centuries += 1;
+        seasonStats.centuries += 1;
+      } else if (matchStats.runs >= 50) {
+        cumulative.fifties += 1;
+        seasonStats.fifties += 1;
+      }
+
+      // Update highest score
+      if (matchStats.runs !== undefined && matchStats.runs !== null) {
+        if (matchStats.runs > (seasonStats.highestScore || 0)) {
+          seasonStats.highestScore = matchStats.runs;
+          seasonStats.highestScoreNotOut = !matchStats.dismissed;
+        }
+      }
+
+      // Update bowling stats
+      if (matchStats.wickets !== undefined && matchStats.wickets !== null) {
+        cumulative.totalWickets += matchStats.wickets;
+        seasonStats.wickets += matchStats.wickets;
+
+        if (matchStats.wickets >= 5) {
+          cumulative.fiveWickets += 1;
+          seasonStats.fiveWickets += 1;
+        } else if (matchStats.wickets >= 4) {
+          seasonStats.fourWickets = (seasonStats.fourWickets || 0) + 1;
+        }
+
+        // Update best bowling figures
+        if (matchStats.wickets > 0) {
+          if (!seasonStats.bestBowling ||
+              matchStats.wickets > seasonStats.bestBowling.wickets ||
+              (matchStats.wickets === seasonStats.bestBowling.wickets &&
+               matchStats.runsConceded < seasonStats.bestBowling.runs)) {
+            seasonStats.bestBowling = {
+              wickets: matchStats.wickets,
+              runs: matchStats.runsConceded || 0
+            };
+          }
+        }
+      }
+
+      if (matchStats.ballsBowled !== undefined && matchStats.ballsBowled !== null) {
+        cumulative.totalBallsBowled += matchStats.ballsBowled;
+        seasonStats.ballsBowled += matchStats.ballsBowled;
+      }
+
+      if (matchStats.runsConceded !== undefined && matchStats.runsConceded !== null) {
+        cumulative.totalRunsConceded += matchStats.runsConceded;
+        seasonStats.runsConceded += matchStats.runsConceded;
+      }
+
+      // Update fielding stats
+      if (matchStats.catches !== undefined && matchStats.catches > 0) {
+        seasonStats.catches = (seasonStats.catches || 0) + matchStats.catches;
+      }
+      if (matchStats.runOuts !== undefined && matchStats.runOuts > 0) {
+        seasonStats.runOuts = (seasonStats.runOuts || 0) + matchStats.runOuts;
+      }
+
+      // Update impact stats
+      if (matchStats.battingImpact !== undefined) {
+        seasonStats.battingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+      }
+      if (matchStats.bowlingImpact !== undefined) {
+        seasonStats.bowlingImpact = (seasonStats.bowlingImpact || 0) + matchStats.bowlingImpact;
+      }
+      if (matchStats.fieldingImpact !== undefined) {
+        seasonStats.fieldingImpact = (seasonStats.fieldingImpact || 0) + matchStats.fieldingImpact;
+      }
+      seasonStats.totalImpact = (seasonStats.battingImpact || 0) +
+                                (seasonStats.bowlingImpact || 0) +
+                                (seasonStats.fieldingImpact || 0);
+
+      // Calculate averages for cumulative
+      const dismissals = cumulative.totalMatches - cumulative.notOuts;
+      cumulative.careerBattingAvg = dismissals > 0
+        ? Number((cumulative.totalRuns / dismissals).toFixed(2))
+        : cumulative.totalRuns;
+
+      cumulative.careerStrikeRate = cumulative.totalBallsFaced > 0
+        ? Number(((cumulative.totalRuns / cumulative.totalBallsFaced) * 100).toFixed(2))
+        : 0;
+
+      cumulative.careerEconomy = cumulative.totalBallsBowled > 0
+        ? Number(((cumulative.totalRunsConceded / cumulative.totalBallsBowled) * 6).toFixed(2))
+        : 0;
+
+      cumulative.careerBowlingAvg = cumulative.totalWickets > 0
+        ? Number((cumulative.totalRunsConceded / cumulative.totalWickets).toFixed(2))
+        : 0;
+
+      // Calculate averages for season
+      const seasonDismissals = seasonStats.matches - seasonStats.notOuts;
+      seasonStats.battingAvg = seasonDismissals > 0
+        ? Number((seasonStats.runs / seasonDismissals).toFixed(2))
+        : seasonStats.runs;
+
+      seasonStats.strikeRate = seasonStats.ballsFaced > 0
+        ? Number(((seasonStats.runs / seasonStats.ballsFaced) * 100).toFixed(2))
+        : 0;
+
+      seasonStats.economy = seasonStats.ballsBowled > 0
+        ? Number(((seasonStats.runsConceded / seasonStats.ballsBowled) * 6).toFixed(2))
+        : 0;
+
+      seasonStats.bowlingAvg = seasonStats.wickets > 0
+        ? Number((seasonStats.runsConceded / seasonStats.wickets).toFixed(2))
+        : 0;
+
+      seasons[seasonId] = seasonStats;
+
+      newCareerStats[playerId] = {
+        cumulative,
+        seasons
+      };
+    });
+
+    return { careerStats: newCareerStats };
   }),
 
   /**
@@ -704,7 +954,8 @@ const usePlayerStore = create(
     }),
     {
       name: 'cm25-player-store',
-      version: 1,
+      version: 2, // Bumped version for compressed storage migration
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions),
       // Exclude filters from persistence (UI state only)
       partialize: (state) => ({
         players: state.players,

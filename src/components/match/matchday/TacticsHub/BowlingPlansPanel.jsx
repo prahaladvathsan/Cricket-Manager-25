@@ -16,7 +16,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import useMatchStore from '../../../../stores/matchStore';
 import usePlayerStore from '../../../../stores/playerStore';
 import useTeamStore from '../../../../stores/teamStore';
-import { Target, Zap, Star, List } from 'lucide-react';
+import { Target, Zap, List } from 'lucide-react';
 import PlayerName from '../../../shared/PlayerName';
 import ConditionBar from '../../../shared/ConditionBar';
 import bowlingPlansConfig from '../../../../data/config/bowling-plans-config.json';
@@ -152,7 +152,6 @@ const BowlerRow = ({ playerId, isCurrentBowler, bowlingPlans, onUpdatePlan }) =>
 const OverAssignmentsTab = ({ bowlers, currentBall, currentBowler, overAssignments, onUpdateAssignment }) => {
   const ballByBall = useMatchStore(state => state.ballByBall);
   const currentInnings = useMatchStore(state => state.innings?.number);
-  const getPlayer = usePlayerStore(state => state.getPlayer);
 
   // Calculate which overs are completed (only for current innings)
   const completedOvers = useMemo(() => {
@@ -474,7 +473,7 @@ export default function BowlingPlansPanel() {
   ];
 
   return (
-    <div className="space-y-1">
+    <div className="bowling-plans-panel space-y-1">
       {/* Sub-tab Switcher */}
       <div className="flex border-b border-border-primary">
         {subTabs.map(tab => {

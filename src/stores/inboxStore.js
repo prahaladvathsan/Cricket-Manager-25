@@ -5,7 +5,8 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { compressedStorageOptions } from '../utils/compression.js';
 
 /**
  * @typedef {Object} Message
@@ -31,6 +32,8 @@ const useInboxStore = create(
       // State
       messages: [],
       unreadCount: 0,
+      currentFilter: 'all', // all | match | injury | finance | board | tutorial
+      currentSort: 'date', // date | type | unread
 
       /**
        * Add a new message to inbox
@@ -162,11 +165,77 @@ const useInboxStore = create(
         set((state) => ({
           unreadCount: state.messages.filter(m => !m.read).length
         }));
+      },
+
+      /**
+       * Set current filter
+       * @param {string} filter - Filter type (all | match | injury | finance | board | tutorial)
+       */
+      setFilter: (filter) => {
+        set({ currentFilter: filter });
+      },
+
+      /**
+       * Set current sort option
+       * @param {string} sort - Sort option (date | type | unread)
+       */
+      setSort: (sort) => {
+        set({ currentSort: sort });
+      },
+
+      /**
+       * Get filtered and sorted messages
+       * @returns {Array<Message>} Filtered and sorted messages
+       */
+      getFilteredAndSortedMessages: () => {
+        const state = get();
+        let filtered = [...state.messages];
+
+        // Apply filter
+        if (state.currentFilter !== 'all') {
+          const filterTypeMap = {
+            match: ['match_reminder', 'match_result'],
+            injury: ['injury', 'recovery'],
+            finance: ['auction_summary'],
+            board: ['expectations', 'season_summary', 'board_objectives'],
+            tutorial: ['tutorial', 'welcome']
+          };
+
+          const allowedTypes = filterTypeMap[state.currentFilter] || [];
+          filtered = filtered.filter(m => allowedTypes.includes(m.type));
+        }
+
+        // Apply sort
+        switch (state.currentSort) {
+          case 'date':
+            // Sort by date descending (newest first)
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            break;
+          case 'type':
+            // Sort by type alphabetically
+            filtered.sort((a, b) => a.type.localeCompare(b.type));
+            break;
+          case 'unread':
+            // Sort unread first, then by date
+            filtered.sort((a, b) => {
+              if (a.read === b.read) {
+                return new Date(b.date) - new Date(a.date);
+              }
+              return a.read ? 1 : -1;
+            });
+            break;
+          default:
+            // Default to date descending
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        return filtered;
       }
     }),
     {
       name: 'cm25-inbox-store',
-      version: 1
+      version: 2, // Bumped version for compressed storage migration
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
     }
   )
 );

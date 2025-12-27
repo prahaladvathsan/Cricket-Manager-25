@@ -385,7 +385,7 @@ export default function FieldingTacticsPanel() {
   ];
 
   return (
-    <div className="space-y-1">
+    <div className="fielding-tactics-panel space-y-1">
       {/* Sub-tab Switcher - same style as bowling tab */}
       <div className="flex border-b border-border-primary">
         {subTabs.map(tab => {

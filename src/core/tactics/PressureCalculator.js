@@ -1,41 +1,108 @@
 /**
  * @file PressureCalculator.js
- * @description Calculate pressure index for batting/bowling teams based on DLS resources
+ * @description Calculate pressure index for batting/bowling teams
  * @module core/tactics/PressureCalculator
+ *
+ * Formula: Combines resource ratio and run rate ratio using sigmoid curve
+ * - advantageRatio = resourceRatio * (CRR / RRR)
+ * - battingPressure = sigmoid(-k * ln(advantageRatio)) * 100
+ *
+ * Higher advantageRatio = lower batting pressure (team is ahead)
+ * Lower advantageRatio = higher batting pressure (team is behind)
  */
+
+import dlsCalculator from './DLSCalculator.js';
 
 /**
  * @class PressureCalculator
- * @description Calculates batting and bowling pressure from resource ratios
+ * @description Calculates batting and bowling pressure from resource and run rate ratios
  * CRITICAL: Pressure ONLY affects playstyle ratings, NOT base attributes
  */
 class PressureCalculator {
   constructor() {
-    console.log('✅ PressureCalculator initialized - affects playstyle ratings only');
+    this.steepness = 1.5; // Sigmoid steepness factor (k)
+    console.log('✅ PressureCalculator initialized with sigmoid curve (k=1.5)');
   }
 
   /**
    * Calculate batting and bowling pressure indices (sum = 100)
-   * @param {number} actualResources - Actual resources remaining (%)
-   * @param {number} expectedResources - Expected resources at this point (%)
+   * Uses combined ratio of resources and run rates with sigmoid curve
+   *
+   * @param {Object} params - Pressure calculation parameters
+   * @param {number} params.ballsLeft - Balls remaining in innings
+   * @param {number} params.wicketsInHand - Wickets in hand (0-10)
+   * @param {number} params.currentScore - Current team score
+   * @param {number} params.target - Target score
+   * @param {number} params.currentRunRate - Current run rate
+   * @param {number} params.requiredRunRate - Required run rate
    * @returns {Object} {batting: number, bowling: number} pressures (0-100 each, sum = 100)
    */
-  calculatePressure(actualResources, expectedResources) {
-    // Avoid division by zero
-    if (expectedResources === 0) {
-      return { batting: 100, bowling: 0 }; 
+  calculatePressure({ ballsLeft, wicketsInHand, currentScore, target, currentRunRate, requiredRunRate }) {
+    // Boundary conditions - explicit checks
+    if (currentScore >= target) {
+      return { batting: 0, bowling: 100 }; // Won
+    }
+    if (wicketsInHand <= 0) {
+      return { batting: 100, bowling: 0 }; // All out
+    }
+    if (ballsLeft <= 0) {
+      return { batting: 100, bowling: 0 }; // No balls left, didn't reach target
     }
 
-    const resourceRatio = actualResources / expectedResources;
+    // Component 1: Resource ratio (actualResources / expectedResources)
+    const wicketsLost = 10 - wicketsInHand;
+    const actualResources = dlsCalculator.getResourcePercentage(ballsLeft, wicketsLost);
+    const expectedResources = dlsCalculator.calculateExpectedResources(currentScore, target);
+    const resourceRatio = expectedResources > 0 ? actualResources / expectedResources : 10;
 
-    // Formula: battingPressure = 100 / (1 + resourceRatio)
-    const battingPressure = 100 / (1 + resourceRatio);
+    // Log transform resource ratio (0 when ratio = 1)
+    const clampedResourceRatio = Math.max(0.01, Math.min(100, resourceRatio));
+    const resourceInput = Math.log(clampedResourceRatio);
+
+    // Component 2: CRR/RRR ratio
+    // When CRR = 0 (start of innings), rate comparison is meaningless → use neutral (0)
+    let rateInput = 0;
+    if (currentRunRate > 0 && requiredRunRate > 0) {
+      const rateRatio = currentRunRate / requiredRunRate;
+      const clampedRateRatio = Math.max(0.01, Math.min(100, rateRatio));
+      rateInput = Math.log(clampedRateRatio);
+    } else if (requiredRunRate <= 0) {
+      // No runs needed = very far ahead
+      rateInput = Math.log(10);
+    }
+    // else: CRR = 0 with RRR > 0 → rateInput stays 0 (neutral)
+
+    // Equal weighted additive combination in log space (50-50 weighting)
+    const combinedInput = 0.5 * resourceInput + 0.5 * rateInput;
+
+    // Sigmoid: 1 / (1 + e^(k*x))
+    // When x > 0 (ahead): sigmoid < 0.5 → lower batting pressure
+    // When x < 0 (behind): sigmoid > 0.5 → higher batting pressure
+    // When x = 0 (neutral): sigmoid = 0.5 → pressure = 50
+    const sigmoid = 1 / (1 + Math.exp(this.steepness * combinedInput));
+
+    const battingPressure = Math.round(sigmoid * 100);
     const bowlingPressure = 100 - battingPressure;
 
-    // Clamp to valid range (should already be 0-100, but safety check)
     return {
       batting: Math.max(0, Math.min(100, battingPressure)),
       bowling: Math.max(0, Math.min(100, bowlingPressure))
+    };
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   * @deprecated Use calculatePressure with full params object instead
+   */
+  calculatePressureLegacy(actualResources, expectedResources) {
+    if (expectedResources === 0) {
+      return { batting: 100, bowling: 0 };
+    }
+    const resourceRatio = actualResources / expectedResources;
+    const battingPressure = 100 / (1 + resourceRatio);
+    return {
+      batting: Math.max(0, Math.min(100, Math.round(battingPressure))),
+      bowling: Math.max(0, Math.min(100, Math.round(100 - battingPressure)))
     };
   }
 
@@ -52,7 +119,24 @@ class PressureCalculator {
       return player;
     }
 
-    const modifiedPlayer = JSON.parse(JSON.stringify(player)); // Deep copy
+    // Deep clone player to avoid mutating original (must clone nested attribute objects)
+    const modifiedPlayer = {
+      ...player,
+      attributes: {
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
+      },
+      condition: { ...player.condition },
+      playstyleRatings: {
+        ...player.playstyleRatings,
+        batting: { ...player.playstyleRatings?.batting },
+        bowling: { ...player.playstyleRatings?.bowling }
+      }
+    };
 
     // Get mental attribute for pressure resistance
     const concentration = player.attributes?.mental?.concentration || 10;
@@ -105,12 +189,13 @@ class PressureCalculator {
   getInfo() {
     return {
       name: 'PressureCalculator',
-      version: '1.0.0',
-      description: 'Calculates DLS-based pressure affecting playstyle ratings ONLY',
-      formula: 'battingPressure = 100 / (1 + resourceRatio)',
+      version: '2.0.0',
+      description: 'Calculates pressure using combined resource ratio and CRR/RRR ratio with sigmoid curve',
+      formula: 'battingPressure = sigmoid(k * ln(resourceRatio * rateRatio)) * 100',
+      steepness: this.steepness,
       criticalNote: 'Pressure ONLY affects playstyle ratings, NOT base attributes',
       methods: [
-        'calculatePressure(actualResources, expectedResources)',
+        'calculatePressure({ ballsLeft, wicketsInHand, currentScore, target, currentRunRate, requiredRunRate })',
         'applyPressureToPlaystyleRating(player, pressure, role)'
       ]
     };

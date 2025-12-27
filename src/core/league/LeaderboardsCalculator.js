@@ -210,19 +210,52 @@ class LeaderboardsCalculator {
   }
 
   /**
+   * Get top impact players (MVP leaderboard)
+   * Impact = batting + bowling + fielding impact (DLS-based)
+   * @param {number} limit - Number of players to return
+   * @returns {Array} Top impact players
+   */
+  getTopImpactPlayers(limit = 10) {
+    const allStats = this.getAllPlayerStats();
+
+    return allStats
+      .map(p => ({
+        ...p,
+        totalImpact: (p.battingImpact || 0) + (p.bowlingImpact || 0) + (p.fieldingImpact || 0)
+      }))
+      .filter(p => p.totalImpact !== 0 || p.matches > 0)
+      .sort((a, b) => b.totalImpact - a.totalImpact)
+      .slice(0, limit)
+      .map((p, index) => ({
+        rank: index + 1,
+        playerId: p.playerId,
+        playerName: p.playerName,
+        teamId: p.teamId,
+        teamName: p.teamName,
+        matches: p.matches || 0,
+        battingImpact: parseFloat((p.battingImpact || 0).toFixed(1)),
+        bowlingImpact: parseFloat((p.bowlingImpact || 0).toFixed(1)),
+        fieldingImpact: parseFloat((p.fieldingImpact || 0).toFixed(1)),
+        totalImpact: parseFloat(p.totalImpact.toFixed(1))
+      }));
+  }
+
+  /**
    * Get all leaderboards at once
    * @param {number} limit - Number of players per leaderboard
    * @returns {Object} All leaderboards
    */
   getAllLeaderboards(limit = 10) {
     return {
+      mvp: this.getTopImpactPlayers(limit),
       batting: this.getTopScorers(50), // Return more for transfer AI usage
       bowling: this.getTopWicketTakers(50), // Return more for transfer AI usage
       topScorers: this.getTopScorers(limit),
       topWicketTakers: this.getTopWicketTakers(limit),
       bestBattingAverage: this.getBestBattingAverage(limit),
       bestBowlingEconomy: this.getBestBowlingEconomy(limit),
-      bestStrikeRate: this.getBestStrikeRate(limit)
+      bestStrikeRate: this.getBestStrikeRate(limit),
+      topImpactPlayers: this.getTopImpactPlayers(limit)
     };
   }
 

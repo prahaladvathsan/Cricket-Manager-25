@@ -11,10 +11,9 @@ import {
   Zap,
   Users,
   Settings,
-  Download,
   BookOpen,
   Info,
-  Trophy
+  Globe
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
@@ -47,6 +46,14 @@ const StartMenu = () => {
       badge: 'Coming Soon'
     },
     {
+      id: 'multiplayer',
+      label: 'Multiplayer',
+      icon: Globe,
+      description: 'Compete with 10 players in turn-based league mode',
+      action: () => navigate('/multiplayer'),
+      badge: 'Coming Soon'
+    },
+    {
       id: 'player-browser',
       label: 'Player Database',
       icon: Users,
@@ -58,24 +65,14 @@ const StartMenu = () => {
       label: 'Settings',
       icon: Settings,
       description: 'Configure game preferences',
-      action: () => navigate('/settings'),
-      badge: 'Placeholder'
+      action: () => navigate('/settings')
     },
     {
-      id: 'download-db',
-      label: 'Download Latest Database',
-      icon: Download,
-      description: 'Update player database with latest stats',
-      action: () => alert('Database download feature coming soon!'),
-      badge: 'Placeholder'
-    },
-    {
-      id: 'tutorial',
-      label: 'Tutorial',
+      id: 'manual',
+      label: 'Game Manual',
       icon: BookOpen,
-      description: 'Learn how to play Cricket Manager',
-      action: () => navigate('/tutorial'),
-      badge: 'Placeholder'
+      description: 'Complete guide to Cricket Manager',
+      action: () => navigate('/manual')
     },
     {
       id: 'credits',
@@ -90,7 +87,7 @@ const StartMenu = () => {
     <div className="min-h-screen app-wallpaper flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Logo */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <img
             src={getGameLogo('light')}
             alt="Cricket Manager 25"
@@ -99,10 +96,10 @@ const StartMenu = () => {
         </div>
 
         {/* Menu Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {menuOptions.map((option) => {
             const Icon = option.icon;
-            const isDisabled = option.badge && option.badge !== 'Coming Soon';
+            const isDisabled = !!option.badge;
 
             return (
               <button
@@ -112,16 +109,16 @@ const StartMenu = () => {
                 onMouseEnter={() => setSelectedOption(option.id)}
                 onMouseLeave={() => setSelectedOption(null)}
                 className={`
-                  relative card p-6 text-left transition-all duration-200
-                  ${selectedOption === option.id ? 'ring-2 ring-cricket-primary scale-105' : ''}
+                  relative card px-6 py-5 text-left transition-all duration-200
+                  ${selectedOption === option.id ? 'ring-2 ring-cricket-primary scale-[1.02]' : ''}
                   ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-cricket-primary/10 cursor-pointer'}
                 `}
               >
                 {/* Badge */}
                 {option.badge && (
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-2 right-2">
                     <span className={`
-                      px-2 py-1 rounded text-xs font-semibold
+                      px-1.5 py-0.5 rounded text-xs font-semibold
                       ${option.badge === 'Coming Soon' ? 'bg-blue-900/50 text-blue-300' : 'bg-yellow-900/50 text-yellow-300'}
                     `}>
                       {option.badge}
@@ -129,12 +126,12 @@ const StartMenu = () => {
                   </div>
                 )}
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   <div className="p-3 bg-cricket-secondary rounded-lg">
                     <Icon className="w-6 h-6 text-cricket-accent" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-cricket-text-primary mb-1">
+                    <h3 className="text-base font-semibold text-cricket-text-primary">
                       {option.label}
                     </h3>
                     <p className="text-sm text-cricket-text-secondary">
@@ -148,11 +145,8 @@ const StartMenu = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-xs text-cricket-text-secondary">
-          <p>Version 1.0.0 • Built with React + Vite</p>
-          <p className="mt-1">
-            Press any menu option to begin your journey
-          </p>
+        <div className="mt-4 text-center text-xs text-cricket-text-secondary">
+          <p>Version 1.0.0</p>
         </div>
       </div>
     </div>

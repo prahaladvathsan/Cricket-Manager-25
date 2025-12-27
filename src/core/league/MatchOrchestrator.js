@@ -74,7 +74,6 @@ class MatchOrchestrator {
 
     // Configure for automated simulation (no user interaction)
     matchEngine.config.simulationSpeed = 'instant'; // Fast simulation
-    matchEngine.config.interactiveMode = false; // Fully automated
     matchEngine.config.showBallByBall = false; // Hide ball-by-ball commentary for league simulation
 
     // Note: playerStore is already initialized at league level with all players

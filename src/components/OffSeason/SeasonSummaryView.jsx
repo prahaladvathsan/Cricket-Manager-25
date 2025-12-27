@@ -1,20 +1,23 @@
 /**
  * @file SeasonSummaryView.jsx
- * @description Season summary screen with champion celebration, final standings, and prizes
+ * @description Season summary screen with champion celebration, final standings, prizes, and board review
  */
 
-import React from 'react';
-import { Trophy, Award, TrendingUp, DollarSign, ChevronRight, Target, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Award, TrendingUp, DollarSign, ChevronRight, Target, Zap, ClipboardCheck, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import useGameStore from '../../stores/gameStore';
 import usePlayerStore from '../../stores/playerStore';
+import useTeamStore from '../../stores/teamStore';
 import TeamName from '../shared/TeamName';
 import PlayerName from '../shared/PlayerName';
 
 const SeasonSummaryView = ({ onContinue }) => {
   const { seasonName, standings, champion, stats } = useLeagueStore();
-  const { currentSeason } = useGameStore();
+  const { currentSeason, seasonObjectives, getBoardScore } = useGameStore();
   const { players, careerStats } = usePlayerStore();
+  const { userTeam } = useTeamStore();
+  const [activeTab, setActiveTab] = useState('summary');
 
   // Sort standings for final positions
   const sortedStandings = React.useMemo(() => {
@@ -27,7 +30,7 @@ const SeasonSummaryView = ({ onContinue }) => {
   }, [standings]);
 
   // Calculate season leaderboards
-  const { topScorers, topWicketTakers } = React.useMemo(() => {
+  const { topScorers, topWicketTakers, topMVPs } = React.useMemo(() => {
     const seasonId = `season_${currentSeason}`;
     const playersWithStats = [];
 
@@ -37,6 +40,9 @@ const SeasonSummaryView = ({ onContinue }) => {
         const seasonStats = stats.seasons[seasonId];
         const player = players[playerId];
         if (player) {
+          const totalImpact = (seasonStats.battingImpact || 0) +
+                              (seasonStats.bowlingImpact || 0) +
+                              (seasonStats.fieldingImpact || 0);
           playersWithStats.push({
             playerId,
             name: player.name,
@@ -52,7 +58,11 @@ const SeasonSummaryView = ({ onContinue }) => {
               : 0,
             economy: seasonStats.ballsBowled > 0
               ? ((seasonStats.runsConceded / (seasonStats.ballsBowled / 6))).toFixed(2)
-              : 0
+              : 0,
+            battingImpact: seasonStats.battingImpact || 0,
+            bowlingImpact: seasonStats.bowlingImpact || 0,
+            fieldingImpact: seasonStats.fieldingImpact || 0,
+            totalImpact
           });
         }
       }
@@ -72,7 +82,13 @@ const SeasonSummaryView = ({ onContinue }) => {
       })
       .slice(0, 5);
 
-    return { topScorers, topWicketTakers };
+    // Top 5 MVPs by total impact
+    const topMVPs = [...playersWithStats]
+      .filter(p => p.totalImpact !== 0 || p.matches > 0)
+      .sort((a, b) => b.totalImpact - a.totalImpact)
+      .slice(0, 5);
+
+    return { topScorers, topWicketTakers, topMVPs };
   }, [careerStats, players, currentSeason]);
 
   // Prize structure
@@ -95,11 +111,103 @@ const SeasonSummaryView = ({ onContinue }) => {
 
   const totalPrizePool = Object.values(SEASON_PRIZES).reduce((sum, prize) => sum + prize, 0);
 
+  // Board score and evaluation
+  const boardScore = getBoardScore();
+
+  // Generate board comments for each objective
+  const generateBoardComment = (objective) => {
+    const progress = objective.progress;
+    const status = objective.status;
+
+    if (status === 'completed' || progress === 100) {
+      return "✅ **Outstanding!** Objective achieved. The board is extremely pleased with this result.";
+    } else if (progress >= 75) {
+      return "👍 **Good progress.** While not fully achieved, the board recognizes your strong efforts toward this objective.";
+    } else if (progress >= 50) {
+      return "⚠️ **Moderate progress.** More was expected, but there were some positive developments.";
+    } else if (progress >= 25) {
+      return "❌ **Disappointing.** This objective was not adequately pursued. Significant improvement needed.";
+    } else {
+      return "❌ **Unacceptable.** No meaningful progress was made toward this objective. The board is deeply concerned.";
+    }
+  };
+
+  // Overall board assessment
+  const getBoardAssessment = (score) => {
+    if (score >= 85) {
+      return {
+        rating: "OUTSTANDING",
+        color: "text-green-400",
+        icon: Trophy,
+        message: "Your performance this season has been exceptional. The board unanimously commends your outstanding leadership and strategic acumen. You have exceeded all expectations and set a new standard for excellence. Job security: ABSOLUTE. The board wishes to extend your contract immediately."
+      };
+    } else if (score >= 70) {
+      return {
+        rating: "EXCELLENT",
+        color: "text-cricket-accent",
+        icon: Award,
+        message: "Strong performance across most objectives. The board is very satisfied with your management this season. You've demonstrated excellent decision-making and tactical prowess. Job security: STRONG. Continue this level of performance."
+      };
+    } else if (score >= 50) {
+      return {
+        rating: "SATISFACTORY",
+        color: "text-blue-400",
+        icon: CheckCircle2,
+        message: "A mixed season with both successes and shortcomings. While some objectives were achieved, others fell short of expectations. The board believes you have potential but expects improvement. Job security: MODERATE. Next season will be crucial."
+      };
+    } else if (score >= 30) {
+      return {
+        rating: "BELOW EXPECTATIONS",
+        color: "text-yellow-500",
+        icon: AlertTriangle,
+        message: "This season's performance has been disappointing. Multiple key objectives were not met, and the board has serious concerns about tactical decisions and squad management. Immediate improvement is required. Job security: AT RISK. You are on notice."
+      };
+    } else {
+      return {
+        rating: "UNACCEPTABLE",
+        color: "text-red-500",
+        icon: XCircle,
+        message: "This performance is far below the standards expected of a manager at this level. Critical objectives were missed, and the squad underperformed dramatically. The board is considering your position. Job security: CRITICAL. One more poor season may result in termination."
+      };
+    }
+  };
+
+  const assessment = getBoardAssessment(boardScore);
+
   return (
     <div className="space-y-4">
-      {/* Champion Celebration */}
-      {champion && (
-        <div className="card p-6 bg-gradient-to-br from-cricket-primary/20 via-cricket-accent/10 to-transparent border-2 border-cricket-accent">
+      {/* Tab Navigation */}
+      <div className="card p-1 flex gap-1">
+        <button
+          onClick={() => setActiveTab('summary')}
+          className={`flex-1 px-4 py-2 text-sm font-semibold rounded transition-colors ${
+            activeTab === 'summary'
+              ? 'bg-cricket-primary text-text-primary'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+          }`}
+        >
+          <Trophy className="w-4 h-4 inline mr-2" />
+          Season Summary
+        </button>
+        <button
+          onClick={() => setActiveTab('board')}
+          className={`flex-1 px-4 py-2 text-sm font-semibold rounded transition-colors ${
+            activeTab === 'board'
+              ? 'bg-cricket-primary text-text-primary'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+          }`}
+        >
+          <ClipboardCheck className="w-4 h-4 inline mr-2" />
+          Board Review
+        </button>
+      </div>
+
+      {/* Season Summary Tab */}
+      {activeTab === 'summary' && (
+        <>
+          {/* Champion Celebration */}
+          {champion && (
+            <div className="card p-6 bg-gradient-to-br from-cricket-primary/20 via-cricket-accent/10 to-transparent border-2 border-cricket-accent">
           <div className="text-center space-y-4">
             {/* Trophy Animation Area */}
             <div className="flex items-center justify-center gap-4">
@@ -295,6 +403,56 @@ const SeasonSummaryView = ({ onContinue }) => {
         </div>
       </div>
 
+      {/* Season MVP */}
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-primary">
+          <Trophy className="w-5 h-5 text-trophy-gold" />
+          <h3 className="text-lg font-bold text-text-primary">Season MVP</h3>
+        </div>
+        <div className="space-y-2">
+          {topMVPs.length > 0 ? topMVPs.map((player, idx) => (
+            <div
+              key={player.playerId}
+              className={`flex items-center justify-between p-2 rounded ${
+                idx === 0 ? 'bg-trophy-gold/10 border border-trophy-gold' : 'bg-bg-tertiary/30'
+              }`}
+            >
+              <div className="flex items-center gap-2 flex-1">
+                <span className={`text-sm font-mono ${
+                  idx === 0 ? 'text-trophy-gold font-bold' : 'text-text-secondary'
+                }`}>
+                  #{idx + 1}
+                </span>
+                <div className="flex-1">
+                  <PlayerName
+                    playerId={player.playerId}
+                    inline={true}
+                    className={idx === 0 ? 'font-bold text-trophy-gold' : 'font-medium'}
+                  />
+                  <div className="text-xs text-text-tertiary">
+                    <TeamName teamId={player.teamId} variant="short" inline={true} />
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`text-lg font-bold font-mono ${
+                  player.totalImpact >= 0 ? (idx === 0 ? 'text-trophy-gold' : 'text-green-400') : 'text-red-400'
+                }`}>
+                  {player.totalImpact >= 0 ? '+' : ''}{player.totalImpact.toFixed(1)}
+                </div>
+                <div className="text-xs text-text-tertiary">
+                  Impact
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="text-text-tertiary text-sm text-center py-4">
+              No MVP data available
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Final Standings with Prizes */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-primary">
@@ -391,7 +549,114 @@ const SeasonSummaryView = ({ onContinue }) => {
         </div>
       </div>
 
-      {/* Continue Button */}
+        </>
+      )}
+
+      {/* Board Review Tab */}
+      {activeTab === 'board' && (
+        <>
+          {/* Overall Board Assessment */}
+          <div className="card p-6 border-2 border-cricket-accent bg-gradient-to-br from-cricket-primary/20 to-transparent">
+            <div className="text-center space-y-4">
+              <assessment.icon className="w-16 h-16 mx-auto text-cricket-accent" />
+              <div>
+                <h1 className="text-3xl font-bold mb-2">
+                  Season {currentSeason} Performance Review
+                </h1>
+                <div className={`text-5xl font-bold ${assessment.color} mb-3`}>
+                  {boardScore}/100
+                </div>
+                <div className={`text-2xl font-semibold ${assessment.color} uppercase tracking-wide`}>
+                  {assessment.rating}
+                </div>
+              </div>
+              <div className="max-w-2xl mx-auto p-4 bg-bg-secondary/50 rounded-lg border border-border-primary">
+                <p className="text-sm text-text-primary leading-relaxed">
+                  {assessment.message}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual Objective Reviews */}
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border-primary">
+              <ClipboardCheck className="w-5 h-5 text-cricket-accent" />
+              <h2 className="text-lg font-bold text-text-primary">
+                Objective-by-Objective Analysis
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {seasonObjectives && seasonObjectives.length > 0 ? (
+                seasonObjectives.map((objective) => {
+                  const IconComponent = objective.icon || Target;
+
+                  // Status badge configuration
+                  const statusConfig = {
+                    completed: { label: 'COMPLETE', color: 'bg-green-500', textColor: 'text-white', icon: CheckCircle2 },
+                    on_track: { label: 'ON TRACK', color: 'bg-blue-500', textColor: 'text-white', icon: TrendingUp },
+                    in_progress: { label: 'FALLING SHORT', color: 'bg-yellow-500', textColor: 'text-white', icon: AlertTriangle },
+                    at_risk: { label: 'FALLING SHORT', color: 'bg-yellow-500', textColor: 'text-white', icon: AlertTriangle },
+                    failed: { label: 'FAILED', color: 'bg-red-500', textColor: 'text-white', icon: XCircle },
+                    pending: { label: 'PENDING', color: 'bg-gray-500', textColor: 'text-white', icon: Clock }
+                  };
+
+                  const statusDisplay = statusConfig[objective.status] || statusConfig.pending;
+                  const StatusIcon = statusDisplay.icon;
+
+                  return (
+                    <div
+                      key={objective.id}
+                      className="p-4 rounded-lg border border-border-primary bg-bg-tertiary/30"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <IconComponent className="w-6 h-6 text-cricket-accent" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-text-primary">{objective.title}</h3>
+                            <p className="text-xs text-text-secondary mt-1">{objective.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full ${statusDisplay.color} ${statusDisplay.textColor} text-xs font-bold`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {statusDisplay.label}
+                          </div>
+                          <div className="text-xs text-text-tertiary mt-2">
+                            Weight: {objective.weight}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Current Status */}
+                      <div className="text-xs text-text-secondary mb-3">
+                        <strong>Progress:</strong> {objective.details}
+                      </div>
+
+                      {/* Board Comment */}
+                      <div className="p-3 bg-bg-secondary rounded border-l-4 border-cricket-accent">
+                        <div className="text-xs font-semibold text-cricket-accent uppercase tracking-wide mb-1">
+                          Board Assessment:
+                        </div>
+                        <p className="text-sm text-text-primary">
+                          {generateBoardComment(objective)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-text-secondary py-8">
+                  No objectives data available for this season
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Continue Button (shown on both tabs) */}
       <div className="card p-6 bg-cricket-primary/10 border border-cricket-accent">
         <div className="flex items-center justify-between">
           <div>

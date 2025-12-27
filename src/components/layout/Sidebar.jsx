@@ -30,7 +30,7 @@ const Sidebar = ({ currentPath }) => {
   const { preferences, toggleSidebar } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
-  const { currentSeason, currentWeek, currentPhase } = useGameStore();
+  const { currentSeason, currentWeek, currentPhase, isSimulating } = useGameStore();
   const { unreadCount } = useInboxStore();
 
   const userTeam = getUserTeam();
@@ -59,7 +59,7 @@ const Sidebar = ({ currentPath }) => {
   return (
     <div className={`fixed left-0 top-0 h-full bg-cricket-surface border-r border-gray-700 transition-all duration-300 z-10 ${
       sidebarCollapsed ? 'w-16' : 'w-48'
-    }`}>
+    } ${isSimulating ? 'pointer-events-none opacity-50' : ''}`}>
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-gray-700">
         <div className="flex items-center justify-between h-10">
@@ -86,7 +86,7 @@ const Sidebar = ({ currentPath }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="p-2">
+      <nav className="sidebar-nav p-2">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -95,16 +95,16 @@ const Sidebar = ({ currentPath }) => {
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center justify-between p-2 rounded transition-colors text-sm ${
+                  className={`${item.path === '/game/inbox' ? 'inbox-link ' : ''}flex items-center justify-between p-2.5 rounded transition-colors ${
                     currentPath === item.path
-                      ? 'bg-cricket-primary text-white'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-cricket-primary/20'
+                      ? 'bg-cricket-primary text-white shadow-md'
+                      : 'text-gray-300 hover:text-white hover:bg-cricket-primary/30'
                   }`}
                 >
                   <div className="flex items-center">
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" />
                     {!sidebarCollapsed && (
-                      <span className="ml-2.5">{item.label}</span>
+                      <span className="ml-3 font-bold text-[15px]">{item.label}</span>
                     )}
                   </div>
                   {hasBadge && !sidebarCollapsed && (

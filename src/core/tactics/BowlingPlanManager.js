@@ -109,7 +109,19 @@ class BowlingPlanManager {
       return { ...bowler };
     }
 
-    const modifiedBowler = JSON.parse(JSON.stringify(bowler)); // Deep copy
+    // Deep clone bowler to avoid mutating original (must clone nested attribute objects)
+    const modifiedBowler = {
+      ...bowler,
+      attributes: {
+        ...bowler.attributes,
+        batting: { ...bowler.attributes?.batting },
+        bowling: { ...bowler.attributes?.bowling },
+        physical: { ...bowler.attributes?.physical },
+        mental: { ...bowler.attributes?.mental },
+        fielding: { ...bowler.attributes?.fielding }
+      },
+      condition: { ...bowler.condition }
+    };
     const appliedModifiers = { lineLengthModifiers: {}, variationModifiers: {} };
 
     // Apply line-length plan modifiers

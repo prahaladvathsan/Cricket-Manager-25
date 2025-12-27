@@ -170,14 +170,14 @@ function addTacticsData(player) {
     defaultBowlingPlans
   };
 
-  // Add confidence to condition if not present
-  if (!player.condition.confidence) {
-    player.condition.confidence = player.condition.morale || 50;
+  // Add confidence to condition if not present (use ?? to preserve 0 values)
+  if (player.condition.confidence === undefined || player.condition.confidence === null) {
+    player.condition.confidence = player.condition.morale ?? 50;
   }
 
   // Add energy to condition (will be initialized to fitness at match start)
-  if (!player.condition.energy) {
-    player.condition.energy = player.condition.fitness || 100;
+  if (player.condition.energy === undefined || player.condition.energy === null) {
+    player.condition.energy = player.condition.fitness ?? 100;
   }
 
   // Add injuryDuration to condition if not present

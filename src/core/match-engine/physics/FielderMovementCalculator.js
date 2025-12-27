@@ -115,9 +115,10 @@ class FielderMovementCalculator {
       boundaryDistance
     );
 
-    // AERIAL SHOT FALLBACK: If closest fielder is in-field and cannot intercept post-bounce,
+    // AERIAL SHOT FALLBACK: If closest fielder cannot intercept post-bounce,
     // re-evaluate using deep fielders (positioned beyond bounce) with minimum angle difference
-    if (shotType === 'aerial' && bouncePoint && !closestFielder.canIntercept && closestFielder.needsDeepFielderEvaluation) {
+    // This triggers regardless of whether initial fielder is in-field or deep
+    if (shotType === 'aerial' && bouncePoint && !closestFielder.canIntercept) {
       const bounceDistance = bouncePoint.r;
 
       // Find deep fielder with minimum angle difference from shot direction

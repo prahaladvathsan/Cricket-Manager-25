@@ -97,12 +97,12 @@
   "wicketTypes": {
     "missed": ["bowled", "lbw", "stumped"],
     "probabilities": {
-      "bowled": 0.5,
-      "lbw": 0.35,
-      "stumped": 0.15
+      "bowled": 0.6,
+      "lbw": 0.3,
+      "stumped": 0.1
     },
     "wicketProbability": {
-      "base": 0.167,
+      "base": 0.08,
       "maxProbability": 0.9,
       "adjustmentScale": 100,
       "contactQualityAdjustment": {

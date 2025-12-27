@@ -11,7 +11,8 @@ import {
   Filter,
   User,
   TrendingUp,
-  Activity
+  Activity,
+  Download
 } from 'lucide-react';
 import PlayerName from '../shared/PlayerName';
 import '../../styles/wallpaper.css';
@@ -141,8 +142,17 @@ const PlayerBrowser = () => {
           <h1 className="text-3xl font-bold text-cricket-text-primary">
             Player Database
           </h1>
-          <div className="text-sm text-cricket-text-secondary">
-            {filteredPlayers.length} / {players.length} players
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => alert('Database download feature coming soon!')}
+              className="btn-secondary flex items-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              Update Database
+            </button>
+            <div className="text-sm text-cricket-text-secondary">
+              {filteredPlayers.length} / {players.length} players
+            </div>
           </div>
         </div>
 

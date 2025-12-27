@@ -89,7 +89,8 @@ class DLSCalculator {
     const resourcesRemaining = this.getResourcePercentage(ballsRemaining, wicketsLost);
 
     // Par score = Target × (100 - resourcesRemaining) / 100
-    const parScore = Math.round(targetScore * (100 - resourcesRemaining) / 100);
+    // Don't round - keep decimal precision for accurate impact calculations
+    const parScore = targetScore * (100 - resourcesRemaining) / 100;
 
     return parScore;
   }

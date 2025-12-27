@@ -1,63 +1,59 @@
 /**
  * @file SaveGameManager.js
- * @description Manages game save/load functionality with max 10 saves
+ * @description Single-save game manager with autosave and export/import support
+ *
+ * Model:
+ * - One "current game" auto-saved to localStorage
+ * - Export to .cm25 file for backup/sharing
+ * - Import .cm25 file to replace current game
  */
 
-const MAX_SAVES = 10;
-const SAVE_KEY_PREFIX = 'cm25_save_';
-const SAVES_INDEX_KEY = 'cm25_saves_index';
+import { compressData, decompressData, getCompressionStats } from './compression';
+
+const SAVE_KEY = 'cm25_current_save';
+const SAVE_FORMAT_VERSION = '2.0.0';
+const MIN_COMPATIBLE_VERSION = '1.0.0';
 
 class SaveGameManager {
   /**
-   * Get all save game metadata
-   * @returns {Array} Array of save metadata
+   * Check if a saved game exists
+   * @returns {boolean}
    */
-  getAllSaves() {
-    try {
-      const indexStr = localStorage.getItem(SAVES_INDEX_KEY);
-      if (!indexStr) return [];
-
-      const index = JSON.parse(indexStr);
-      return index.saves || [];
-    } catch (error) {
-      console.error('Error loading saves index:', error);
-      return [];
-    }
+  hasSave() {
+    return localStorage.getItem(SAVE_KEY) !== null;
   }
 
   /**
-   * Get a specific save by slot
-   * @param {number} slot - Save slot number (0-9)
-   * @returns {Object|null} Save data or null
+   * Get current save metadata (for display without loading full save)
+   * @returns {Object|null}
    */
-  getSave(slot) {
+  getSaveInfo() {
     try {
-      const saveKey = `${SAVE_KEY_PREFIX}${slot}`;
-      const saveStr = localStorage.getItem(saveKey);
+      const saveStr = localStorage.getItem(SAVE_KEY);
       if (!saveStr) return null;
 
-      return JSON.parse(saveStr);
+      const save = JSON.parse(saveStr);
+      return {
+        saveName: save.saveName,
+        timestamp: save.timestamp,
+        metadata: save.metadata,
+        version: save.version
+      };
     } catch (error) {
-      console.error(`Error loading save ${slot}:`, error);
+      console.error('Error reading save info:', error);
       return null;
     }
   }
 
   /**
-   * Save current game state
-   * @param {number} slot - Save slot number (0-9)
+   * Save current game state (used for both manual and auto-save)
    * @param {Object} stores - All Zustand stores
-   * @param {string} saveName - Custom save name
+   * @param {string} reason - Why save was triggered (for logging)
    * @returns {boolean} Success status
    */
-  saveGame(slot, stores, saveName = null) {
-    if (slot < 0 || slot >= MAX_SAVES) {
-      console.error(`Invalid save slot: ${slot}. Must be 0-${MAX_SAVES - 1}`);
-      return false;
-    }
-
+  saveGame(stores, reason = 'manual') {
     try {
-      console.log('🎮 Starting save to slot', slot);
+      console.log(`Saving game (${reason})...`);
 
       // Extract state from all stores
       const gameState = stores.gameStore.getState();
@@ -67,21 +63,15 @@ class SaveGameManager {
       const financeState = stores.financeStore.getState();
       const matchState = stores.matchStore.getState();
       const auctionState = stores.auctionStore?.getState();
-      const uiState = stores.uiStore.getState();
       const inboxState = stores.inboxStore?.getState();
-      const navigationState = stores.navigationStore?.getState();
+      const transferState = stores.transferStore?.getState();
 
-      console.log('🎮 Auction state:', auctionState ? auctionState.auctionState : 'No auction store');
-      console.log('🎮 Finance teamFinances type:', financeState.teamFinances?.constructor?.name || typeof financeState.teamFinances);
-
-      // Create save object
       const saveData = {
-        version: '1.0.0',
-        slot,
+        version: SAVE_FORMAT_VERSION,
         timestamp: new Date().toISOString(),
-        saveName: saveName || this._generateSaveName(gameState, teamState),
+        lastSaveReason: reason,
+        saveName: this._generateSaveName(gameState, teamState),
 
-        // Game state snapshot
         gameState: {
           currentSeason: gameState.currentSeason,
           currentPhase: gameState.currentPhase,
@@ -89,13 +79,14 @@ class SaveGameManager {
           currentDate: gameState.currentDate,
           gameDay: gameState.gameDay || 1,
           calendarEvents: gameState.calendarEvents || [],
-          settings: gameState.settings
+          settings: gameState.settings,
+          seasonObjectives: gameState.seasonObjectives || [],
+          objectiveTracking: gameState.objectiveTracking || {}
         },
 
         teamState: {
           teams: teamState.teams,
           userTeamId: teamState.userTeamId,
-          // Save only player IDs in squads, not full objects
           squadLists: Object.fromEntries(
             Object.entries(teamState.squadLists || {}).map(([teamId, playerIds]) => [
               teamId,
@@ -107,17 +98,20 @@ class SaveGameManager {
           teamStats: teamState.teamStats
         },
 
-        // Don't save full player database (545 players = too large!)
-        // Players are static data loaded from JSON, no need to save
-        // BUT we do need to save team assignments (currentTeam field)
         playerState: {
           careerStats: playerState.careerStats,
           currentSeasonId: playerState.currentSeasonId,
-          // Save player team assignments as a simple mapping
           playerTeamAssignments: Object.entries(playerState.players)
             .filter(([_, player]) => player.currentTeam)
             .reduce((acc, [playerId, player]) => {
               acc[playerId] = player.currentTeam;
+              return acc;
+            }, {}),
+          playerConditions: Object.entries(playerState.players)
+            .reduce((acc, [playerId, player]) => {
+              if (player.condition) {
+                acc[playerId] = player.condition;
+              }
               return acc;
             }, {})
         },
@@ -127,8 +121,10 @@ class SaveGameManager {
           seasonName: leagueState.seasonName,
           currentMatchday: leagueState.currentMatchday,
           currentWeek: leagueState.currentWeek,
+          currentFixtureIndex: leagueState.currentFixtureIndex,
           stage: leagueState.stage,
           fixtures: leagueState.fixtures,
+          matchWeeks: leagueState.matchWeeks,
           results: leagueState.results,
           standings: leagueState.standings,
           clubs: leagueState.clubs,
@@ -151,11 +147,7 @@ class SaveGameManager {
 
         matchState: {
           matchId: matchState.matchId,
-          status: matchState.status,
-          teams: matchState.teams,
-          innings: matchState.innings,
-          currentBall: matchState.currentBall,
-          tacticsState: matchState.tacticsState
+          status: matchState.status
         },
 
         auctionState: auctionState ? {
@@ -163,7 +155,9 @@ class SaveGameManager {
           rounds: auctionState.rounds,
           currentRound: auctionState.currentRound,
           currentPlayerIndex: auctionState.currentPlayerIndex,
-          soldPlayers: auctionState.soldPlayers
+          soldPlayers: auctionState.soldPlayers,
+          userMaxBid: auctionState.userMaxBid,
+          userMaxBidPlayerId: auctionState.userMaxBidPlayerId
         } : null,
 
         inboxState: inboxState ? {
@@ -171,12 +165,15 @@ class SaveGameManager {
           unreadCount: inboxState.unreadCount || 0
         } : null,
 
-        navigationState: navigationState ? {
-          // Only save last 5 routes to minimize save size
-          history: (navigationState.history || []).slice(-5)
+        transferState: transferState ? {
+          activeListings: transferState.activeListings || [],
+          userListings: transferState.userListings || [],
+          userBids: transferState.userBids || [],
+          freeAgents: transferState.freeAgents || [],
+          notifications: transferState.notifications || [],
+          transferWindow: transferState.transferWindow || { isOpen: false }
         } : null,
 
-        // Metadata for display
         metadata: {
           userTeamName: teamState.teams[teamState.userTeamId]?.name || 'Unknown',
           season: gameState.currentSeason,
@@ -189,277 +186,383 @@ class SaveGameManager {
         }
       };
 
+      // Generate checksum
+      saveData.checksum = this._generateChecksum(saveData);
+
       // Save to localStorage
-      const saveKey = `${SAVE_KEY_PREFIX}${slot}`;
-      localStorage.setItem(saveKey, JSON.stringify(saveData));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
 
-      // Update saves index
-      this._updateSavesIndex(slot, saveData);
-
-      console.log(`✅ Game saved to slot ${slot}: ${saveData.saveName}`);
+      console.log(`Game saved: ${saveData.saveName}`);
       return true;
     } catch (error) {
-      console.error(`❌ Error saving game to slot ${slot}:`, error);
-      console.error('Error details:', error.message);
-      console.error('Stack:', error.stack);
+      console.error('Error saving game:', error);
       return false;
     }
   }
 
   /**
-   * Load a saved game
-   * @param {number} slot - Save slot number (0-9)
+   * Load saved game
    * @param {Object} stores - All Zustand stores
    * @returns {boolean} Success status
    */
-  loadGame(slot, stores) {
+  loadGame(stores) {
     try {
-      const saveData = this.getSave(slot);
-      if (!saveData) {
-        console.error(`No save found in slot ${slot}`);
+      const saveStr = localStorage.getItem(SAVE_KEY);
+      if (!saveStr) {
+        console.error('No save found');
         return false;
       }
 
-      // Restore all store states
-      // Game Store
-      stores.gameStore.setState({
-        currentSeason: saveData.gameState.currentSeason,
-        currentPhase: saveData.gameState.currentPhase,
-        currentWeek: saveData.gameState.currentWeek,
-        currentDate: saveData.gameState.currentDate,
-        gameDay: saveData.gameState.gameDay || 1,
-        calendarEvents: saveData.gameState.calendarEvents || [],
-        settings: saveData.gameState.settings,
-        isSimulating: false
-      });
+      let saveData = JSON.parse(saveStr);
 
-      // Team Store
-      stores.teamStore.setState({
-        teams: saveData.teamState.teams,
-        userTeamId: saveData.teamState.userTeamId,
-        squadLists: saveData.teamState.squadLists,
-        teamTactics: saveData.teamState.teamTactics || {},
-        playerStats: saveData.teamState.playerStats,
-        teamStats: saveData.teamState.teamStats
-      });
+      // Migrate if needed
+      saveData = this._migrateSaveData(saveData);
 
-      // Player Store - restore team assignments and available players
-      const playerTeamAssignments = saveData.playerState.playerTeamAssignments || {};
-      const players = stores.playerStore.getState().players;
+      // Restore states
+      this._restoreStoreStates(saveData, stores);
 
-      // Update currentTeam for each player based on saved assignments
-      const updatedPlayers = { ...players };
-      const assignedPlayerIds = new Set();
-
-      Object.entries(playerTeamAssignments).forEach(([playerId, teamId]) => {
-        if (updatedPlayers[playerId]) {
-          updatedPlayers[playerId] = {
-            ...updatedPlayers[playerId],
-            currentTeam: teamId
-          };
-          assignedPlayerIds.add(playerId);
-        }
-      });
-
-      // Clear currentTeam for players not in assignments (they should be available)
-      Object.keys(updatedPlayers).forEach(playerId => {
-        if (!assignedPlayerIds.has(playerId) && updatedPlayers[playerId].currentTeam) {
-          updatedPlayers[playerId] = {
-            ...updatedPlayers[playerId],
-            currentTeam: null
-          };
-        }
-      });
-
-      // Update available players list
-      const availablePlayers = Object.keys(updatedPlayers).filter(
-        playerId => !updatedPlayers[playerId].currentTeam
-      );
-
-      stores.playerStore.setState({
-        players: updatedPlayers,
-        availablePlayers,
-        careerStats: saveData.playerState.careerStats || {},
-        currentSeasonId: saveData.playerState.currentSeasonId
-      });
-
-      // League Store
-      stores.leagueStore.setState({
-        seasonId: saveData.leagueState.seasonId,
-        seasonName: saveData.leagueState.seasonName,
-        currentMatchday: saveData.leagueState.currentMatchday,
-        currentWeek: saveData.leagueState.currentWeek,
-        stage: saveData.leagueState.stage,
-        fixtures: saveData.leagueState.fixtures,
-        results: saveData.leagueState.results,
-        standings: saveData.leagueState.standings,
-        clubs: saveData.leagueState.clubs,
-        stats: saveData.leagueState.stats,
-        playoffFixtures: saveData.leagueState.playoffFixtures,
-        playoffResults: saveData.leagueState.playoffResults,
-        champion: saveData.leagueState.champion
-      });
-
-      // Finance Store - reconstruct Map
-      const teamFinancesMap = new Map(saveData.financeState.teamFinances);
-      stores.financeStore.setState({
-        seasonId: saveData.financeState.seasonId,
-        initialized: saveData.financeState.initialized,
-        teamFinances: teamFinancesMap,
-        transactionHistory: saveData.financeState.transactionHistory,
-        lastUpdate: Date.now()
-      });
-      // Also update the engine's internal state
-      stores.financeStore.getState().engine.teamFinances = teamFinancesMap;
-      stores.financeStore.getState().engine.transactionHistory = saveData.financeState.transactionHistory;
-
-      // Match Store
-      stores.matchStore.setState({
-        matchId: saveData.matchState.matchId,
-        status: saveData.matchState.status,
-        teams: saveData.matchState.teams,
-        innings: saveData.matchState.innings,
-        currentBall: saveData.matchState.currentBall,
-        tacticsState: saveData.matchState.tacticsState
-      });
-
-      // Auction Store (if exists in save)
-      if (saveData.auctionState && stores.auctionStore) {
-        stores.auctionStore.setState({
-          auctionState: saveData.auctionState.auctionState,
-          rounds: saveData.auctionState.rounds,
-          currentRound: saveData.auctionState.currentRound,
-          currentPlayerIndex: saveData.auctionState.currentPlayerIndex,
-          soldPlayers: saveData.auctionState.soldPlayers
-        });
-      }
-
-      // Inbox Store (if exists in save)
-      if (saveData.inboxState && stores.inboxStore) {
-        stores.inboxStore.setState({
-          messages: saveData.inboxState.messages || [],
-          unreadCount: saveData.inboxState.unreadCount || 0
-        });
-      }
-
-      // Navigation Store (if exists in save)
-      if (saveData.navigationState && stores.navigationStore) {
-        stores.navigationStore.setState({
-          history: saveData.navigationState.history || []
-        });
-      }
-
-      console.log(`✅ Game loaded from slot ${slot}: ${saveData.saveName}`);
+      console.log(`Game loaded: ${saveData.saveName}`);
       return true;
     } catch (error) {
-      console.error(`Error loading game from slot ${slot}:`, error);
+      console.error('Error loading game:', error);
       return false;
     }
   }
 
   /**
-   * Delete a save
-   * @param {number} slot - Save slot number (0-9)
-   * @returns {boolean} Success status
-   */
-  deleteSave(slot) {
-    try {
-      const saveKey = `${SAVE_KEY_PREFIX}${slot}`;
-      localStorage.removeItem(saveKey);
-
-      // Update index
-      const saves = this.getAllSaves();
-      const updatedSaves = saves.filter(s => s.slot !== slot);
-      localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify({ saves: updatedSaves }));
-
-      console.log(`✅ Save deleted from slot ${slot}`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting save ${slot}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Get empty save slots
-   * @returns {Array<number>} Array of empty slot numbers
-   */
-  getEmptySlots() {
-    const saves = this.getAllSaves();
-    const usedSlots = new Set(saves.map(s => s.slot));
-    const emptySlots = [];
-
-    for (let i = 0; i < MAX_SAVES; i++) {
-      if (!usedSlots.has(i)) {
-        emptySlots.push(i);
-      }
-    }
-
-    return emptySlots;
-  }
-
-  /**
-   * Check if saves are full
+   * Delete current save
    * @returns {boolean}
    */
-  isFull() {
-    return this.getAllSaves().length >= MAX_SAVES;
+  deleteSave() {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+      console.log('Save deleted');
+      return true;
+    } catch (error) {
+      console.error('Error deleting save:', error);
+      return false;
+    }
   }
 
   /**
-   * Generate automatic save name
-   * @private
+   * Export current save to .cm25 file
+   * @param {string} filename - Optional custom filename
+   * @returns {boolean}
    */
-  _generateSaveName(gameState, teamState) {
-    const teamName = teamState.teams[teamState.userTeamId]?.name || 'Unknown Team';
-    const phase = gameState.currentPhase;
-    const season = gameState.currentSeason;
+  exportSave(filename = null) {
+    try {
+      const saveStr = localStorage.getItem(SAVE_KEY);
+      if (!saveStr) {
+        console.error('No save to export');
+        return false;
+      }
 
-    return `${teamName} - S${season} ${phase}`;
+      const saveData = JSON.parse(saveStr);
+
+      // Add export metadata
+      const exportData = {
+        ...saveData,
+        exportedAt: new Date().toISOString(),
+        exportVersion: SAVE_FORMAT_VERSION
+      };
+
+      // Log compression stats
+      const stats = getCompressionStats(exportData);
+      console.log(`Export: ${stats.originalKB}KB -> ${stats.compressedKB}KB (${stats.ratio} savings)`);
+
+      // Compress and download
+      const compressed = compressData(exportData);
+      const blob = new Blob([compressed], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+
+      const safeName = (saveData.saveName || 'save').replace(/[^a-z0-9]/gi, '_');
+      // Use in-game day for filename
+      const gameDay = saveData.gameState?.gameDay || 1;
+      const defaultFilename = filename || `cm25_${safeName}_Day${gameDay}.cm25`;
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = defaultFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log(`Exported to ${defaultFilename}`);
+      return true;
+    } catch (error) {
+      console.error('Error exporting save:', error);
+      return false;
+    }
   }
 
   /**
-   * Get team position in standings
-   * @private
+   * Import save from .cm25 file (replaces current save)
+   * @param {File} file
+   * @returns {Promise<{success: boolean, error?: string, saveName?: string}>}
    */
-  _getTeamPosition(standings, teamId) {
-    if (!standings || standings.length === 0) return null;
+  async importSave(file) {
+    return new Promise((resolve) => {
+      if (!file.name.toLowerCase().endsWith('.cm25')) {
+        resolve({ success: false, error: 'Invalid file type. Expected .cm25 file.' });
+        return;
+      }
 
-    const sorted = [...standings].sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.netRunRate - a.netRunRate;
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          let saveData;
+          try {
+            saveData = decompressData(e.target.result);
+          } catch {
+            resolve({ success: false, error: 'Failed to decompress. File may be corrupted.' });
+            return;
+          }
+
+          if (!this._isVersionCompatible(saveData.version)) {
+            resolve({ success: false, error: `Incompatible version: ${saveData.version}` });
+            return;
+          }
+
+          if (!saveData.gameState || !saveData.teamState) {
+            resolve({ success: false, error: 'Invalid save structure.' });
+            return;
+          }
+
+          // Migrate and save
+          saveData = this._migrateSaveData(saveData);
+          saveData.importedAt = new Date().toISOString();
+          saveData.importedFrom = file.name;
+          saveData.checksum = this._generateChecksum(saveData);
+
+          localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+
+          console.log(`Imported: ${saveData.saveName}`);
+          resolve({ success: true, saveName: saveData.saveName });
+        } catch (error) {
+          console.error('Import error:', error);
+          resolve({ success: false, error: 'Failed to parse save file.' });
+        }
+      };
+
+      reader.onerror = () => resolve({ success: false, error: 'Failed to read file.' });
+      reader.readAsText(file);
+    });
+  }
+
+  /**
+   * Get save format version
+   */
+  getVersion() {
+    return SAVE_FORMAT_VERSION;
+  }
+
+  // ============================================
+  // Private Methods
+  // ============================================
+
+  _restoreStoreStates(saveData, stores) {
+    // Game Store
+    stores.gameStore.setState({
+      currentSeason: saveData.gameState.currentSeason,
+      currentPhase: saveData.gameState.currentPhase,
+      currentWeek: saveData.gameState.currentWeek,
+      currentDate: saveData.gameState.currentDate,
+      gameDay: saveData.gameState.gameDay || 1,
+      calendarEvents: saveData.gameState.calendarEvents || [],
+      settings: saveData.gameState.settings,
+      seasonObjectives: saveData.gameState.seasonObjectives || [],
+      objectiveTracking: saveData.gameState.objectiveTracking || {},
+      isSimulating: false
     });
 
-    const position = sorted.findIndex(s => s.clubId === teamId);
-    return position >= 0 ? position + 1 : null;
+    // Team Store
+    stores.teamStore.setState({
+      teams: saveData.teamState.teams,
+      userTeamId: saveData.teamState.userTeamId,
+      squadLists: saveData.teamState.squadLists,
+      teamTactics: saveData.teamState.teamTactics || {},
+      playerStats: saveData.teamState.playerStats,
+      teamStats: saveData.teamState.teamStats
+    });
+
+    // Player Store
+    const playerTeamAssignments = saveData.playerState.playerTeamAssignments || {};
+    const playerConditions = saveData.playerState.playerConditions || {};
+    const players = stores.playerStore.getState().players;
+
+    const updatedPlayers = { ...players };
+    const assignedPlayerIds = new Set();
+
+    Object.entries(playerTeamAssignments).forEach(([playerId, teamId]) => {
+      if (updatedPlayers[playerId]) {
+        updatedPlayers[playerId] = { ...updatedPlayers[playerId], currentTeam: teamId };
+        assignedPlayerIds.add(playerId);
+      }
+    });
+
+    Object.entries(playerConditions).forEach(([playerId, condition]) => {
+      if (updatedPlayers[playerId]) {
+        updatedPlayers[playerId] = { ...updatedPlayers[playerId], condition };
+      }
+    });
+
+    Object.keys(updatedPlayers).forEach(playerId => {
+      if (!assignedPlayerIds.has(playerId) && updatedPlayers[playerId].currentTeam) {
+        updatedPlayers[playerId] = { ...updatedPlayers[playerId], currentTeam: null };
+      }
+    });
+
+    const availablePlayers = Object.keys(updatedPlayers).filter(
+      playerId => !updatedPlayers[playerId].currentTeam
+    );
+
+    stores.playerStore.setState({
+      players: updatedPlayers,
+      availablePlayers,
+      careerStats: saveData.playerState.careerStats || {},
+      currentSeasonId: saveData.playerState.currentSeasonId
+    });
+
+    // League Store
+    stores.leagueStore.setState({
+      seasonId: saveData.leagueState.seasonId,
+      seasonName: saveData.leagueState.seasonName,
+      currentMatchday: saveData.leagueState.currentMatchday,
+      currentWeek: saveData.leagueState.currentWeek,
+      currentFixtureIndex: saveData.leagueState.currentFixtureIndex,
+      stage: saveData.leagueState.stage,
+      fixtures: saveData.leagueState.fixtures,
+      matchWeeks: saveData.leagueState.matchWeeks,
+      results: saveData.leagueState.results,
+      standings: saveData.leagueState.standings,
+      clubs: saveData.leagueState.clubs,
+      stats: saveData.leagueState.stats,
+      playoffFixtures: saveData.leagueState.playoffFixtures,
+      playoffResults: saveData.leagueState.playoffResults,
+      champion: saveData.leagueState.champion
+    });
+
+    // Finance Store
+    const teamFinancesMap = new Map(saveData.financeState.teamFinances);
+    stores.financeStore.setState({
+      seasonId: saveData.financeState.seasonId,
+      initialized: saveData.financeState.initialized,
+      teamFinances: teamFinancesMap,
+      transactionHistory: saveData.financeState.transactionHistory,
+      lastUpdate: Date.now()
+    });
+    const financeEngine = stores.financeStore.getState().engine;
+    if (financeEngine) {
+      financeEngine.teamFinances = teamFinancesMap;
+      financeEngine.transactionHistory = saveData.financeState.transactionHistory;
+    }
+
+    // Match Store
+    stores.matchStore.setState({
+      matchId: saveData.matchState?.matchId || null,
+      status: saveData.matchState?.status || 'idle'
+    });
+
+    // Auction Store
+    if (saveData.auctionState && stores.auctionStore) {
+      stores.auctionStore.setState({
+        auctionState: saveData.auctionState.auctionState,
+        rounds: saveData.auctionState.rounds,
+        currentRound: saveData.auctionState.currentRound,
+        currentPlayerIndex: saveData.auctionState.currentPlayerIndex,
+        soldPlayers: saveData.auctionState.soldPlayers,
+        userMaxBid: saveData.auctionState.userMaxBid || null,
+        userMaxBidPlayerId: saveData.auctionState.userMaxBidPlayerId || null
+      });
+    }
+
+    // Inbox Store
+    if (saveData.inboxState && stores.inboxStore) {
+      stores.inboxStore.setState({
+        messages: saveData.inboxState.messages || [],
+        unreadCount: saveData.inboxState.unreadCount || 0
+      });
+    }
+
+    // Transfer Store
+    if (saveData.transferState && stores.transferStore) {
+      stores.transferStore.setState({
+        activeListings: saveData.transferState.activeListings || [],
+        userListings: saveData.transferState.userListings || [],
+        userBids: saveData.transferState.userBids || [],
+        freeAgents: saveData.transferState.freeAgents || [],
+        notifications: saveData.transferState.notifications || [],
+        transferWindow: saveData.transferState.transferWindow || { isOpen: false }
+      });
+    }
   }
 
-  /**
-   * Update saves index
-   * @private
-   */
-  _updateSavesIndex(slot, saveData) {
-    try {
-      const saves = this.getAllSaves();
+  _migrateSaveData(saveData) {
+    let data = { ...saveData };
 
-      // Remove existing entry for this slot
-      const filteredSaves = saves.filter(s => s.slot !== slot);
+    if (!data.version || data.version === '1.0.0') {
+      console.log('Migrating save from v1.0.0 to v2.0.0');
 
-      // Add new entry
-      filteredSaves.push({
-        slot,
-        timestamp: saveData.timestamp,
-        saveName: saveData.saveName,
-        metadata: saveData.metadata
-      });
+      if (!data.transferState) {
+        data.transferState = {
+          activeListings: [], userListings: [], userBids: [],
+          freeAgents: [], notifications: [], transferWindow: { isOpen: false }
+        };
+      }
 
-      // Sort by timestamp (newest first)
-      filteredSaves.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      if (data.gameState && !data.gameState.objectiveTracking) {
+        data.gameState.seasonObjectives = data.gameState.seasonObjectives || [];
+        data.gameState.objectiveTracking = {};
+      }
 
-      localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify({ saves: filteredSaves }));
-    } catch (error) {
-      console.error('Error updating saves index:', error);
+      if (data.playerState && !data.playerState.playerConditions) {
+        data.playerState.playerConditions = {};
+      }
+
+      if (data.leagueState) {
+        data.leagueState.currentFixtureIndex = data.leagueState.currentFixtureIndex || 0;
+        data.leagueState.matchWeeks = data.leagueState.matchWeeks || [];
+      }
+
+      data.version = '2.0.0';
+      data.migratedAt = new Date().toISOString();
     }
+
+    return data;
+  }
+
+  _isVersionCompatible(version) {
+    if (!version) return true;
+    const [major] = version.split('.').map(Number);
+    const [minMajor] = MIN_COMPATIBLE_VERSION.split('.').map(Number);
+    return major >= minMajor;
+  }
+
+  _generateChecksum(data) {
+    const { checksum, ...rest } = data;
+    const str = JSON.stringify(rest);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return hash.toString(16);
+  }
+
+  _generateSaveName(gameState, teamState) {
+    const teamName = teamState.teams[teamState.userTeamId]?.name || 'Unknown';
+    return `${teamName} - S${gameState.currentSeason} ${gameState.currentPhase}`;
+  }
+
+  _getTeamPosition(standings, teamId) {
+    if (!standings?.length) return null;
+    const sorted = [...standings].sort((a, b) =>
+      b.points !== a.points ? b.points - a.points : b.netRunRate - a.netRunRate
+    );
+    const pos = sorted.findIndex(s => s.clubId === teamId);
+    return pos >= 0 ? pos + 1 : null;
   }
 }
 

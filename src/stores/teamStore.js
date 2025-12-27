@@ -5,8 +5,10 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import usePlayerStore from './playerStore';
+import { compressedStorageOptions } from '../utils/compression.js';
+import aiCore from '../core/ai/AICore.js';
 
 /**
  * @typedef {Object} BowlingPlans
@@ -206,7 +208,15 @@ const useTeamStore = create(
       ballsBowled: 0,
       runsConceded: 0,
       economy: 0,
-      bowlingAverage: 0
+      bowlingAverage: 0,
+      // Fielding stats
+      catches: 0,
+      runOuts: 0,
+      // Impact metrics (DLS-based)
+      battingImpact: 0,
+      bowlingImpact: 0,
+      fieldingImpact: 0,
+      totalImpact: 0
     };
 
     // Accumulate stats
@@ -217,6 +227,16 @@ const useTeamStore = create(
     const newWickets = currentStats.wickets + (matchStats.wickets || 0);
     const newBallsBowled = currentStats.ballsBowled + (matchStats.ballsBowled || 0);
     const newRunsConceded = currentStats.runsConceded + (matchStats.runsConceded || 0);
+
+    // Accumulate fielding stats
+    const newCatches = (currentStats.catches || 0) + (matchStats.catches || 0);
+    const newRunOuts = (currentStats.runOuts || 0) + (matchStats.runOuts || 0);
+
+    // Accumulate impact stats
+    const newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
+    const newBowlingImpact = (currentStats.bowlingImpact || 0) + (matchStats.bowlingImpact || 0);
+    const newFieldingImpact = (currentStats.fieldingImpact || 0) + (matchStats.fieldingImpact || 0);
+    const newTotalImpact = newBattingImpact + newBowlingImpact + newFieldingImpact;
 
     // Calculate derived stats
     const newBattingAverage = newDismissed > 0 ? newRuns / newDismissed : newRuns;
@@ -240,9 +260,95 @@ const useTeamStore = create(
             ballsBowled: newBallsBowled,
             runsConceded: newRunsConceded,
             economy: newEconomy,
-            bowlingAverage: newBowlingAverage
+            bowlingAverage: newBowlingAverage,
+            catches: newCatches,
+            runOuts: newRunOuts,
+            battingImpact: newBattingImpact,
+            bowlingImpact: newBowlingImpact,
+            fieldingImpact: newFieldingImpact,
+            totalImpact: newTotalImpact
           }
         }
+      }
+    };
+  }),
+
+  /**
+   * Batch update player stats for a team in a single setState call
+   * This reduces localStorage writes significantly during match simulation
+   * @param {string} teamId - Team ID
+   * @param {Object} allPlayerStats - Map of playerId -> matchStats
+   */
+  batchUpdatePlayerStats: (teamId, allPlayerStats) => set((state) => {
+    const teamPlayerStats = { ...(state.playerStats[teamId] || {}) };
+
+    Object.entries(allPlayerStats).forEach(([playerId, matchStats]) => {
+      const currentStats = teamPlayerStats[playerId] || {
+        matches: 0,
+        runs: 0,
+        ballsFaced: 0,
+        dismissed: 0,
+        battingAverage: 0,
+        strikeRate: 0,
+        wickets: 0,
+        ballsBowled: 0,
+        runsConceded: 0,
+        economy: 0,
+        bowlingAverage: 0,
+        catches: 0,
+        runOuts: 0,
+        battingImpact: 0,
+        bowlingImpact: 0,
+        fieldingImpact: 0,
+        totalImpact: 0
+      };
+
+      // Accumulate stats
+      const newMatches = currentStats.matches + 1;
+      const newRuns = currentStats.runs + (matchStats.runs || 0);
+      const newBallsFaced = currentStats.ballsFaced + (matchStats.ballsFaced || 0);
+      const newDismissed = currentStats.dismissed + (matchStats.dismissed ? 1 : 0);
+      const newWickets = currentStats.wickets + (matchStats.wickets || 0);
+      const newBallsBowled = currentStats.ballsBowled + (matchStats.ballsBowled || 0);
+      const newRunsConceded = currentStats.runsConceded + (matchStats.runsConceded || 0);
+      const newCatches = (currentStats.catches || 0) + (matchStats.catches || 0);
+      const newRunOuts = (currentStats.runOuts || 0) + (matchStats.runOuts || 0);
+      const newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
+      const newBowlingImpact = (currentStats.bowlingImpact || 0) + (matchStats.bowlingImpact || 0);
+      const newFieldingImpact = (currentStats.fieldingImpact || 0) + (matchStats.fieldingImpact || 0);
+      const newTotalImpact = newBattingImpact + newBowlingImpact + newFieldingImpact;
+
+      // Calculate derived stats
+      const newBattingAverage = newDismissed > 0 ? newRuns / newDismissed : newRuns;
+      const newStrikeRate = newBallsFaced > 0 ? (newRuns / newBallsFaced) * 100 : 0;
+      const newEconomy = newBallsBowled > 0 ? (newRunsConceded / newBallsBowled) * 6 : 0;
+      const newBowlingAverage = newWickets > 0 ? newRunsConceded / newWickets : 0;
+
+      teamPlayerStats[playerId] = {
+        matches: newMatches,
+        runs: newRuns,
+        ballsFaced: newBallsFaced,
+        dismissed: newDismissed,
+        battingAverage: newBattingAverage,
+        strikeRate: newStrikeRate,
+        wickets: newWickets,
+        ballsBowled: newBallsBowled,
+        runsConceded: newRunsConceded,
+        economy: newEconomy,
+        bowlingAverage: newBowlingAverage,
+        catches: newCatches,
+        runOuts: newRunOuts,
+        battingImpact: newBattingImpact,
+        bowlingImpact: newBowlingImpact,
+        fieldingImpact: newFieldingImpact,
+        totalImpact: newTotalImpact
+      };
+    });
+
+    return {
+      playerStats: {
+        ...state.playerStats,
+        [teamId]: teamPlayerStats
       }
     };
   }),
@@ -378,162 +484,8 @@ const useTeamStore = create(
     }
   },
 
-  /**
-   * Select balanced playing XI from squad
-   * Ensures: 1 wicketkeeper, 5+ bowling options, rest batsmen
-   * @param {Object[]} players - Array of player objects in squad
-   * @returns {string[]} Array of 11 player IDs for balanced XI
-   */
-  selectBalancedPlayingXI: (players) => {
-    if (players.length < 11) {
-      console.error(`Cannot select XI from ${players.length} players (need at least 11)`);
-      return players.map(p => p.id);
-    }
-
-    const playingXI = [];
-
-    // Helper to get overall rating
-    const getOverallRating = (player) => {
-      const batting = player.attributes?.batting || {};
-      const bowling = player.attributes?.bowling || {};
-      const battingAvg = Object.values(batting).reduce((a, b) => a + b, 0) / Object.keys(batting).length || 0;
-      const bowlingAvg = Object.values(bowling).reduce((a, b) => a + b, 0) / Object.keys(bowling).length || 0;
-      return (battingAvg + bowlingAvg) / 2;
-    };
-
-    // 1. Select best wicketkeeper (MANDATORY)
-    const wicketkeepers = players
-      .filter(p => p.role === 'wicket-keeper')
-      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
-
-    if (wicketkeepers.length === 0) {
-      console.error('❌ CRITICAL: No wicketkeeper in squad! Squad composition is invalid.');
-      // Fallback: take first 11 players anyway
-      return players.slice(0, 11).map(p => p.id);
-    }
-
-    playingXI.push(wicketkeepers[0].id);
-
-    // 2. Select best bowlers and all-rounders (aim for 5-6)
-    const bowlers = players
-      .filter(p => (p.role === 'bowler' || p.role === 'all-rounder') && !playingXI.includes(p.id))
-      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
-
-    // Take top 5-6 bowlers/all-rounders
-    const bowlersToSelect = Math.min(6, bowlers.length);
-    for (let i = 0; i < bowlersToSelect && playingXI.length < 11; i++) {
-      playingXI.push(bowlers[i].id);
-    }
-
-    // 3. Fill remaining spots with best batsmen
-    const batsmen = players
-      .filter(p => p.role === 'batsman' && !playingXI.includes(p.id))
-      .sort((a, b) => getOverallRating(b) - getOverallRating(a));
-
-    for (const batsman of batsmen) {
-      if (playingXI.length >= 11) break;
-      playingXI.push(batsman.id);
-    }
-
-    // 4. If still not 11, fill with anyone left
-    if (playingXI.length < 11) {
-      const remaining = players
-        .filter(p => !playingXI.includes(p.id))
-        .sort((a, b) => getOverallRating(b) - getOverallRating(a));
-
-      for (const player of remaining) {
-        if (playingXI.length >= 11) break;
-        playingXI.push(player.id);
-      }
-    }
-
-    console.log(`✅ Selected balanced XI: 1 WK, ${bowlers.filter(b => playingXI.includes(b.id)).length} bowlers/AR, ${batsmen.filter(b => playingXI.includes(b.id)).length} batsmen`);
-    return playingXI;
-  },
-
-  /**
-   * Initialize default tactics for a team from player data
-   * @param {string} teamId - Team ID
-   * @param {Object[]} players - Array of player objects
-   * @param {string[]} squadIds - Array of 11 player IDs for playing XI (optional, will auto-select if null)
-   */
-  initializeDefaultTactics: (teamId, players, squadIds = null) => {
-    // If no squad specified, select balanced XI
-    const playingXI = squadIds || get().selectBalancedPlayingXI(players);
-
-    // Initialize tactics with player defaults
-    const tactics = {
-      squadSelection: playingXI,
-      playstyleOverrides: {}, // Empty - using primary playstyles
-      battingOrder: [...playingXI], // Same order as squad initially
-      accelerationTiers: {},
-      bowlingPlans: {},
-      bowlingRotation: [],
-      fieldFormation: 'neutral_orthodox'
-    };
-
-    // Set default acceleration tiers and bowling plans from player data
-    players.forEach(player => {
-      if (playingXI.includes(player.id)) {
-        // Set default batting tier
-        tactics.accelerationTiers[player.id] = player.tactics?.defaultBattingTier || 'Rotate';
-
-        // Set default bowling plans for bowlers/all-rounders
-        if (player.role === 'bowler' || player.role === 'all-rounder') {
-          // Use player's preset plans if they exist, otherwise use playstyle-based defaults
-          tactics.bowlingPlans[player.id] = player.tactics?.defaultBowlingPlans
-            || get().getDefaultBowlingPlansForPlaystyle(player);
-
-          // Add to bowling rotation
-          tactics.bowlingRotation.push(player.id);
-        }
-      }
-    });
-
-    set((state) => ({
-      teamTactics: {
-        ...state.teamTactics,
-        [teamId]: tactics
-      }
-    }));
-  },
-
-  /**
-   * Initialize default tactics for all teams at once
-   * Used after auction completion to set up all teams for the season
-   */
-  initializeAllTeamsTactics: () => {
-    const state = get();
-    const playerStore = usePlayerStore.getState();
-
-    // Initialize tactics for each team
-    Object.keys(state.teams).forEach(teamId => {
-      // Skip if tactics already exist
-      if (state.teamTactics[teamId]) {
-        return;
-      }
-
-      // Get team's squad
-      const squadIds = state.squadLists[teamId] || [];
-      if (squadIds.length < 11) {
-        console.warn(`Team ${teamId} has less than 11 players (${squadIds.length}), skipping tactics initialization`);
-        return;
-      }
-
-      // Get player objects for the squad
-      const players = squadIds
-        .map(playerId => playerStore.players[playerId])
-        .filter(p => p); // Filter out any undefined players
-
-      if (players.length >= 11) {
-        // Use initializeDefaultTactics with auto-balanced XI selection
-        // Pass null for squadIds to trigger automatic balanced selection
-        get().initializeDefaultTactics(teamId, players, null);
-      }
-    });
-
-    console.log(`✅ Initialized tactics for ${Object.keys(state.teams).length} teams`);
-  },
+  // NOTE: selectBalancedPlayingXI, initializeDefaultTactics, and initializeAllTeamsTactics
+  // have been moved to AITacticsManager.js for centralized AI tactics management
 
   /**
    * Validate that a playing XI has required roles
@@ -577,6 +529,20 @@ const useTeamStore = create(
   getTeamTactics: (teamId) => {
     const state = get();
     return state.teamTactics[teamId] || null;
+  },
+
+  /**
+   * Set complete tactics for a team (used by AITacticsManager)
+   * @param {string} teamId - Team ID
+   * @param {TeamTactics} tactics - Complete tactics object
+   */
+  setTeamTactics: (teamId, tactics) => {
+    set((state) => ({
+      teamTactics: {
+        ...state.teamTactics,
+        [teamId]: tactics
+      }
+    }));
   },
 
   /**
@@ -625,6 +591,15 @@ const useTeamStore = create(
         playerIds.includes(playerId)
       );
 
+      // CRITICAL: Also clear overAssignments when squad changes
+      // overAssignments takes priority over bowlingRotation in MatchEngine,
+      // so we must clear it to force regeneration with the updated squad
+      // The match engine will auto-regenerate valid assignments via ensureCompleteBowlingRotation
+      const currentOverAssignments = currentTactics?.overAssignments || {};
+      const hasInvalidOverAssignments = Object.values(currentOverAssignments).some(
+        bowlerId => bowlerId && !playerIds.includes(bowlerId)
+      );
+
       return {
         teamTactics: {
           ...state.teamTactics,
@@ -635,7 +610,9 @@ const useTeamStore = create(
             accelerationTiers: newAccelerationTiers,
             bowlingPlans: newBowlingPlans,
             playstyleOverrides: newPlaystyleOverrides,
-            bowlingRotation: newBowlingRotation
+            bowlingRotation: newBowlingRotation,
+            // Clear overAssignments if any bowler is no longer in squad
+            overAssignments: hasInvalidOverAssignments ? {} : currentOverAssignments
           }
         }
       };
@@ -758,6 +735,23 @@ const useTeamStore = create(
   },
 
   /**
+   * Update over assignments (which bowler bowls which over)
+   * @param {string} teamId - Team ID
+   * @param {Object} overAssignments - Object mapping over number to bowler ID { 1: 'id', 2: 'id', ... }
+   */
+  updateOverAssignments: (teamId, overAssignments) => {
+    set((state) => ({
+      teamTactics: {
+        ...state.teamTactics,
+        [teamId]: {
+          ...state.teamTactics[teamId],
+          overAssignments
+        }
+      }
+    }));
+  },
+
+  /**
    * Update field formation
    * @param {string} teamId - Team ID
    * @param {string} formation - Formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
@@ -792,7 +786,117 @@ const useTeamStore = create(
   },
 
   /**
+   * Update team captain
+   * @param {string} teamId - Team ID
+   * @param {string|null} playerId - Player ID or null to unset
+   */
+  updateCaptain: (teamId, playerId) => {
+    set((state) => ({
+      teamTactics: {
+        ...state.teamTactics,
+        [teamId]: {
+          ...state.teamTactics[teamId],
+          captain: playerId
+        }
+      }
+    }));
+  },
+
+  /**
+   * Update team vice-captain
+   * @param {string} teamId - Team ID
+   * @param {string|null} playerId - Player ID or null to unset
+   */
+  updateViceCaptain: (teamId, playerId) => {
+    set((state) => ({
+      teamTactics: {
+        ...state.teamTactics,
+        [teamId]: {
+          ...state.teamTactics[teamId],
+          viceCaptain: playerId
+        }
+      }
+    }));
+  },
+
+  /**
+   * Update team wicket-keeper
+   * Also updates fielding assignments to put the keeper at position 1 (wicket-keeper position)
+   * @param {string} teamId - Team ID
+   * @param {string|null} playerId - Player ID or null to unset
+   */
+  updateWicketKeeper: (teamId, playerId) => {
+    set((state) => {
+      const currentTactics = state.teamTactics[teamId] || {};
+      const currentFielding = currentTactics.fielding || {};
+
+      // Update fielding assignments to put keeper at position 1
+      const updatedFielding = { ...currentFielding };
+
+      // Helper function to update assignments for a phase
+      const updatePhaseAssignments = (phaseData) => {
+        if (!phaseData) return phaseData;
+
+        const assignments = { ...(phaseData.playerAssignments || {}) };
+
+        if (playerId) {
+          // Remove this player from any existing assignment
+          Object.keys(assignments).forEach(pos => {
+            if (assignments[pos] === playerId) {
+              assignments[pos] = null;
+            }
+          });
+          // Assign to position 1 (keeper position)
+          assignments[1] = playerId;
+        } else {
+          // If clearing keeper, also clear position 1
+          assignments[1] = null;
+        }
+
+        return {
+          ...phaseData,
+          playerAssignments: assignments
+        };
+      };
+
+      // Update powerplay assignments (create if doesn't exist)
+      if (updatedFielding.powerplay) {
+        updatedFielding.powerplay = updatePhaseAssignments(updatedFielding.powerplay);
+      } else if (playerId) {
+        // Initialize powerplay with just the keeper assignment
+        updatedFielding.powerplay = {
+          template: 'attacking_powerplay_press',
+          playerAssignments: { 1: playerId }
+        };
+      }
+
+      // Update post-powerplay assignments (create if doesn't exist)
+      if (updatedFielding.postPowerplay) {
+        updatedFielding.postPowerplay = updatePhaseAssignments(updatedFielding.postPowerplay);
+      } else if (playerId) {
+        // Initialize postPowerplay with just the keeper assignment
+        updatedFielding.postPowerplay = {
+          template: 'defensive_ring_fence',
+          playerAssignments: { 1: playerId }
+        };
+      }
+
+      return {
+        teamTactics: {
+          ...state.teamTactics,
+          [teamId]: {
+            ...currentTactics,
+            wicketKeeper: playerId,
+            fielding: updatedFielding
+          }
+        }
+      };
+    });
+  },
+
+  /**
    * Auto-assign bowling rotation using intelligent selection algorithm
+   * Uses aiCore.canBowl() to filter eligible bowlers, with fallback to part-timers if needed
    * Assigns all 20 overs to bowlers from playing XI based on their attributes and playstyles
    * @param {string} teamId - Team ID
    * @returns {string[]} Array of 20 player IDs (one per over)
@@ -812,37 +916,42 @@ const useTeamStore = create(
       .map(id => playerStore.players[id])
       .filter(Boolean);
 
-    // Helper function to get bowling rating
-    const getBowlingRating = (player) => {
-      const bowlingAttrs = player.attributes?.bowling || {};
-      const values = Object.values(bowlingAttrs);
-      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    };
+    // Filter primary eligible bowlers using aiCore.canBowl()
+    // This includes: role='bowler'/'all-rounder' OR bowling rating >= 30
+    let eligibleBowlers = playingXI.filter(player => aiCore.canBowl(player));
 
-    // Categorize into primary bowlers and part-timers
-    // Include ALL players from playing XI as potential bowlers
-    const primaryBowlers = [];
-    const partTimers = [];
-
-    playingXI.forEach(player => {
-      const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
-      const bowlingRating = getBowlingRating(player);
-
-      if (isPrimary) {
-        primaryBowlers.push({ player, bowlingRating });
-      } else {
-        // Include all non-bowlers as part-timers (batsmen, wicket-keepers)
-        // They'll be penalized in scoring but available as fallback
-        partTimers.push({ player, bowlingRating });
-      }
+    // Sort by bowling rating (highest first)
+    eligibleBowlers.sort((a, b) => {
+      const ratingA = aiCore.getBowlingRating(a);
+      const ratingB = aiCore.getBowlingRating(b);
+      return ratingB - ratingA;
     });
 
-    // Sort by bowling rating
-    primaryBowlers.sort((a, b) => b.bowlingRating - a.bowlingRating);
-    partTimers.sort((a, b) => b.bowlingRating - a.bowlingRating);
+    // FALLBACK: If fewer than 5 eligible bowlers, add part-timers from playing XI
+    // Cricket requires at least 5 bowlers to avoid consecutive overs (4 overs × 5 bowlers = 20)
+    if (eligibleBowlers.length < 5) {
+      console.warn(`Team ${teamId} has only ${eligibleBowlers.length} eligible bowlers - adding part-timers`);
 
-    // Combine eligible bowlers (primary first, then part-timers)
-    const eligibleBowlers = [...primaryBowlers.map(b => b.player), ...partTimers.map(b => b.player)];
+      // Get non-bowlers from playing XI, sorted by bowling playstyle rating
+      const partTimers = playingXI
+        .filter(player => !aiCore.canBowl(player))
+        .map(player => {
+          // Get best bowling playstyle rating for this player
+          const bowlingRatings = player.playstyleRatings?.bowling || {};
+          const bestBowlingRating = Math.max(...Object.values(bowlingRatings), 0);
+          return { player, rating: bestBowlingRating };
+        })
+        .sort((a, b) => b.rating - a.rating);
+
+      // Add part-timers until we have at least 5 bowlers
+      const needed = 5 - eligibleBowlers.length;
+      const addedPartTimers = partTimers.slice(0, needed).map(pt => pt.player);
+
+      if (addedPartTimers.length > 0) {
+        console.log(`Added ${addedPartTimers.length} part-timer(s) to bowling rotation: ${addedPartTimers.map(p => p.name).join(', ')}`);
+        eligibleBowlers = [...eligibleBowlers, ...addedPartTimers];
+      }
+    }
 
     if (eligibleBowlers.length === 0) {
       console.warn(`No eligible bowlers found for team ${teamId}`);
@@ -876,7 +985,7 @@ const useTeamStore = create(
         )
         .map(bowler => {
           const bowlerPlaystyle = bowler.primaryPlaystyle?.bowling || '';
-          const bowlingRating = getBowlingRating(bowler);
+          const bowlingRating = aiCore.getBowlingRating(bowler);
 
           // Rotation bonus - MUST be dominant to ensure even distribution
           // With 5 bowlers and 20 overs, we need 4-4-4-4-4 distribution
@@ -894,12 +1003,6 @@ const useTeamStore = create(
           };
           score += phaseBonuses[phase]?.[bowlerPlaystyle] || 0;
 
-          // Heavy penalty for part-timers (batsmen, wicket-keepers)
-          // This ensures they're only used as absolute last resort
-          if (bowler.role !== 'bowler' && bowler.role !== 'all-rounder') {
-            score -= 10;
-          }
-
           return { bowler, score };
         });
 
@@ -912,13 +1015,13 @@ const useTeamStore = create(
         oversBowled[selectedBowler.id]++;
         previousBowler = selectedBowler.id;
       } else {
-        // No valid bowler found - this should NEVER happen with 11 players
-        // (11 players × 4 overs each = 44 available overs, we only need 20)
+        // No valid bowler found - this shouldn't happen with the part-timer fallback
         console.error(
           `❌ CRITICAL: Cannot assign bowler for over ${overIndex + 1}. ` +
-          `This violates cricket rules (no consecutive overs, max 4 overs per bowler). ` +
-          `Team ${teamId} squad composition may be invalid.`
+          `Team ${teamId} - ${eligibleBowlers.length} bowlers available. ` +
+          `Cricket rules require: no consecutive overs, max 4 overs per bowler.`
         );
+        console.error('Eligible bowlers:', eligibleBowlers.map(b => b.name));
         console.error('Current overs bowled:', oversBowled);
         console.error('Previous bowler:', previousBowler);
 
@@ -931,9 +1034,9 @@ const useTeamStore = create(
   },
 
   /**
-   * Ensure bowling rotation has all 20 overs assigned
-   * Auto-completes any missing assignments before match starts
-   * Also validates that all assigned bowlers are in the current playing XI
+   * Ensure over assignments are complete and valid before match starts
+   * Only validates overAssignments (the actual per-over bowler mapping)
+   * Note: bowlingRotation is just a priority list of bowlers (5-8 entries), NOT per-over assignments
    * @param {string} teamId - Team ID
    */
   ensureCompleteBowlingRotation: (teamId) => {
@@ -945,51 +1048,54 @@ const useTeamStore = create(
       return;
     }
 
-    const currentRotation = tactics.bowlingRotation || [];
+    const currentOverAssignments = tactics.overAssignments || {};
     const playingXI = tactics.squadSelection || [];
 
-    // Check if we need to complete/re-assign the rotation
+    // Check if we need to regenerate over assignments
     let needsReassignment = false;
+    let reassignmentReason = '';
 
-    // Check 1: Are there 20 overs?
-    if (currentRotation.length < 20) {
+    // Check 1: Does overAssignments have all 20 overs?
+    const assignedOversCount = Object.keys(currentOverAssignments).length;
+    if (assignedOversCount < 20) {
       needsReassignment = true;
-      console.log(`Bowling rotation for team ${teamId} has ${currentRotation.length} overs, needs 20`);
+      reassignmentReason = `overAssignments has ${assignedOversCount} overs (needs 20)`;
     }
 
-    // Check 2: Are any overs unassigned (null)?
+    // Check 2: Are all bowlers in overAssignments in the current playing XI?
     if (!needsReassignment) {
-      const hasNulls = currentRotation.some((bowlerId, index) => index < 20 && !bowlerId);
-      if (hasNulls) {
-        needsReassignment = true;
-        console.log(`Bowling rotation for team ${teamId} has unassigned overs`);
-      }
-    }
+      const invalidOverBowlers = Object.values(currentOverAssignments)
+        .filter(bowlerId => bowlerId && !playingXI.includes(bowlerId));
 
-    // Check 3: Are all assigned bowlers in the current playing XI?
-    if (!needsReassignment) {
-      const invalidBowlers = currentRotation
-        .filter((bowlerId, index) => index < 20 && bowlerId) // Only check first 20 overs, skip nulls
-        .filter(bowlerId => !playingXI.includes(bowlerId));
-
-      if (invalidBowlers.length > 0) {
+      if (invalidOverBowlers.length > 0) {
         needsReassignment = true;
-        console.log(`Bowling rotation for team ${teamId} contains ${invalidBowlers.length} bowler(s) not in playing XI - re-assigning`);
+        reassignmentReason = `overAssignments contains ${invalidOverBowlers.length} bowler(s) not in playing XI`;
       }
     }
 
     if (needsReassignment) {
+      console.log(`[ensureCompleteBowlingRotation] Team ${teamId}: ${reassignmentReason} - regenerating`);
+
       // Auto-assign complete rotation
       const completeRotation = get().autoAssignBowlingRotation(teamId);
 
       if (completeRotation.length === 20) {
+        // Update bowlingRotation
         get().updateBowlingRotation(teamId, completeRotation);
-        console.log(`✓ Auto-completed bowling rotation for team ${teamId}`);
+
+        // CRITICAL: Also generate and update overAssignments from the new rotation
+        const newOverAssignments = {};
+        completeRotation.forEach((bowlerId, index) => {
+          if (bowlerId) {
+            newOverAssignments[index + 1] = bowlerId; // 1-indexed overs
+          }
+        });
+        get().updateOverAssignments(teamId, newOverAssignments);
+
+        console.log(`✓ Auto-completed bowling rotation and over assignments for team ${teamId}`);
       } else {
         console.warn(`⚠ Failed to auto-complete bowling rotation for team ${teamId}`);
       }
-    } else {
-      // console.log(`✓ Bowling rotation for team ${teamId} is complete and valid`);
     }
   },
 
@@ -1013,25 +1119,22 @@ const useTeamStore = create(
       accelerationTiers: tactics.accelerationTiers,
       bowlingPlans: tactics.bowlingPlans,
       bowlingRotation: tactics.bowlingRotation,
+      overAssignments: tactics.overAssignments, // Explicit over-by-over assignments (preferred over bowlingRotation)
       fieldFormation: tactics.fieldFormation
     };
   },
 
   /**
-   * Reset tactics to defaults for a team
+   * Reset tactics for a team (clears tactics so AITacticsManager regenerates them)
    * @param {string} teamId - Team ID
-   * @param {Object[]} players - Array of player objects
    */
-  resetTacticsToDefaults: (teamId, players) => {
-    const state = get();
-    const currentTactics = state.teamTactics[teamId];
-
-    if (!currentTactics) {
-      return;
-    }
-
-    // Re-initialize with current squad
-    get().initializeDefaultTactics(teamId, players, currentTactics.squadSelection);
+  resetTacticsToDefaults: (teamId) => {
+    set((state) => {
+      const newTactics = { ...state.teamTactics };
+      delete newTactics[teamId];
+      return { teamTactics: newTactics };
+    });
+    console.log(`🔄 Cleared tactics for team ${teamId} - will regenerate before next match`);
   },
 
   /**
@@ -1044,41 +1147,8 @@ const useTeamStore = create(
     return !!state.teamTactics[teamId];
   },
 
-  /**
-   * Initialize tactics for all teams in the league
-   * Used after auction to set up default tactics for all teams
-   */
-  initializeAllTeamsTactics: () => {
-    const state = get();
-    const playerStoreState = usePlayerStore.getState();
-
-    console.log('🎯 Initializing tactics for all teams...');
-
-    Object.keys(state.teams).forEach(teamId => {
-      // Skip if team already has tactics
-      if (state.teamTactics[teamId]) {
-        console.log(`  ✓ ${state.teams[teamId].shortName} already has tactics`);
-        return;
-      }
-
-      // Get players for this team
-      const teamSquad = state.squadLists[teamId] || [];
-      const players = teamSquad
-        .map(playerId => playerStoreState.players[playerId])
-        .filter(Boolean);
-
-      if (players.length === 0) {
-        console.warn(`  ⚠ ${state.teams[teamId].shortName} has no players, skipping`);
-        return;
-      }
-
-      // Initialize with default tactics
-      get().initializeDefaultTactics(teamId, players);
-      console.log(`  ✓ Initialized tactics for ${state.teams[teamId].shortName} (${players.length} players)`);
-    });
-
-    console.log('✅ All team tactics initialized');
-  },
+  // NOTE: initializeAllTeamsTactics has been moved to AITacticsManager.js
+  // Called via LeagueInitializer.js after auction
 
   /**
    * Reset all team tactics (used when starting a new game)
@@ -1090,7 +1160,8 @@ const useTeamStore = create(
     }),
     {
       name: 'cm25-team-store',
-      version: 2
+      version: 3, // Bumped version for compressed storage migration
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
     }
   )
 );

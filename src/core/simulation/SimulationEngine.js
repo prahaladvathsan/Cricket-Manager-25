@@ -10,6 +10,9 @@ import MatchWeekScheduleGenerator from '../league/MatchWeekScheduleGenerator';
 import PlayoffGenerator from '../league/PlayoffGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
 import PrizeDistributor from '../offseason/PrizeDistributor';
+import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
+import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
+import aiTacticsManager from '../ai/AITacticsManager';
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -42,6 +45,8 @@ class SimulationEngine {
     // Simulation state
     this.isRunning = false;
     this.shouldStop = false;
+    this.onEventCallback = null; // Callback for live event feed
+    this.onProgressCallback = null; // Callback for progress updates
     this.currentProgress = {
       startDay: 0,
       targetDay: 0,
@@ -60,9 +65,10 @@ class SimulationEngine {
    * @param {Function} onProgress - Progress callback (progress object)
    * @param {Function} onComplete - Completion callback (summary)
    * @param {Function} onError - Error callback (error)
+   * @param {Function} onEvent - Event callback for live event feed (event object)
    * @returns {Promise<Object>} Simulation summary
    */
-  async simulateToDate(targetDate, onProgress = null, onComplete = null, onError = null) {
+  async simulateToDate(targetDate, onProgress = null, onComplete = null, onError = null, onEvent = null) {
     try {
       // Validate inputs
       const target = new Date(targetDate);
@@ -78,6 +84,7 @@ class SimulationEngine {
       // Initialize simulation
       this.isRunning = true;
       this.shouldStop = false;
+      this.onEventCallback = onEvent;
       this.currentProgress = {
         startDay: this.gameStore.getState().gameDay,
         targetDay: this.gameStore.getState().gameDay + dayDiff,
@@ -90,6 +97,15 @@ class SimulationEngine {
       };
 
       console.log(`🎮 Starting simulation: ${dayDiff} days to simulate`);
+
+      // Store callbacks for use in sub-operations
+      this.onProgressCallback = onProgress;
+      this.onEventCallback = onEvent;
+
+      // Yield to allow UI to render overlay before starting
+      // Use double yieldToBrowser for reliable initial render
+      await this.yieldToBrowser();
+      await this.yieldToBrowser();
 
       // STEP 1: Simulate day by day
       for (let i = 0; i < dayDiff; i++) {
@@ -113,14 +129,14 @@ class SimulationEngine {
           onProgress({ ...this.currentProgress });
         }
 
-        // Yield to UI every 5 days
-        if (i % 5 === 0) {
-          await this.sleep(10);
-        }
+        // Yield to browser EVERY day to keep UI responsive
+        // This allows React to re-render and the browser to paint
+        await this.yieldToBrowser();
       }
 
       // Simulation complete
       this.isRunning = false;
+      const wasStopped = this.shouldStop;
 
       const summary = {
         daysSimulated: this.currentProgress.daysSimulated,
@@ -128,10 +144,11 @@ class SimulationEngine {
         matchesSimulated: this.currentProgress.matchesSimulated,
         transfersProcessed: this.currentProgress.transfersProcessed,
         finalDate: this.gameStore.getState().currentDate,
-        phase: this.gameStore.getState().currentPhase
+        phase: this.gameStore.getState().currentPhase,
+        wasStopped
       };
 
-      console.log('✅ Simulation complete:', summary);
+      console.log(wasStopped ? '⏸ Simulation stopped:' : '✅ Simulation complete:', summary);
 
       if (onComplete) {
         onComplete(summary);
@@ -157,6 +174,9 @@ class SimulationEngine {
   async runAuction() {
     console.log('📋 Running automated auction...');
 
+    // Update progress to show auction starting
+    await this.updateProgressMessage('Running auction...');
+
     const teams = Object.values(this.teamStore.getState().teams);
     const allPlayers = Object.values(this.playerStore.getState().players);
     const userTeamId = this.teamStore.getState().userTeamId;
@@ -181,6 +201,7 @@ class SimulationEngine {
     let totalPlayers = 0;
     rounds.forEach(round => totalPlayers += round.length);
     let playerIndex = 0;
+    let playersSold = 0;
 
     for (const round of rounds) {
       for (const player of round) {
@@ -190,9 +211,19 @@ class SimulationEngine {
         // Record sale if player was sold
         if (result.status === 'sold' && result.winner) {
           this.auctionStore.getState().recordSale(player.id, result.winner.id, result.finalPrice);
+          playersSold++;
         }
 
         playerIndex++;
+
+        // Update progress and yield every 10 players
+        if (playerIndex % 10 === 0) {
+          const percent = Math.round((playerIndex / totalPlayers) * 100);
+          await this.updateProgressMessage(`Auction: ${playerIndex}/${totalPlayers} players (${percent}%)`, {
+            auctionProgress: percent,
+            playersSold
+          });
+        }
       }
     }
 
@@ -243,195 +274,38 @@ class SimulationEngine {
     // Mark auction as complete
     this.auctionStore.getState().completeAuction();
 
+    // Emit auction event for live feed
+    this.emitEvent('auction', {
+      playersSold: totalPlayers,
+      totalSpent: auctionEngine.teams.reduce((sum, t) => sum + (t.spent || 0), 0)
+    });
+
     console.log('✅ Auction complete');
   }
 
   /**
    * Initialize the league after auction
+   * Uses shared league initialization logic
    */
   async initializeLeague() {
-    console.log('🏏 Initializing league...');
+    // Update progress to show league init
+    await this.updateProgressMessage('Initializing league schedule...');
 
     const currentSeason = this.gameStore.getState().currentSeason;
-    const currentDate = this.gameStore.getState().currentDate;
-    const gameDay = this.gameStore.getState().gameDay;
-    const userTeamId = this.teamStore.getState().userTeamId;
-    const soldPlayers = this.auctionStore.getState().soldPlayers;
+    const isFirstSeasonInit = currentSeason === 1;
 
-    // Create clubs array from teamStore
-    const teams = Object.values(this.teamStore.getState().teams);
-    const clubs = teams.map(team => ({
-      id: team.id,
-      name: team.name,
-      shortName: team.shortName || team.name.substring(0, 3).toUpperCase(),
-      homeVenue: team.homeGround || `${team.name} Stadium`,
-      homeGround: team.homeGround || `${team.name} Stadium`,
-      colors: team.colors || { primary: '#2D5F3F', secondary: '#D4AF37' }
-    }));
-
-    // Generate fixtures with season-aware timing
-    // Odd seasons (1,3,5...): Jan-June, end by June 30
-    // Even seasons (2,4,6...): July-Dec, end by Dec 31
-    const isOddSeason = currentSeason % 2 === 1;
-
-    const leagueStartDate = new Date(currentDate);
-    leagueStartDate.setDate(leagueStartDate.getDate() + 7);
-
-    const scheduleGenerator = new MatchWeekScheduleGenerator();
-    const { fixtures } = scheduleGenerator.generateMatchWeekSchedule(
-      clubs,
-      leagueStartDate
-    );
-
-    // Find last group stage match date
-    const lastGroupMatchDate = new Date(Math.max(...fixtures.map(f => new Date(f.dateObj))));
-
-    // Calculate next Monday after last group match
-    const playoffStartDate = new Date(lastGroupMatchDate);
-    const dayOfWeek = playoffStartDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek); // If Sunday, add 1 day. Otherwise, add days to reach next Monday
-    playoffStartDate.setDate(playoffStartDate.getDate() + daysUntilMonday);
-
-    const playoffGenerator = new PlayoffGenerator();
-    // Generate playoff fixtures with TBD teams (will be populated at end of league stage)
-    const placeholderStandings = [
-      { clubId: null, clubName: 'TBD (1st)', position: 1 },
-      { clubId: null, clubName: 'TBD (2nd)', position: 2 },
-      { clubId: null, clubName: 'TBD (3rd)', position: 3 },
-      { clubId: null, clubName: 'TBD (4th)', position: 4 }
-    ];
-
-    const playoffFixturesRaw = playoffGenerator.generatePlayoffFixtures(placeholderStandings);
-
-    // Space playoffs over 10 days: Q1 (day 0), Eliminator (day 3), Q2 (day 6), Final (day 10)
-    const playoffFixtures = playoffFixturesRaw.map((fixture, index) => {
-      const dayOffset = index === 0 ? 0 : index === 1 ? 3 : index === 2 ? 6 : 10;
-      const fixtureDate = new Date(playoffStartDate);
-      fixtureDate.setDate(fixtureDate.getDate() + dayOffset);
-
-      return {
-        ...fixture,
-        date: fixtureDate.toISOString().split('T')[0],
-        dateObj: fixtureDate
-      };
+    return sharedInitializeLeague({
+      stores: {
+        gameStore: this.gameStore,
+        teamStore: this.teamStore,
+        leagueStore: this.leagueStore,
+        financeStore: this.financeStore,
+        auctionStore: this.auctionStore,
+        inboxStore: this.inboxStore,
+        playerStore: this.playerStore
+      },
+      isFirstSeasonInit
     });
-
-    // Combine league and playoff fixtures
-    const allFixtures = [...fixtures, ...playoffFixtures];
-
-    // Get final match date (last playoff)
-    const finalMatchDate = new Date(Math.max(...playoffFixtures.map(f => new Date(f.dateObj))));
-
-    // Calculate season end date based on season parity
-    const seasonEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31); // June 30 or Dec 31
-
-    // Initialize league season with all fixtures (league + playoffs)
-    this.leagueStore.getState().initializeSeason({
-      seasonId: `season_${currentSeason}`,
-      seasonName: `Season ${currentSeason}`,
-      clubs,
-      fixtures: allFixtures,
-      useMatchWeeks: false
-    });
-
-    // Initialize finances
-    const teamsForFinances = teams.map(team => ({
-      id: team.id,
-      name: team.name
-    }));
-    this.financeStore.getState().initializeSeason(teamsForFinances, `season_${currentSeason}`, null);
-
-    // Record auction spending for each team
-    teams.forEach(team => {
-      const squadList = this.teamStore.getState().squadLists[team.id] || [];
-      const teamSales = soldPlayers.filter(sale => sale.teamId === team.id);
-      const totalSpent = teamSales.reduce((sum, sale) => sum + sale.price, 0);
-
-      this.financeStore.getState().processAuctionSpending(team.id, totalSpent, squadList);
-    });
-
-    // Initialize tactics for all teams
-    this.teamStore.getState().initializeAllTeamsTactics();
-
-    // Calculate game day offsets for all events
-    const currentGameDate = new Date(currentDate);
-    const gameStartDate = new Date(currentGameDate);
-    gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
-
-    // Convert all fixtures (league + playoffs) to match events
-    const matchEvents = allFixtures.map(fixture => {
-      const matchDate = new Date(fixture.dateObj);
-      const daysSinceStart = Math.ceil((matchDate - gameStartDate) / (1000 * 60 * 60 * 24));
-      const matchGameDay = daysSinceStart + 1;
-
-      return {
-        day: matchGameDay,
-        type: 'match',
-        data: fixture
-      };
-    });
-
-    // Off-season starts the day after final
-    const offseasonStartDate = new Date(finalMatchDate);
-    offseasonStartDate.setDate(offseasonStartDate.getDate() + 1);
-    const offseasonStartDay = Math.ceil((offseasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Transfer window: June 1-30 for odd seasons, Dec 1-31 for even seasons
-    const transferWindowStartDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, 1); // June 1 or Dec 1
-    const transferWindowEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31); // June 30 or Dec 31
-
-    const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-    const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Season ends on transfer window close date
-    const seasonEndDay = transferWindowEndDay;
-
-    // Next season auction (first day after current season ends)
-    const nextSeasonStartDate = new Date(transferWindowEndDate);
-    nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
-    const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    const additionalEvents = [
-      { day: offseasonStartDay, type: 'offseason_start' },
-      { day: transferWindowStartDay, type: 'transfer_window_open' },
-      { day: transferWindowEndDay, type: 'transfer_window_close' },
-      { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } }
-    ];
-
-    // Schedule new season start event for the day after transfer window closes
-    // This will trigger season transition and either auction (odd) or direct league init (even)
-    const nextSeason = currentSeason + 1;
-    const isNextSeasonOdd = nextSeason % 2 === 1;
-
-    if (isNextSeasonOdd) {
-      // Odd season: Schedule auction which will trigger league init
-      additionalEvents.push({ day: nextSeasonStartDay, type: 'auction', data: { season: nextSeason } });
-    } else {
-      // Even season: Schedule preseason_start which will trigger league init without auction
-      additionalEvents.push({ day: nextSeasonStartDay, type: 'preseason_start', data: { season: nextSeason } });
-    }
-
-    this.gameStore.getState().scheduleEvents([...matchEvents, ...additionalEvents]);
-    this.gameStore.getState().advancePhase('league');
-
-    // Add inbox messages
-    const userTeam = this.teamStore.getState().teams[userTeamId];
-    if (this.inboxStore && userTeam) {
-      this.inboxStore.getState().addMessage(MessageGenerator.generateWelcomeMessage(userTeam, currentSeason));
-      this.inboxStore.getState().addMessage(MessageGenerator.generateExpectationsMessage(userTeam, currentSeason));
-      this.inboxStore.getState().addMessage(MessageGenerator.generateTutorialMessage());
-
-      const userSquadIds = this.teamStore.getState().squadLists[userTeamId] || [];
-      const userSquad = userSquadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean);
-      const userTeamSales = soldPlayers.filter(sale => sale.teamId === userTeamId);
-      const finances = {
-        totalSpent: userTeamSales.reduce((sum, sale) => sum + sale.price, 0),
-        budgetRemaining: 0 // Will be calculated by finance store
-      };
-      this.inboxStore.getState().addMessage(MessageGenerator.generateAuctionSummaryMessage(userSquad, finances));
-    }
-
-    console.log('✅ League initialized');
   }
 
   /**
@@ -445,27 +319,61 @@ class SimulationEngine {
       transfersCompleted: 0
     };
 
-    // Check if auction needs to happen (preseason phase, first day)
-    // For odd seasons, auction event triggers this
-    // For even seasons, preseason_start event already handled this above
-    if (this.gameStore.getState().currentPhase === 'preseason' && this.gameStore.getState().gameDay === 1) {
-      const currentSeason = this.gameStore.getState().currentSeason;
-      const isOddSeason = currentSeason % 2 === 1;
+    // Check if auction needs to happen for Season 1 ONLY (preseason phase, first day)
+    // For Season 2+ transitions, new_season_start event handles everything
+    if (this.gameStore.getState().currentPhase === 'preseason' &&
+        this.gameStore.getState().gameDay === 1 &&
+        this.gameStore.getState().currentSeason === 1) {
+      // Season 1 initial auction and league setup
+      console.log('📋 Season 1 - Running initial auction...');
+      // Yield before auction to ensure UI shows the starting state
+      await this.yieldToBrowser();
+      await this.runAuction();
+      summary.eventsProcessed++;
 
-      if (isOddSeason) {
-        // Odd seasons: Run auction then initialize league
-        console.log('📋 Auction day - running auction...');
-        await this.runAuction();
-        summary.eventsProcessed++;
-
-        console.log('🏏 Initializing league after auction...');
-        await this.initializeLeague();
-        summary.eventsProcessed++;
-      }
+      console.log('🏏 Season 1 - Initializing league after auction...');
+      await this.initializeLeague();
+      summary.eventsProcessed++;
     }
 
     // Get current day's event
     const event = this.gameStore.getState().getCurrentEvent();
+
+    // Handle new_season_start event (Season transitions)
+    if (event && event.type === 'new_season_start') {
+      console.log(`🔄 New Season Start - Transitioning to Season ${event.data.season}...`);
+
+      // Reset for new season (increments season number, resets calendar)
+      this.gameStore.getState().resetForNewSeason();
+
+      // Invalidate AI tactics cache at season start (squads may have changed)
+      aiTacticsManager.invalidateCache();
+      console.log(`✅ Season transitioned to ${this.gameStore.getState().currentSeason}`);
+
+      // Generate objectives for the new season
+      const teams = Object.values(this.teamStore.getState().teams);
+      const userTeamId = this.teamStore.getState().userTeamId;
+      const rivalTeam = teams.find(t => t.id !== userTeamId);
+      this.gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
+      console.log(`📋 Objectives generated for Season ${this.gameStore.getState().currentSeason}`);
+
+      // Determine if this new season needs auction or direct league init
+      const newSeason = this.gameStore.getState().currentSeason;
+      const isNewSeasonOdd = newSeason % 2 === 1;
+
+      if (isNewSeasonOdd) {
+        // Odd season (3, 5, 7...): Run auction then initialize league
+        console.log(`🏏 Season ${newSeason} is ODD - Running auction...`);
+        await this.runAuction();
+        await this.initializeLeague();
+      } else {
+        // Even season (2, 4, 6...): Initialize league with existing squads (no auction)
+        console.log(`🏏 Season ${newSeason} is EVEN - Initializing league directly...`);
+        await this.initializeLeague();
+      }
+
+      summary.eventsProcessed++;
+    }
 
     if (event && event.type === 'match') {
       // Simulate the match
@@ -479,6 +387,30 @@ class SimulationEngine {
 
       // Check if all group stage matches are complete and populate playoffs
       await this.checkAndPopulatePlayoffs();
+    } else if (event && event.type === 'auction') {
+      // ODD SEASON START (after EVEN season ends) - for Season 3, 5, 7, etc.
+      console.log('🔄 Auction event - Starting new ODD season...');
+
+      // Reset season state and generate objectives
+      this.gameStore.getState().resetForNewSeason();
+
+      // Invalidate AI tactics cache (auction will change squads)
+      aiTacticsManager.invalidateCache();
+      const teams = Object.values(this.teamStore.getState().teams);
+      const userTeamId = this.teamStore.getState().userTeamId;
+      const rivalTeam = teams.find(t => t.id !== userTeamId);
+      this.gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
+      console.log(`✅ Season transition complete - Now in Season ${this.gameStore.getState().currentSeason}`);
+
+      // Run auction
+      console.log('📋 Running auction...');
+      await this.runAuction();
+      summary.eventsProcessed++;
+
+      // Initialize league
+      console.log('🏏 Initializing league after auction...');
+      await this.initializeLeague();
+      summary.eventsProcessed++;
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
       // SEASON END EVENT - Distribute prizes and send inbox message
       console.log('🏆 Season End Event - Processing prize distribution...');
@@ -532,6 +464,12 @@ class SimulationEngine {
 
         summary.eventsProcessed++;
 
+        // Emit season end event for live feed
+        this.emitEvent('season_end', {
+          season: this.gameStore.getState().currentSeason,
+          champion: champion?.id || null
+        });
+
         // NOTE: Do NOT call resetForNewSeason() here!
         // Season transition happens later when auction or preseason_start event is reached
         console.log('✅ Season end processing complete. Transfer window and offseason will follow.');
@@ -539,15 +477,18 @@ class SimulationEngine {
         console.error('Error processing season end:', error);
       }
     } else if (event && event.type === 'preseason_start') {
-      // PRESEASON START (Even seasons - no auction)
-      console.log('🔄 Preseason starting for even season (no auction)...');
+      // EVEN SEASON START (after ODD season ends)
+      console.log('🔄 Preseason start - Starting new EVEN season...');
 
-      // Transition to new season
+      // Reset season state and generate objectives
       this.gameStore.getState().resetForNewSeason();
+      const teams = Object.values(this.teamStore.getState().teams);
+      const userTeamId = this.teamStore.getState().userTeamId;
+      const rivalTeam = teams.find(t => t.id !== userTeamId);
+      this.gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
       console.log(`✅ Season transition complete - Now in Season ${this.gameStore.getState().currentSeason}`);
 
-      // Initialize league immediately (no auction for even seasons)
-      console.log('🏏 Even season - Initializing league with existing squads...');
+      console.log('🏏 Initializing league with existing squads...');
       await this.initializeLeague();
       summary.eventsProcessed++;
     }
@@ -687,7 +628,30 @@ class SimulationEngine {
         return null;
       }
 
-      // Get tactics or use first 11 players
+      // Generate tactics for ALL teams before EVERY match in sim-to-date mode
+      // This ensures tactics reflect current squad state (injuries, fitness, etc.)
+      // User team is included in sim mode to auto-fix any invalid bowling assignments
+      const userTeamId = this.teamStore.getState().userTeamId;
+
+      // Home team tactics - regenerate for ALL teams in sim mode
+      const homeSquadIds = this.teamStore.getState().squadLists[homeTeam.id] || [];
+      const homeSquad = homeSquadIds
+        .map(id => this.playerStore.getState().players[id])
+        .filter(Boolean);
+      if (homeSquad.length >= 11) {
+        aiTacticsManager.generateTactics(homeTeam.id, homeSquad, this.teamStore);
+      }
+
+      // Away team tactics - regenerate for ALL teams in sim mode
+      const awaySquadIds = this.teamStore.getState().squadLists[awayTeam.id] || [];
+      const awaySquad = awaySquadIds
+        .map(id => this.playerStore.getState().players[id])
+        .filter(Boolean);
+      if (awaySquad.length >= 11) {
+        aiTacticsManager.generateTactics(awayTeam.id, awaySquad, this.teamStore);
+      }
+
+      // Get tactics (now freshly generated for AI teams)
       const homeTactics = this.teamStore.getState().getTeamTactics(homeTeam.id);
       const awayTactics = this.teamStore.getState().getTeamTactics(awayTeam.id);
 
@@ -782,7 +746,36 @@ class SimulationEngine {
 
       // Record result with full scorecard for clickable results
       this.leagueStore.getState().recordResult(result, fullScorecard);
-      this.leagueStore.getState().recalculateStandings();
+      // Use incremental standings update (O(1)) instead of full recalculation (O(n))
+      this.leagueStore.getState().updateStandingsForMatch(result);
+
+      // Emit match event for live feed
+      this.emitEvent('match', {
+        innings1: result.innings1,
+        innings2: result.innings2,
+        winner: result.winner,
+        margin: result.margin.replace('by ', '')
+      });
+
+      // Check for injuries from this match and emit them
+      if (result.injuries && result.injuries.length > 0) {
+        result.injuries.forEach(injury => {
+          const player = this.playerStore.getState().players[injury.playerId];
+          this.emitEvent('injury', {
+            playerName: player?.name || 'Unknown Player',
+            playerId: injury.playerId,
+            teamId: player?.currentTeam,
+            injuryType: injury.type || 'Injury',
+            daysOut: injury.daysOut || 7
+          });
+        });
+      }
+
+      // Update objectives tracking if this match involved the user team
+      const isUserMatch = userTeamId && (fixture.homeTeam === userTeamId || fixture.awayTeam === userTeamId);
+      if (isUserMatch) {
+        updateObjectivesAfterMatch(result, fixture, userTeamId, this.gameStore, this.leagueStore, this.teamStore);
+      }
 
       // Process match financials (revenue and performance tracking) - matches Normal UI behavior
       const standings = this.leagueStore.getState().standings;
@@ -878,6 +871,55 @@ class SimulationEngine {
    */
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Update progress with a custom message (for sub-operations like auction)
+   * @param {string} message - Status message to display
+   * @param {Object} extraData - Additional progress data to merge
+   */
+  async updateProgressMessage(message, extraData = {}) {
+    if (this.onProgressCallback) {
+      this.onProgressCallback({
+        ...this.currentProgress,
+        ...extraData,
+        message
+      });
+    }
+    // Yield to allow UI to update
+    await this.yieldToBrowser();
+  }
+
+  /**
+   * Yield to browser to allow UI updates (uses requestAnimationFrame + setTimeout)
+   * This ensures React has time to commit state and the browser has painted
+   * @returns {Promise}
+   */
+  yieldToBrowser() {
+    return new Promise(resolve => {
+      // Use requestAnimationFrame to wait for the next frame
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => {
+          // Add a small setTimeout after RAF to ensure React has committed
+          // This gives React's scheduler time to process pending state updates
+          setTimeout(resolve, 0);
+        });
+      } else {
+        // Fallback for environments without RAF
+        setTimeout(resolve, 16); // ~60fps
+      }
+    });
+  }
+
+  /**
+   * Emit an event to the callback (for live event feed)
+   * @param {string} type - Event type (match, auction, transfer, injury, season_end)
+   * @param {Object} data - Event data
+   */
+  emitEvent(type, data) {
+    if (this.onEventCallback) {
+      this.onEventCallback({ type, data });
+    }
   }
 }
 

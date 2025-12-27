@@ -32,7 +32,7 @@ class ConfidenceManager {
       const playerObj = typeof player === 'string' ? null : player;
 
       // confidence = morale (default 50 if not set)
-      const morale = playerObj?.condition?.morale || 50;
+      const morale = playerObj?.condition?.morale ?? 50;
       confidenceMap[playerId] = this.clampConfidence(morale);
     });
 
@@ -191,7 +191,19 @@ class ConfidenceManager {
       return player; // No modification for Normal confidence
     }
 
-    const modifiedPlayer = JSON.parse(JSON.stringify(player)); // Deep copy
+    // Deep clone player to avoid mutating original (must clone nested attribute objects)
+    const modifiedPlayer = {
+      ...player,
+      attributes: {
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
+      },
+      condition: { ...player.condition }
+    };
 
     // Apply modifier to ALL attribute categories
     this.applyModifierToAllAttributes(modifiedPlayer, modifier);

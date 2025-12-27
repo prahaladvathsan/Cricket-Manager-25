@@ -1474,7 +1474,7 @@
             "conditions": [
               {
                 "field": "over",
-                "operator": ">=",
+                "operator": "<=",
                 "value": 10
               }
             ],
@@ -1500,9 +1500,12 @@
             ],
             "effects": [
               {
-                "targetPlayer": "batsman",
-                "attribute": "timing",
-                "flatPenalty": 1
+                "attribute": "flight",
+                "scalingFactor": 0.004
+              },
+              {
+                "attribute": "accuracy",
+                "scalingFactor": 0.003
               }
             ]
           },

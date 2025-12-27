@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import useFinanceStore from '../../stores/financeStore';
 
@@ -18,18 +18,18 @@ const FinancialSummary = ({ compact = false, onClick }) => {
   const userTeam = useTeamStore(state => state.getUserTeam());
   const getTeamFinances = useFinanceStore(state => state.getTeamFinances);
 
-  console.log('💰 FinancialSummary - userTeam:', userTeam);
+  // console.log('💰 FinancialSummary - userTeam:', userTeam);
 
   if (!userTeam) {
-    console.log('⚠️ FinancialSummary - No user team found');
+    // console.log('⚠️ FinancialSummary - No user team found');
     return null;
   }
 
   const finances = getTeamFinances(userTeam.id);
-  console.log('💰 FinancialSummary - finances for', userTeam.id, ':', finances);
+  // console.log('💰 FinancialSummary - finances for', userTeam.id, ':', finances);
 
   if (!finances) {
-    console.log('⚠️ FinancialSummary - No finances found for team', userTeam.id);
+    // console.log('⚠️ FinancialSummary - No finances found for team', userTeam.id);
     return null;
   }
 
@@ -44,11 +44,12 @@ const FinancialSummary = ({ compact = false, onClick }) => {
     return (
       <div
         onClick={onClick}
-        className="card p-3 cursor-pointer hover:bg-cricket-primary/10 transition-colors"
+        className="card-interactive p-2"
       >
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-text-primary">Finances</h4>
+        <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
           <DollarSign className="w-4 h-4 text-cricket-accent" />
+          <h3 className="text-lg font-semibold text-text-primary">Finances</h3>
+          <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
         </div>
         <div className="space-y-1.5 text-xs">
           <div className="flex justify-between">
@@ -84,7 +85,7 @@ const FinancialSummary = ({ compact = false, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="card p-4 cursor-pointer hover:bg-cricket-primary/10 transition-colors"
+      className={onClick ? "card-interactive p-4" : "card p-4"}
     >
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-cricket-primary/20 rounded">

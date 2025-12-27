@@ -66,7 +66,12 @@ export function extractPlayerStatsFromBalls(ballByBall, matchConfig) {
         dismissed: false,
         wickets: 0,
         ballsBowled: 0,
-        runsConceded: 0
+        runsConceded: 0,
+        catches: 0,
+        runOuts: 0,
+        battingImpact: 0,
+        bowlingImpact: 0,
+        fieldingImpact: 0
       };
     }
 
@@ -78,7 +83,12 @@ export function extractPlayerStatsFromBalls(ballByBall, matchConfig) {
         dismissed: false,
         wickets: 0,
         ballsBowled: 0,
-        runsConceded: 0
+        runsConceded: 0,
+        catches: 0,
+        runOuts: 0,
+        battingImpact: 0,
+        bowlingImpact: 0,
+        fieldingImpact: 0
       };
     }
 
@@ -105,6 +115,76 @@ export function extractPlayerStatsFromBalls(ballByBall, matchConfig) {
     if (ball.isWicket) {
       bowlerStats.wickets += 1;
     }
+
+    // Aggregate impact stats from ball.impact (calculated by ImpactCalculator)
+    if (ball.impact) {
+      // Batting impact goes to striker
+      batsmanStats.battingImpact += ball.impact.batting || 0;
+
+      // Bowling impact goes to bowler
+      bowlerStats.bowlingImpact += ball.impact.bowling || 0;
+
+      // Fielding impact goes to fielder (if any)
+      if (ball.impact.fielderId && ball.impact.fielding) {
+        const fielderTeam = playerTeamMap[ball.impact.fielderId];
+        if (fielderTeam) {
+          if (!stats[fielderTeam]) stats[fielderTeam] = {};
+          if (!stats[fielderTeam][ball.impact.fielderId]) {
+            stats[fielderTeam][ball.impact.fielderId] = {
+              runs: 0,
+              ballsFaced: 0,
+              dismissed: false,
+              wickets: 0,
+              ballsBowled: 0,
+              runsConceded: 0,
+              catches: 0,
+              runOuts: 0,
+              battingImpact: 0,
+              bowlingImpact: 0,
+              fieldingImpact: 0
+            };
+          }
+          stats[fielderTeam][ball.impact.fielderId].fieldingImpact += ball.impact.fielding;
+        }
+      }
+    }
+
+    // Track catches and run-outs for fielding stats
+    if (ball.isWicket && ball.fielderId) {
+      const fielderId = ball.fielderId;
+      const fielderTeam = playerTeamMap[fielderId];
+
+      if (fielderTeam) {
+        if (!stats[fielderTeam]) stats[fielderTeam] = {};
+        if (!stats[fielderTeam][fielderId]) {
+          stats[fielderTeam][fielderId] = {
+            runs: 0,
+            ballsFaced: 0,
+            dismissed: false,
+            wickets: 0,
+            ballsBowled: 0,
+            runsConceded: 0,
+            catches: 0,
+            runOuts: 0,
+            battingImpact: 0,
+            bowlingImpact: 0,
+            fieldingImpact: 0
+          };
+        }
+
+        const dismissalType = (ball.dismissalType || '').toLowerCase();
+
+        // Track catches (caught, caught_behind, caught_and_bowled)
+        if (dismissalType.includes('caught')) {
+          stats[fielderTeam][fielderId].catches += 1;
+        }
+
+        // Track run-outs
+        if (dismissalType === 'run_out' || dismissalType === 'runout') {
+          stats[fielderTeam][fielderId].runOuts += 1;
+        }
+      }
+    }
   });
 
   return stats;
@@ -125,6 +205,10 @@ export function updatePlayerStats(matchConfig, matchState, teamStore, playerStor
   // Extract player stats from ball-by-ball data
   const playerStats = extractPlayerStatsFromBalls(ballByBall, matchConfig);
 
+  // Collect all stats updates first, then batch update
+  const allTeamStats = {};
+  const allCareerStats = {};
+
   // Update stats for both teams
   [homeTeamId, awayTeamId].forEach(teamId => {
     const teamPlayerStats = playerStats[teamId];
@@ -134,27 +218,51 @@ export function updatePlayerStats(matchConfig, matchState, teamStore, playerStor
     }
 
     Object.entries(teamPlayerStats).forEach(([playerId, stats]) => {
-      // Update team-specific stats in teamStore
-      teamStore.getState().updatePlayerStats(teamId, playerId, stats);
+      // Collect team-specific stats
+      if (!allTeamStats[teamId]) allTeamStats[teamId] = {};
+      allTeamStats[teamId][playerId] = stats;
 
-      // Update career stats in playerStore
-      playerStore.getState().updateCareerStats(playerId, stats);
+      // Collect career stats
+      allCareerStats[playerId] = stats;
     });
+  });
 
+  // Batch update team stats (single setState per team)
+  Object.entries(allTeamStats).forEach(([teamId, teamPlayerStats]) => {
+    // Use batch update if available
+    if (teamStore.getState().batchUpdatePlayerStats) {
+      teamStore.getState().batchUpdatePlayerStats(teamId, teamPlayerStats);
+    } else {
+      // Fallback to individual updates
+      Object.entries(teamPlayerStats).forEach(([playerId, stats]) => {
+        teamStore.getState().updatePlayerStats(teamId, playerId, stats);
+      });
+    }
     // Recalculate team aggregate stats
     teamStore.getState().recalculateTeamStats(teamId);
   });
+
+  // Batch update career stats using the new batch method if available
+  if (playerStore.getState().batchUpdateCareerStats) {
+    playerStore.getState().batchUpdateCareerStats(allCareerStats);
+  } else {
+    // Fallback to individual updates
+    Object.entries(allCareerStats).forEach(([playerId, stats]) => {
+      playerStore.getState().updateCareerStats(playerId, stats);
+    });
+  }
 }
 
 /**
  * Calculate Player of the Match
- * Simple algorithm: Highest impact score combining batting and bowling
+ * Uses DLS-based impact metrics for selection (batting + bowling + fielding impact)
+ * Display shows traditional stats (runs, wickets, catches)
  * @param {Object} playerStats - Stats by team and player ID
  * @param {Object} matchConfig - Match configuration with player info
  * @returns {Object|null} Player of the match {id, name, reason}
  */
 export function calculatePlayerOfMatch(playerStats, matchConfig) {
-  let maxImpact = 0;
+  let maxImpact = -Infinity;
   let playerOfMatch = null;
 
   // Get all players from both teams
@@ -169,15 +277,16 @@ export function calculatePlayerOfMatch(playerStats, matchConfig) {
 
   Object.entries(playerStats).forEach(([teamId, teamPlayers]) => {
     Object.entries(teamPlayers).forEach(([playerId, stats]) => {
-      // Calculate impact: runs + (wickets * 20) - (dismissed ? 10 : 0)
-      const battingImpact = stats.runs - (stats.dismissed ? 10 : 0);
-      const bowlingImpact = stats.wickets * 20;
-      const totalImpact = battingImpact + bowlingImpact;
+      // Use DLS-based impact for selection
+      const totalImpact = (stats.battingImpact || 0) +
+                          (stats.bowlingImpact || 0) +
+                          (stats.fieldingImpact || 0);
 
       if (totalImpact > maxImpact) {
         maxImpact = totalImpact;
         const player = playerLookup[playerId];
 
+        // Return traditional stats for display (not impact numbers)
         playerOfMatch = {
           id: playerId,
           name: player?.name || 'Unknown',
@@ -186,6 +295,7 @@ export function calculatePlayerOfMatch(playerStats, matchConfig) {
           wickets: stats.wickets,
           ballsBowled: stats.ballsBowled,
           runsConceded: stats.runsConceded,
+          catches: stats.catches || 0,
           reason: getReason(stats)
         };
       }

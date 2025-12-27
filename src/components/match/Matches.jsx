@@ -3,8 +3,8 @@
  * @description User team fixtures and results page
  */
 
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, History, PlayCircle, Trophy, MapPin, Clock } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -13,11 +13,20 @@ import TeamName from '../shared/TeamName';
 
 const Matches = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { getUserTeam } = useTeamStore();
   const { fixtures, results, clubs } = useLeagueStore();
   const [activeTab, setActiveTab] = useState('fixtures');
 
   const userTeam = getUserTeam();
+
+  // Handle tab from URL query param
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'results' || tabParam === 'fixtures') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Filter fixtures for user team only
   const userFixtures = useMemo(() => {

@@ -188,7 +188,7 @@ function getDefaultTactics(role, bowlingType, primaryBattingPlaystyle, primaryBo
         varPlan = 'Turn Candy Bag';
       } else if (primaryBowlingPlaystyle === 'Containment Spinner') {
         linePlan = 'Wide of Off';
-        varPlan = 'Pace Variation';
+        varPlan = 'Consistent Line';
       }
     }
 
@@ -373,22 +373,11 @@ function transformPlayer(sourcePlayer, calculator) {
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 5);
 
-  // Determine primary playstyles based on role
-  let primaryBatting = null;
-  let primaryBowling = null;
-  let primaryFielding = null;
-
-  if (role === 'batsman' || role === 'all-rounder' || role === 'wicket-keeper') {
-    primaryBatting = battingPlaystyles[0]?.name || null;
-  }
-
-  if (role === 'bowler' || role === 'all-rounder') {
-    primaryBowling = bowlingPlaystyles[0]?.name || null;
-  }
-
-  if (role === 'wicket-keeper') {
-    primaryFielding = fieldingPlaystyles[0]?.name || null;
-  }
+  // Determine primary playstyles - always use top-rated playstyle for each discipline
+  // Every player has ratings for all disciplines, so we always set the top one
+  const primaryBatting = battingPlaystyles[0]?.name || null;
+  const primaryBowling = bowlingPlaystyles[0]?.name || null;
+  const primaryFielding = role === 'wicket-keeper' ? (fieldingPlaystyles[0]?.name || null) : null;
 
   // Add playstyle data
   player.playstyleRatings = allRatings;
@@ -557,6 +546,56 @@ try {
       console.log(`Wicketkeeper Rating: ${keeper.topPlaystyles.fielding[0].rating.toFixed(1)}/100`);
     }
   }
+
+  // Display primary playstyle distributions
+  console.log(`\n📊 Primary Playstyle Distributions:`);
+  console.log('===================================\n');
+
+  // Primary Batting Playstyle Distribution (batsmen, wicket-keepers, all-rounders)
+  const battingRoles = ['batsman', 'wicket-keeper', 'all-rounder'];
+  const battingPlayers = enrichedPlayers.filter(p => battingRoles.includes(p.role));
+  const battingPlaystyleCount = {};
+  
+  battingPlayers.forEach(p => {
+    const playstyle = p.primaryPlaystyle.batting;
+    if (playstyle) {
+      battingPlaystyleCount[playstyle] = (battingPlaystyleCount[playstyle] || 0) + 1;
+    }
+  });
+
+  console.log(`Primary Batting Playstyles (Batsmen, Wicket-Keepers, All-Rounders):`);
+  console.log(`Total Players: ${battingPlayers.length}\n`);
+  
+  const sortedBattingPlaystyles = Object.entries(battingPlaystyleCount)
+    .sort((a, b) => b[1] - a[1]);
+  
+  sortedBattingPlaystyles.forEach(([playstyle, count]) => {
+    const percentage = ((count / battingPlayers.length) * 100).toFixed(1);
+    console.log(`   ${playstyle.padEnd(25)} ${count.toString().padStart(4)} (${percentage.padStart(5)}%)`);
+  });
+
+  // Primary Bowling Playstyle Distribution (bowlers, all-rounders)
+  const bowlingRoles = ['bowler', 'all-rounder'];
+  const bowlingPlayers = enrichedPlayers.filter(p => bowlingRoles.includes(p.role));
+  const bowlingPlaystyleCount = {};
+  
+  bowlingPlayers.forEach(p => {
+    const playstyle = p.primaryPlaystyle.bowling;
+    if (playstyle) {
+      bowlingPlaystyleCount[playstyle] = (bowlingPlaystyleCount[playstyle] || 0) + 1;
+    }
+  });
+
+  console.log(`\nPrimary Bowling Playstyles (Bowlers, All-Rounders):`);
+  console.log(`Total Players: ${bowlingPlayers.length}\n`);
+  
+  const sortedBowlingPlaystyles = Object.entries(bowlingPlaystyleCount)
+    .sort((a, b) => b[1] - a[1]);
+  
+  sortedBowlingPlaystyles.forEach(([playstyle, count]) => {
+    const percentage = ((count / bowlingPlayers.length) * 100).toFixed(1);
+    console.log(`   ${playstyle.padEnd(25)} ${count.toString().padStart(4)} (${percentage.padStart(5)}%)`);
+  });
 
   console.log('\n🎉 Master player database build completed successfully!\n');
 

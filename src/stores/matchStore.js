@@ -145,6 +145,32 @@ const useMatchStore = create(
     showDetailedCommentary: true
   },
 
+  // Super Over State
+  superOver: {
+    isActive: false,
+    phase: null, // 'team1_batting' | 'team2_batting' | 'completed'
+    team1: {
+      teamId: null,
+      teamName: '',
+      runs: 0,
+      wickets: 0,
+      balls: 0,
+      batsmen: [], // [playerId, playerId, playerId] - 3 batsmen
+      bowler: null // playerId
+    },
+    team2: {
+      teamId: null,
+      teamName: '',
+      runs: 0,
+      wickets: 0,
+      balls: 0,
+      batsmen: [],
+      bowler: null
+    },
+    ballByBall: [], // Super over ball records
+    winner: null
+  },
+
   // Actions
   /**
    * Initialize a new match
@@ -486,6 +512,30 @@ const useMatchStore = create(
     matchId: null,
     status: 'scheduled',
     winner: null,
+    superOver: {
+      isActive: false,
+      phase: null,
+      team1: {
+        teamId: null,
+        teamName: '',
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      team2: {
+        teamId: null,
+        teamName: '',
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      ballByBall: [],
+      winner: null
+    },
     teams: {
       batting: {
         id: null,
@@ -590,7 +640,7 @@ const useMatchStore = create(
    */
   getPlayerConfidenceLevel: (playerId) => {
     const state = get();
-    const confidence = state.matchConditions[playerId]?.confidence || 50;
+    const confidence = state.matchConditions[playerId]?.confidence ?? 50;
 
     if (confidence >= 81) return 'Sky-High';
     if (confidence >= 61) return 'High';
@@ -606,7 +656,7 @@ const useMatchStore = create(
    */
   getPlayerEnergyLevel: (playerId) => {
     const state = get();
-    const energy = state.matchConditions[playerId]?.energy || 100;
+    const energy = state.matchConditions[playerId]?.energy ?? 100;
 
     if (energy >= 80) return 'Fresh';
     if (energy >= 60) return 'Slightly Tired';
@@ -636,6 +686,150 @@ const useMatchStore = create(
    */
   setModifierBreakdown: (breakdown) => set(() => ({
     currentModifierBreakdown: breakdown
+  })),
+
+  // Super Over Actions
+
+  /**
+   * Initialize super over after a tie
+   * @param {string} team1Id - Team batting first in super over (2nd innings batting team)
+   * @param {string} team1Name - Team 1 name
+   * @param {string} team2Id - Team bowling first in super over
+   * @param {string} team2Name - Team 2 name
+   */
+  initiateSuperOver: (team1Id, team1Name, team2Id, team2Name) => set((state) => ({
+    superOver: {
+      ...state.superOver,
+      isActive: true,
+      phase: 'team1_batting',
+      team1: {
+        teamId: team1Id,
+        teamName: team1Name,
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      team2: {
+        teamId: team2Id,
+        teamName: team2Name,
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      ballByBall: [],
+      winner: null
+    }
+  })),
+
+  /**
+   * Set super over squad for a team
+   * @param {string} teamId - Team ID
+   * @param {Array} batsmen - Array of 3 batsmen player IDs
+   * @param {string} bowler - Bowler player ID
+   */
+  setSuperOverSquad: (teamId, batsmen, bowler) => set((state) => {
+    const teamKey = state.superOver.team1.teamId === teamId ? 'team1' : 'team2';
+    return {
+      superOver: {
+        ...state.superOver,
+        [teamKey]: {
+          ...state.superOver[teamKey],
+          batsmen,
+          bowler
+        }
+      }
+    };
+  }),
+
+  /**
+   * Update super over score for a team
+   * @param {string} teamId - Team ID
+   * @param {number} runs - Total runs
+   * @param {number} wickets - Total wickets
+   * @param {number} balls - Total balls faced
+   */
+  updateSuperOverScore: (teamId, runs, wickets, balls) => set((state) => {
+    const teamKey = state.superOver.team1.teamId === teamId ? 'team1' : 'team2';
+    return {
+      superOver: {
+        ...state.superOver,
+        [teamKey]: {
+          ...state.superOver[teamKey],
+          runs,
+          wickets,
+          balls
+        }
+      }
+    };
+  }),
+
+  /**
+   * Add a ball to super over ball-by-ball record
+   * @param {Object} ballData - Ball data
+   */
+  addSuperOverBall: (ballData) => set((state) => ({
+    superOver: {
+      ...state.superOver,
+      ballByBall: [...state.superOver.ballByBall, ballData]
+    }
+  })),
+
+  /**
+   * Switch to team 2 batting in super over
+   */
+  switchSuperOverInnings: () => set((state) => ({
+    superOver: {
+      ...state.superOver,
+      phase: 'team2_batting'
+    }
+  })),
+
+  /**
+   * Complete super over and set winner
+   * @param {string} winnerId - Winning team ID
+   */
+  completeSuperOver: (winnerId) => set((state) => ({
+    status: 'completed',
+    winner: winnerId,
+    superOver: {
+      ...state.superOver,
+      phase: 'completed',
+      winner: winnerId
+    }
+  })),
+
+  /**
+   * Reset super over state
+   */
+  resetSuperOver: () => set((state) => ({
+    superOver: {
+      isActive: false,
+      phase: null,
+      team1: {
+        teamId: null,
+        teamName: '',
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      team2: {
+        teamId: null,
+        teamName: '',
+        runs: 0,
+        wickets: 0,
+        balls: 0,
+        batsmen: [],
+        bowler: null
+      },
+      ballByBall: [],
+      winner: null
+    }
   }))
     }),
     {

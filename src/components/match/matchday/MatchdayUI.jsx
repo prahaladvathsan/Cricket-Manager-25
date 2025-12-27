@@ -24,6 +24,7 @@ import { ArrowLeft, Play, Pause, FastForward, ArrowRight, ChevronDown } from 'lu
 import TeamName from '../../shared/TeamName';
 import PlayerName from '../../shared/PlayerName';
 import ConditionBar from '../../shared/ConditionBar';
+import LoadingScreen from '../../shared/LoadingScreen';
 import ModifierBreakdownPanel from './ModifierBreakdownPanel';
 import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
@@ -32,6 +33,9 @@ import MatchEngine from '../../../core/match-engine/core/MatchEngine';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
 import { useMatchResultModal } from '../../../hooks/useMatchResultModal';
 import { getTeamIcon } from '../../../utils/assetHelpers';
+import SuperOverSelectionModal from '../SuperOverSelectionModal';
+import { TutorialSpotlight } from '../../tutorial';
+import useMatchdayTutorial from '../../tutorial/useMatchdayTutorial';
 
 /**
  * MatchHeader - Broadcast-style HUD with 2-row layout
@@ -374,6 +378,11 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
       : 'linear-gradient(to right, #2D5F3F 0%, #1a1a1a 50%, #2D5F3F 100%)'
   };
 
+  // Text shadow style for legibility on light backgrounds
+  const textShadowStyle = {
+    textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.7), 0 0 12px rgba(0,0,0,0.5)'
+  };
+
   // Fixed batsmen positions - sort by ID to keep consistent order regardless of strike
   const batsmen = [];
   if (strikerId && strikerStats) {
@@ -389,7 +398,7 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
   const batsmanOnBottom = batsmen[1] || null;
 
   return (
-    <div style={gradientStyle} className="border-b-2 border-cricket-primary/30 shadow-lg">
+    <div style={gradientStyle} className="match-header-bar border-b-2 border-cricket-primary/30 shadow-lg">
       {/* Single Row: All match information */}
       <div className="flex items-stretch h-20">
         {/* Left: Back button (fixed width) */}
@@ -413,122 +422,181 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
                 alt={leftTeam?.name}
                 className="w-5 h-5 drop-shadow-lg"
               />
-              <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg truncate ${battingTeam?.id === firstBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
+              <div
+                className={`text-xs font-bold uppercase tracking-wide truncate ${battingTeam?.id === firstBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}
+                style={textShadowStyle}
+              >
                 {leftTeam?.name || 'Team 1'}
               </div>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-white font-mono tracking-tight drop-shadow-lg">{leftTeamScore.runs}</span>
-              <span className="text-lg font-semibold text-cricket-accent font-mono drop-shadow-lg">/{leftTeamScore.wickets}</span>
-              <span className="text-xs text-white/70 font-mono drop-shadow-lg ml-1">({leftTeamScore.overs}.{leftTeamScore.balls})</span>
+              <span className="text-2xl font-bold text-white font-mono tracking-tight" style={textShadowStyle}>{leftTeamScore.runs}</span>
+              <span className="text-lg font-semibold text-cricket-accent font-mono" style={textShadowStyle}>/{leftTeamScore.wickets}</span>
+              <span className="text-xs text-white/70 font-mono ml-1" style={textShadowStyle}>({leftTeamScore.overs}.{leftTeamScore.balls})</span>
             </div>
           </div>
 
           <div className="w-px h-14 bg-white/20" />
 
-          {/* Center: Batsmen, Metrics, Bowler - Hover for modifier breakdown */}
+          {/* Center: Players on their team's side, Metrics in center - Hover for modifier breakdown */}
           <div
-            className="relative flex items-center gap-3 flex-1 justify-center min-w-0"
+            className="match-header-center relative flex items-center gap-3 flex-1 justify-center min-w-0"
             onMouseEnter={() => !isBreakdownPinned && setShowModifierBreakdown(true)}
             onMouseLeave={() => !isBreakdownPinned && setShowModifierBreakdown(false)}
           >
-            {/* Batsmen - Fixed positions (fixed width) */}
-            <div className="w-48 flex flex-col gap-0.5 flex-shrink-0">
-              {/* Top batsman (always shows first batsman, star moves) */}
-              {batsmanOnTop && (
-                <div className="flex items-center gap-1.5 h-7">
-                  <span className={`text-cricket-accent font-bold text-sm drop-shadow-lg w-3 ${batsmanOnTop.isStriker ? '' : 'invisible'}`}>★</span>
-                  <PlayerName playerId={batsmanOnTop.id} className="font-semibold text-white text-xs drop-shadow-lg truncate flex-1" />
-                  <span className="font-mono text-xs text-white/90 drop-shadow-lg w-16 text-right">
-                    {batsmanOnTop.stats.runs}({batsmanOnTop.stats.balls})
-                  </span>
-                </div>
-              )}
-              {/* Bottom batsman (always shows second batsman, star moves) */}
-              {batsmanOnBottom && (
-                <div className="flex items-center gap-1.5 h-7">
-                  <span className={`text-cricket-accent font-bold text-sm drop-shadow-lg w-3 ${batsmanOnBottom.isStriker ? '' : 'invisible'}`}>★</span>
-                  <PlayerName playerId={batsmanOnBottom.id} className="font-medium text-white/80 text-xs drop-shadow-lg truncate flex-1" />
-                  <span className="font-mono text-xs text-white/70 drop-shadow-lg w-16 text-right">
-                    {batsmanOnBottom.stats.runs}({batsmanOnBottom.stats.balls})
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* Determine if left team (first batting) is currently batting */}
+            {(() => {
+              const leftTeamIsBatting = battingTeam?.id === firstBattingTeamId;
 
-            <div className="w-px h-14 bg-white/20" />
-
-            {/* Central Metrics - Compact with Need X from Y below (fixed width) */}
-            <div className={`w-36 px-3 py-1.5 rounded ${isSecondInnings ? (isOnTrack ? 'bg-green-900/40 border border-green-500/50' : 'bg-red-900/40 border border-red-500/50') : 'bg-black/30 border border-white/20'} flex-shrink-0`}>
-              {/* CRR and RRR in single row */}
-              <div className="flex items-center justify-between gap-2 mb-0.5">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-white/70 uppercase tracking-wide font-semibold">CRR</span>
-                  <span className="font-mono font-bold text-white text-sm drop-shadow-lg">{currentRunRate.toFixed(2)}</span>
+              // Batsmen column component - same layout on both sides: ★ | Name | Stats
+              const BatsmenColumn = () => (
+                <div className="w-48 flex flex-col gap-0.5 flex-shrink-0">
+                  {/* Top batsman (always shows first batsman, star moves) */}
+                  {batsmanOnTop && (
+                    <div className="flex items-center gap-1.5 h-7">
+                      <span className={`text-cricket-accent font-bold text-sm w-3 ${batsmanOnTop.isStriker ? '' : 'invisible'}`} style={textShadowStyle}>★</span>
+                      <PlayerName playerId={batsmanOnTop.id} className="font-semibold text-white text-xs truncate flex-1" style={textShadowStyle} />
+                      <span className="font-mono text-xs text-white/90 w-16 text-right" style={textShadowStyle}>
+                        {batsmanOnTop.stats.runs}({batsmanOnTop.stats.balls})
+                      </span>
+                    </div>
+                  )}
+                  {/* Bottom batsman (always shows second batsman, star moves) */}
+                  {batsmanOnBottom && (
+                    <div className="flex items-center gap-1.5 h-7">
+                      <span className={`text-cricket-accent font-bold text-sm w-3 ${batsmanOnBottom.isStriker ? '' : 'invisible'}`} style={textShadowStyle}>★</span>
+                      <PlayerName playerId={batsmanOnBottom.id} className="font-medium text-white/80 text-xs truncate flex-1" style={textShadowStyle} />
+                      <span className="font-mono text-xs text-white/70 w-16 text-right" style={textShadowStyle}>
+                        {batsmanOnBottom.stats.runs}({batsmanOnBottom.stats.balls})
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {isSecondInnings && requiredRunRate > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-white/70 uppercase tracking-wide font-semibold">RRR</span>
-                    <span className="font-mono font-bold text-cricket-accent text-sm drop-shadow-lg">{requiredRunRate.toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-              {/* Need X from Y text below */}
-              {isSecondInnings && ballsRemaining > 0 && (
-                <div className="text-center pt-0.5 border-t border-white/10">
-                  <span className="text-xs font-semibold text-white/90 drop-shadow-lg">
-                    Need <span className="text-cricket-accent font-bold">{runsRequired}</span> from <span className="text-cricket-accent font-bold">{ballsRemaining}</span>
-                  </span>
+              );
+
+              // Bowler column component
+              const BowlerColumn = ({ alignRight = false }) => (
+                <div className={`w-52 flex flex-col gap-0.5 flex-shrink-0 ${alignRight ? 'items-end' : ''}`}>
+                  {bowlerId && bowlerStats ? (
+                    <>
+                      {/* Row 1: Bowler name + stats */}
+                      <div className={`flex items-center gap-2 h-7 ${alignRight ? 'flex-row-reverse' : ''}`}>
+                        <PlayerName playerId={bowlerId} className={`font-semibold text-white text-xs truncate flex-1 ${alignRight ? 'text-right' : ''}`} style={textShadowStyle} />
+                        <span className="font-mono text-xs text-white/90 whitespace-nowrap" style={textShadowStyle}>
+                          {bowlerStats.overs}-{bowlerStats.maidens}-{bowlerStats.runs}-{bowlerStats.wickets}
+                        </span>
+                      </div>
+                      {/* Row 2: Current over balls */}
+                      <div className={`flex items-center gap-1 h-7 ${alignRight ? 'flex-row-reverse' : ''}`}>
+                        {currentOverBalls.length > 0 ? (
+                          currentOverBalls.map((ball, idx) => (
+                            <div
+                              key={idx}
+                              className={`
+                                w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
+                                ${ball === 'W' ? 'bg-red-600 text-white' : ''}
+                                ${ball === '•' ? 'bg-gray-600 text-white' : ''}
+                                ${ball === '4' ? 'bg-blue-600 text-white' : ''}
+                                ${ball === '6' ? 'bg-purple-600 text-white' : ''}
+                                ${['1', '2', '3'].includes(ball) ? 'bg-green-700 text-white' : ''}
+                                ${['Wd', 'Nb'].includes(ball) ? 'bg-orange-600 text-white text-[10px]' : ''}
+                              `}
+                              style={textShadowStyle}
+                            >
+                              {ball}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="h-5">&nbsp;</div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-7">&nbsp;</div>
+                      <div className="h-7">&nbsp;</div>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
+              );
 
-            <div className="w-px h-14 bg-white/20" />
+              // Central Metrics component with win probability gradient
+              const MetricsColumn = () => {
+                // Get pressure index (0-100, <50 = batting winning, >50 = bowling winning)
+                const pressureIndex = tacticsState?.pressureIndex?.batting ?? 50;
 
-            {/* Bowler (fixed width) */}
-            <div className="w-52 flex flex-col gap-0.5 flex-shrink-0">
-              {bowlerId && bowlerStats ? (
-                <>
-                  {/* Row 1: Bowler name + stats - aligned with top batsman */}
-                  <div className="flex items-center gap-2 h-7">
-                    <PlayerName playerId={bowlerId} className="font-semibold text-white text-xs drop-shadow-lg truncate flex-1" />
-                    <span className="font-mono text-xs text-white/90 drop-shadow-lg whitespace-nowrap">
-                      {bowlerStats.overs}-{bowlerStats.maidens}-{bowlerStats.runs}-{bowlerStats.wickets}
-                    </span>
-                  </div>
-                  {/* Row 2: Current over balls - ALWAYS render to maintain spacing */}
-                  <div className="flex items-center gap-1 h-7">
-                    {currentOverBalls.length > 0 ? (
-                      currentOverBalls.map((ball, idx) => (
-                        <div
-                          key={idx}
-                          className={`
-                            w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold drop-shadow-lg
-                            ${ball === 'W' ? 'bg-red-600 text-white' : ''}
-                            ${ball === '•' ? 'bg-gray-600 text-white' : ''}
-                            ${ball === '4' ? 'bg-blue-600 text-white' : ''}
-                            ${ball === '6' ? 'bg-purple-600 text-white' : ''}
-                            ${['1', '2', '3'].includes(ball) ? 'bg-green-700 text-white' : ''}
-                            ${['Wd', 'Nb'].includes(ball) ? 'bg-orange-600 text-white text-[10px]' : ''}
-                          `}
-                        >
-                          {ball}
+                // Calculate right team win probability based on which team is batting
+                // If left team batting: high pressure = right team (bowling) winning
+                // If right team batting: high pressure = left team (bowling) winning
+                const rightTeamWinProb = leftTeamIsBatting ? pressureIndex : (100 - pressureIndex);
+
+                // Get team colors
+                const leftTeamColor = leftTeam?.colors?.primary || '#2D5F3F';
+                const rightTeamColor = rightTeam?.colors?.primary || '#2D5F3F';
+
+                // Create gradient style - the transition point shifts based on win probability
+                // rightTeamWinProb = 0 → all left color (left team dominating)
+                // rightTeamWinProb = 50 → even split at center
+                // rightTeamWinProb = 100 → all right color (right team dominating)
+                // The transition center is at (100 - rightTeamWinProb)%
+                const transitionCenter = 100 - rightTeamWinProb;
+                const gradientStyle = {
+                  background: `linear-gradient(to right,
+                    ${leftTeamColor} ${Math.max(0, transitionCenter - 15)}%,
+                    ${rightTeamColor} ${Math.min(100, transitionCenter + 15)}%)`
+                };
+
+                return (
+                  <div
+                    className="w-36 px-3 py-1.5 rounded border border-white/30 flex-shrink-0"
+                    style={gradientStyle}
+                  >
+                    {/* CRR and RRR in single row */}
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-white/90 uppercase tracking-wide font-semibold" style={textShadowStyle}>CRR</span>
+                        <span className="font-mono font-bold text-white text-sm" style={textShadowStyle}>{currentRunRate.toFixed(2)}</span>
+                      </div>
+                      {isSecondInnings && requiredRunRate > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-white/90 uppercase tracking-wide font-semibold" style={textShadowStyle}>RRR</span>
+                          <span className="font-mono font-bold text-white text-sm" style={textShadowStyle}>{requiredRunRate.toFixed(2)}</span>
                         </div>
-                      ))
-                    ) : (
-                      // Empty placeholder to maintain row height
-                      <div className="h-5">&nbsp;</div>
+                      )}
+                    </div>
+                    {/* Need X from Y text below */}
+                    {isSecondInnings && ballsRemaining > 0 && (
+                      <div className="text-center pt-0.5 border-t border-white/20">
+                        <span className="text-xs font-semibold text-white" style={textShadowStyle}>
+                          Need <span className="font-bold">{runsRequired}</span> from <span className="font-bold">{ballsRemaining}</span>
+                        </span>
+                      </div>
                     )}
                   </div>
+                );
+              };
+
+              // Render based on which team is batting
+              // Left team batting: Batsmen left, Bowler right
+              // Right team batting: Bowler left, Batsmen right
+              return leftTeamIsBatting ? (
+                <>
+                  <BatsmenColumn />
+                  <div className="w-px h-14 bg-white/20" />
+                  <MetricsColumn />
+                  <div className="w-px h-14 bg-white/20" />
+                  <BowlerColumn />
                 </>
               ) : (
-                // No bowler - render empty rows to maintain spacing
                 <>
-                  <div className="h-7">&nbsp;</div>
-                  <div className="h-7">&nbsp;</div>
+                  <BowlerColumn />
+                  <div className="w-px h-14 bg-white/20" />
+                  <MetricsColumn />
+                  <div className="w-px h-14 bg-white/20" />
+                  <BatsmenColumn />
                 </>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Modifier Breakdown Panel */}
             {(showModifierBreakdown || isBreakdownPinned) && currentModifierBreakdown && innings && (
@@ -547,6 +615,7 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
                   setIsBreakdownPinned(false);
                   setShowModifierBreakdown(false);
                 }}
+                swapSides={battingTeam?.id !== firstBattingTeamId}
               />
             )}
           </div>
@@ -556,7 +625,10 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
           {/* Right Team Score + Name (fixed width) */}
           <div className={`w-44 flex-shrink-0 text-right ${battingTeam?.id === secondBattingTeamId ? 'opacity-100' : 'opacity-60'}`}>
             <div className="flex items-center gap-1.5 mb-1 justify-end">
-              <div className={`text-xs font-bold uppercase tracking-wide drop-shadow-lg truncate ${battingTeam?.id === secondBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}>
+              <div
+                className={`text-xs font-bold uppercase tracking-wide truncate ${battingTeam?.id === secondBattingTeamId ? 'text-cricket-accent' : 'text-white'}`}
+                style={textShadowStyle}
+              >
                 {rightTeam?.name || 'Team 2'}
               </div>
               <img
@@ -567,12 +639,12 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
             </div>
             {rightTeamScore ? (
               <div className="flex items-baseline gap-1 justify-end">
-                <span className="text-2xl font-bold text-white font-mono tracking-tight drop-shadow-lg">{rightTeamScore.runs}</span>
-                <span className="text-lg font-semibold text-cricket-accent font-mono drop-shadow-lg">/{rightTeamScore.wickets}</span>
-                <span className="text-xs text-white/70 font-mono drop-shadow-lg ml-1">({rightTeamScore.overs}.{rightTeamScore.balls})</span>
+                <span className="text-2xl font-bold text-white font-mono tracking-tight" style={textShadowStyle}>{rightTeamScore.runs}</span>
+                <span className="text-lg font-semibold text-cricket-accent font-mono" style={textShadowStyle}>/{rightTeamScore.wickets}</span>
+                <span className="text-xs text-white/70 font-mono ml-1" style={textShadowStyle}>({rightTeamScore.overs}.{rightTeamScore.balls})</span>
               </div>
             ) : (
-              <div className="text-xs text-white/50 italic drop-shadow-lg">
+              <div className="text-xs text-white/50 italic" style={textShadowStyle}>
                 Yet to bat
               </div>
             )}
@@ -580,7 +652,7 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
         </div>
 
         {/* Right: Controls (fixed width, same as back button) */}
-        <div className="w-20 flex flex-col items-center justify-center gap-1 px-2 flex-shrink-0 border-l border-white/10">
+        <div className="match-controls w-20 flex flex-col items-center justify-center gap-1 px-2 flex-shrink-0 border-l border-white/10">
           {status === 'completed' ? (
             <button
               onClick={() => {
@@ -668,6 +740,11 @@ export default function MatchdayUI() {
   const [hasProcessedResult, setHasProcessedResult] = useState(false);
   const initializingRef = React.useRef(false); // Prevent concurrent initializations
 
+  // Super Over state
+  const [showSuperOverModal, setShowSuperOverModal] = useState(false);
+  const [tieData, setTieData] = useState(null); // Stores tie match data for super over
+  const userTeamId = useTeamStore(state => state.userTeamId);
+
   // Match result modal hook
   const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal({
     onClose: () => {
@@ -677,6 +754,16 @@ export default function MatchdayUI() {
       advanceDay();
     }
   });
+
+  // Matchday tutorial hook
+  const {
+    shouldShowTutorial,
+    currentStep,
+    currentStepData,
+    advance: advanceTutorial,
+    skip: skipTutorial,
+    totalSteps
+  } = useMatchdayTutorial();
 
   const status = useMatchStore(state => state.status);
   const matchStoreId = useMatchStore(state => state.matchId);
@@ -778,10 +865,11 @@ export default function MatchdayUI() {
         );
 
         // Configure for ball-by-ball interactive mode with delays
-        engine.config.interactiveMode = true;
         engine.config.showBallByBall = true;
-        engine.config.simulationSpeed = 'normal'; // ~1s per ball (not instant!)
-        engine.config.ballDelay = 1000; // 1 second delay between balls
+        // Read simulation speed from user settings (numeric ms value)
+        const userSimSpeed = useGameStore.getState().settings.simulationSpeed;
+        engine.config.simulationSpeed = userSimSpeed;
+        engine.config.ballDelay = userSimSpeed; // Match the delay to user preference
 
         // IMPORTANT: Pause BEFORE starting the match
         engine.isPaused = true;
@@ -907,6 +995,48 @@ export default function MatchdayUI() {
 
       const innings1 = calculateInningsScore(1);
       const innings2 = calculateInningsScore(2);
+
+      // CHECK FOR TIE - Super Over Required!
+      if (innings1.totalScore === innings2.totalScore) {
+        console.log('🏏 MATCH TIED - Super Over Required!');
+
+        // Determine which team is user's team
+        const isUserHome = homeTeam.id === userTeamId;
+        const userTeam = isUserHome ? homeTeam : awayTeam;
+        const opponentTeam = isUserHome ? awayTeam : homeTeam;
+
+        // Get first batting team from matchStore
+        const firstBattingTeamId = currentMatchState.firstBattingTeamId;
+
+        // 2nd innings batting team bats first in super over
+        // Second batting team is whichever team wasn't first batting team
+        const secondBattingTeamId = firstBattingTeamId === homeTeam.id ? awayTeam.id : homeTeam.id;
+        const superOverBatsFirst = secondBattingTeamId;
+
+        // Get playing XIs for squad selection
+        const homeTactics = useTeamStore.getState().getTeamTactics(homeTeam.id);
+        const awayTactics = useTeamStore.getState().getTeamTactics(awayTeam.id);
+        const homePlayingXI = homeTactics?.squadSelection || [];
+        const awayPlayingXI = awayTactics?.squadSelection || [];
+
+        // Store tie data for super over modal
+        setTieData({
+          homeTeam,
+          awayTeam,
+          innings1,
+          innings2,
+          ballByBall,
+          firstBattingTeamId,
+          superOverBatsFirst,
+          userPlayingXI: isUserHome ? homePlayingXI : awayPlayingXI,
+          opponentPlayingXI: isUserHome ? awayPlayingXI : homePlayingXI,
+          userBatsFirst: superOverBatsFirst === userTeamId
+        });
+
+        // Show super over modal instead of result modal
+        setShowSuperOverModal(true);
+        return; // Don't process result yet - wait for super over
+      }
 
       // Create match config for stat updater
       const matchConfig = {
@@ -1141,20 +1271,225 @@ export default function MatchdayUI() {
     }
   };
 
+  /**
+   * Handle super over completion
+   * @param {Object} selections - User and AI selections
+   */
+  const handleSuperOverStart = async (selections) => {
+    if (!matchEngine || !tieData) return;
+
+    console.log('🏏 Starting Super Over with selections:', selections);
+
+    try {
+      // Determine team order for super over
+      // Team that batted second in main match bats first in super over
+      const team1Id = tieData.superOverBatsFirst; // 2nd innings batting team
+      const team2Id = team1Id === tieData.homeTeam.id ? tieData.awayTeam.id : tieData.homeTeam.id;
+      const team1Name = team1Id === tieData.homeTeam.id ? tieData.homeTeam.name : tieData.awayTeam.name;
+      const team2Name = team2Id === tieData.homeTeam.id ? tieData.homeTeam.name : tieData.awayTeam.name;
+
+      // Determine which selection belongs to which team
+      const isUserTeam1 = team1Id === userTeamId;
+      const team1Selection = isUserTeam1 ? selections.userSelection : selections.aiSelection;
+      const team2Selection = isUserTeam1 ? selections.aiSelection : selections.userSelection;
+
+      // Simulate super over
+      const superOverResult = await matchEngine.simulateSuperOver(
+        team1Selection,
+        team2Selection,
+        team1Id,
+        team1Name,
+        team2Id,
+        team2Name
+      );
+
+      console.log('🏆 Super Over Result:', superOverResult);
+
+      // Close super over modal
+      setShowSuperOverModal(false);
+
+      // Now process the full result with super over winner
+      processMatchResultWithSuperOver(superOverResult);
+
+    } catch (error) {
+      console.error('Error simulating super over:', error);
+    }
+  };
+
+  /**
+   * Process match result after super over completes
+   */
+  const processMatchResultWithSuperOver = (superOverResult) => {
+    if (!tieData) return;
+
+    const { homeTeam, awayTeam, innings1, innings2, ballByBall, firstBattingTeamId } = tieData;
+
+    // Set season ID for career stats tracking
+    const currentSeasonId = useLeagueStore.getState().seasonId;
+    if (currentSeasonId) {
+      usePlayerStore.getState().setCurrentSeasonId(currentSeasonId);
+    }
+
+    // Create match config for stat updater (super over stats NOT included)
+    const matchConfig = {
+      matchId: matchId,
+      homeTeam: {
+        id: homeTeam.id,
+        name: homeTeam.name,
+        players: getPlayersByTeam(homeTeam.id)
+      },
+      awayTeam: {
+        id: awayTeam.id,
+        name: awayTeam.name,
+        players: getPlayersByTeam(awayTeam.id)
+      },
+      venue: navMatchData.venue || homeTeam.homeGround
+    };
+
+    // Update player stats (main match only, NOT super over)
+    updatePlayerStats(matchConfig, { ballByBall }, useTeamStore, usePlayerStore);
+
+    // Extract player stats for awards
+    const playerStats = extractPlayerStatsFromBalls(ballByBall, matchConfig);
+    const playerOfMatch = calculatePlayerOfMatch(playerStats, matchConfig);
+
+    // Helper functions for top batsmen/bowlers
+    const getTopBatsmen = (inningsNum, limit = 4) => {
+      const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
+      const batsmenStats = {};
+
+      inningsBalls.forEach(ball => {
+        if (!batsmenStats[ball.batsmanId]) {
+          batsmenStats[ball.batsmanId] = { runs: 0, balls: 0 };
+        }
+        batsmenStats[ball.batsmanId].runs += ball.runs || 0;
+        if (ball.isLegal) {
+          batsmenStats[ball.batsmanId].balls++;
+        }
+      });
+
+      return Object.entries(batsmenStats)
+        .map(([id, stats]) => ({ id, ...stats }))
+        .sort((a, b) => b.runs - a.runs)
+        .slice(0, limit);
+    };
+
+    const getTopBowlers = (inningsNum, limit = 4) => {
+      const inningsBalls = ballByBall.filter(b => b.innings === inningsNum);
+      const bowlerStats = {};
+
+      inningsBalls.forEach(ball => {
+        if (!bowlerStats[ball.bowlerId]) {
+          bowlerStats[ball.bowlerId] = { runs: 0, wickets: 0, balls: 0 };
+        }
+        bowlerStats[ball.bowlerId].runs += ball.runs || 0;
+        if (ball.isWicket) {
+          bowlerStats[ball.bowlerId].wickets++;
+        }
+        if (ball.isLegal) {
+          bowlerStats[ball.bowlerId].balls++;
+        }
+      });
+
+      return Object.entries(bowlerStats)
+        .map(([id, stats]) => {
+          const overs = Math.floor(stats.balls / 6);
+          const ballsRemainder = stats.balls % 6;
+          const oversStr = ballsRemainder > 0 ? `${overs}.${ballsRemainder}` : `${overs}`;
+          return { id, wickets: stats.wickets, runs: stats.runs, overs: oversStr };
+        })
+        .sort((a, b) => b.wickets - a.wickets || a.runs - b.runs)
+        .slice(0, limit);
+    };
+
+    // Winner from super over
+    const winner = superOverResult.winner;
+    const winnerTeam = winner === homeTeam.id ? homeTeam : awayTeam;
+
+    // Create result object for league store
+    const leagueResult = {
+      matchId: matchId,
+      homeTeam: homeTeam.id,
+      homeTeamName: homeTeam.name,
+      awayTeam: awayTeam.id,
+      awayTeamName: awayTeam.name,
+      venue: navMatchData.venue || homeTeam.homeGround,
+      innings1,
+      innings2,
+      winner: winner,
+      winnerName: winnerTeam.name,
+      margin: 'Super Over',
+      result: 'win',
+      status: 'completed',
+      timestamp: new Date().toISOString(),
+      superOver: superOverResult
+    };
+
+    // Determine which team batted first
+    const firstBattingTeam = firstBattingTeamId === homeTeam.id ? homeTeam : awayTeam;
+    const secondBattingTeam = firstBattingTeamId === homeTeam.id ? awayTeam : homeTeam;
+
+    // Prepare full scorecard data
+    const fullScorecard = {
+      venue: navMatchData.venue || homeTeam.homeGround,
+      matchType: 'World Premier League T20',
+      firstBattingTeam: {
+        id: firstBattingTeam.id,
+        name: firstBattingTeam.name,
+        colors: getClub(firstBattingTeam.id)?.colors
+      },
+      secondBattingTeam: {
+        id: secondBattingTeam.id,
+        name: secondBattingTeam.name,
+        colors: getClub(secondBattingTeam.id)?.colors
+      },
+      innings1Data: {
+        totalScore: innings1.totalScore,
+        wickets: innings1.wickets,
+        overs: innings1.overs,
+        balls: innings1.balls,
+        topBatsmen: getTopBatsmen(1),
+        topBowlers: getTopBowlers(1)
+      },
+      innings2Data: {
+        totalScore: innings2.totalScore,
+        wickets: innings2.wickets,
+        overs: innings2.overs,
+        balls: innings2.balls,
+        topBatsmen: getTopBatsmen(2),
+        topBowlers: getTopBowlers(2)
+      },
+      winner: winner,
+      margin: 'Super Over',
+      superOver: superOverResult,
+      playerOfMatch: playerOfMatch ? {
+        id: playerOfMatch.id,
+        performance: formatPlayerOfMatchPerformance(playerOfMatch)
+      } : null
+    };
+
+    // Record result in league store
+    recordResult(leagueResult, fullScorecard);
+    recalculateStandings();
+    processMatchFinancials(leagueResult, standings);
+    advanceToNextMatch();
+
+    // Show result modal
+    showResult(fullScorecard);
+
+    setHasProcessedResult(true);
+    setTieData(null);
+
+    console.log('✅ Match result with super over processed successfully');
+  };
+
   // Show loading state
   if (isInitializing) {
     return (
-      <div className="h-screen flex items-center justify-center bg-bg-primary">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Loading Match...
-          </h2>
-          <p className="text-text-secondary">
-            Initializing match engine...
-          </p>
-        </div>
-      </div>
+      <LoadingScreen
+        message="Loading Match"
+        submessage="Initializing match engine..."
+      />
     );
   }
 
@@ -1227,17 +1562,10 @@ export default function MatchdayUI() {
   // Don't render UI until match engine is ready
   if (!matchEngine) {
     return (
-      <div className="h-screen flex items-center justify-center bg-bg-primary">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Preparing Match...
-          </h2>
-          <p className="text-text-secondary">
-            Setting up teams and field positions...
-          </p>
-        </div>
-      </div>
+      <LoadingScreen
+        message="Preparing Match"
+        submessage="Setting up teams and field positions..."
+      />
     );
   }
 
@@ -1268,6 +1596,35 @@ export default function MatchdayUI() {
 
       {/* Match Result Modal */}
       {MatchResultModalComponent}
+
+      {/* Super Over Selection Modal */}
+      {showSuperOverModal && tieData && (
+        <SuperOverSelectionModal
+          isOpen={showSuperOverModal}
+          onClose={() => setShowSuperOverModal(false)}
+          onStartSuperOver={handleSuperOverStart}
+          userTeamId={userTeamId}
+          opponentTeamId={tieData.homeTeam.id === userTeamId ? tieData.awayTeam.id : tieData.homeTeam.id}
+          userPlayingXI={tieData.userPlayingXI}
+          opponentPlayingXI={tieData.opponentPlayingXI}
+          userBatsFirst={tieData.userBatsFirst}
+        />
+      )}
+
+      {/* Matchday Tutorial */}
+      {shouldShowTutorial && currentStepData && (
+        <TutorialSpotlight
+          targetSelector={currentStepData.targetSelector}
+          title={currentStepData.title}
+          description={currentStepData.description}
+          icon={currentStepData.icon}
+          step={currentStep + 1}
+          totalSteps={totalSteps}
+          position={currentStepData.position}
+          onNext={advanceTutorial}
+          onSkip={skipTutorial}
+        />
+      )}
     </div>
   );
 }

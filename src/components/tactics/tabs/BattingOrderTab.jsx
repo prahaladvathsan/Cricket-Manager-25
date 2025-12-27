@@ -159,6 +159,9 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             const availableBattingPlaystyles = getAvailableBattingPlaystyles(player);
             const isDragging = draggedIndex === index;
 
+            // Add special classes to first row for tutorial highlighting
+            const isFirstRow = index === 0;
+
             return (
               <div
                 key={player.id}
@@ -167,14 +170,14 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`flex items-center gap-2 p-1 rounded transition-all ${
+                className={`${isFirstRow ? 'batting-order-row-first ' : ''}flex items-center gap-2 p-1 rounded transition-all ${
                   isDragging
                     ? 'bg-cricket-primary/20 border border-cricket-accent'
                     : 'bg-bg-tertiary border border-transparent cursor-move hover:border-cricket-accent'
                 }`}
               >
                 {/* Drag Handle */}
-                <GripVertical className="w-4 h-4 text-text-secondary flex-shrink-0" />
+                <GripVertical className={`${isFirstRow ? 'batting-drag-handle ' : ''}w-4 h-4 text-text-secondary flex-shrink-0`} />
 
                 {/* Position */}
                 <div className="flex items-center gap-1.5">
@@ -196,7 +199,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   value={battingPlaystyle}
                   onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-[220px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                  className={`${isFirstRow ? 'batting-playstyle-select ' : ''}w-[220px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                 >
                   {availableBattingPlaystyles.map(({ name, rating }) => (
                     <option key={name} value={name}>
@@ -211,7 +214,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   value={currentTier}
                   onChange={(e) => handleTierChange(player.id, e.target.value)}
                   onClick={(e) => e.stopPropagation()}
-                  className={`w-[140px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs font-medium focus:outline-none focus:border-cricket-accent ${getTierColor(currentTier)}`}
+                  className={`${isFirstRow ? 'batting-tier-select ' : ''}w-[140px] px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs font-medium focus:outline-none focus:border-cricket-accent ${getTierColor(currentTier)}`}
                 >
                   {accelerationTiers.map(({ name, description }) => (
                     <option key={name} value={name}>

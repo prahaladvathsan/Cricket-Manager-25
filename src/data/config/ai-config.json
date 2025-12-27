@@ -1,0 +1,207 @@
+{
+  "version": "1.0.0",
+  "description": "Centralized AI configuration for Cricket Manager 25",
+
+  "auction": {
+    "secondPriceEnabled": true,
+    "baseValueMultiplier": 1.2,
+    "conservativeMode": {
+      "enabled": true,
+      "reserveForMinSquad": 0.3
+    }
+  },
+
+  "squadSelection": {
+    "weights": {
+      "primaryRoleRating": 0.5,
+      "playstyleFit": 0.5
+    },
+    "fitnessPenalty": {
+      "description": "Gradual penalty curve based on fitness (not fatigue) - higher fitness = no penalty",
+      "noImpactThreshold": 70,
+      "minorPenaltyThreshold": 40,
+      "majorPenaltyThreshold": 20,
+      "minorPenaltyRate": 0.5,
+      "majorPenaltyRate": 1.0,
+      "severePenaltyRate": 2.0
+    },
+    "refinementIterations": 10,
+    "roleGapPenalty": {
+      "description": "Penalty applied when team composition gaps exist",
+      "fullPenaltyMagnitude": 25,
+      "thresholds": {
+        "bowlingOptions": 6,
+        "wicketKeeper": 1,
+        "battingOptions": 7
+      }
+    },
+    "playstyleRatingCaps": {
+      "description": "Maximum total rating for each playstyle type in playing XI",
+      "batting": {
+        "openers": {
+          "cap": 200,
+          "playstyles": ["Opener - Slogger", "Opener - Balanced", "Opener - Anchor"],
+          "requiredCount": 2
+        },
+        "topOrder": {
+          "cap": 190,
+          "playstyles": ["Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor"],
+          "requiredCount": 2
+        },
+        "middleOrder": {
+          "cap": 180,
+          "playstyles": ["Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor"],
+          "requiredCount": 2
+        },
+        "lowerOrder": {
+          "cap": 170,
+          "playstyles": ["Lower Order - Slogger", "Lower Order - Balanced", "Lower Order - Anchor"],
+          "requiredCount": 2
+        },
+        "tailenders": {
+          "cap": 100,
+          "playstyles": ["Finisher", "Runner", "Pinch-Hitter", "Wall"],
+          "requiredCount": 3
+        }
+      },
+      "bowling": {
+        "powerplay": {
+          "cap": 300,
+          "playstyles": ["Swing Bowler", "Hit-the-Deck Seamer", "Flat Spinner"],
+          "requiredCount": 3
+        },
+        "earlyMiddle": {
+          "cap": 300,
+          "playstyles": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner", "Short-Ball Specialist", "Swing Bowler"],
+          "requiredCount": 3
+        },
+        "lateMiddle": {
+          "cap": 200,
+          "playstyles": ["Mystery Spinner", "Containment Spinner", "Classical Spinner", "Short-Ball Specialist", "Death Specialist"],
+          "requiredCount": 2
+        },
+        "death": {
+          "cap": 200,
+          "playstyles": ["Death Specialist", "Hit-the-Deck Seamer"],
+          "requiredCount": 2
+        }
+      },
+      "fielding": {
+        "wicketKeeper": {
+          "cap": 100,
+          "playstyles": ["Wicketkeeper"],
+          "requiredCount": 1
+        }
+      }
+    },
+    "compositionRules": {
+      "minWicketKeepers": 1,
+      "minBowlingOptions": 5,
+      "preferredBowlingOptions": 6,
+      "playingXISize": 11
+    }
+  },
+
+  "tactics": {
+    "battingOrder": {
+      "positionMapping": {
+        "description": "Map batting position ranges to playstyle categories",
+        "openers": [0, 1],
+        "topOrder": [2, 3],
+        "middleOrder": [4, 5],
+        "lowerOrder": [6, 7],
+        "tailenders": [8, 9, 10]
+      }
+    },
+    "accelerationTiers": {
+      "playstyleDefaults": {
+        "Slogger": "Blitz",
+        "Pinch-Hitter": "Blitz",
+        "Finisher": "Cruise",
+        "Anchor": "Build",
+        "Wall": "Build",
+        "Balanced": "Rotate",
+        "Runner": "Rotate"
+      },
+      "default": "Rotate"
+    },
+    "bowlingRotation": {
+      "maxOversPerBowler": 4,
+      "noConsecutiveOvers": true,
+      "phases": {
+        "powerplay": {
+          "overs": [1, 2, 3, 4, 5, 6],
+          "spells": [[1, 3, 5], [2, 4, 6]]
+        },
+        "earlyMiddle": {
+          "overs": [7, 8, 9, 10, 11, 12],
+          "spells": [[7, 9, 11], [8, 10, 12]]
+        },
+        "lateMiddle": {
+          "overs": [13, 14, 15, 16],
+          "spells": [[13, 15], [14, 16]]
+        },
+        "death": {
+          "overs": [17, 18, 19, 20],
+          "spells": [[17, 19], [18, 20]]
+        }
+      },
+      "playstylePhasePreferences": {
+        "Swing Bowler": ["powerplay", "earlyMiddle"],
+        "Hit-the-Deck Seamer": ["powerplay", "death"],
+        "Short-Ball Specialist": ["earlyMiddle", "lateMiddle"],
+        "Death Specialist": ["death", "lateMiddle"],
+        "Classical Spinner": ["earlyMiddle", "lateMiddle"],
+        "Flat Spinner": ["powerplay", "earlyMiddle"],
+        "Mystery Spinner": ["earlyMiddle", "lateMiddle"],
+        "Containment Spinner": ["earlyMiddle", "lateMiddle"]
+      }
+    },
+    "fieldPositions": {
+      "keyPositions": ["point", "cover", "mid_wicket", "deep_mid_wicket", "third_man"],
+      "secondaryPositions": ["slip", "gully", "square_leg", "fine_leg", "long_on", "long_off"],
+      "defaultFormation": "neutral_orthodox"
+    }
+  },
+
+  "roles": {
+    "captain": {
+      "selectionCriteria": ["leadership", "experience"],
+      "weights": { "leadership": 1, "experience": 1 }
+    },
+    "viceCaptain": {
+      "description": "Second highest leadership score, excluding captain"
+    },
+    "wicketKeeper": {
+      "description": "Auto-detected from player role"
+    }
+  },
+
+  "playstyleOptimization": {
+    "enabled": true,
+    "minRatingForOverride": 50,
+    "positionOptimalStyles": {
+      "0": ["Opener - Balanced", "Opener - Slogger", "Opener - Anchor"],
+      "1": ["Opener - Balanced", "Opener - Slogger", "Opener - Anchor"],
+      "2": ["Top Order - Balanced", "Top Order - Slogger", "Top Order - Anchor"],
+      "3": ["Top Order - Balanced", "Top Order - Slogger", "Top Order - Anchor"],
+      "4": ["Middle Order - Balanced", "Middle Order - Slogger", "Middle Order - Anchor"],
+      "5": ["Middle Order - Balanced", "Middle Order - Slogger", "Finisher"],
+      "6": ["Finisher", "Lower Order - Slogger", "Lower Order - Balanced"],
+      "7": ["Finisher", "Lower Order - Slogger", "Lower Order - Balanced"],
+      "8": ["Lower Order - Balanced", "Lower Order - Anchor"],
+      "9": ["Lower Order - Balanced", "Lower Order - Anchor"],
+      "10": ["Lower Order - Balanced", "Lower Order - Anchor"]
+    }
+  },
+
+  "midMatch": {
+    "enabled": true,
+    "fullSimOnly": true,
+    "evaluationFrequency": "endOfOver",
+    "fieldAdjustments": {
+      "sloggerFormation": "defensive_ring_fence",
+      "anchorFormation": "attacking_pace_cordon"
+    }
+  }
+}

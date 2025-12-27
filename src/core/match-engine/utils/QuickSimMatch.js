@@ -8,6 +8,34 @@ import MatchEngine from '../core/MatchEngine.js';
 import { updatePlayerStats } from '../../../utils/MatchStatsUpdater.js';
 
 /**
+ * Auto-select best players for super over
+ * @param {Array} squadIds - Array of player IDs in the squad
+ * @param {Object} playerStore - Player store
+ * @returns {Object} { batsmen: [id, id, id], bowler: id }
+ */
+function selectBestPlayersForSuperOver(squadIds, playerStore) {
+  const players = playerStore.getState().players;
+
+  // Get all squad players with their ratings
+  const squadPlayers = squadIds.map(id => ({
+    id,
+    player: players[id],
+    battingRating: players[id]?.ratings?.batting || 0,
+    bowlingRating: players[id]?.ratings?.bowling || 0
+  })).filter(p => p.player);
+
+  // Sort by batting rating and get top 3 batsmen
+  const sortedByBatting = [...squadPlayers].sort((a, b) => b.battingRating - a.battingRating);
+  const batsmen = sortedByBatting.slice(0, 3).map(p => p.id);
+
+  // Sort by bowling rating and get best bowler
+  const sortedByBowling = [...squadPlayers].sort((a, b) => b.bowlingRating - a.bowlingRating);
+  const bowler = sortedByBowling[0]?.id;
+
+  return { batsmen, bowler };
+}
+
+/**
  * Auto-fix injured players in a team's lineup before match
  * Replaces injured players with uninjured players from the squad
  * @param {string} teamId - Team ID
@@ -89,12 +117,14 @@ function autoFixInjuredPlayersInLineup(teamId, teamStore, playerStore) {
     teamStore.getState().updateBattingOrder(teamId, newBattingOrder);
   }
 
-  // CRITICAL: Clear bowling rotation to force MatchEngine to auto-generate a new one
+  // CRITICAL: Clear bowling rotation AND overAssignments to force MatchEngine to auto-generate a new one
   // This is safer than trying to patch it, because there might be other players in the rotation
   // who aren't in the updated squad
+  // NOTE: overAssignments takes priority over bowlingRotation in MatchEngine, so BOTH must be cleared
   if (injuredInSquad.length > 0) {
-    console.log(`  ↳ Clearing bowling rotation to force auto-generation with updated squad`);
+    console.log(`  ↳ Clearing bowling rotation and over assignments to force auto-generation with updated squad`);
     teamStore.getState().updateBowlingRotation(teamId, null);
+    teamStore.getState().updateOverAssignments(teamId, {});
   }
 
   console.log(`  ✓ Final squad (${newSquadSelection.length} players):`, newSquadSelection.map(id => players[id]?.name).join(', '));
@@ -112,6 +142,9 @@ function autoFixInjuredPlayersInLineup(teamId, teamStore, playerStore) {
  * @returns {Promise<Object>} Match result with winner, margin, etc.
  */
 export async function quickSimMatch(matchConfig, matchStore, playerStore, teamStore, leagueStore = null) {
+  // Performance timing - start
+  const matchStartTime = performance.now();
+
   try {
     // Set season ID for career stats tracking (CRITICAL for stats to be saved)
     if (leagueStore) {
@@ -151,7 +184,6 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     const engine = new MatchEngine(matchStore, playerStore, teamStore, { silent: true });
 
     // Configure for instant simulation
-    engine.config.interactiveMode = false;
     engine.config.showBallByBall = false;
     engine.config.simulationSpeed = 'instant';
 
@@ -184,6 +216,7 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     const innings2TopBowlers = extractBowlingStats(ballByBall || [], 2, playerStore);
 
     let winnerId, loserId, margin, marginType;
+    let superOverResult = null;
 
     // Determine winner based on second innings result
     if (innings2.totalScore > innings1.totalScore) {
@@ -199,11 +232,45 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
       margin = innings1.totalScore - innings2.totalScore; // Runs
       marginType = 'runs';
     } else {
-      // Tie - award to team batting first
-      winnerId = innings1.battingTeam;
-      loserId = innings2.battingTeam;
+      // TIE - Super Over Required!
+      console.log('🏏 MATCH TIED - Starting Super Over...');
+
+      // Get team names
+      const team1Id = innings2.battingTeam; // 2nd innings batting team bats first in super over
+      const team2Id = innings1.battingTeam;
+      const team1Name = teamStore.getState().teams[team1Id]?.name || 'Team 1';
+      const team2Name = teamStore.getState().teams[team2Id]?.name || 'Team 2';
+
+      // Get squads for super over selection
+      const team1Squad = matchConfig.homeTeam.id === team1Id
+        ? matchConfig.homeTeam.playingXI || matchConfig.homeTeam.players
+        : matchConfig.awayTeam.playingXI || matchConfig.awayTeam.players;
+      const team2Squad = matchConfig.homeTeam.id === team2Id
+        ? matchConfig.homeTeam.playingXI || matchConfig.homeTeam.players
+        : matchConfig.awayTeam.playingXI || matchConfig.awayTeam.players;
+
+      // Auto-select best players for each team
+      const team1Selection = selectBestPlayersForSuperOver(team1Squad, playerStore);
+      const team2Selection = selectBestPlayersForSuperOver(team2Squad, playerStore);
+
+      console.log(`🏏 Super Over - ${team1Name} batsmen: ${team1Selection.batsmen.join(', ')}`);
+      console.log(`🏏 Super Over - ${team2Name} bowler: ${team2Selection.bowler}`);
+
+      // Simulate super over
+      superOverResult = await engine.simulateSuperOver(
+        team1Selection,
+        team2Selection,
+        team1Id,
+        team1Name,
+        team2Id,
+        team2Name
+      );
+
+      // Set winner/loser based on super over result
+      winnerId = superOverResult.winner;
+      loserId = winnerId === team1Id ? team2Id : team1Id;
       margin = 0;
-      marginType = 'tie';
+      marginType = 'super over';
     }
 
     // Get player of the match from BOTH innings (top scorer or top wicket-taker)
@@ -260,9 +327,18 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
       marginText = `by ${margin} wicket${margin !== 1 ? 's' : ''}`;
     } else if (marginType === 'runs') {
       marginText = `by ${margin} run${margin !== 1 ? 's' : ''}`;
+    } else if (marginType === 'super over') {
+      marginText = 'won in Super Over';
     } else {
       marginText = 'Match Tied';
     }
+
+    // Performance timing - end
+    const matchEndTime = performance.now();
+    const matchDuration = Math.round(matchEndTime - matchStartTime);
+    const totalBalls = (ballByBall || []).length;
+    const ballsPerSecond = matchDuration > 0 ? Math.round(totalBalls / (matchDuration / 1000)) : 0;
+    console.log(`⚡ Quick-sim completed: ${totalBalls} balls in ${matchDuration}ms (${ballsPerSecond} balls/sec)`);
 
     return {
       matchId: matchConfig.id || matchConfig.matchId,
@@ -301,7 +377,9 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
         id: playerOfMatch.id || 'unknown',
         name: playerOfMatch.name || 'Unknown',
         performance: performanceText
-      }
+      },
+      // Super over data (null if no super over occurred)
+      superOver: superOverResult
     };
   } catch (error) {
     console.error('Error quick-simulating match:', error);

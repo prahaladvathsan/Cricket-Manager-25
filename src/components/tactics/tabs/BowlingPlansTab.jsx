@@ -12,18 +12,18 @@ import { getPrimaryBowlingRating, formatRating } from '../../../utils/ratingHelp
 import PlayerName from '../../shared/PlayerName';
 
 const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { updateBowlingPlans, updateBowlingRotation, updatePlaystyleOverride, autoAssignBowlingRotation } = useTeamStore();
+  const { updateBowlingPlans, updateOverAssignments, updatePlaystyleOverride, autoAssignBowlingRotation } = useTeamStore();
   const { players } = usePlayerStore();
 
   // Subscribe to team tactics changes to ensure UI updates when playing XI changes
   const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
 
   // Over assignments: array of 20 player IDs (or null for unassigned)
+  // Convert overAssignments object { 1: 'id', 2: 'id', ... } to array
   const overAssignments = useMemo(() => {
-    const assignments = teamTactics?.bowlingRotation || [];
-    // Ensure we have exactly 20 slots
-    return Array.from({ length: 20 }, (_, i) => assignments[i] || null);
-  }, [teamTactics?.bowlingRotation]);
+    const assignmentsObj = teamTactics?.overAssignments || {};
+    return Array.from({ length: 20 }, (_, i) => assignmentsObj[i + 1] || null);
+  }, [teamTactics?.overAssignments]);
 
   // Categorize bowlers: Primary vs Part-timers
   const { primaryBowlers, partTimers } = useMemo(() => {
@@ -59,9 +59,19 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
   // Handle over assignment change
   const handleOverAssignment = (overIndex, playerId) => {
-    const newAssignments = [...overAssignments];
-    newAssignments[overIndex] = playerId === '' ? null : playerId;
-    updateBowlingRotation(teamId, newAssignments);
+    // Convert array to object format { 1: 'id', 2: 'id', ... }
+    const newAssignmentsObj = {};
+    overAssignments.forEach((id, idx) => {
+      if (id) newAssignmentsObj[idx + 1] = id;
+    });
+    // Update the specific over
+    const overNumber = overIndex + 1;
+    if (playerId === '') {
+      delete newAssignmentsObj[overNumber];
+    } else {
+      newAssignmentsObj[overNumber] = playerId;
+    }
+    updateOverAssignments(teamId, newAssignmentsObj);
   };
 
   // Auto-assign bowling rotation using teamStore method
@@ -71,9 +81,14 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       return;
     }
 
-    const newAssignments = autoAssignBowlingRotation(teamId);
-    if (newAssignments.length === 20) {
-      updateBowlingRotation(teamId, newAssignments);
+    const newAssignmentsArray = autoAssignBowlingRotation(teamId);
+    if (newAssignmentsArray.length === 20) {
+      // Convert array to object format { 1: 'id', 2: 'id', ... }
+      const newAssignmentsObj = {};
+      newAssignmentsArray.forEach((id, idx) => {
+        if (id) newAssignmentsObj[idx + 1] = id;
+      });
+      updateOverAssignments(teamId, newAssignmentsObj);
     } else {
       alert('Failed to auto-assign bowling rotation. Please check your playing XI.');
     }
@@ -210,7 +225,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         )}
 
         {/* Over Assignment List - Grouped by Phase */}
-        <div className="card p-2">
+        <div className="bowling-over-assignment card p-2">
           <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-border-primary">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-cricket-accent" />
@@ -220,14 +235,14 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             </div>
             <button
               onClick={handleAutoAssign}
-              className="btn-secondary text-xs px-2 py-1"
+              className="bowling-auto-assign btn-secondary text-xs px-2 py-1"
             >
               Auto Assign
             </button>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {phases.map((phase) => (
+            {phases.map((phase, phaseIndex) => (
               <div key={phase.name} className="space-y-1">
                 {/* Phase Header */}
                 <div className="text-xs font-semibold text-cricket-accent mb-0.5">
@@ -235,9 +250,11 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 </div>
 
                 {/* Overs in this phase */}
-                {phase.overs.map((overIndex) => {
+                {phase.overs.map((overIndex, overIdx) => {
                   const playerId = overAssignments[overIndex];
                   const overNumber = overIndex + 1;
+                  // Add class to first over select for tutorial
+                  const isFirstOver = phaseIndex === 0 && overIdx === 0;
 
                   return (
                     <div key={overIndex} className="space-y-0.5">
@@ -245,7 +262,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       <select
                         value={playerId || ''}
                         onChange={(e) => handleOverAssignment(overIndex, e.target.value)}
-                        className="w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                        className={`${isFirstOver ? 'bowling-over-select-first ' : ''}w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                       >
                         <option value="">—</option>
                         {primaryBowlers.length > 0 && (
@@ -277,7 +294,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Side Panel: Bowling Plans */}
-      <div className="lg:col-span-2 card p-2">
+      <div className="bowling-plans-panel lg:col-span-2 card p-2">
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border-primary">
           <CheckCircle className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-sm font-semibold text-text-primary">
@@ -291,7 +308,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           </p>
         ) : (
           <div className="space-y-1 max-h-[600px] overflow-y-auto">
-            {allBowlers.map(player => {
+            {allBowlers.map((player, bowlerIndex) => {
               const bowlingType = player.bowlingType || 'pace';
               const plans = getBowlingPlans(bowlingType);
               const currentPlans = teamTactics?.bowlingPlans[player.id];
@@ -309,8 +326,11 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               const isBowlingPrimary = playstyle === player.primaryPlaystyle?.bowling;
               const availableBowlingPlaystyles = getAvailableBowlingPlaystyles(player);
 
+              // Add class to first bowler's plans for tutorial
+              const isFirstBowler = bowlerIndex === 0;
+
               return (
-                <div key={player.id} className="p-1 bg-bg-tertiary rounded">
+                <div key={player.id} className={`${isFirstBowler ? 'bowling-plans-first ' : ''}p-1 bg-bg-tertiary rounded`}>
                   {/* Row 1: Name, Role, Playstyle */}
                   <div className="grid grid-cols-2 gap-1 mb-0.5">
                     <div className="flex items-center gap-1">
@@ -338,11 +358,11 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   </div>
 
                   {/* Row 2: Line-Length & Variation Plans */}
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className={`${isFirstBowler ? 'bowling-plan-selects ' : ''}grid grid-cols-2 gap-1`}>
                     <select
                       value={currentPlans.lineLength}
                       onChange={(e) => handlePlanChange(player.id, 'lineLength', e.target.value)}
-                      className="px-1.5 py-0.5 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                      className={`${isFirstBowler ? 'bowling-line-length-select ' : ''}px-1.5 py-0.5 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                     >
                       {plans.lineLengthPlans.map((plan) => (
                         <option key={plan.name} value={plan.name}>

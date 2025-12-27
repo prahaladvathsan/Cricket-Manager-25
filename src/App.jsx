@@ -23,7 +23,11 @@ import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
 import Credits from './components/menu/Credits';
+import Settings from './components/menu/Settings';
+import { GameManual } from './components/manual';
+import { TutorialController } from './components/tutorial';
 import CalendarPage from './components/calendar/CalendarPage';
+import TestingDashboard from './components/testing/TestingDashboard';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
@@ -94,6 +98,11 @@ function App() {
           <Route path="/load-game" element={<LoadGame />} />
           <Route path="/player-browser" element={<PlayerBrowser />} />
           <Route path="/credits" element={<Credits />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/manual" element={<GameManual />} />
+
+          {/* Developer Testing Mode (URL access only - no menu link) */}
+          <Route path="/testing" element={<TestingDashboard />} />
 
           {/* Team Selection (Transition to Game) */}
           <Route
@@ -112,27 +121,30 @@ function App() {
           <Route path="/game/match/:matchId/live" element={<MatchdayUI />} />
           <Route path="/game/match/:matchId/pre-match" element={<PreMatchFlow />} />
 
-          {/* Game Routes (With Layout) */}
+          {/* Game Routes (With Layout + Tutorial) */}
           <Route
             path="/game/*"
             element={
-              <Layout>
-                <Routes>
-                  <Route path="home" element={<Home />} />
-                  <Route path="inbox" element={<Inbox />} />
-                  <Route path="squad" element={<Squad />} />
-                  <Route path="tactics" element={<TacticsPage />} />
-                  <Route path="matches" element={<Matches />} />
-                  <Route path="match/:matchId/preview" element={<MatchPreview />} />
-                  {/* Redirect old match route to preview screen */}
-                  <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
-                  <Route path="calendar" element={<CalendarPage />} />
-                  <Route path="league" element={<League />} />
-                  <Route path="transfers" element={<Transfers />} />
-                  <Route path="board" element={<Board />} />
-                  <Route path="*" element={<Navigate to="/game/home" replace />} />
-                </Routes>
-              </Layout>            }
+              <TutorialController>
+                <Layout>
+                  <Routes>
+                    <Route path="home" element={<Home />} />
+                    <Route path="inbox" element={<Inbox />} />
+                    <Route path="squad" element={<Squad />} />
+                    <Route path="tactics" element={<TacticsPage />} />
+                    <Route path="matches" element={<Matches />} />
+                    <Route path="match/:matchId/preview" element={<MatchPreview />} />
+                    {/* Redirect old match route to preview screen */}
+                    <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route path="league" element={<League />} />
+                    <Route path="transfers" element={<Transfers />} />
+                    <Route path="board" element={<Board />} />
+                    <Route path="*" element={<Navigate to="/game/home" replace />} />
+                  </Routes>
+                </Layout>
+              </TutorialController>
+            }
           />
 
           {/* Catch all - redirect to start menu */}

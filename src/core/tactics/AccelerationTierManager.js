@@ -5,7 +5,7 @@
  */
 
 import tacticsConfig from '../../data/config/tactics-config.json';
-import dlsCalculator from './DLSCalculator.js';
+import pressureCalculator from './PressureCalculator.js';
 
 /**
  * @class AccelerationTierManager
@@ -57,7 +57,19 @@ class AccelerationTierManager {
       return { ...player };
     }
 
-    const modifiedPlayer = JSON.parse(JSON.stringify(player)); // Deep copy
+    // Deep clone player to avoid mutating original (must clone nested attribute objects)
+    const modifiedPlayer = {
+      ...player,
+      attributes: {
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
+      },
+      condition: { ...player.condition }
+    };
     const appliedModifiers = { bonuses: {}, penalties: {} };
 
     // Apply bonuses
@@ -158,7 +170,7 @@ class AccelerationTierManager {
   }
 
   /**
-   * Auto-select tier based on DLS resources (realistic cricket logic)
+   * Auto-select tier based on batting pressure (0-100 scale)
    * @param {Object} matchSituation - Current match situation
    * @param {number} targetScore - Target score (par score for innings)
    * @param {number} currentScore - Current score
@@ -167,60 +179,39 @@ class AccelerationTierManager {
    * @returns {string} Recommended tier name
    */
   autoSelectTier(matchSituation, targetScore, currentScore, ballsRemaining, wicketsLost) {
-    // DLS RESOURCE-BASED CALCULATION
-    // Key insight: Compare actual score vs DLS par score at this point
+    const wicketsInHand = 10 - wicketsLost;
 
-    // Step 1: Get current DLS resource percentage
-    const currentResourcesRemaining = dlsCalculator.getResourcePercentage(ballsRemaining, wicketsLost);
+    // Calculate batting pressure using PressureCalculator
+    const pressure = pressureCalculator.calculatePressure({
+      ballsLeft: ballsRemaining,
+      wicketsInHand,
+      currentScore,
+      target: targetScore,
+      currentRunRate: matchSituation.currentRunRate || 0,
+      requiredRunRate: matchSituation.requiredRunRate || 8.0
+    });
 
-    // Step 2: Calculate how many resources we've consumed
-    const resourcesConsumed = 100 - currentResourcesRemaining;
+    const battingPressure = pressure.batting;
 
-    // Step 3: Calculate DLS par score at this point in the innings
-    // If we've used X% of resources, we should have X% of the target score
-    const dlsParScore = (resourcesConsumed / 100) * targetScore;
+    // Get thresholds and tier mapping from config
+    const thresholds = this.autoTierRules.pressureThresholds;
+    const tierMapping = this.autoTierRules.tierMapping;
 
-    // Step 4: Calculate the gap (positive = ahead of par, negative = behind par)
-    const scoreGap = currentScore - dlsParScore;
-
-    // Step 5: Normalize gap as percentage of target (for consistent thresholds)
-    const gapPercentage = (scoreGap / targetScore) * 100;
-
-    const effectiveGapPercentage = (gapPercentage / currentResourcesRemaining)
-
-    // Step 6: Map gap to acceleration tier using cricket-realistic thresholds
-    // Positive gap = ahead of par → can afford to be conservative
-    // Negative gap = behind par → need to accelerate
-
-    const rules = this.autoTierRules.logic;
-
-    // Far ahead of DLS par (>12% ahead) → Blockade (preserve wickets)
-    if (gapPercentage >= 12) {
-      return rules.tierMapping.massiveAhead; // Blockade
-    }
-    // Comfortably ahead (7-12% ahead) → Build (consolidate)
-    else if (gapPercentage >= 7) {
-      return rules.tierMapping.significantAhead; // Build
-    }
-    // Slightly ahead (3-7% ahead) → Rotate (steady accumulation)
-    else if (gapPercentage >= 3) {
-      return rules.tierMapping.slightAhead; // Rotate
-    }
-    // On par (±3%) → Rotate (maintain pace)
-    else if (gapPercentage >= -3) {
-      return rules.tierMapping.onPar; // Rotate
-    }
-    // Slightly behind (3-7% behind) → Cruise (controlled aggression)
-    else if (gapPercentage >= -7) {
-      return rules.tierMapping.slightBehind; // Cruise
-    }
-    // Significantly behind (7-12% behind) → Blitz (attack mode)
-    else if (gapPercentage >= -12) {
-      return rules.tierMapping.significantBehind; // Blitz
-    }
-    // Far behind (>12% behind) → Hit Out/Get Out (desperate measures)
-    else {
-      return rules.tierMapping.massiveBehind; // Hit Out/Get Out
+    // Map batting pressure to acceleration tier
+    // Low pressure = cruising → conservative tiers
+    // High pressure = under the pump → aggressive tiers
+    if (battingPressure < thresholds.veryLow) {
+      return tierMapping.veryLowPressure; // Blockade
+    } else if (battingPressure < thresholds.low) {
+      return tierMapping.lowPressure; // Build
+    } else if (battingPressure < thresholds.neutral) {
+      return tierMapping.neutralPressure; // Rotate
+    } else if (battingPressure < thresholds.high) {
+      return tierMapping.highPressure; // Cruise
+    } else if (battingPressure < thresholds.veryHigh) {
+      return tierMapping.veryHighPressure; // Blitz
+    } else {
+      return tierMapping.extremePressure; // Hit Out/Get Out
     }
   }
 

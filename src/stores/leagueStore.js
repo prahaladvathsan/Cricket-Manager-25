@@ -5,10 +5,11 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import PlayoffGenerator from '../core/league/PlayoffGenerator.js';
 import MatchWeekScheduleGenerator from '../core/league/MatchWeekScheduleGenerator.js';
 import useGameStore from './gameStore';
+import { compressedStorageOptions } from '../utils/compression.js';
 
 /**
  * @typedef {Object} LeagueState
@@ -419,6 +420,141 @@ const useLeagueStore = create(
   }),
 
   /**
+   * Incrementally update standings for a single match result (O(1) instead of O(n))
+   * Use this for performance during simulation instead of recalculateStandings
+   * @param {Object} result - Single match result object
+   */
+  updateStandingsForMatch: (result) => set((state) => {
+    const { standings } = state;
+
+    // Create mutable copy of standings
+    const updatedStandings = standings.map(team => ({ ...team }));
+
+    // Create a map for quick lookup
+    const standingsMap = {};
+    updatedStandings.forEach(team => {
+      standingsMap[team.clubId] = team;
+    });
+
+    const homeTeam = standingsMap[result.homeTeam];
+    const awayTeam = standingsMap[result.awayTeam];
+
+    if (!homeTeam || !awayTeam) {
+      console.warn('Team not found in standings:', result.homeTeam, result.awayTeam);
+      return state;
+    }
+
+    // Update matches played
+    homeTeam.played++;
+    awayTeam.played++;
+
+    // Get innings data
+    const innings1 = result.innings1;
+    const innings2 = result.innings2;
+
+    // Determine which team batted first
+    const homeTeamBattedFirst = innings1.battingTeam === result.homeTeam;
+
+    // Calculate balls from innings data (same logic as recalculateStandings)
+    const calculateBalls = (innings) => {
+      if (innings.ballsBowled !== undefined && innings.ballsBowled !== null && innings.ballsBowled > 0) {
+        return innings.ballsBowled;
+      }
+      if (innings.ballsFaced !== undefined && innings.ballsFaced !== null && innings.ballsFaced > 0) {
+        return innings.ballsFaced;
+      }
+      if (innings.overs !== undefined && innings.overs !== null &&
+          innings.balls !== undefined && innings.balls !== null) {
+        const completeOvers = parseInt(innings.overs, 10) || 0;
+        const ballsInOver = parseInt(innings.balls, 10) || 0;
+        return completeOvers * 6 + ballsInOver;
+      }
+      if (innings.overs !== undefined && innings.overs !== null) {
+        const oversFloat = parseFloat(innings.overs);
+        const completeOvers = Math.floor(oversFloat);
+        const ballsInOver = Math.round((oversFloat - completeOvers) * 10);
+        return completeOvers * 6 + ballsInOver;
+      }
+      if (innings.oversCompleted !== undefined && innings.oversCompleted !== null) {
+        const ballsInCurrentOver = innings.ballsInCurrentOver || 0;
+        return innings.oversCompleted * 6 + ballsInCurrentOver;
+      }
+      if (innings.balls !== undefined && innings.balls !== null && innings.balls > 0) {
+        return innings.balls;
+      }
+      return 0;
+    };
+
+    const innings1Balls = calculateBalls(innings1);
+    const innings2Balls = calculateBalls(innings2);
+
+    // NRR rule: If team was all out (10 wickets), use full quota (120 balls for T20)
+    const innings1BallsForNRR = innings1.wickets === 10 ? 120 : innings1Balls;
+    const innings2BallsForNRR = innings2.wickets === 10 ? 120 : innings2Balls;
+
+    // Update home team stats
+    if (homeTeamBattedFirst) {
+      homeTeam.runsScored += innings1.totalScore;
+      homeTeam.ballsFaced += innings1BallsForNRR;
+      homeTeam.runsConceded += innings2.totalScore;
+      homeTeam.ballsBowled += innings2BallsForNRR;
+    } else {
+      homeTeam.runsScored += innings2.totalScore;
+      homeTeam.ballsFaced += innings2BallsForNRR;
+      homeTeam.runsConceded += innings1.totalScore;
+      homeTeam.ballsBowled += innings1BallsForNRR;
+    }
+
+    // Update away team stats (opposite of home team)
+    if (homeTeamBattedFirst) {
+      awayTeam.runsScored += innings2.totalScore;
+      awayTeam.ballsFaced += innings2BallsForNRR;
+      awayTeam.runsConceded += innings1.totalScore;
+      awayTeam.ballsBowled += innings1BallsForNRR;
+    } else {
+      awayTeam.runsScored += innings1.totalScore;
+      awayTeam.ballsFaced += innings1BallsForNRR;
+      awayTeam.runsConceded += innings2.totalScore;
+      awayTeam.ballsBowled += innings2BallsForNRR;
+    }
+
+    // Update win/loss/tie
+    if (result.winner === result.homeTeam) {
+      homeTeam.won++;
+      awayTeam.lost++;
+    } else if (result.winner === result.awayTeam) {
+      awayTeam.won++;
+      homeTeam.lost++;
+    } else if (result.winner === 'tie') {
+      homeTeam.tied++;
+      awayTeam.tied++;
+    } else {
+      homeTeam.noResult++;
+      awayTeam.noResult++;
+    }
+
+    // Recalculate points and NRR for both teams
+    [homeTeam, awayTeam].forEach(team => {
+      team.points = (team.won * 2) + team.tied + team.noResult;
+      const runRateScored = team.ballsFaced > 0 ? (team.runsScored / team.ballsFaced) * 6 : 0;
+      const runRateConceded = team.ballsBowled > 0 ? (team.runsConceded / team.ballsBowled) * 6 : 0;
+      team.netRunRate = runRateScored - runRateConceded;
+    });
+
+    // Sort standings: Points DESC, then NRR DESC
+    updatedStandings.sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return b.netRunRate - a.netRunRate;
+    });
+
+    return {
+      standings: updatedStandings
+    };
+  }),
+
+  /**
    * Advance to next matchday
    */
   advanceMatchday: () => set((state) => ({
@@ -790,7 +926,8 @@ const useLeagueStore = create(
     }),
     {
       name: 'cm25-league-store',
-      version: 2
+      version: 3, // Bumped version for compressed storage migration
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
     }
   )
 );

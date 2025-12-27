@@ -42,7 +42,19 @@ class ContextualModifierManager {
    * @returns {Object} Modified bowler (copy)
    */
   applyLeftRightPenalty(bowler) {
-    const modifiedBowler = JSON.parse(JSON.stringify(bowler)); // Deep copy
+    // Deep clone bowler to avoid mutating original (must clone nested attribute objects)
+    const modifiedBowler = {
+      ...bowler,
+      attributes: {
+        ...bowler.attributes,
+        batting: { ...bowler.attributes?.batting },
+        bowling: { ...bowler.attributes?.bowling },
+        physical: { ...bowler.attributes?.physical },
+        mental: { ...bowler.attributes?.mental },
+        fielding: { ...bowler.attributes?.fielding }
+      },
+      condition: { ...bowler.condition }
+    };
 
     // Apply accuracy penalty
     const accuracyPenalty = this.leftRightConfig.effects.bowler.accuracy;
@@ -104,7 +116,19 @@ class ContextualModifierManager {
    * @returns {Object} Modified bowler (copy)
    */
   applyNewBallBoost(bowler) {
-    const modifiedBowler = JSON.parse(JSON.stringify(bowler)); // Deep copy
+    // Deep clone bowler to avoid mutating original (must clone nested attribute objects)
+    const modifiedBowler = {
+      ...bowler,
+      attributes: {
+        ...bowler.attributes,
+        batting: { ...bowler.attributes?.batting },
+        bowling: { ...bowler.attributes?.bowling },
+        physical: { ...bowler.attributes?.physical },
+        mental: { ...bowler.attributes?.mental },
+        fielding: { ...bowler.attributes?.fielding }
+      },
+      condition: { ...bowler.condition }
+    };
 
     // Apply swing boost
     const swingBoost = this.newBallConfig.effects.bowler.swing;

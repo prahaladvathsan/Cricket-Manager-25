@@ -21,6 +21,7 @@ import BattingOrderTab from './tabs/BattingOrderTab';
 import BowlingPlansTab from './tabs/BowlingPlansTab';
 import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
+import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
 
 const TacticsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -35,11 +36,25 @@ const TacticsPage = () => {
   const userTeam = getUserTeam();
   const teamId = userTeam?.id;
 
+  // Tutorial: Tactics-specific walkthrough (pass setActiveTab for auto-switching)
+  const {
+    shouldShowTutorial,
+    currentStep,
+    advance: advanceTutorial,
+    skip: skipTutorial,
+    totalSteps
+  } = useTacticsTutorial(setActiveTab);
+
   // Get team tactics
   const teamTactics = getTeamTactics(teamId);
 
   // Get team players
   const teamPlayers = teamId ? Object.values(players).filter(p => p.currentTeam === teamId) : [];
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   // Initialize tactics if they don't exist
   useEffect(() => {
@@ -188,7 +203,7 @@ const TacticsPage = () => {
 
       {/* Tabs */}
       <div className="border-b border-border-primary">
-        <nav className="flex gap-2">
+        <nav className="tactics-tab-nav flex gap-2">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
@@ -199,7 +214,7 @@ const TacticsPage = () => {
                   setValidationErrors([]); // Clear errors when switching tabs
                   setShowSuccess(false);
                 }}
-                className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+                className={`tactics-tab-${tab.id} px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-cricket-accent text-cricket-accent'
                     : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -256,12 +271,27 @@ const TacticsPage = () => {
         <div className="flex-1"></div>
         <button
           onClick={handleValidate}
-          className="btn-primary flex items-center gap-2 text-sm px-4 py-2"
+          className="tactics-validate-btn btn-primary flex items-center gap-2 text-sm px-4 py-2"
         >
           <CheckCircle className="w-4 h-4" />
           <span>Validate Tactics</span>
         </button>
       </div>
+
+      {/* Tactics Tutorial Walkthrough */}
+      {shouldShowTutorial && tacticsTutorialSteps[currentStep] && (
+        <TutorialSpotlight
+          targetSelector={tacticsTutorialSteps[currentStep].targetSelector}
+          title={tacticsTutorialSteps[currentStep].title}
+          description={tacticsTutorialSteps[currentStep].description}
+          icon={tacticsTutorialSteps[currentStep].icon}
+          step={currentStep + 1}
+          totalSteps={totalSteps}
+          position={tacticsTutorialSteps[currentStep].position}
+          onNext={advanceTutorial}
+          onSkip={skipTutorial}
+        />
+      )}
     </div>
   );
 };

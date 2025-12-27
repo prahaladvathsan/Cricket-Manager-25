@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar } from 'lucide-react';
+import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar, List } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -14,7 +14,7 @@ import useFinanceStore from '../../stores/financeStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
 import AuctionEngine from '../../core/auction-system/AuctionEngine';
-import PlayerValuation from '../../core/auction-system/PlayerValuation';
+import aiCore from '../../core/ai/AICore';
 import PlayerCard from '../shared/PlayerCard';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
@@ -22,6 +22,8 @@ import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGener
 import MessageGenerator from '../../utils/MessageGenerator';
 import TransferMarketView from '../Transfers/TransferMarketView';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
+import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
+import { ContextualTip, useScreenTip, screenTips, TutorialSpotlight, useAuctionTutorial, auctionTutorialSteps } from '../tutorial';
 
 const Transfers = () => {
   const { teams, userTeamId, getUserTeam, addPlayerToSquad, initializeAllTeamsTactics } = useTeamStore();
@@ -38,7 +40,9 @@ const Transfers = () => {
   const { transferHandler, transferMarket, isReady } = useTransferSystem();
 
   const userTeam = getUserTeam();
-  const valuation = useMemo(() => new PlayerValuation(), []);
+
+  // Tutorial: Screen tip for first-time visitors
+  const { shouldShow: showTip, dismiss: dismissTip } = useScreenTip('transfers');
 
   // Reconstruct auction summary from persisted data (for when user navigates away and comes back)
   const auctionSummary = useMemo(() => {
@@ -121,6 +125,17 @@ const Transfers = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [skipProgress, setSkipProgress] = useState({ current: 0, total: 0, type: '' });
+  const [roundMetadata, setRoundMetadata] = useState([]);
+
+  // Tutorial: Auction walkthrough when auction starts
+  // Must be after auctionState and setActiveTab declarations
+  const {
+    shouldShowTutorial: showAuctionTutorial,
+    currentStep: auctionTutorialStep,
+    advance: advanceAuctionTutorial,
+    skip: skipAuctionTutorial,
+    totalSteps: auctionTutorialTotalSteps
+  } = useAuctionTutorial(auctionState, setActiveTab);
 
   const timerRef = useRef(null);
   const bidFloor = useRef(0);
@@ -223,6 +238,7 @@ const Transfers = () => {
 
       setAuctionEngine(engine);
       setRounds(auctionRounds);
+      setRoundMetadata(engine.getRoundMetadata());
       setAuctionState('in_progress');
       setCurrentRound(0);
       setCurrentPlayerIndex(0);
@@ -253,7 +269,7 @@ const Transfers = () => {
     secondsRef.current = 0;
     bidFloor.current = player.basePrice;
 
-    addToLog(`Now auctioning: ${player.name} (${player.role}) - Base Price: ${valuation.formatPrice(player.basePrice)}`, 'player');
+    addToLog(`Now auctioning: ${player.name} (${player.role}) - Base Price: ${aiCore.formatPrice(player.basePrice)}`, 'player');
 
     const totalPlayers = rounds.reduce((sum, round) => sum + round.length, 0);
     const playersAuctioned = (roundIndex * (rounds[0]?.length || 10)) + playerIndex;
@@ -349,7 +365,7 @@ const Transfers = () => {
     secondsRef.current = 0;
     bidFloor.current = validAmount;
 
-    addToLog(`${team.name} bids ${valuation.formatPrice(validAmount)}`, 'bid');
+    addToLog(`${team.name} bids ${aiCore.formatPrice(validAmount)}`, 'bid');
 
     if (timerRef.current) clearTimeout(timerRef.current);
     if (engine && player && auctionProgress !== undefined) {
@@ -369,7 +385,7 @@ const Transfers = () => {
     const nextBid = price + increment;
 
     if (nextBid > userTeamData.budgetRemaining) {
-      addToLog(`Insufficient funds! Budget remaining: ${valuation.formatPrice(userTeamData.budgetRemaining)}`, 'error');
+      addToLog(`Insufficient funds! Budget remaining: ${aiCore.formatPrice(userTeamData.budgetRemaining)}`, 'error');
       return;
     }
 
@@ -410,17 +426,23 @@ const Transfers = () => {
     }
 
     if (willingBidders.length > 0) {
-      let highestBid = Math.max(...willingBidders.map(b => b.maxBid));
-      highestBid = auctionEngine.floorToValidBidAmount(highestBid);
-      const highestBidders = willingBidders.filter(b => b.maxBid >= highestBid);
-      const winner = highestBidders[Math.floor(Math.random() * highestBidders.length)];
+      // Use second-price auction logic
+      const bids = willingBidders.map(b => ({
+        teamId: b.team.id,
+        team: b.team,
+        amount: auctionEngine.floorToValidBidAmount(b.maxBid)
+      }));
 
-      setCurrentPrice(highestBid);
-      currentPriceRef.current = highestBid;
-      setHighestBidder(winner.team);
-      highestBidderRef.current = winner.team;
+      const result = auctionEngine.ai.determineWinningBid(bids);
 
-      addToLog(`Fast auction: ${winner.team.name} wins at ${valuation.formatPrice(highestBid)}`, 'bid');
+      if (result) {
+        setCurrentPrice(result.paidPrice);
+        currentPriceRef.current = result.paidPrice;
+        setHighestBidder(result.team);
+        highestBidderRef.current = result.team;
+
+        addToLog(`Fast auction: ${result.team.name} wins at ${aiCore.formatPrice(result.paidPrice)} (2nd-price)`, 'bid');
+      }
     }
 
     finalizePlayerAuction(auctionEngine, currentPlayer);
@@ -444,17 +466,17 @@ const Transfers = () => {
 
     const minBid = currentPriceRef.current + getValidIncrement(currentPriceRef.current);
     if (maxBidAmount < minBid) {
-      addToLog(`Max bid must be at least ${valuation.formatPrice(minBid)} (${(minBid / 1000).toFixed(0)}K)`, 'error');
+      addToLog(`Max bid must be at least ${aiCore.formatPrice(minBid)} (${(minBid / 1000).toFixed(0)}K)`, 'error');
       return;
     }
 
     if (maxBidAmount > userTeamData.budgetRemaining) {
-      addToLog(`Max bid exceeds budget! Budget: ${valuation.formatPrice(userTeamData.budgetRemaining)} (${(userTeamData.budgetRemaining / 1000).toFixed(0)}K)`, 'error');
+      addToLog(`Max bid exceeds budget! Budget: ${aiCore.formatPrice(userTeamData.budgetRemaining)} (${(userTeamData.budgetRemaining / 1000).toFixed(0)}K)`, 'error');
       return;
     }
 
     setUserMaxBid(currentPlayer.id, maxBidAmount);
-    addToLog(`Max bid set to ${valuation.formatPrice(maxBidAmount)} for ${currentPlayer.name}`, 'info');
+    addToLog(`Max bid set to ${aiCore.formatPrice(maxBidAmount)} for ${currentPlayer.name}`, 'info');
     setMaxBidInput('');
   };
 
@@ -502,22 +524,28 @@ const Transfers = () => {
       }
 
       if (willingBidders.length > 0) {
-        let highestBid = Math.max(...willingBidders.map(b => b.maxBid));
-        highestBid = auctionEngine.floorToValidBidAmount(highestBid);
-        const highestBidders = willingBidders.filter(b => b.maxBid >= highestBid);
-        const winner = highestBidders[Math.floor(Math.random() * highestBidders.length)];
+        // Use second-price auction logic
+        const bids = willingBidders.map(b => ({
+          teamId: b.team.id,
+          team: b.team,
+          amount: auctionEngine.floorToValidBidAmount(b.maxBid)
+        }));
 
-        winner.team.squad.push({ ...player, soldPrice: highestBid });
-        winner.team.totalSpent += highestBid;
-        winner.team.budgetRemaining -= highestBid;
+        const result = auctionEngine.ai.determineWinningBid(bids);
 
-        savedAuction.recordSale(player.id, winner.team.id, highestBid);
-        if (player.id) {
-          addPlayerToSquad(winner.team.id, player.id);
-          assignPlayerToTeam(player.id, winner.team.id);
-          setPlayerSoldPrice(player.id, highestBid);
+        if (result) {
+          result.team.squad.push({ ...player, soldPrice: result.paidPrice });
+          result.team.totalSpent += result.paidPrice;
+          result.team.budgetRemaining -= result.paidPrice;
+
+          savedAuction.recordSale(player.id, result.team.id, result.paidPrice);
+          if (player.id) {
+            addPlayerToSquad(result.team.id, player.id);
+            assignPlayerToTeam(player.id, result.team.id);
+            setPlayerSoldPrice(player.id, result.paidPrice);
+          }
+          addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)})`, 'sold');
         }
-        addToLog(`${player.name} → ${winner.team.name} (${valuation.formatPrice(highestBid)})`, 'sold');
       } else {
         auctionEngine.unsoldPlayers.push(player);
         addToLog(`${player.name} → UNSOLD`, 'unsold');
@@ -585,24 +613,30 @@ const Transfers = () => {
         }
 
         if (willingBidders.length > 0) {
-          let highestBid = Math.max(...willingBidders.map(b => b.maxBid));
-          highestBid = auctionEngine.floorToValidBidAmount(highestBid);
-          const highestBidders = willingBidders.filter(b => b.maxBid >= highestBid);
-          const winner = highestBidders[Math.floor(Math.random() * highestBidders.length)];
+          // Use second-price auction logic
+          const bids = willingBidders.map(b => ({
+            teamId: b.team.id,
+            team: b.team,
+            amount: auctionEngine.floorToValidBidAmount(b.maxBid)
+          }));
 
-          winner.team.squad.push({ ...player, soldPrice: highestBid });
-          winner.team.totalSpent += highestBid;
-          winner.team.budgetRemaining -= highestBid;
-          savedAuction.recordSale(player.id, winner.team.id, highestBid);
+          const result = auctionEngine.ai.determineWinningBid(bids);
 
-          if (player.id) {
-            addPlayerToSquad(winner.team.id, player.id);
-            assignPlayerToTeam(player.id, winner.team.id);
-            setPlayerSoldPrice(player.id, highestBid);
-          }
+          if (result) {
+            result.team.squad.push({ ...player, soldPrice: result.paidPrice });
+            result.team.totalSpent += result.paidPrice;
+            result.team.budgetRemaining -= result.paidPrice;
+            savedAuction.recordSale(player.id, result.team.id, result.paidPrice);
 
-          if (processed % 5 === 0) {
-            addToLog(`${player.name} → ${winner.team.name} (${valuation.formatPrice(highestBid)})`, 'sold');
+            if (player.id) {
+              addPlayerToSquad(result.team.id, player.id);
+              assignPlayerToTeam(player.id, result.team.id);
+              setPlayerSoldPrice(player.id, result.paidPrice);
+            }
+
+            if (processed % 5 === 0) {
+              addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)})`, 'sold');
+            }
           }
         } else {
           auctionEngine.unsoldPlayers.push(player);
@@ -612,6 +646,67 @@ const Transfers = () => {
 
         if (processed % 10 === 0) {
           await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+    }
+
+    // Check for unsold players and run unsold round
+    if (auctionEngine.hasUnsoldPlayers()) {
+      const { players: unsoldPlayers } = auctionEngine.createUnsoldRound();
+
+      if (unsoldPlayers.length > 0) {
+        addToLog(`--- UNSOLD ROUND (${unsoldPlayers.length} players at 50% base price) ---`, 'info');
+        setSkipProgress({ current: 0, total: unsoldPlayers.length, type: 'unsold' });
+
+        for (let i = 0; i < unsoldPlayers.length; i++) {
+          const player = unsoldPlayers[i];
+          const auctionProgress = 0.95 + (i / unsoldPlayers.length) * 0.05;
+
+          setSkipProgress({ current: i + 1, total: unsoldPlayers.length, type: 'unsold' });
+
+          const willingBidders = [];
+          for (const team of auctionEngine.teams) {
+            if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
+            const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+            if (decision.shouldBid) {
+              willingBidders.push({ team, maxBid: decision.maxBid });
+            }
+          }
+
+          if (willingBidders.length > 0) {
+            // Use second-price auction logic
+            const bids = willingBidders.map(b => ({
+              teamId: b.team.id,
+              team: b.team,
+              amount: auctionEngine.floorToValidBidAmount(b.maxBid)
+            }));
+
+            const result = auctionEngine.ai.determineWinningBid(bids);
+
+            if (result) {
+              result.team.squad.push({ ...player, soldPrice: result.paidPrice });
+              result.team.totalSpent += result.paidPrice;
+              result.team.budgetRemaining -= result.paidPrice;
+              savedAuction.recordSale(player.id, result.team.id, result.paidPrice);
+
+              if (player.id) {
+                addPlayerToSquad(result.team.id, player.id);
+                assignPlayerToTeam(player.id, result.team.id);
+                setPlayerSoldPrice(player.id, result.paidPrice);
+              }
+
+              addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)}) [UNSOLD ROUND]`, 'sold');
+            }
+          } else {
+            auctionEngine.permanentlyUnsold.push(player);
+            addToLog(`${player.name} → PERMANENTLY UNSOLD`, 'unsold');
+          }
+
+          savedAuction.nextPlayer();
+
+          if (i % 5 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
         }
       }
     }
@@ -649,7 +744,7 @@ const Transfers = () => {
       team.totalSpent += finalPrice;
       team.budgetRemaining -= finalPrice;
 
-      addToLog(`SOLD! ${player.name} to ${winner.name} for ${valuation.formatPrice(finalPrice)}`, 'sold');
+      addToLog(`SOLD! ${player.name} to ${winner.name} for ${aiCore.formatPrice(finalPrice)}`, 'sold');
 
       if (player.id) {
         addPlayerToSquad(team.id, player.id);
@@ -695,104 +790,71 @@ const Transfers = () => {
       const nextRound = currentRound + 1;
       setCurrentRound(nextRound);
       setCurrentPlayerIndex(0);
-      addToLog(`--- Round ${nextRound + 1} ---`, 'info');
+      const nextRoundLabel = roundMetadata[nextRound]?.label || `Round ${nextRound + 1}`;
+      addToLog(`--- ${nextRoundLabel.toUpperCase()} ---`, 'info');
       savedAuction.nextPlayer();
       startPlayerAuction(auctionEngine, rounds[nextRound][0], nextRound, 0);
     } else {
-      setAuctionState('completed');
-      setCurrentPlayer(null);
-      addToLog('Auction completed! Initializing league...', 'success');
-      savedAuction.completeAuction();
-      clearEvents();
-      setTimeout(() => {
-        initializeLeague();
-      }, 500);
+      // Check for unsold players before completing
+      if (auctionEngine.hasUnsoldPlayers()) {
+        startUnsoldRound();
+      } else {
+        completeAuction();
+      }
     }
+  };
+
+  // Start the unsold round
+  const startUnsoldRound = () => {
+    const { players: unsoldPlayers, metadata } = auctionEngine.createUnsoldRound();
+
+    if (unsoldPlayers.length === 0) {
+      completeAuction();
+      return;
+    }
+
+    // Add unsold round to rounds array
+    const newRounds = [...rounds, unsoldPlayers];
+    setRounds(newRounds);
+    setRoundMetadata(auctionEngine.getRoundMetadata());
+
+    const nextRound = newRounds.length - 1;
+    setCurrentRound(nextRound);
+    setCurrentPlayerIndex(0);
+
+    addToLog(`--- UNSOLD ROUND (${unsoldPlayers.length} players at 50% base price) ---`, 'info');
+    savedAuction.nextPlayer();
+    startPlayerAuction(auctionEngine, unsoldPlayers[0], nextRound, 0);
+  };
+
+  // Complete the auction
+  const completeAuction = () => {
+    setAuctionState('completed');
+    setCurrentPlayer(null);
+    addToLog('Auction completed! Initializing league...', 'success');
+    savedAuction.completeAuction();
+    clearEvents();
+    setTimeout(() => {
+      initializeLeague();
+    }, 500);
   };
 
   const initializeLeague = () => {
     console.log('🏏 Initializing league after auction completion...');
 
     try {
-      const clubs = auctionEngine.teams.map(team => ({
-        id: team.id,
-        name: team.name,
-        shortName: team.shortName || team.name.substring(0, 3).toUpperCase(),
-        homeVenue: team.homeGround || `${team.name} Stadium`,
-        homeGround: team.homeGround || `${team.name} Stadium`,
-        colors: team.colors || { primary: '#2D5F3F', secondary: '#D4AF37' }
-      }));
-
-      const scheduleGenerator = new MatchWeekScheduleGenerator();
-      const { fixtures, seasonStart, seasonEnd } = scheduleGenerator.generateMatchWeekSchedule(
-        clubs,
-        new Date(currentDate)
-      );
-
-      initializeSeason({
-        seasonId: `season_${currentSeason}`,
-        seasonName: `Season ${currentSeason}`,
-        clubs,
-        fixtures,
-        useMatchWeeks: false
+      return sharedInitializeLeague({
+        stores: {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          playerStore: usePlayerStore
+        },
+        isFirstSeasonInit: true // Transfers page always handles Season 1 initial setup
       });
-
-      // Initialize finances for all teams
-      console.log('💰 Initializing finances...');
-      const teamsForFinances = Object.values(teams).map(team => ({
-        id: team.id,
-        name: team.name
-      }));
-
-      console.log('💰 Teams for finance init:', teamsForFinances.map(t => t.name).join(', '));
-      initializeFinances(teamsForFinances, `season_${currentSeason}`, null);
-      console.log('💰 Finance initialization done');
-
-      // Record auction spending for each team
-      console.log('💸 Recording auction spending for all teams...');
-      auctionEngine.teams.forEach(auctionTeam => {
-        const squadPlayerIds = auctionTeam.squad.map(p => p.id);
-        console.log(`  📊 ${auctionTeam.name}: Spending $${(auctionTeam.totalSpent / 1000000).toFixed(1)}M for ${squadPlayerIds.length} players`);
-        const success = processAuctionSpending(auctionTeam.id, auctionTeam.totalSpent, squadPlayerIds);
-        console.log(`  ${success ? '✅' : '❌'} ${auctionTeam.name}: ${success ? 'Success' : 'Failed'}`);
-      });
-
-      console.log('✅ Finance initialization and auction spending recording complete!');
-
-      initializeAllTeamsTactics();
-      clearEvents();
-
-      const currentGameDate = new Date(currentDate);
-      const gameStartDate = new Date(currentGameDate);
-      gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
-
-      const matchEvents = fixtures.map(fixture => {
-        const matchDate = new Date(fixture.dateObj);
-        const daysSinceStart = Math.ceil((matchDate - gameStartDate) / (1000 * 60 * 60 * 24));
-        const matchGameDay = daysSinceStart + 1;
-
-        return {
-          day: matchGameDay,
-          type: 'match',
-          data: fixture
-        };
-      });
-
-      scheduleEvents(matchEvents);
-      advancePhase('league');
-
-      addMessage(MessageGenerator.generateWelcomeMessage(userTeam, currentSeason));
-      addMessage(MessageGenerator.generateExpectationsMessage(userTeam, currentSeason));
-      addMessage(MessageGenerator.generateTutorialMessage());
-
-      const userSquad = auctionEngine.teams.find(t => t.id === userTeamId)?.squad || [];
-      const finances = {
-        totalSpent: auctionEngine.teams.find(t => t.id === userTeamId)?.totalSpent || 0,
-        budgetRemaining: auctionEngine.teams.find(t => t.id === userTeamId)?.budgetRemaining || 0
-      };
-      addMessage(MessageGenerator.generateAuctionSummaryMessage(userSquad, finances));
-
-      console.log('✅ League initialization complete!');
     } catch (error) {
       console.error('❌ Error initializing league:', error);
       alert(`Failed to initialize league: ${error.message}`);
@@ -804,18 +866,17 @@ const Transfers = () => {
       const nextRound = currentRound + 1;
       setCurrentRound(nextRound);
       setCurrentPlayerIndex(0);
-      addToLog(`--- Round ${nextRound + 1} ---`, 'info');
+      const nextRoundLabel = roundMetadata[nextRound]?.label || `Round ${nextRound + 1}`;
+      addToLog(`--- ${nextRoundLabel.toUpperCase()} ---`, 'info');
       savedAuction.nextPlayer();
       startPlayerAuction(auctionEngine, rounds[nextRound][0], nextRound, 0);
     } else {
-      setAuctionState('completed');
-      setCurrentPlayer(null);
-      addToLog('Auction completed! Initializing league...', 'success');
-      savedAuction.completeAuction();
-      clearEvents();
-      setTimeout(() => {
-        initializeLeague();
-      }, 1500);
+      // Check for unsold players before completing
+      if (auctionEngine.hasUnsoldPlayers()) {
+        startUnsoldRound();
+      } else {
+        completeAuction();
+      }
     }
   };
 
@@ -846,9 +907,14 @@ const Transfers = () => {
 
   const tabs = [
     { id: 'auction', label: 'Live Auction', icon: Gavel },
+    { id: 'rounds', label: 'Rounds', icon: List },
     { id: 'squads', label: 'Team Squads', icon: Users },
     { id: 'log', label: 'Auction Log', icon: TrendingUp }
   ];
+
+  // Get current round label for display
+  const currentRoundLabel = roundMetadata[currentRound]?.label || `Round ${currentRound + 1}`;
+  const currentRoundCategory = roundMetadata[currentRound]?.category || '';
 
   // If transfer window is open and auction completed, show transfer market
   if (isTransferWindowOpen && auctionCompleted && userTeam && isReady) {
@@ -872,13 +938,9 @@ const Transfers = () => {
         </div>
       )}
 
-      {/* Header - Single Line */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-base font-bold text-cricket-text-primary flex items-center gap-2">
-          <Gavel className="w-4 h-4 text-cricket-accent" />
-          Player Auction • Season {currentSeason} • {userTeam?.name || 'Select Team'}
-        </h1>
-        {auctionState === 'not_started' && (
+      {/* Start Auction Button */}
+      {auctionState === 'not_started' && (
+        <div className="flex justify-end">
           <button
             onClick={handleStartAuction}
             disabled={Object.keys(players).length === 0}
@@ -887,17 +949,17 @@ const Transfers = () => {
             <Play className="w-5 h-5" />
             {Object.keys(players).length === 0 ? 'Loading Players...' : 'Start Auction'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Auction Status - Compressed */}
       {auctionEngine && (
-        <div className="card p-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="auction-status-bar card p-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
             <div>
               <div className="text-xxs text-cricket-text-secondary">Your Budget</div>
               <div className="text-base font-bold text-cricket-accent">
-                {valuation.formatPrice(userTeamData?.budgetRemaining || 0)}
+                {aiCore.formatPrice(userTeamData?.budgetRemaining || 0)}
               </div>
             </div>
             <div>
@@ -905,8 +967,8 @@ const Transfers = () => {
               <div className="text-base font-bold">{userTeamData?.squad.length || 0} / 25</div>
             </div>
             <div>
-              <div className="text-xxs text-cricket-text-secondary">Round Progress</div>
-              <div className="text-base font-bold">{currentRound + 1} / {rounds.length}</div>
+              <div className="text-xxs text-cricket-text-secondary">Current Round</div>
+              <div className="text-base font-bold capitalize">{currentRoundLabel}</div>
             </div>
             <div>
               <div className="text-xxs text-cricket-text-secondary">Status</div>
@@ -914,16 +976,50 @@ const Transfers = () => {
                 auctionState === 'in_progress' ? 'text-yellow-500' :
                 auctionState === 'completed' ? 'text-green-500' : 'text-gray-500'
               }`}>
-                {auctionState === 'in_progress' ? 'Live' :
+                {auctionState === 'in_progress' ? `Live (${currentRound + 1}/${rounds.length})` :
                  auctionState === 'completed' ? 'Complete' : 'Pending'}
               </div>
             </div>
           </div>
+
+          {/* Players in Current Round */}
+          {rounds[currentRound] && rounds[currentRound].length > 0 && (
+            <div className="pt-2 border-t border-border-primary">
+              <div className="flex items-center gap-1 flex-wrap">
+                {rounds[currentRound].map((player, idx) => {
+                  const isCurrentPlayer = idx === currentPlayerIndex;
+                  const isCompleted = idx < currentPlayerIndex;
+                  const isSold = player.status === 'sold';
+                  const isUnsold = player.status === 'unsold';
+
+                  return (
+                    <div
+                      key={player.id}
+                      className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                        isCurrentPlayer
+                          ? 'bg-cricket-accent text-black ring-2 ring-cricket-accent/50'
+                          : isCompleted && isSold
+                          ? 'bg-green-900/30 text-green-400 line-through opacity-60'
+                          : isCompleted && isUnsold
+                          ? 'bg-red-900/30 text-red-400 line-through opacity-60'
+                          : isCompleted
+                          ? 'bg-gray-700 text-gray-400 opacity-60'
+                          : 'bg-bg-tertiary text-text-secondary'
+                      }`}
+                      title={`${player.name} - ${player.role}`}
+                    >
+                      {player.name.split(' ').pop()}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="border-b border-border-primary">
+      <div className="auction-tab-nav border-b border-border-primary">
         <nav className="flex gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -957,7 +1053,8 @@ const Transfers = () => {
                 <div className="text-center mb-8">
                   <FastForward className="w-24 h-24 text-cricket-accent mx-auto mb-6 animate-pulse" />
                   <h2 className="text-4xl font-bold text-text-primary mb-4">
-                    {skipProgress.type === 'round' ? `Skipping Round ${currentRound + 1}` : 'Fast-Forwarding Auction'}
+                    {skipProgress.type === 'round' ? `Skipping Round ${currentRound + 1}` :
+                     skipProgress.type === 'unsold' ? 'Processing Unsold Round' : 'Fast-Forwarding Auction'}
                   </h2>
                   <p className="text-xl text-text-secondary">
                     Processing player auctions...
@@ -1032,15 +1129,7 @@ const Transfers = () => {
             /* Auction Complete - Show Detailed Summary */
             <div className="space-y-4">
               {/* Header */}
-              <div className="card p-6 text-center">
-                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                  <Trophy className="w-12 h-12 text-green-500" />
-                </div>
-                <h2 className="text-3xl font-bold text-green-500 mb-2">Auction Complete!</h2>
-                <p className="text-lg text-text-secondary">
-                  All squads have been finalized. League fixtures have been scheduled.
-                </p>
-              </div>
+              <h2 className="text-xl font-bold text-green-500">Auction Complete</h2>
 
               {/* Auction Statistics */}
               {(auctionEngine || auctionSummary) && (() => {
@@ -1108,7 +1197,7 @@ const Transfers = () => {
                               <div className="text-xs text-text-secondary">{sale.team}</div>
                             </div>
                             <div className="text-lg font-bold text-cricket-accent">
-                              {valuation.formatPrice(sale.price)}
+                              {aiCore.formatPrice(sale.price)}
                             </div>
                           </div>
                         ))}
@@ -1128,7 +1217,7 @@ const Transfers = () => {
                           <div className="p-3 bg-bg-secondary rounded">
                             <div className="text-xs text-text-secondary mb-1">Average Price</div>
                             <div className="text-2xl font-bold text-cricket-accent">
-                              {valuation.formatPrice(avgPrice)}
+                              {aiCore.formatPrice(avgPrice)}
                             </div>
                           </div>
                         </div>
@@ -1148,19 +1237,19 @@ const Transfers = () => {
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Total Spent</div>
                               <div className="text-2xl font-bold text-text-primary">
-                                {valuation.formatPrice(userTeamSummary.totalSpent)}
+                                {aiCore.formatPrice(userTeamSummary.totalSpent)}
                               </div>
                             </div>
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Budget Remaining</div>
                               <div className="text-2xl font-bold text-green-500">
-                                {valuation.formatPrice(userTeamSummary.budgetRemaining)}
+                                {aiCore.formatPrice(userTeamSummary.budgetRemaining)}
                               </div>
                             </div>
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Avg. Price/Player</div>
                               <div className="text-2xl font-bold text-text-primary">
-                                {valuation.formatPrice(userTeamSummary.squad.length > 0 ? userTeamSummary.totalSpent / userTeamSummary.squad.length : 0)}
+                                {aiCore.formatPrice(userTeamSummary.squad.length > 0 ? userTeamSummary.totalSpent / userTeamSummary.squad.length : 0)}
                               </div>
                             </div>
                           </div>
@@ -1192,13 +1281,13 @@ const Transfers = () => {
                                 </td>
                                 <td className="text-right py-2 px-3 text-text-primary">{team.players}</td>
                                 <td className="text-right py-2 px-3 font-mono text-cricket-accent">
-                                  {valuation.formatPrice(team.spent)}
+                                  {aiCore.formatPrice(team.spent)}
                                 </td>
                                 <td className="text-right py-2 px-3 font-mono text-text-primary">
-                                  {valuation.formatPrice(team.remaining)}
+                                  {aiCore.formatPrice(team.remaining)}
                                 </td>
                                 <td className="text-right py-2 px-3 font-mono text-text-secondary">
-                                  {valuation.formatPrice(team.players > 0 ? team.spent / team.players : 0)}
+                                  {aiCore.formatPrice(team.players > 0 ? team.spent / team.players : 0)}
                                 </td>
                               </tr>
                             ))}
@@ -1251,7 +1340,7 @@ const Transfers = () => {
                     <div className="p-4 bg-cricket-secondary rounded-lg border-2 border-green-500">
                       <div className="text-xs text-cricket-text-secondary mb-1">Final Price</div>
                       <div className="text-3xl font-bold text-green-500">
-                        {valuation.formatPrice(soldDetails.price)}
+                        {aiCore.formatPrice(soldDetails.price)}
                       </div>
                     </div>
                   </div>
@@ -1306,7 +1395,7 @@ const Transfers = () => {
               {/* Current Player - Auction Layout */}
               <div className="flex flex-col lg:flex-row gap-4">
                 {/* Left: Player Card - Wider */}
-                <div className="lg:w-1/2">
+                <div className="auction-player-card lg:w-1/2">
                   <PlayerCard
                     player={currentPlayer}
                     variant="auction"
@@ -1320,12 +1409,12 @@ const Transfers = () => {
                 {/* Right: Bidding Area - Narrower */}
                 <div className="lg:w-1/2 flex flex-col">
                   {/* Current Bid & Timer - Compact */}
-                  <div className="card p-3 flex-1 flex flex-col justify-between">
+                  <div className="auction-bid-display card p-3 flex-1 flex flex-col justify-between">
                     {/* Current Bid */}
                     <div className="text-center mb-2">
                       <div className="text-xxs text-text-secondary mb-0.5">Current Bid</div>
                       <div className="text-3xl font-bold text-cricket-accent">
-                        {valuation.formatPrice(currentPrice)}
+                        {aiCore.formatPrice(currentPrice)}
                       </div>
                       {highestBidder && (
                         <div className="text-xs text-text-secondary mt-0.5">
@@ -1338,7 +1427,7 @@ const Transfers = () => {
                     <div className="text-center mb-2 pb-2 border-b border-border-primary">
                       <div className="text-xxs text-text-secondary">Base Price</div>
                       <div className="text-sm font-semibold text-text-primary">
-                        {valuation.formatPrice(currentPlayer.basePrice)}
+                        {aiCore.formatPrice(currentPlayer.basePrice)}
                       </div>
                     </div>
 
@@ -1372,14 +1461,14 @@ const Transfers = () => {
                     {highestBidder?.id !== userTeamId ? (
                       <>
                         {/* Row 1: Bid Button OR Set Custom Max Bid */}
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="auction-bid-controls flex items-center gap-3 mb-3">
                           <button
                             onClick={handleBid}
                             disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining}
                             className="btn-primary flex-1 text-base py-3"
                           >
                             <Gavel className="w-5 h-5 inline mr-2" />
-                            Bid {valuation.formatPrice(currentPrice + getValidIncrement(currentPrice))}
+                            Bid {aiCore.formatPrice(currentPrice + getValidIncrement(currentPrice))}
                           </button>
 
                           <span className="text-sm text-text-tertiary px-2">or</span>
@@ -1413,7 +1502,7 @@ const Transfers = () => {
                           <div className="p-2 bg-green-900/20 border border-green-700/30 rounded flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                               <DollarSign className="w-4 h-4 text-green-400" />
-                              <span className="text-xs text-green-400">Auto-bid active: {valuation.formatPrice(userMaxBid)}</span>
+                              <span className="text-xs text-green-400">Auto-bid active: {aiCore.formatPrice(userMaxBid)}</span>
                             </div>
                             <button
                               onClick={handleClearMaxBid}
@@ -1426,7 +1515,7 @@ const Transfers = () => {
                         )}
 
                         {/* Row 2: Skip Player | Skip Round | Skip to End */}
-                        <div className="flex items-center gap-2">
+                        <div className="auction-skip-controls flex items-center gap-2">
                           <button
                             onClick={handlePass}
                             className="btn-secondary flex-1 text-sm py-2 flex items-center justify-center gap-1"
@@ -1505,7 +1594,7 @@ const Transfers = () => {
                         <div className="flex items-center justify-between mt-3">
                           <span className="text-xs text-text-tertiary">{player.teamName}</span>
                           <span className="text-lg font-bold text-cricket-accent">
-                            {valuation.formatPrice(player.soldPrice)}
+                            {aiCore.formatPrice(player.soldPrice)}
                           </span>
                         </div>
                       </div>
@@ -1544,7 +1633,7 @@ const Transfers = () => {
                             team.budgetRemaining < 500000 ? 'text-red-400' :
                             team.budgetRemaining < 1000000 ? 'text-yellow-400' : 'text-green-400'
                           }`}>
-                            {valuation.formatPrice(team.budgetRemaining)}
+                            {aiCore.formatPrice(team.budgetRemaining)}
                           </div>
                         </div>
                       </div>
@@ -1558,20 +1647,20 @@ const Transfers = () => {
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Total Spent</div>
                           <div className="text-sm font-bold text-text-primary">
-                            {valuation.formatPrice(team.totalSpent)}
+                            {aiCore.formatPrice(team.totalSpent)}
                           </div>
                         </div>
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Avg Price</div>
                           <div className="text-sm font-bold text-text-primary">
-                            {valuation.formatPrice(team.squad.length > 0 ? team.totalSpent / team.squad.length : 0)}
+                            {aiCore.formatPrice(team.squad.length > 0 ? team.totalSpent / team.squad.length : 0)}
                           </div>
                         </div>
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Top Buy</div>
                           <div className="text-sm font-bold text-text-primary">
                             {team.squad.length > 0
-                              ? valuation.formatPrice(Math.max(...team.squad.map(p => p.soldPrice)))
+                              ? aiCore.formatPrice(Math.max(...team.squad.map(p => p.soldPrice)))
                               : '$0'}
                           </div>
                         </div>
@@ -1591,7 +1680,7 @@ const Transfers = () => {
       )}
 
       {activeTab === 'squads' && (
-        <div className="space-y-2">
+        <div className="auction-squads-list space-y-2">
           {auctionEngine?.teams.map(team => {
             // Categorize players by role
             const playersByRole = {
@@ -1616,7 +1705,7 @@ const Transfers = () => {
                   </h3>
                   <div className="text-sm">
                     <span className="text-cricket-text-secondary">Budget: </span>
-                    <span className="font-bold">{valuation.formatPrice(team.budgetRemaining)}</span>
+                    <span className="font-bold">{aiCore.formatPrice(team.budgetRemaining)}</span>
                     <span className="text-cricket-text-secondary ml-3">Squad: </span>
                     <span className="font-bold">{team.squad.length}/25</span>
                   </div>
@@ -1643,27 +1732,27 @@ const Transfers = () => {
                                   <PlayerName playerId={player.id} player={player} className="font-semibold text-sm" />
                                 </div>
                                 <div className="text-xs text-cricket-text-secondary truncate">
-                                  {role === 'wicket-keeper' && player.primaryPlaystyle?.fielding ? (
-                                    <span>{player.primaryPlaystyle.fielding}</span>
-                                  ) : (
-                                    <>
-                                      {player.primaryPlaystyle?.batting && (
-                                        <span>{player.primaryPlaystyle.batting}</span>
-                                      )}
-                                      {player.primaryPlaystyle?.bowling && role === 'all-rounder' && (
-                                        <span> | {player.primaryPlaystyle.bowling}</span>
-                                      )}
-                                      {player.primaryPlaystyle?.bowling && role === 'bowler' && (
-                                        <span>{player.primaryPlaystyle.bowling}</span>
-                                      )}
-                                      {!player.primaryPlaystyle?.batting && !player.primaryPlaystyle?.bowling && !player.primaryPlaystyle?.fielding && (
-                                        <span className="text-cricket-text-tertiary">—</span>
-                                      )}
-                                    </>
+                                  {role === 'batsman' && (
+                                    <span>{player.primaryPlaystyle?.batting || '—'}</span>
+                                  )}
+                                  {role === 'bowler' && (
+                                    <span>{player.primaryPlaystyle?.bowling || '—'}</span>
+                                  )}
+                                  {role === 'all-rounder' && (
+                                    <span>
+                                      {player.primaryPlaystyle?.batting || '—'}
+                                      {player.primaryPlaystyle?.bowling && ` | ${player.primaryPlaystyle.bowling}`}
+                                    </span>
+                                  )}
+                                  {role === 'wicket-keeper' && (
+                                    <span>
+                                      {player.primaryPlaystyle?.batting || '—'}
+                                      {player.primaryPlaystyle?.fielding && ` | ${player.primaryPlaystyle.fielding}`}
+                                    </span>
                                   )}
                                 </div>
                                 <div className="text-xs text-cricket-accent font-bold mt-1">
-                                  {valuation.formatPrice(player.soldPrice)}
+                                  {aiCore.formatPrice(player.soldPrice)}
                                 </div>
                               </div>
                             ))}
@@ -1679,9 +1768,121 @@ const Transfers = () => {
         </div>
       )}
 
+      {activeTab === 'rounds' && (
+        <div className="card p-3">
+          <h3 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+            <List className="w-5 h-5 text-cricket-accent" />
+            Auction Rounds Schedule
+          </h3>
+          {roundMetadata.length === 0 ? (
+            <div className="text-center text-cricket-text-secondary py-8">
+              Start the auction to see the round schedule
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Group rounds by category for display */}
+              {(() => {
+                const categories = ['marquee', 'wicket-keepers', 'all-rounders', 'batsmen', 'bowlers'];
+                const categoryLabels = {
+                  'marquee': 'Marquee (Elite)',
+                  'wicket-keepers': 'Wicket-Keepers',
+                  'all-rounders': 'All-Rounders',
+                  'batsmen': 'Batsmen',
+                  'bowlers': 'Bowlers',
+                  'unsold': 'Unsold Round (50% Price)'
+                };
+                const categoryColors = {
+                  'marquee': 'border-yellow-500 bg-yellow-500/10',
+                  'wicket-keepers': 'border-purple-500 bg-purple-500/10',
+                  'all-rounders': 'border-green-500 bg-green-500/10',
+                  'batsmen': 'border-blue-500 bg-blue-500/10',
+                  'bowlers': 'border-red-500 bg-red-500/10',
+                  'unsold': 'border-orange-500 bg-orange-500/10'
+                };
+
+                return (
+                  <div className="auction-rounds-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {roundMetadata.map((round, idx) => {
+                      const isCurrentRound = idx === currentRound;
+                      const isCompleted = idx < currentRound;
+                      const categoryColor = categoryColors[round.category] || 'border-gray-500 bg-gray-500/10';
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-lg border-2 transition-all ${
+                            isCurrentRound
+                              ? 'border-cricket-accent bg-cricket-accent/20 ring-2 ring-cricket-accent/50'
+                              : isCompleted
+                              ? 'border-gray-600 bg-gray-800/50 opacity-60'
+                              : categoryColor
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-bold capitalize ${
+                              isCurrentRound ? 'text-cricket-accent' : 'text-text-primary'
+                            }`}>
+                              {round.label}
+                            </span>
+                            {isCurrentRound && (
+                              <span className="px-2 py-0.5 bg-cricket-accent text-black text-xs font-bold rounded animate-pulse">
+                                LIVE
+                              </span>
+                            )}
+                            {isCompleted && (
+                              <span className="px-2 py-0.5 bg-gray-600 text-gray-300 text-xs font-bold rounded">
+                                DONE
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-text-secondary capitalize">
+                              {categoryLabels[round.category] || round.category}
+                            </span>
+                            <span className="text-text-tertiary">
+                              {round.playerCount} players
+                            </span>
+                          </div>
+                          {isCurrentRound && (
+                            <div className="mt-2 pt-2 border-t border-cricket-accent/30">
+                              <div className="text-xs text-cricket-accent">
+                                Player {currentPlayerIndex + 1} of {round.playerCount}
+                              </div>
+                              <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+                                <div
+                                  className="h-1.5 bg-cricket-accent rounded-full transition-all"
+                                  style={{ width: `${((currentPlayerIndex + 1) / round.playerCount) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Summary */}
+              <div className="mt-4 p-3 bg-bg-secondary rounded-lg">
+                <h4 className="text-sm font-semibold text-text-primary mb-2">Round Order</h4>
+                <p className="text-xs text-text-secondary">
+                  <span className="text-yellow-400">Marquee</span> rounds first, then interleaved:
+                  <span className="text-purple-400"> WK</span> →
+                  <span className="text-green-400"> AR</span> →
+                  <span className="text-blue-400"> Bat</span> →
+                  <span className="text-red-400"> Bowl</span> (repeat), then
+                  <span className="text-orange-400"> Unsold Round</span> (50% base price)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'log' && (
         <div className="card p-2">
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          <div className="auction-log-list space-y-2 max-h-[600px] overflow-y-auto">
             {auctionLog.map((entry, idx) => (
               <div
                 key={idx}
@@ -1715,6 +1916,31 @@ const Transfers = () => {
         }}
         playerId={selectedPlayerId}
       />
+
+      {/* Auction Tutorial */}
+      {showAuctionTutorial && auctionTutorialSteps[auctionTutorialStep] && (
+        <TutorialSpotlight
+          targetSelector={auctionTutorialSteps[auctionTutorialStep].targetSelector}
+          title={auctionTutorialSteps[auctionTutorialStep].title}
+          description={auctionTutorialSteps[auctionTutorialStep].description}
+          icon={auctionTutorialSteps[auctionTutorialStep].icon}
+          step={auctionTutorialStep + 1}
+          totalSteps={auctionTutorialTotalSteps}
+          position={auctionTutorialSteps[auctionTutorialStep].position}
+          onNext={advanceAuctionTutorial}
+          onSkip={skipAuctionTutorial}
+        />
+      )}
+
+      {/* Contextual Tip for first visit */}
+      {showTip && (
+        <ContextualTip
+          title={screenTips.transfers.title}
+          icon={screenTips.transfers.icon}
+          tips={screenTips.transfers.tips}
+          onDismiss={dismissTip}
+        />
+      )}
     </div>
   );
 };

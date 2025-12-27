@@ -48,7 +48,9 @@
       "Bash(npm run build:*)",
       "Bash(pip install:*)",
       "Bash(git reset:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(del \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\\utils\\storage.js\")",
+      "Bash(del \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\\utils\\autosave.js\")"
     ],
     "deny": []
   }

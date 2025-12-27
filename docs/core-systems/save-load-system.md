@@ -218,16 +218,23 @@ auctionStore.resetAuction()
 
 ### LocalStorage Usage
 
+**With Gzip Compression** (January 2025):
 ```
-Total: ~3-4MB (well under 5-10MB browser limit)
-- Manual saves: 10 × 200KB = 2MB
-- Zustand stores: 8 stores × ~100KB = 1-2MB
+Total: ~1-2MB (well under 5-10MB browser limit)
+- Manual saves: 10 × 50-80KB = 0.5-0.8MB (compressed)
+- Zustand stores: 8 stores × ~30KB = 0.2-0.5MB (compressed)
 
 Keys:
 - cm25_save_0 through cm25_save_9 (manual saves)
 - cm25_saves_index (metadata index)
-- gameStore, teamStore, playerStore, etc. (Zustand persistence)
+- cm25-game-store, cm25-team-store, cm25-player-store, etc. (Zustand persistence, compressed)
 ```
+
+**Compression Details**:
+- All major stores now use gzip compression via `compressedStorageOptions`
+- Compression ratio: 60-80% reduction in storage size
+- Backward compatible: Can read old uncompressed data
+- Prevents `QuotaExceededError` during full season simulation
 
 ### Save Size Optimization
 
@@ -472,9 +479,9 @@ if (SaveGameManager.isFull()) {
 
 - **Browser-only**: No cloud sync (LocalStorage is local to browser)
 - **10 save limit**: Hard limit to prevent storage abuse
-- **No compression**: Could compress saves further with LZ-string
+- ~~**No compression**~~: ✅ **Implemented** - Gzip compression via pako (60-80% reduction)
 - **No validation**: Corrupted saves may fail to load
-- **No versioning**: Save format changes may break old saves
+- **Store version migration**: Version bumps may require clearing old localStorage data
 
 ## Future Enhancements
 
@@ -482,7 +489,7 @@ if (SaveGameManager.isFull()) {
 - **Auto-save functionality**: Save after each major event
 - **Cloud save sync**: Cross-device save synchronization
 - **Save file export/import**: Share saves or backup externally
-- **Save file compression**: Use LZ-string for smaller saves
+- ~~**Save file compression**~~: ✅ **Implemented** - Using pako gzip compression
 - **Save file validation**: Detect and repair corrupted saves
 - **Save versioning**: Migration system for format changes
 - **Multiple profiles**: Support multiple player profiles
@@ -564,7 +571,8 @@ if (SaveGameManager.isFull()) {
 
 ---
 
-**Last Updated**: January 2025
-**Status**: ✅ Complete and Working
+**Last Updated**: December 2025
+**Status**: ✅ Complete and Working (with gzip compression)
 **Implementation Time**: ~2 days
 **Lines of Code**: ~2000+ (9 new files, 10 modified files)
+**Storage Compression**: ~60-80% reduction via pako gzip

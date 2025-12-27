@@ -204,12 +204,20 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
                 HS <SortIndicator column="highestScore" />
               </div>
             </th>
+            <th
+              onClick={() => handleSort('totalImpact')}
+              className="px-3 py-2 text-center font-semibold text-trophy-gold cursor-pointer hover:bg-bg-tertiary transition-colors"
+            >
+              <div className="flex items-center justify-center gap-1">
+                Impact <SortIndicator column="totalImpact" />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
           {filteredSortedPlayers.length === 0 ? (
             <tr>
-              <td colSpan="11" className="px-3 py-8 text-center text-text-secondary">
+              <td colSpan="12" className="px-3 py-8 text-center text-text-secondary">
                 No batting statistics available with current filters
               </td>
             </tr>
@@ -237,6 +245,11 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
                 <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.centuries || 0}</td>
                 <td className="px-3 py-2 text-center font-mono text-trophy-gold font-semibold">
                   {player.highestScore || 0}{player.highestScoreNotOut ? '*' : ''}
+                </td>
+                <td className={`px-3 py-2 text-center font-mono font-semibold ${
+                  (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
                 </td>
               </tr>
             ))
@@ -351,12 +364,20 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
                 5W <SortIndicator column="fiveWickets" />
               </div>
             </th>
+            <th
+              onClick={() => handleSort('totalImpact')}
+              className="px-3 py-2 text-center font-semibold text-trophy-gold cursor-pointer hover:bg-bg-tertiary transition-colors"
+            >
+              <div className="flex items-center justify-center gap-1">
+                Impact <SortIndicator column="totalImpact" />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
           {filteredSortedPlayers.length === 0 ? (
             <tr>
-              <td colSpan="13" className="px-3 py-8 text-center text-text-secondary">
+              <td colSpan="14" className="px-3 py-8 text-center text-text-secondary">
                 No bowling statistics available with current filters
               </td>
             </tr>
@@ -385,6 +406,11 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
                 <td className="px-3 py-2 text-center font-mono text-trophy-gold font-semibold">{formatBestBowling(player.bestBowling)}</td>
                 <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.fourWickets || 0}</td>
                 <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.fiveWickets || 0}</td>
+                <td className={`px-3 py-2 text-center font-mono font-semibold ${
+                  (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
+                </td>
               </tr>
             ))
           )}

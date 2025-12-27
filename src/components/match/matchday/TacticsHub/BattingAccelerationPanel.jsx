@@ -15,7 +15,7 @@ import React, { useState } from 'react';
 import useMatchStore from '../../../../stores/matchStore';
 import usePlayerStore from '../../../../stores/playerStore';
 import useTeamStore from '../../../../stores/teamStore';
-import { TrendingUp, Zap, Shield, GripVertical, Star } from 'lucide-react';
+import { TrendingUp, Zap, Shield, GripVertical } from 'lucide-react';
 import PlayerName from '../../../shared/PlayerName';
 import ConditionBar from '../../../shared/ConditionBar';
 
@@ -112,122 +112,6 @@ const TierSelector = ({ currentTier, playerId, isAtCrease, disabled }) => {
 };
 
 /**
- * Batsman row component (for current batsmen at crease)
- */
-const BatsmanRow = ({ playerId, isStriker, isNonStriker, currentTier, accelerationMode }) => {
-  const getPlayer = usePlayerStore(state => state.getPlayer);
-  const player = getPlayer(playerId);
-
-  if (!player) return null;
-
-  const playerType = isStriker ? 'striker' : isNonStriker ? 'nonStriker' : null;
-  const isAtCrease = isStriker || isNonStriker;
-
-  return (
-    <div className={`p-3 rounded-md border transition-colors ${
-      isAtCrease
-        ? 'bg-cricket-primary bg-opacity-10 border-cricket-primary'
-        : 'bg-bg-tertiary border-border-primary'
-    }`}>
-      {/* Player info */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {isStriker && <Star className="w-3 h-3 text-cricket-accent fill-cricket-accent" />}
-          <PlayerName playerId={playerId} />
-          <RoleBadge role={player.role} />
-          {isStriker && (
-            <span className="px-2 py-0.5 text-xs font-semibold bg-cricket-accent text-cricket-dark rounded">
-              STRIKE
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Tier selector */}
-      {isAtCrease && (
-        <TierSelector
-          currentTier={currentTier}
-          playerId={playerId}
-          playerType={playerType}
-          disabled={accelerationMode === 'auto'}
-        />
-      )}
-    </div>
-  );
-};
-
-/**
- * Upcoming batsman row component (with drag-and-drop)
- */
-const UpcomingBatsmanRow = ({
-  playerId,
-  position,
-  defaultTier,
-  isFrozen,
-  isDragging,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop
-}) => {
-  const getPlayer = usePlayerStore(state => state.getPlayer);
-  const player = getPlayer(playerId);
-
-  if (!player) return null;
-
-  return (
-    <div
-      draggable={!isFrozen}
-      onDragStart={(e) => !isFrozen && onDragStart(e, position)}
-      onDragEnd={onDragEnd}
-      onDragOver={(e) => !isFrozen && onDragOver(e)}
-      onDrop={(e) => !isFrozen && onDrop(e, position)}
-      className={`p-2 rounded-md border transition-all ${
-        isFrozen
-          ? 'bg-bg-tertiary border-border-primary opacity-50 cursor-not-allowed'
-          : isDragging
-          ? 'bg-cricket-primary bg-opacity-20 border-cricket-accent'
-          : 'bg-bg-secondary border-border-primary cursor-move hover:border-cricket-accent'
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        {/* Drag handle */}
-        {!isFrozen && (
-          <GripVertical className="w-4 h-4 text-text-secondary flex-shrink-0" />
-        )}
-
-        {/* Position number */}
-        <span className={`text-xs font-semibold ${isFrozen ? 'text-text-tertiary' : 'text-text-secondary'} w-4`}>
-          {position}
-        </span>
-
-        {/* Player name */}
-        <div className="flex-1 min-w-0">
-          <PlayerName playerId={playerId} />
-        </div>
-
-        {/* Role badge */}
-        <RoleBadge role={player.role} />
-
-        {/* Default tier indicator */}
-        {defaultTier && (
-          <div className="flex items-center gap-1">
-            <div className={`w-2 h-2 rounded-full ${ACCELERATION_TIERS.find(t => t.id === defaultTier)?.color || 'bg-gray-500'}`} />
-            <span className="text-xs text-text-tertiary">{defaultTier}</span>
-          </div>
-        )}
-      </div>
-
-      {isFrozen && (
-        <div className="text-xs text-text-tertiary mt-1">
-          {player.isOut ? 'Out' : 'Already batted'}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
  * Main BattingAccelerationPanel component
  */
 export default function BattingAccelerationPanel() {
@@ -248,12 +132,6 @@ export default function BattingAccelerationPanel() {
   const teamTactics = getTeamTactics(userTeamId);
   const battingOrder = teamTactics?.battingOrder || [];
   const accelerationTiers = teamTactics?.accelerationTiers || {};
-
-  //console.log('BattingAccelerationPanel - userTeamId:', userTeamId);
-  //console.log('BattingAccelerationPanel - battingOrder:', battingOrder);
-  //console.log('BattingAccelerationPanel - striker:', striker, 'nonStriker:', nonStriker);
-  //console.log('BattingAccelerationPanel - battedPlayers:', battedPlayers);
-  //console.log('BattingAccelerationPanel - accelerationTiers:', accelerationTiers);
 
   // Drag-and-drop state
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -332,7 +210,7 @@ export default function BattingAccelerationPanel() {
   };
 
   return (
-    <div className="space-y-1 overflow-y-auto scrollbar-hide" style={{
+    <div className="acceleration-panel space-y-1 overflow-y-auto scrollbar-hide" style={{
       scrollbarWidth: 'none',
       msOverflowStyle: 'none'
     }}>

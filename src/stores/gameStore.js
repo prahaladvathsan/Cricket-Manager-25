@@ -5,8 +5,10 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import MessageGenerator from '../utils/MessageGenerator';
+import { generateSeasonObjectives, calculateBoardScore, updateAllObjectives } from '../utils/ObjectiveGenerator';
+import { compressedStorageOptions } from '../utils/compression.js';
 
 /**
  * @typedef {Object} GameState
@@ -20,6 +22,18 @@ import MessageGenerator from '../utils/MessageGenerator';
  * @property {Object} settings - Game settings and preferences
  */
 
+/**
+ * Default settings configuration
+ * Used for initial state and reset functionality
+ */
+const DEFAULT_SETTINGS = {
+  simulationSpeed: 1000,    // Delay between balls in ms (0-3000)
+  currency: 'USD',          // Display currency (USD, EUR, GBP, INR)
+  tutorialEnabled: true,    // Show tutorial messages for new games
+  difficulty: 'normal',     // Placeholder for future difficulty system
+  autosave: true            // Auto-save game state
+};
+
 const useGameStore = create(
   persist(
     (set, get) => ({
@@ -31,6 +45,10 @@ const useGameStore = create(
   gameDay: 1,
   calendarEvents: [],
   isSimulating: false,
+
+  // Board Objectives
+  seasonObjectives: [], // Array of 5 objectives for current season
+  objectiveTracking: {}, // Track objective-specific data (home wins, streaks, etc.)
 
   // Test Mode State
   testMode: false,
@@ -44,12 +62,14 @@ const useGameStore = create(
   },
   
   // Game Settings
-  settings: {
-    difficulty: 'normal',
-    simulationSpeed: 'normal',
-    currency: 'USD',
-    nameProtection: false,
-    autosave: true
+  settings: { ...DEFAULT_SETTINGS },
+
+  // Tutorial Progress
+  tutorialProgress: {
+    onboardingComplete: false,  // Has user finished initial walkthrough
+    onboardingStep: 0,          // Current step in onboarding (0-4)
+    visitedScreens: [],         // Screens already explained
+    dismissedTips: []           // Tip IDs user dismissed permanently
   },
 
   // Actions
@@ -267,6 +287,97 @@ const useGameStore = create(
   })),
 
   /**
+   * Reset settings to defaults
+   */
+  resetSettings: () => set({
+    settings: { ...DEFAULT_SETTINGS }
+  }),
+
+  // Tutorial Actions
+
+  /**
+   * Advance to next onboarding step
+   */
+  advanceOnboarding: () => set((state) => {
+    const newStep = state.tutorialProgress.onboardingStep + 1;
+    const totalSteps = 5; // 5 total onboarding steps
+
+    // If we've completed all steps, mark onboarding as complete
+    if (newStep >= totalSteps) {
+      return {
+        tutorialProgress: {
+          ...state.tutorialProgress,
+          onboardingComplete: true,
+          onboardingStep: 0
+        }
+      };
+    }
+
+    return {
+      tutorialProgress: {
+        ...state.tutorialProgress,
+        onboardingStep: newStep
+      }
+    };
+  }),
+
+  /**
+   * Complete onboarding (called on last step)
+   */
+  completeOnboarding: () => set((state) => ({
+    tutorialProgress: {
+      ...state.tutorialProgress,
+      onboardingComplete: true,
+      onboardingStep: 0
+    }
+  })),
+
+  /**
+   * Skip onboarding entirely
+   */
+  skipOnboarding: () => set((state) => ({
+    tutorialProgress: {
+      ...state.tutorialProgress,
+      onboardingComplete: true,
+      onboardingStep: 0
+    }
+  })),
+
+  /**
+   * Mark a screen as visited (for contextual tips)
+   * @param {string} screenId - Screen identifier
+   */
+  markScreenVisited: (screenId) => set((state) => ({
+    tutorialProgress: {
+      ...state.tutorialProgress,
+      visitedScreens: [...new Set([...state.tutorialProgress.visitedScreens, screenId])]
+    }
+  })),
+
+  /**
+   * Permanently dismiss a tip
+   * @param {string} tipId - Tip identifier
+   */
+  dismissTip: (tipId) => set((state) => ({
+    tutorialProgress: {
+      ...state.tutorialProgress,
+      dismissedTips: [...state.tutorialProgress.dismissedTips, tipId]
+    }
+  })),
+
+  /**
+   * Reset all tutorial progress
+   */
+  resetTutorial: () => set({
+    tutorialProgress: {
+      onboardingComplete: false,
+      onboardingStep: 0,
+      visitedScreens: [],
+      dismissedTips: []
+    }
+  }),
+
+  /**
    * Start simulation mode
    */
   startSimulation: () => set({ isSimulating: true }),
@@ -305,8 +416,31 @@ const useGameStore = create(
       currentWeek: 1,
       gameDay: 1,
       currentDate: newSeasonStartDate.toISOString(),
-      calendarEvents: [],
-      isSimulating: false
+      // NOTE: Don't clear calendarEvents here - let league initialization handle that
+      // This allows scheduled events (auction, preseason_start) to still fire
+      isSimulating: false,
+      // Reset objectives for new season
+      seasonObjectives: [],
+      objectiveTracking: {
+        homeWins: 0,
+        homeMatchesPlayed: 0,
+        winsInFirst3: 0,
+        rivalWins: 0,
+        rivalMatchesPlayed: 0,
+        longestWinStreak: 0,
+        currentWinStreak: 0,
+        highestScore: 0,
+        // Best batsman tracking
+        userBestBatsmanName: null,
+        userBestBatsmanRank: null,
+        userBestBatsmanRuns: 0,
+        topScorerRuns: 0,
+        // Best bowler tracking
+        userBestBowlerName: null,
+        userBestBowlerRank: null,
+        userBestBowlerWickets: 0,
+        topBowlerWickets: 0
+      }
     };
   }),
 
@@ -320,7 +454,14 @@ const useGameStore = create(
     gameDay: 1,
     currentDate: new Date('2025-01-01').toISOString(),
     calendarEvents: [],
-    isSimulating: false
+    isSimulating: false,
+    // Reset tutorial for new games so players see onboarding
+    tutorialProgress: {
+      onboardingComplete: false,
+      onboardingStep: 0,
+      visitedScreens: [],
+      dismissedTips: []
+    }
   }),
 
   // Test Mode Actions
@@ -409,11 +550,160 @@ const useGameStore = create(
     }));
 
     return summary;
-  }
+  },
+
+  // Board Objectives Actions
+
+  /**
+   * Generate new objectives for the current season
+   * @param {string} rivalTeamName - Name of designated rival team (optional)
+   */
+  generateSeasonObjectives: (rivalTeamName = 'Sydney Sharks') => {
+    const state = get();
+    const objectives = generateSeasonObjectives(state.currentSeason, rivalTeamName);
+
+    console.log(`📋 Generated ${objectives.length} objectives for Season ${state.currentSeason}`);
+
+    set({
+      seasonObjectives: objectives,
+      objectiveTracking: {
+        homeWins: 0,
+        homeMatchesPlayed: 0,
+        winsInFirst3: 0,
+        rivalWins: 0,
+        rivalMatchesPlayed: 0,
+        longestWinStreak: 0,
+        currentWinStreak: 0,
+        highestScore: 0,
+        // Best batsman tracking
+        userBestBatsmanName: null,
+        userBestBatsmanRank: null,
+        userBestBatsmanRuns: 0,
+        topScorerRuns: 0,
+        // Best bowler tracking
+        userBestBowlerName: null,
+        userBestBowlerRank: null,
+        userBestBowlerWickets: 0,
+        topBowlerWickets: 0
+      }
+    });
+
+    // Send inbox message about new season objectives
+    // Use dynamic imports to avoid circular dependencies
+    import('./inboxStore').then(inboxStoreModule => {
+      import('./teamStore').then(teamStoreModule => {
+        import('../utils/MessageGenerator').then(MessageGeneratorModule => {
+          const inboxStore = inboxStoreModule.default;
+          const teamStore = teamStoreModule.default;
+          const MessageGenerator = MessageGeneratorModule.default;
+
+          const userTeam = teamStore.getState().userTeam;
+          if (userTeam) {
+            const message = MessageGenerator.generateBoardObjectivesMessage(
+              state.currentSeason,
+              objectives,
+              userTeam.name
+            );
+            inboxStore.getState().addMessage(message);
+            console.log(`📧 Sent board objectives message for Season ${state.currentSeason}`);
+          }
+        });
+      });
+    });
+  },
+
+  /**
+   * Update objective progress with current game state
+   * Requires league and team stores to be passed to avoid circular dependencies
+   * @param {Object} gameData - Current game state data
+   */
+  updateObjectiveProgress: (gameData) => {
+    const state = get();
+
+    if (!state.seasonObjectives || state.seasonObjectives.length === 0) {
+      return;
+    }
+
+    // Merge tracking data with game data
+    const fullGameData = {
+      ...gameData,
+      ...state.objectiveTracking
+    };
+
+    const updatedObjectives = updateAllObjectives(state.seasonObjectives, fullGameData);
+
+    set({ seasonObjectives: updatedObjectives });
+  },
+
+  /**
+   * Update objective tracking data (home wins, streaks, etc.)
+   * @param {Object} updates - Tracking data updates
+   */
+  updateObjectiveTracking: (updates) => set((state) => ({
+    objectiveTracking: { ...state.objectiveTracking, ...updates }
+  })),
+
+  /**
+   * Get current board score (0-100)
+   * @returns {number} Weighted board score
+   */
+  getBoardScore: () => {
+    const state = get();
+    return calculateBoardScore(state.seasonObjectives);
+  },
+
+  /**
+   * Reset objectives for new season (called during season transition)
+   */
+  resetObjectivesForNewSeason: () => set({
+    seasonObjectives: [],
+    objectiveTracking: {
+      homeWins: 0,
+      homeMatchesPlayed: 0,
+      winsInFirst3: 0,
+      rivalWins: 0,
+      rivalMatchesPlayed: 0,
+      longestWinStreak: 0,
+      currentWinStreak: 0,
+      highestScore: 0,
+      // Best batsman tracking
+      userBestBatsmanName: null,
+      userBestBatsmanRank: null,
+      userBestBatsmanRuns: 0,
+      topScorerRuns: 0,
+      // Best bowler tracking
+      userBestBowlerName: null,
+      userBestBowlerRank: null,
+      userBestBowlerWickets: 0,
+      topBowlerWickets: 0
+    }
+  })
     }),
     {
       name: 'cm25-game-store',
-      version: 2
+      version: 4, // Bumped version for compressed storage migration
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions),
+      // Merge function to ensure new state properties are added to existing saves
+      merge: (persistedState, currentState) => {
+        // Deep merge settings to preserve new default settings
+        const mergedSettings = {
+          ...currentState.settings,
+          ...(persistedState?.settings || {})
+        };
+
+        // Deep merge tutorialProgress to ensure it exists for old saves
+        const mergedTutorialProgress = {
+          ...currentState.tutorialProgress,
+          ...(persistedState?.tutorialProgress || {})
+        };
+
+        return {
+          ...currentState,
+          ...persistedState,
+          settings: mergedSettings,
+          tutorialProgress: mergedTutorialProgress
+        };
+      }
     }
   )
 );

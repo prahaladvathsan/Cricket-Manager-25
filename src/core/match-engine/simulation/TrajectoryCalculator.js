@@ -303,8 +303,8 @@ class TrajectoryCalculator {
   calculateKeeperCatchProbability(wicketKeeper) {
     const catchingAttribute = wicketKeeper?.attributes?.fielding?.catching || 10;
 
-    // Simple calculation: catching attribute / 20
-    return Math.min(1, Math.max(0, catchingAttribute / 20));
+    // Divisor of 25 means catching=10 gives 40% catch rate (reduced from 50% at divisor 20)
+    return Math.min(1, Math.max(0, catchingAttribute / 25));
   }
 
   /**
@@ -556,14 +556,24 @@ class TrajectoryCalculator {
   }
 
   /**
-   * Determine wicket type for missed balls
+   * Determine wicket type for missed balls using configured probabilities
    * @returns {string} Wicket type
    */
   determineWicketType() {
-    // Use configured wicket types and probabilities
-    const wicketTypes = this.wicketConfig.missed;
-    const randomIndex = Math.floor(Math.random() * wicketTypes.length);
-    return wicketTypes[randomIndex];
+    const probabilities = this.wicketConfig.probabilities;
+    const roll = Math.random();
+
+    // Cumulative probability selection
+    let cumulative = 0;
+    for (const [wicketType, probability] of Object.entries(probabilities)) {
+      cumulative += probability;
+      if (roll < cumulative) {
+        return wicketType;
+      }
+    }
+
+    // Fallback to bowled if probabilities don't sum to 1
+    return 'bowled';
   }
 
 

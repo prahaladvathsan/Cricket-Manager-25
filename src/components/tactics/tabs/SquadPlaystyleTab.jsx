@@ -249,7 +249,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     </div>
                     <button
                       onClick={() => handleAddPlayer(player.id)}
-                      className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                      className={`squad-add-player-btn p-1 text-green-400 hover:text-green-300 transition-colors`}
                       title="Add to playing XI"
                     >
                       <Plus className="w-4 h-4" />
@@ -257,60 +257,45 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   </div>
 
                   {/* Playstyle Selectors */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="squad-playstyle-selectors grid grid-cols-2 gap-2">
                     {/* Batting Playstyle */}
-                    <div>
-                      <label className="block text-xs text-text-secondary mb-0.5">
-                        Batting
-                      </label>
-                      <select
-                        value={currentBattingPlaystyle}
-                        onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
-                        className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                      >
-                        {availableBattingPlaystyles.map(({ name, rating }) => (
-                          <option key={name} value={name}>
-                            {name} ({rating.toFixed(0)})
-                            {name === player.primaryPlaystyle?.batting && ' ⭐'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={currentBattingPlaystyle}
+                      onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
+                      className="squad-batting-playstyle w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                    >
+                      {availableBattingPlaystyles.map(({ name, rating }) => (
+                        <option key={name} value={name}>
+                          {name} ({rating.toFixed(0)})
+                          {name === player.primaryPlaystyle?.batting && ' ⭐'}
+                        </option>
+                      ))}
+                    </select>
 
                     {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
                     {player.role === 'wicket-keeper' ? (
                       player.topPlaystyles?.fielding?.[0] && (
-                        <div>
-                          <label className="block text-xs text-text-secondary mb-0.5">
-                            Fielding
-                          </label>
-                          <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
-                            {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
-                          </div>
+                        <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
+                          {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
                         </div>
                       )
                     ) : (
-                      <div>
-                        <label className="block text-xs text-text-secondary mb-0.5">
-                          Bowling
-                        </label>
-                        {availableBowlingPlaystyles.length > 0 ? (
-                          <select
-                            value={currentBowlingPlaystyle}
-                            onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
-                            className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                          >
-                            {availableBowlingPlaystyles.map(({ name, rating }) => (
-                              <option key={name} value={name}>
-                                {name} ({rating.toFixed(0)})
-                                {name === player.primaryPlaystyle?.bowling && ' ⭐'}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="text-xs text-text-tertiary italic">No data</div>
-                        )}
-                      </div>
+                      availableBowlingPlaystyles.length > 0 ? (
+                        <select
+                          value={currentBowlingPlaystyle}
+                          onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
+                          className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                        >
+                          {availableBowlingPlaystyles.map(({ name, rating }) => (
+                            <option key={name} value={name}>
+                              {name} ({rating.toFixed(0)})
+                              {name === player.primaryPlaystyle?.bowling && ' ⭐'}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="text-xs text-text-tertiary italic px-2 py-1">No bowling data</div>
+                      )
                     )}
                   </div>
                 </div>
@@ -409,58 +394,43 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   {/* Playstyle Selectors */}
                   <div className="ml-5 grid grid-cols-2 gap-2">
                     {/* Batting Playstyle */}
-                    <div>
-                      <label className="block text-xs text-text-secondary mb-0.5">
-                        Batting
-                      </label>
-                      <select
-                        value={currentBattingPlaystyle}
-                        onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
-                        className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                      >
-                        {availableBattingPlaystyles.map(({ name, rating }) => (
-                          <option key={name} value={name}>
-                            {name} ({rating.toFixed(0)})
-                            {name === player.primaryPlaystyle?.batting && ' ⭐'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={currentBattingPlaystyle}
+                      onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
+                      className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                    >
+                      {availableBattingPlaystyles.map(({ name, rating }) => (
+                        <option key={name} value={name}>
+                          {name} ({rating.toFixed(0)})
+                          {name === player.primaryPlaystyle?.batting && ' ⭐'}
+                        </option>
+                      ))}
+                    </select>
 
                     {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
                     {player.role === 'wicket-keeper' ? (
                       player.topPlaystyles?.fielding?.[0] && (
-                        <div>
-                          <label className="block text-xs text-text-secondary mb-0.5">
-                            Fielding
-                          </label>
-                          <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
-                            {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
-                          </div>
+                        <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
+                          {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
                         </div>
                       )
                     ) : (
-                      <div>
-                        <label className="block text-xs text-text-secondary mb-0.5">
-                          Bowling
-                        </label>
-                        {availableBowlingPlaystyles.length > 0 ? (
-                          <select
-                            value={currentBowlingPlaystyle}
-                            onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
-                            className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                          >
-                            {availableBowlingPlaystyles.map(({ name, rating }) => (
-                              <option key={name} value={name}>
-                                {name} ({rating.toFixed(0)})
-                                {name === player.primaryPlaystyle?.bowling && ' ⭐'}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="text-xs text-text-tertiary italic">No data</div>
-                        )}
-                      </div>
+                      availableBowlingPlaystyles.length > 0 ? (
+                        <select
+                          value={currentBowlingPlaystyle}
+                          onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
+                          className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                        >
+                          {availableBowlingPlaystyles.map(({ name, rating }) => (
+                            <option key={name} value={name}>
+                              {name} ({rating.toFixed(0)})
+                              {name === player.primaryPlaystyle?.bowling && ' ⭐'}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="text-xs text-text-tertiary italic px-2 py-1">No bowling data</div>
+                      )
                     )}
                   </div>
                 </div>

@@ -32,7 +32,7 @@ class EnergyManager {
       const playerObj = typeof player === 'string' ? null : player;
 
       // energy = fitness (default 100 if not set)
-      const fitness = playerObj?.condition?.fitness || 100;
+      const fitness = playerObj?.condition?.fitness ?? 100;
       energyMap[playerId] = this.clampEnergy(fitness);
     });
 
@@ -163,7 +163,19 @@ class EnergyManager {
       return player; // No penalties for Fresh
     }
 
-    const modifiedPlayer = JSON.parse(JSON.stringify(player)); // Deep copy
+    // Deep clone player to avoid mutating original (must clone nested attribute objects)
+    const modifiedPlayer = {
+      ...player,
+      attributes: {
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
+      },
+      condition: { ...player.condition }
+    };
 
     // Check for allAttributes penalty
     if (penalties.allAttributes !== undefined) {

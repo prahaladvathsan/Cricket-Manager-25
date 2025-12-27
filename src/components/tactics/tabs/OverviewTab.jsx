@@ -17,10 +17,12 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   // Subscribe to team tactics changes to ensure UI updates reactively
   const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
   const battingOrder = teamTactics?.battingOrder || [];
+
+  // Convert overAssignments object { 1: 'id', 2: 'id', ... } to array
   const overAssignments = useMemo(() => {
-    const assignments = teamTactics?.bowlingRotation || [];
-    return Array.from({ length: 20 }, (_, i) => assignments[i] || null);
-  }, [teamTactics?.bowlingRotation]);
+    const assignmentsObj = teamTactics?.overAssignments || {};
+    return Array.from({ length: 20 }, (_, i) => assignmentsObj[i + 1] || null);
+  }, [teamTactics?.overAssignments]);
 
   // Get ordered batsmen
   const orderedBatsmen = useMemo(() => {
@@ -358,11 +360,14 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               <option value="">Select keeper...</option>
               {orderedBatsmen
                 .filter(p => p.role === 'wicket-keeper')
-                .map(player => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
+                .map(player => {
+                  const keeperRating = player.playstyleRatings?.fielding?.Wicketkeeper || 0;
+                  return (
+                    <option key={player.id} value={player.id}>
+                      {player.name} ({Math.round(keeperRating)})
+                    </option>
+                  );
+                })}
             </select>
           </div>
 
@@ -375,11 +380,14 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
             >
               <option value="">Select captain...</option>
-              {orderedBatsmen.map(player => (
-                <option key={player.id} value={player.id}>
-                  {player.name}
-                </option>
-              ))}
+              {orderedBatsmen.map(player => {
+                const leadership = player.attributes?.mental?.leadership || 0;
+                return (
+                  <option key={player.id} value={player.id}>
+                    {player.name} ({leadership})
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -395,11 +403,14 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               <option value="">Select vice-captain...</option>
               {orderedBatsmen
                 .filter(p => p.id !== teamTactics?.captain)
-                .map(player => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
+                .map(player => {
+                  const leadership = player.attributes?.mental?.leadership || 0;
+                  return (
+                    <option key={player.id} value={player.id}>
+                      {player.name} ({leadership})
+                    </option>
+                  );
+                })}
             </select>
           </div>
         </div>

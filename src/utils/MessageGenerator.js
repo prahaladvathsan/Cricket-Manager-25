@@ -431,6 +431,58 @@ Best regards,
       }
     };
   }
+
+  /**
+   * Generate board objectives announcement message
+   * @param {number} season - Season number
+   * @param {Array} objectives - Array of objective objects
+   * @param {string} teamName - User's team name
+   * @returns {Object} Message data
+   */
+  static generateBoardObjectivesMessage(season, objectives, teamName) {
+    // Format objectives list
+    const objectivesList = objectives.map((obj, idx) => {
+      const priority = obj.isMandatory ? '🎯 **CRITICAL**' : `📌 Priority ${idx}`;
+      const weight = objectives.find(t => t.id === obj.id)?.weight || 0;
+      return `${idx + 1}. ${priority} - ${obj.title} (${weight}% of board score)\n   ${obj.description}`;
+    }).join('\n\n');
+
+    return {
+      type: 'board_objectives',
+      subject: `Season ${season} Board Objectives - ${teamName}`,
+      sender: 'Board of Directors',
+      body: `Manager,
+
+Welcome to Season ${season}! The Board of Directors has established your performance objectives for this season.
+
+**Your Season ${season} Objectives:**
+
+${objectivesList}
+
+**Performance Evaluation:**
+Your overall board score will be calculated based on the weighted completion of these objectives. The score ranges from 0-100 and will determine the board's assessment of your performance at season end.
+
+- **75-100:** Outstanding performance
+- **50-74:** Good performance
+- **25-49:** Average performance
+- **0-24:** Below expectations
+
+We have full confidence in your ability to lead ${teamName} to success this season. Your performance will be reviewed continuously throughout the season.
+
+**Next Steps:**
+→ [View objectives and track progress](/game/board)
+
+Good luck, and let's make this a successful season!
+
+Best regards,
+**Board of Directors**`,
+      metadata: {
+        season,
+        objectivesCount: objectives.length,
+        link: '/game/board'
+      }
+    };
+  }
 }
 
 export default MessageGenerator;

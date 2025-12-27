@@ -26,7 +26,7 @@ export default function PitchVisualization() {
   const latestBall = ballByBall.length > 0 ? ballByBall[ballByBall.length - 1] : null;
 
   return (
-    <div className="bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
+    <div className="pitch-visualization bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
       {/* Pitch Visualization Area - 2D Cricket Field */}
       <div className="flex-1 flex items-center justify-center min-h-0">
         <div className="w-full max-w-4xl" style={{ height: '85vh' }}>

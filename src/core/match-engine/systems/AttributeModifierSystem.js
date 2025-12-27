@@ -25,9 +25,32 @@ class AttributeModifierSystem {
    * @returns {Object} Object with modified player and opponent player (if modified)
    */
   applyPlaystyleModifiers(player, category, playstyleName, matchContext, opponentPlayer = null) {
-    // Clone player object to avoid mutating original
-    const modifiedPlayer = JSON.parse(JSON.stringify(player));
-    let modifiedOpponent = opponentPlayer ? JSON.parse(JSON.stringify(opponentPlayer)) : null;
+    // Deep clone player object to avoid mutating original
+    // Must clone nested attribute objects to prevent mutation accumulation
+    const modifiedPlayer = {
+      ...player,
+      attributes: {
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
+      },
+      condition: { ...player.condition }
+    };
+    let modifiedOpponent = opponentPlayer ? {
+      ...opponentPlayer,
+      attributes: {
+        ...opponentPlayer.attributes,
+        batting: { ...opponentPlayer.attributes?.batting },
+        bowling: { ...opponentPlayer.attributes?.bowling },
+        physical: { ...opponentPlayer.attributes?.physical },
+        mental: { ...opponentPlayer.attributes?.mental },
+        fielding: { ...opponentPlayer.attributes?.fielding }
+      },
+      condition: { ...opponentPlayer.condition }
+    } : null;
 
     // Get playstyle modifiers configuration
     let playstyleConfig;

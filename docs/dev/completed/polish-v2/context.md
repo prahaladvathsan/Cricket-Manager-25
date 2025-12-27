@@ -4,9 +4,9 @@
 ✅ Task 1 (Seasonal Loop) - COMPLETE
 ✅ Task 2 (Injury Tracking) - COMPLETE
 ✅ Critical Fix: Auction AI Wicketkeeper Prioritization - COMPLETE
-⏳ Task 3 (Board Objectives) - PENDING
-⏳ Task 4 (Inbox Improvements) - PENDING
-⏳ Task 5 (Super Overs) - PENDING
+✅ Task 3 (Board Objectives) - COMPLETE
+✅ Task 4 (Inbox Improvements) - COMPLETE
+✅ Task 5 (Super Overs) - COMPLETE
 
 ## Files Modified
 
@@ -29,6 +29,58 @@
 - `src/core/auction-system/AuctionAI.js`: Added +300 fitScore bonus when team has 0 wicketkeepers, +150 for 1 wicketkeeper
 - `src/core/auction-system/PlayerValuation.js`: Added 25% base value bonus for all wicketkeepers
 
+### Task 3: Board Objectives Enhancement (✅ Complete)
+- `src/utils/ObjectiveGenerator.js`: **NEW** - Master list of 10 objective templates with weighted scoring
+- `src/stores/gameStore.js`: Added seasonObjectives state, objectiveTracking state, and objective management methods
+- `src/core/simulation/SimulationEngine.js`: Added objective generation on season start (both odd and even seasons)
+- `src/components/layout/Header.jsx`: Added objective generation on season start (both odd and even seasons)
+- `src/components/board/ObjectivesPanel.jsx`: Updated to use gameStore objectives and display board score
+
+### Task 4: Inbox Improvements (✅ Complete)
+- `src/stores/inboxStore.js`: Added currentFilter and currentSort state, setFilter/setSort methods, getFilteredAndSortedMessages method, added 'board_objectives' to board filter
+- `src/components/inbox/Inbox.jsx`: Added filter dropdown (All/Match/Injury/Finance/Board/Tutorial) and sort options (Date/Type/Unread First)
+
+### Task 3 Enhancements (✅ Complete)
+- `src/utils/MessageGenerator.js`: Added generateBoardObjectivesMessage() method for new season objective announcements
+- `src/stores/gameStore.js`: Updated generateSeasonObjectives() to send inbox message, added best batsman/bowler tracking fields
+- `src/components/OffSeason/SeasonSummaryView.jsx`: **MAJOR UPDATE** - Added tab system with Season Summary and Board Review tabs, status badges instead of progress bars, comprehensive objective evaluation with board comments
+- `src/utils/ObjectiveGenerator.js`: Removed semi_finals objective, added best_batsman and best_bowler objectives (not implemented yet), added Star and Crosshair icons
+- `src/utils/ObjectiveTracker.js`: **NEW** - Helper function to update objectives after each user team match (tracks home wins, streaks, first 3, high score, rival wins)
+- `src/components/layout/Header.jsx`: Integrated objective tracking after user matches in Normal UI mode
+- `src/core/simulation/SimulationEngine.js`: Integrated objective tracking after user matches in Sim-to-Date mode
+
+### Task 5: Super Overs Feature (✅ Complete)
+- `src/stores/matchStore.js`: Added superOver state object, 7 action methods for managing super over flow
+- `src/core/match-engine/core/MatchEngine.js`: Added simulateSuperOver(), simulateSuperOverInnings(), simulateSuperOverBall() methods, updated calculateMatchResult() for tie detection
+- `src/core/match-engine/utils/QuickSimMatch.js`: Added selectBestPlayersForSuperOver() helper, updated tie handling to auto-select AI players and simulate super over
+- `src/components/match/SuperOverSelectionModal.jsx`: **NEW** - Modal for user squad selection (3 batsmen + 1 bowler), displays AI opponent selections
+- `src/components/match/matchday/MatchdayUI.jsx`: Added super over state, tie detection in processMatchResult(), handleSuperOverStart(), processMatchResultWithSuperOver(), renders SuperOverSelectionModal
+- `src/components/layout/Header.jsx`: Updated both handleQuickSimUserMatch() and handleContinue() to handle super over results in fullScorecard
+- `src/components/shared/MatchResultModal.jsx`: Added super over display section with both team scores when super over occurred
+
+### Critical Fix: League Initialization Architecture (✅ Complete)
+**Root Cause:** THREE separate implementations of league initialization existed, causing DRY violations and sync bugs:
+1. `SimulationEngine.js::initializeLeague()` - Sim-to-date flow
+2. `Header.jsx::initializeNewSeasonLeague()` - Normal UI flow (Season 2+)
+3. `Transfers.jsx::initializeLeague()` - Normal UI flow (after auction)
+
+**Solution:** Created single source of truth in `src/utils/LeagueInitializer.js`
+- `LeagueInitializer.js`: **NEW** - Shared `initializeLeague()` function with all logic consolidated
+- `SimulationEngine.js`: Now calls shared function (14 lines vs 190 lines)
+- `Header.jsx`: Now calls shared function (14 lines vs 123 lines)
+- `Transfers.jsx`: Now calls shared function (16 lines vs 85 lines)
+
+**Bugs Fixed by Consolidation:**
+1. **Transfers.jsx missing playoffs** - Was NOT generating playoff fixtures at all
+2. **Header.jsx hardcoded gameStartDate** - Used `new Date('2025-01-01')` instead of dynamic calculation
+3. **Header.jsx missing playoff matchEvents** - Only scheduled league matches, not playoffs
+4. **Inconsistent game day calculations** - Each implementation calculated differently
+
+**Impact:** All three flows now produce IDENTICAL league schedules with proper playoff fixtures
+
+### Critical Fix: Wicketkeeper Fallback Logic (✅ Complete)
+- `src/core/match-engine/core/MatchEngine.js`: Enhanced getWicketKeeper() with intelligent fallback - uses player with highest wicketkeeping rating instead of first player when no designated keeper available
+
 ## Key Decisions Made
 1. Priority order: Seasonal loop → Injuries → Objectives → Inbox → Super Overs
 2. Season parity logic: Odd seasons (1,3,5) = Jan-Jun with auction, Even seasons (2,4,6) = Jul-Dec no auction
@@ -39,6 +91,7 @@
 7. **NEW**: Injury duration uses inverse linear probability (weight = maxDuration - duration + 1)
 8. **NEW**: AI teams auto-fix injured players before every match (replace with uninjured players of same role)
 9. **NEW**: User match progression blocked at Preview & Tactics phase if validation errors exist
+10. **ARCHITECTURAL**: Created single shared `LeagueInitializer.js` - DRY principle for all league initialization flows
 
 ## Current Progress
 - ✅ **Task 1: Seasonal Loop System** - COMPLETE
@@ -58,6 +111,50 @@
   - **IMPROVEMENT 2**: Only send injury/recovery emails for user's squad players
   - **IMPROVEMENT 3**: AI auto-reselects uninjured players before matches
   - **IMPROVEMENT 4**: User blocked from continuing pre-match if tactics invalid
+
+- ✅ **Task 3: Board Objectives Enhancement** - COMPLETE
+  - Created ObjectiveGenerator.js with 10 objective templates
+  - Objectives generated: 1 mandatory (playoffs) + 4 random per season
+  - Weighted scoring: Playoffs 30%, Championship 25%, others 45% total
+  - Board score calculation (0-100) based on weighted completion
+  - Objective tracking: home wins, win streaks, rival wins, high scores, etc.
+  - UI displays board score prominently with color-coded progress bar
+  - Objectives update dynamically as season progresses
+
+- ✅ **Task 4: Inbox Improvements** - COMPLETE
+  - Added filter dropdown with 6 categories: All, Match, Injury, Finance, Board, Tutorial
+  - Added sort options: Date (newest first), Type (alphabetical), Unread First
+  - Filter/sort state persists in inboxStore
+  - Messages display shows "X of Y" count when filtered
+  - Injury/recovery messages already implemented in Task 2
+
+- ✅ **Task 3 Enhancements** - COMPLETE
+  - Added inbox message when season objectives are generated (type: 'board_objectives')
+  - Added Board Review tab to SeasonSummaryView with comprehensive performance evaluation
+  - Board score displayed prominently (0-100) with color-coded ratings
+  - Individual objective reviews with STATUS BADGES (Complete, On Track, Falling Short, Failed, Pending)
+  - Overall assessment with 5 rating tiers (Outstanding, Excellent, Satisfactory, Below Expectations, Unacceptable)
+  - Removed semi-finals objective (duplicate of playoffs)
+  - Added best batsman objective (12% weight) - NOT YET IMPLEMENTED (requires leaderboard tracking)
+  - Added best bowler objective (12% weight) - NOT YET IMPLEMENTED (requires leaderboard tracking)
+  - **Objective Tracking System**: Tracks progress automatically after every user team match
+    - Home wins / home matches played
+    - Win streaks (current and longest)
+    - First 3 matches wins
+    - Highest score achieved
+    - Rival wins / rival matches played
+    - Updates in BOTH Normal UI mode and Sim-to-Date mode
+
+- ✅ **Task 5: Super Overs Feature** - COMPLETE
+  - Tie detection: When both teams score the same, match is declared a tie and super over is triggered
+  - Super over simulation: 6 balls maximum per team, max 2 wickets, simplified outcome probabilities
+  - User squad selection modal: Select 3 batsmen + 1 bowler from playing XI
+  - AI auto-selection: AI opponent selects best players based on batting/bowling ratings
+  - Results display: Super over scores shown in MatchResultModal when applicable
+  - Stats handling: Super over runs do NOT count toward career statistics or NRR
+  - Win margin: Display shows "Super Over" instead of runs/wickets margin
+  - Both flows supported: Interactive play (MatchdayUI) and quick-sim (Header.jsx)
+  - League standings: Winner determined by super over, correctly awards 2 points for win (not tie)
 
 ## Bug Fixes Applied
 
@@ -126,6 +223,35 @@ The current injury system is quite aggressive. Considerations for balancing:
 4. **Rotation incentive**: High injury risk encourages squad rotation (may be intended design)
 
 ## Next Steps
-1. Task 3: Board Objectives - Create master list, board score, integrate with season start
-2. Task 4: Inbox Improvements - Add filtering/sorting UI
-3. Task 5: Super Overs - Implement tie-breaker system
+All Polish v2 tasks are complete!
+
+## Super Over System Documentation
+
+### How Super Overs Work
+1. **Tie Detection**: If both teams score exactly the same runs in the main match, a super over is triggered
+2. **Squad Selection**:
+   - User selects 3 batsmen and 1 bowler from their playing XI
+   - AI auto-selects best players based on batting/bowling ratings
+3. **Simulation**:
+   - Each team faces 6 balls maximum (1 over)
+   - Maximum 2 wickets per team
+   - If all out (2 wickets), innings ends early
+4. **Winner Determination**:
+   - Team with more runs wins
+   - If super over is also tied, team that batted first in super over wins
+5. **Stats**: Super over runs/wickets do NOT count toward career statistics or NRR
+
+### Key Design Decisions
+- Super over batsmen/bowler can be ANY player from the playing XI (not restricted by role)
+- AI selection prioritizes highest-rated players (top 3 batsmen by batting rating, best bowler by bowling rating)
+- Team that batted SECOND in main match bats FIRST in super over (real cricket convention)
+- Super over outcome probabilities are simplified (flat distribution) vs main match engine
+
+### Files Involved
+- `matchStore.js` - State management for super over data
+- `MatchEngine.js` - Simulation logic
+- `QuickSimMatch.js` - AI match handling
+- `SuperOverSelectionModal.jsx` - User selection UI
+- `MatchdayUI.jsx` - Interactive match flow
+- `Header.jsx` - Quick-sim result handling
+- `MatchResultModal.jsx` - Result display

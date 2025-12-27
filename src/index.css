@@ -50,6 +50,13 @@
     @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md hover:border-border-accent transition-colors;
   }
 
+  /* Interactive card variant for clickable dashboard cards */
+  .card-interactive {
+    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md
+           hover:border-cricket-accent/50 hover:bg-cricket-primary/10
+           transition-colors cursor-pointer;
+  }
+
   .input-field {
     @apply bg-bg-secondary border border-border-primary rounded px-3 py-2 text-text-primary focus:border-cricket-accent focus:outline-none transition-colors;
   }

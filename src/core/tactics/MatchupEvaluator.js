@@ -97,7 +97,19 @@ class MatchupEvaluator {
    */
   applyMatchupModifiers(batsman, bowler) {
     const matchup = this.evaluateMatchup(batsman, bowler);
-    const modifiedBatsman = JSON.parse(JSON.stringify(batsman)); // Deep copy
+    // Deep clone batsman to avoid mutating original (must clone nested attribute objects)
+    const modifiedBatsman = {
+      ...batsman,
+      attributes: {
+        ...batsman.attributes,
+        batting: { ...batsman.attributes?.batting },
+        bowling: { ...batsman.attributes?.bowling },
+        physical: { ...batsman.attributes?.physical },
+        mental: { ...batsman.attributes?.mental },
+        fielding: { ...batsman.attributes?.fielding }
+      },
+      condition: { ...batsman.condition }
+    };
 
     // Apply modifiers
     if (matchup.modifiers && Object.keys(matchup.modifiers).length > 0) {

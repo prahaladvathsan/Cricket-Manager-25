@@ -3,11 +3,13 @@
  * @description Board objectives with live progress tracking
  */
 
-import React, { useMemo } from 'react';
-import { Users, Target, Trophy, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import React, { useMemo, useEffect } from 'react';
+import { Users, Target, Trophy, CheckCircle, Clock, XCircle, AlertCircle, Award } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useTeamStore from '../../stores/teamStore';
+import useGameStore from '../../stores/gameStore';
+import { ICON_MAP } from '../../utils/ObjectiveGenerator';
 
 const ObjectivesPanel = () => {
   const standings = useLeagueStore(state => state.standings);
@@ -15,130 +17,102 @@ const ObjectivesPanel = () => {
   const champion = useLeagueStore(state => state.champion);
   const auctionState = useAuctionStore(state => state.auctionState);
   const userTeam = useTeamStore(state => state.userTeam);
+  const seasonObjectives = useGameStore(state => state.seasonObjectives);
+  const objectiveTracking = useGameStore(state => state.objectiveTracking);
+  const updateObjectiveProgress = useGameStore(state => state.updateObjectiveProgress);
+  const getBoardScore = useGameStore(state => state.getBoardScore);
 
-  // Helper to get ordinal suffix
-  const getOrdinal = (n) => {
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  };
-
-  // Calculate objectives data
-  const objectives = useMemo(() => {
-    if (!userTeam) return [];
-
-    const auctionCompleted = auctionState === 'completed';
+  // Update objectives with current game state
+  useEffect(() => {
+    if (!userTeam || !seasonObjectives || seasonObjectives.length === 0) {
+      return;
+    }
 
     // Find user's position in standings
     const userStanding = standings.find(s => s.clubId === userTeam.id);
     const userPosition = standings.findIndex(s => s.clubId === userTeam.id) + 1;
     const totalMatches = 18; // WPL season (9 teams × 2 rounds = 18 matches per team)
     const played = userStanding?.played || 0;
-    const remaining = totalMatches - played;
 
-    // Calculate playoff progress
-    const calculatePlayoffProgress = () => {
-      if (userPosition <= 4 && played === totalMatches) return 100;
-      if (userPosition > 4 && played === totalMatches) return 0;
-
-      // During season, estimate based on current trajectory
-      const progressThroughSeason = (played / totalMatches) * 100;
-      const positionScore = userPosition <= 4 ? 100 : Math.max(0, 100 - ((userPosition - 4) * 20));
-
-      return Math.min(100, Math.round((progressThroughSeason + positionScore) / 2));
+    // Build game data for objective calculations
+    const gameData = {
+      userPosition,
+      userStanding,
+      played,
+      totalMatches,
+      stage,
+      champion,
+      userTeamId: userTeam.id,
+      auctionCompleted: auctionState === 'completed',
+      ...objectiveTracking
     };
 
-    // Calculate championship progress
-    const calculateChampionshipProgress = () => {
-      if (champion?.id === userTeam.id) return 100;
-      if (stage === 'completed') return 0;
-      if (stage === 'playoffs') {
-        // Check if user qualified
-        if (userPosition <= 4) return 50;
-        return 0;
-      }
-      if (stage === 'league') {
-        // Progress based on position
-        if (userPosition <= 2) return 40;
-        if (userPosition <= 4) return 30;
-        if (userPosition <= 6) return 20;
-        return 10;
-      }
-      return 0;
-    };
+    // Update objectives with current game state
+    updateObjectiveProgress(gameData);
+  }, [standings, stage, champion, auctionState, userTeam, seasonObjectives, objectiveTracking, updateObjectiveProgress]);
 
-    // Determine playoff status
-    const getPlayoffStatus = () => {
-      if (stage === 'playoffs' && userPosition <= 4) return 'completed';
-      if (stage === 'completed' && userPosition > 4) return 'failed';
-      if (userPosition <= 4) return 'in_progress';
-      if (userPosition > 8) return 'at_risk';
-      return 'in_progress';
-    };
+  // Just return the objectives directly from store
+  const objectives = seasonObjectives || [];
 
-    // Determine championship status
-    const getChampionshipStatus = () => {
-      if (champion?.id === userTeam.id) return 'completed';
-      if (stage === 'completed' && champion?.id !== userTeam.id) return 'failed';
-      if (stage === 'playoffs' && userPosition <= 4) return 'in_progress';
-      if (stage === 'league' && userPosition <= 4) return 'on_track';
-      return 'pending';
-    };
+  // One-time initialization for existing saves (if in league/playoffs but no objectives)
+  useEffect(() => {
+    const gamePhase = useGameStore.getState().currentPhase;
+    const teams = Object.values(useTeamStore.getState().teams);
+    const userTeamId = useTeamStore.getState().userTeamId;
 
-    // Get playoff details
-    const getPlayoffDetails = () => {
-      if (played === 0) return 'Season not started';
-      if (stage === 'completed') {
-        return userPosition <= 4 ? 'Qualified for playoffs' : 'Failed to qualify';
-      }
-      if (stage === 'playoffs') {
-        return 'Playoffs in progress';
-      }
-      return `Currently ${getOrdinal(userPosition)} place, ${remaining} match${remaining !== 1 ? 'es' : ''} remaining`;
-    };
+    // If we're past preseason and have no objectives, generate them now
+    if ((gamePhase === 'league' || gamePhase === 'playoffs') && seasonObjectives.length === 0) {
+      const rivalTeam = teams.find(t => t.id !== userTeamId);
+      useGameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
+      console.log('📋 Generated objectives for existing save');
+    }
+  }, []);
 
-    // Get championship details
-    const getChampionshipDetails = () => {
-      if (champion?.id === userTeam.id) return 'Champions! 🏆';
-      if (stage === 'completed') return 'Season completed';
-      if (stage === 'playoffs') return 'Competing for the title';
-      if (userPosition <= 4) return 'On track for playoffs';
-      return 'Need to improve league position';
-    };
+  // Calculate board score
+  const boardScore = getBoardScore();
 
-    return [
-      {
-        id: 'auction',
-        title: 'Complete Squad Building',
-        description: 'Build your squad through the auction',
-        progress: auctionCompleted ? 100 : 0,
-        status: auctionCompleted ? 'completed' : 'pending',
-        details: auctionCompleted ? 'Squad finalized' : 'Auction not completed',
-        icon: Users
-      },
-      {
-        id: 'playoffs',
-        title: 'Qualify for Playoffs',
-        description: 'Finish in the top 4 to qualify for playoffs',
-        progress: calculatePlayoffProgress(),
-        status: getPlayoffStatus(),
-        details: getPlayoffDetails(),
-        icon: Target
-      },
-      {
-        id: 'championship',
-        title: 'Win the Championship',
-        description: 'Win the World Premier League title',
-        progress: calculateChampionshipProgress(),
-        status: getChampionshipStatus(),
-        details: getChampionshipDetails(),
-        icon: Trophy
-      }
-    ];
-  }, [standings, stage, champion, auctionState, userTeam]);
+  // If no objectives yet, show message
+  if (objectives.length === 0) {
+    return (
+      <div className="card p-4 text-center text-text-secondary">
+        <p>Objectives will be generated at the start of the season</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
+      {/* Board Score Display */}
+      <div className="card p-4 border-2 border-cricket-accent bg-cricket-primary/10">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-text-primary flex items-center gap-2">
+              <Award className="w-5 h-5 text-cricket-accent" />
+              Board Score
+            </h3>
+            <p className="text-xs text-text-secondary mt-1">Overall performance rating</p>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold text-cricket-accent">{boardScore}</div>
+            <div className="text-xs text-text-secondary">out of 100</div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-3 h-3 bg-bg-tertiary rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${
+              boardScore >= 75 ? 'bg-green-500' :
+              boardScore >= 50 ? 'bg-cricket-accent' :
+              boardScore >= 25 ? 'bg-yellow-500' :
+              'bg-red-500'
+            }`}
+            style={{ width: `${boardScore}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Individual Objectives */}
       {objectives.map(objective => (
         <ObjectiveCard key={objective.id} objective={objective} />
       ))}
@@ -203,7 +177,8 @@ const ObjectiveCard = ({ objective }) => {
     failed: 'border-red-500 bg-red-900/10'
   };
 
-  const Icon = objective.icon;
+  // Map icon string to component
+  const Icon = ICON_MAP[objective.icon] || Target;
 
   return (
     <div className={`card p-3 border ${statusColors[objective.status]}`}>

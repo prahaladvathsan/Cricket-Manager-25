@@ -1,6 +1,6 @@
 /**
  * @file FieldVisualEditor.jsx
- * @description Visual cricket field editor with player assignment and drag-and-drop customization
+ * @description Visual cricket field editor with player assignment and full-screen customization modal
  *
  * Coordinate System:
  * - Data: Positive Y = striker/keeper end, Negative Y = bowler end
@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react';
-import { Edit3, Lock } from 'lucide-react';
+import { Edit3, X } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import fieldPositionsComplete from '../../../data/config/fielding-positions-complete.json';
@@ -38,27 +38,20 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   const STUMP_RADIUS = 0.5;
 
   // Player assignments (must be defined before using it)
-  const playerAssignments = currentSetup?.playerAssignments || {};
+  // Merge with wicketKeeper from teamTactics if set (from Overview tab)
+  const rawPlayerAssignments = currentSetup?.playerAssignments || {};
+  const playerAssignments = {
+    ...rawPlayerAssignments,
+    // If wicketKeeper is set in teamTactics, use it for position 1 (unless already set)
+    1: rawPlayerAssignments[1] || teamTactics?.wicketKeeper || null
+  };
 
   // Get playing XI from squadSelection for fielding position assignments
-  // The 11th player (leftover) will be the bowler or sub when bowler is bowling
   const playingXI = teamTactics?.squadSelection || [];
   const allXIPlayers = playingXI.map(playerId => players[playerId]).filter(p => p);
 
-  // Debug logging
-  const samplePlayer = allXIPlayers.find(p => p.role === 'wicket-keeper');
-  console.log('FieldVisualEditor Debug:', {
-    teamId,
-    hasTeamTactics: !!teamTactics,
-    allXIPlayers: allXIPlayers.length,
-    sampleWicketkeeper: samplePlayer ? {
-      name: samplePlayer.name,
-      playstyleRatings: samplePlayer.playstyleRatings
-    } : 'none found'
-  });
-
-  // Get assigned wicketkeeper ID
-  const assignedWicketkeeperId = playerAssignments[1]; // Position 1 is wicketkeeper
+  // Get assigned wicketkeeper ID (prioritize explicit assignment, then teamTactics.wicketKeeper)
+  const assignedWicketkeeperId = playerAssignments[1];
 
   // For wicketkeeper position: show only wicketkeepers with wicketkeeper playstyle rating
   const wicketkeeperCandidates = allXIPlayers.filter(p =>
@@ -74,7 +67,6 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
 
   // Get fielder color based on zone (from position data)
   const getFielderColor = (position) => {
-    // Use zone property from fielding-positions-complete.json (4 zones)
     switch (position.zone) {
       case 'silly':
         return '#EF4444'; // Red - very close (<12m), high risk
@@ -97,7 +89,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
 
     // Toggle selection
     if (selectedFielderIndex === index) {
-      setSelectedFielderIndex(null); // Deselect if clicking same fielder
+      setSelectedFielderIndex(null);
     } else {
       setSelectedFielderIndex(index);
     }
@@ -107,7 +99,6 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   const handlePositionClick = (newPositionData) => {
     if (!customizeMode || selectedFielderIndex === null) return;
 
-    // Find nearest available position
     const newPosition = {
       name: newPositionData.id,
       x: newPositionData.x,
@@ -115,11 +106,9 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
       zone: newPositionData.zone
     };
 
-    // Update positions array
     const newPositions = [...positions];
     newPositions[selectedFielderIndex] = newPosition;
 
-    // Call update handler
     if (onUpdateSetup) {
       onUpdateSetup({
         ...currentSetup,
@@ -127,7 +116,6 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
       });
     }
 
-    // Clear selection after moving
     setSelectedFielderIndex(null);
   };
 
@@ -137,17 +125,14 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
 
     const newAssignments = { ...playerAssignments };
 
-    // If player is being assigned (not cleared)
     if (playerId) {
-      // Find and clear any existing assignment of this player
       Object.keys(newAssignments).forEach(key => {
         if (newAssignments[key] === playerId && key !== String(positionIndex)) {
-          newAssignments[key] = null; // Vacate the old position
+          newAssignments[key] = null;
         }
       });
     }
 
-    // Assign player to new position (or clear if playerId is null)
     newAssignments[positionIndex] = playerId || null;
 
     onUpdateSetup({
@@ -164,363 +149,375 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
     return player ? player.name : null;
   };
 
-  return (
-    <div className="card p-4">
-      {/* Header with customize toggle */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h4 className="text-sm font-semibold text-text-primary mb-1">
-            Field Setup
-          </h4>
-          <p className="text-xs text-text-secondary">
-            {customizeMode ? 'Click a fielder, then click a position to move' : 'Visual representation with player assignments'}
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setCustomizeMode(!customizeMode);
-            // Reset selection when toggling off
-            if (customizeMode) setSelectedFielderIndex(null);
-          }}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-            customizeMode
-              ? 'bg-cricket-primary text-white'
-              : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
-          }`}
-        >
-          {customizeMode ? (
-            <>
-              <Lock className="w-3 h-3" />
-              Lock Positions
-            </>
-          ) : (
-            <>
-              <Edit3 className="w-3 h-3" />
-              Customize Field
-            </>
-          )}
-        </button>
-      </div>
+  // Close customize modal
+  const closeCustomizeMode = () => {
+    setCustomizeMode(false);
+    setSelectedFielderIndex(null);
+  };
 
-      {/* Main layout: Field on left, positions list on right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Field Visualization - 2/3 width */}
-        <div className="lg:col-span-2">
-          <div className="bg-bg-tertiary rounded-lg p-4">
-            <svg
-              viewBox="-80 -80 160 160"
-              className="w-full h-auto"
-              style={{ aspectRatio: '1 / 1' }}
-              preserveAspectRatio="xMidYMid meet"
+  // Render the field SVG (reusable for both normal and modal views)
+  const renderFieldSVG = (isModal = false) => (
+    <svg
+      viewBox="-80 -80 160 160"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <g transform="scale(1, -1)">
+        {/* Background - Cricket Green */}
+        <rect x="-80" y="-80" width="160" height="160" fill="#2D5F3F" />
+
+        {/* Boundary Circle */}
+        <circle cx="0" cy="0" r={BOUNDARY_RADIUS} fill="none" stroke="white" strokeWidth="0.4" opacity="0.9" />
+
+        {/* Inner Circle (30m) */}
+        <circle cx="0" cy="0" r={INNER_CIRCLE_RADIUS} fill="none" stroke="white" strokeWidth="0.3" strokeDasharray="2 1" opacity="0.6" />
+
+        {/* Pitch Rectangle */}
+        <rect
+          x={-PITCH_WIDTH / 2}
+          y={-PITCH_LENGTH / 2}
+          width={PITCH_WIDTH}
+          height={PITCH_LENGTH}
+          fill="#3D7050"
+          stroke="white"
+          strokeWidth="0.2"
+          opacity="0.8"
+        />
+
+        {/* Creases */}
+        <line x1={-PITCH_WIDTH} y1={-STRIKER_OFFSET} x2={PITCH_WIDTH} y2={-STRIKER_OFFSET} stroke="white" strokeWidth="0.15" opacity="0.7" />
+        <line x1={-PITCH_WIDTH} y1={STRIKER_OFFSET} x2={PITCH_WIDTH} y2={STRIKER_OFFSET} stroke="white" strokeWidth="0.15" opacity="0.7" />
+
+        {/* Stumps */}
+        <circle cx="0" cy={-STRIKER_OFFSET} r={STUMP_RADIUS} fill="#D4AF37" stroke="white" strokeWidth="0.1" />
+        <circle cx="0" cy={STRIKER_OFFSET} r={STUMP_RADIUS} fill="#D4AF37" stroke="white" strokeWidth="0.1" />
+
+        {/* Available positions in customize mode - white dots */}
+        {isModal && allPositions.map((pos) => {
+          if (pos.id === 'bowler' || pos.id === 'wicketkeeper') return null;
+
+          const isOccupied = positions.some(p =>
+            Math.abs(p.x - pos.x) < 1 && Math.abs(p.y - pos.y) < 1
+          );
+
+          const isClickable = selectedFielderIndex !== null;
+
+          return (
+            <circle
+              key={pos.id}
+              cx={pos.x}
+              cy={pos.y}
+              r={isOccupied ? 0 : 1.5}
+              fill="white"
+              opacity={isClickable ? 0.6 : 0.2}
+              stroke={isClickable ? '#D4AF37' : 'none'}
+              strokeWidth={isClickable ? 0.2 : 0}
+              className={isClickable ? 'cursor-pointer' : ''}
+              style={{ pointerEvents: 'all' }}
+              onClick={() => handlePositionClick(pos)}
             >
-              {/* Apply Y-axis flip: positive Y data = top of screen */}
-              <g transform="scale(1, -1)">
-              {/* Background - Cricket Green */}
-              <rect x="-80" y="-80" width="160" height="160" fill="#2D5F3F" />
+              <title>{isClickable ? 'Click to move fielder here' : 'Select a fielder first'}</title>
+            </circle>
+          );
+        })}
 
-              {/* Boundary Circle */}
-              <circle cx="0" cy="0" r={BOUNDARY_RADIUS} fill="none" stroke="white" strokeWidth="0.4" opacity="0.9" />
+        {/* Current fielder positions */}
+        {positions.map((position, index) => {
+          const isKeeper = index === 1;
+          const isBowler = index === 0;
+          const isBowlerOrKeeper = isBowler || isKeeper;
+          const color = getFielderColor(position);
+          const playerName = getPlayerName(index);
+          const isClickable = isModal && !isBowlerOrKeeper;
+          const isSelected = selectedFielderIndex === index;
 
-              {/* Inner Circle (30m) */}
-              <circle cx="0" cy="0" r={INNER_CIRCLE_RADIUS} fill="none" stroke="white" strokeWidth="0.3" strokeDasharray="2 1" opacity="0.6" />
+          let stroke = 'white';
+          let strokeWidth = 0.4;
+          if (isSelected) {
+            stroke = '#D4AF37';
+            strokeWidth = 0.6;
+          }
 
-              {/* Pitch Rectangle */}
-              <rect
-                x={-PITCH_WIDTH / 2}
-                y={-PITCH_LENGTH / 2}
-                width={PITCH_WIDTH}
-                height={PITCH_LENGTH}
-                fill="#3D7050"
-                stroke="white"
-                strokeWidth="0.2"
-                opacity="0.8"
-              />
+          return (
+            <g key={index}>
+              <circle
+                cx={position.x}
+                cy={position.y}
+                r={isBowler ? 2.5 : isKeeper ? 2.5 : 2}
+                fill={color}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                className={isClickable ? 'cursor-pointer' : ''}
+                style={{ pointerEvents: 'all' }}
+                onClick={() => isModal && handleFielderClick(index)}
+              >
+                <title>
+                  {playerName || position.name}
+                  {isClickable && ' - Click to select'}
+                  {isBowlerOrKeeper && ' - Locked'}
+                </title>
+              </circle>
 
-              {/* Creases */}
-              <line x1={-PITCH_WIDTH} y1={-STRIKER_OFFSET} x2={PITCH_WIDTH} y2={-STRIKER_OFFSET} stroke="white" strokeWidth="0.15" opacity="0.7" />
-              <line x1={-PITCH_WIDTH} y1={STRIKER_OFFSET} x2={PITCH_WIDTH} y2={STRIKER_OFFSET} stroke="white" strokeWidth="0.15" opacity="0.7" />
+              {isSelected && (
+                <circle
+                  cx={position.x}
+                  cy={position.y}
+                  r={3}
+                  fill="none"
+                  stroke="#D4AF37"
+                  strokeWidth={0.3}
+                  opacity={0.8}
+                >
+                  <animate attributeName="r" from="2.5" to="3.5" dur="1s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.8" to="0.3" dur="1s" repeatCount="indefinite" />
+                </circle>
+              )}
 
-              {/* Stumps - Striker End (bottom) */}
-              <circle cx="0" cy={-STRIKER_OFFSET} r={STUMP_RADIUS} fill="#D4AF37" stroke="white" strokeWidth="0.1" />
+              {playerName && (
+                <text
+                  x={position.x}
+                  y={position.y - 3.5}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize="2.5"
+                  fontWeight="600"
+                  className="select-none"
+                  style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                  transform={`scale(1, -1) translate(0, ${-2 * (position.y - 4)})`}
+                >
+                  {playerName.split(' ').pop()}
+                </text>
+              )}
 
-              {/* Stumps - Bowler End (top) */}
-              <circle cx="0" cy={STRIKER_OFFSET} r={STUMP_RADIUS} fill="#D4AF37" stroke="white" strokeWidth="0.1" />
+              <text
+                x={position.x}
+                y={position.y + (playerName ? 5 : 4)}
+                textAnchor="middle"
+                fill="white"
+                fontSize="2"
+                fontWeight="500"
+                opacity="1"
+                className="select-none"
+                transform={`scale(1, -1) translate(0, ${-2 * (position.y + (3.5))})`}
+              >
+                {position.name?.replace(/_/g, ' ').split(' ').map(w =>
+                  w.charAt(0).toUpperCase() + w.slice(1)
+                ).join(' ').substring(0, 12)}
+              </text>
 
-              {/* Available positions in customize mode - white dots */}
-              {customizeMode && allPositions.map((pos) => {
-                // Don't show bowler and keeper positions
-                if (pos.id === 'bowler' || pos.id === 'wicketkeeper') return null;
+              {isKeeper && (
+                <text
+                  x={position.x}
+                  y={position.y + 1}
+                  textAnchor="middle"
+                  fill="#000000"
+                  fontSize="2"
+                  fontWeight="bold"
+                  transform={`scale(1, -1) translate(0, ${-2 * (position.y)})`}
+                >
+                  WK
+                </text>
+              )}
+              {isBowler && (
+                <text
+                  x={position.x}
+                  y={position.y + 0.8}
+                  textAnchor="middle"
+                  fill="#000000"
+                  fontSize="2"
+                  fontWeight="bold"
+                  transform={`scale(1, -1) translate(0, ${-2 * (position.y)})`}
+                >
+                  B
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
 
-                // Check if position is already occupied
-                const isOccupied = positions.some(p =>
-                  Math.abs(p.x - pos.x) < 1 && Math.abs(p.y - pos.y) < 1
-                );
-
-                const isClickable = selectedFielderIndex !== null;
-
-                return (
-                  <circle
-                    key={pos.id}
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={isOccupied ? 0 : 1.5}
-                    fill="white"
-                    opacity={isClickable ? 0.6 : 0.2}
-                    stroke={isClickable ? '#D4AF37' : 'none'}
-                    strokeWidth={isClickable ? 0.2 : 0}
-                    className={isClickable ? 'cursor-pointer' : ''}
-                    style={{ pointerEvents: 'all' }}
-                    onClick={() => handlePositionClick(pos)}
-                  >
-                    <title>{isClickable ? 'Click to move fielder here' : 'Select a fielder first'}</title>
-                  </circle>
-                );
-              })}
-
-              {/* Current fielder positions */}
-              {positions.map((position, index) => {
-                const isKeeper = index === 1;
-                const isBowler = index === 0;
-                const isBowlerOrKeeper = isBowler || isKeeper;
-                const color = getFielderColor(position);
-                const playerName = getPlayerName(index);
-                const isClickable = customizeMode && !isBowlerOrKeeper;
-                const isSelected = selectedFielderIndex === index;
-
-                // Stroke: selected > default
-                let stroke = 'white';
-                let strokeWidth = 0.4;
-                if (isSelected) {
-                  stroke = '#D4AF37'; // Gold for selected
-                  strokeWidth = 0.6;
-                }
-
-                return (
-                  <g key={index}>
-                    {/* Fielder marker */}
-                    <circle
-                      cx={position.x}
-                      cy={position.y}
-                      r={isBowler ? 2.5 : isKeeper ? 2.5 : 2}
-                      fill={color}
-                      stroke={stroke}
-                      strokeWidth={strokeWidth}
-                      className={isClickable ? 'cursor-pointer' : ''}
-                      style={{ pointerEvents: 'all' }}
-                      onClick={() => handleFielderClick(index)}
-                    >
-                      <title>
-                        {playerName || position.name}
-                        {isClickable && ' - Click to select'}
-                        {isBowlerOrKeeper && ' - Locked'}
-                      </title>
-                    </circle>
-
-                    {/* Selection ring for selected fielder */}
-                    {isSelected && (
-                      <circle
-                        cx={position.x}
-                        cy={position.y}
-                        r={3}
-                        fill="none"
-                        stroke="#D4AF37"
-                        strokeWidth={0.3}
-                        opacity={0.8}
-                      >
-                        <animate
-                          attributeName="r"
-                          from="2.5"
-                          to="3.5"
-                          dur="1s"
-                          repeatCount="indefinite"
-                        />
-                        <animate
-                          attributeName="opacity"
-                          from="0.8"
-                          to="0.3"
-                          dur="1s"
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    )}
-
-                    {/* Player name below */}
-                    {playerName && (
-                      <text
-                        x={position.x}
-                        y={position.y - 3.5}
-                        textAnchor="middle"
-                        fill="white"
-                        fontSize="2.5"
-                        fontWeight="600"
-                        className="select-none"
-                        style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
-                        transform={`scale(1, -1) translate(0, ${-2 * (position.y - 4)})`}
-                      >
-                        {playerName.split(' ').pop()}
-                      </text>
-                    )}
-
-                    {/* Position label Above */}
-                    <text
-                      x={position.x}
-                      y={position.y + (playerName ? 5 : 4)}
-                      textAnchor="middle"
-                      fill="white"
-                      fontSize="2"
-                      fontWeight="500"
-                      opacity="1"
-                      className="select-none"
-                      transform={`scale(1, -1) translate(0, ${-2 * (position.y + (3.5))})`}
-                    >
-                      {position.name?.replace(/_/g, ' ').split(' ').map(w =>
-                        w.charAt(0).toUpperCase() + w.slice(1)
-                      ).join(' ').substring(0, 12)}
-                    </text>
-
-                    {/* Special markers */}
-                    {isKeeper && (
-                      <text
-                        x={position.x}
-                        y={position.y + 1}
-                        textAnchor="middle"
-                        fill="#000000"
-                        fontSize="2"
-                        fontWeight="bold"
-                        transform={`scale(1, -1) translate(0, ${-2 * (position.y)})`}
-                      >
-                        WK
-                      </text>
-                    )}
-                    {isBowler && (
-                      <text
-                        x={position.x}
-                        y={position.y + 0.8}
-                        textAnchor="middle"
-                        fill="#000000"
-                        fontSize="2"
-                        fontWeight="bold"
-                        transform={`scale(1, -1) translate(0, ${-2 * (position.y)})`}
-                      >
-                        B
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-              </g> {/* Close transform group */}
-            </svg>
-          </div>
-
-          {/* Zone Legend */}
-          <div className="flex gap-3 text-xs mt-2 justify-center flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
-              <span className="text-text-secondary">Silly (&lt;12m)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F97316' }}></div>
-              <span className="text-text-secondary">Close (12-20m)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EAB308' }}></div>
-              <span className="text-text-secondary">Ring (20-30m)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
-              <span className="text-text-secondary">Boundary (30-70m)</span>
-            </div>
-          </div>
+  return (
+    <>
+      <div className="card p-3">
+        {/* Header with customize toggle */}
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold text-text-primary">Field Setup</h4>
+          <button
+            onClick={() => setCustomizeMode(true)}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded transition-colors bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary"
+          >
+            <Edit3 className="w-3 h-3" />
+            Customize
+          </button>
         </div>
 
-        {/* Position List with Player Assignment - 1/3 width */}
-        <div className="lg:col-span-1">
-          <div className="card p-2 bg-bg-tertiary max-h-[600px] overflow-y-auto">
-            <h5 className="text-xs font-semibold text-text-primary mb-2 sticky top-0 bg-bg-tertiary pb-1 border-b border-border-primary">
-              Player Assignments
-            </h5>
-            <div className="space-y-1">
-              {/* Sort positions: keeper first, then fielders (2-10), bowler last */}
-              {[...positions].map((position, originalIndex) => ({ position, originalIndex }))
-                .sort((a, b) => {
-                  // Keeper (1) first
-                  if (a.originalIndex === 1) return -1;
-                  if (b.originalIndex === 1) return 1;
-                  // Bowler (0) last
-                  if (a.originalIndex === 0) return 1;
-                  if (b.originalIndex === 0) return -1;
-                  // Others by original order
-                  return a.originalIndex - b.originalIndex;
-                })
-                .map(({ position, originalIndex: index }) => {
-                const isKeeper = index === 1;
-                const isBowler = index === 0;
-                const color = getFielderColor(position);
+        {/* Main layout: Field on left, positions list on right */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Field Visualization - 2/3 width */}
+          <div className="lg:col-span-2">
+            <div className="bg-bg-tertiary rounded-lg p-2" style={{ aspectRatio: '1 / 1' }}>
+              {renderFieldSVG(false)}
+            </div>
 
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1.5 p-1.5 rounded bg-bg-secondary border border-border-primary"
-                  >
-                    <div className={`w-3 h-3 rounded-full flex-shrink-0`} style={{ backgroundColor: color }}></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-text-primary truncate">
-                        {index + 1}. {position.name?.replace(/_/g, ' ').split(' ').map(w =>
-                          w.charAt(0).toUpperCase() + w.slice(1)
-                        ).join(' ')}
-                      </div>
+            {/* Zone Legend */}
+            <div className="flex gap-3 text-xs mt-2 justify-center flex-wrap">
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
+                <span className="text-text-secondary">Silly</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#F97316' }}></div>
+                <span className="text-text-secondary">Close</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#EAB308' }}></div>
+                <span className="text-text-secondary">Ring</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
+                <span className="text-text-secondary">Boundary</span>
+              </div>
+            </div>
+          </div>
 
-                      {/* Player assignment dropdown */}
-                      {isBowler ? (
-                        <div className="text-xs text-text-secondary">
-                          Bowler (auto)
+          {/* Position List with Player Assignment - 1/3 width */}
+          <div className="lg:col-span-1">
+            <div className="fielding-player-assignments card p-2 bg-bg-tertiary">
+              <h5 className="text-xs font-semibold text-text-primary mb-2 pb-1 border-b border-border-primary">
+                Player Assignments
+              </h5>
+              <div className="space-y-1">
+                {[...positions].map((position, originalIndex) => ({ position, originalIndex }))
+                  .sort((a, b) => {
+                    if (a.originalIndex === 1) return -1;
+                    if (b.originalIndex === 1) return 1;
+                    if (a.originalIndex === 0) return 1;
+                    if (b.originalIndex === 0) return -1;
+                    return a.originalIndex - b.originalIndex;
+                  })
+                  .map(({ position, originalIndex: index }) => {
+                  const isKeeper = index === 1;
+                  const isBowler = index === 0;
+                  const color = getFielderColor(position);
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-1.5 p-1.5 rounded bg-bg-secondary border border-border-primary"
+                    >
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-text-primary truncate">
+                          {index + 1}. {position.name?.replace(/_/g, ' ').split(' ').map(w =>
+                            w.charAt(0).toUpperCase() + w.slice(1)
+                          ).join(' ')}
                         </div>
-                      ) : isKeeper ? (
-                        <select
-                          value={playerAssignments[index] || ''}
-                          onChange={(e) => handlePlayerAssignment(index, e.target.value)}
-                          className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
-                        >
-                          <option value="">Auto-assign wicketkeeper</option>
-                          {wicketkeeperCandidates.map(player => {
-                            // Get wicketkeeper playstyle rating
-                            const wicketkeeperRating = Math.round(player.playstyleRatings?.fielding.Wicketkeeper || 0);
 
-                            return (
-                              <option key={player.id} value={player.id}>
-                                {player.name} ({wicketkeeperRating})
-                              </option>
-                            );
-                          })}
-                        </select>
-                      ) : (
-                        <select
-                          value={playerAssignments[index] || ''}
-                          onChange={(e) => handlePlayerAssignment(index, e.target.value)}
-                          className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
-                        >
-                          <option value="">Auto-assign</option>
-                          {teamPlayers.map(player => {
-                            // Get fielding attribute
-                            const fieldingRating = player.fielding || player.catching || 10;
-
-                            return (
-                              <option key={player.id} value={player.id}>
-                                {player.name} ({fieldingRating})
-                              </option>
-                            );
-                          })}
-                        </select>
-                      )}
+                        {isBowler ? (
+                          <div className="text-xs text-text-secondary">Bowler (auto)</div>
+                        ) : isKeeper ? (
+                          <select
+                            value={playerAssignments[index] || ''}
+                            onChange={(e) => handlePlayerAssignment(index, e.target.value)}
+                            className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
+                          >
+                            <option value="">Auto-assign wicketkeeper</option>
+                            {wicketkeeperCandidates.map(player => {
+                              const wicketkeeperRating = Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0);
+                              return (
+                                <option key={player.id} value={player.id}>
+                                  {player.name} ({wicketkeeperRating})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        ) : (
+                          <select
+                            value={playerAssignments[index] || ''}
+                            onChange={(e) => handlePlayerAssignment(index, e.target.value)}
+                            className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
+                          >
+                            <option value="">Auto-assign</option>
+                            {teamPlayers.map(player => {
+                              // Calculate fielding rating from attributes
+                              const fieldingAttrs = player.attributes?.fielding || {};
+                              const catching = fieldingAttrs.catching || 0;
+                              const groundFielding = fieldingAttrs.groundFielding || 0;
+                              const throwAccuracy = fieldingAttrs.throwAccuracy || 0;
+                              const fieldingRating = Math.round((catching + groundFielding + throwAccuracy) / 3);
+                              return (
+                                <option key={player.id} value={player.id}>
+                                  {player.name} ({fieldingRating})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Full-screen Customize Modal - positioned to avoid sidebar */}
+      {customizeMode && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ left: '200px' }}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/80" onClick={closeCustomizeMode} />
+
+          {/* Field container - fills available space */}
+          <div className="relative w-full h-full p-4 flex items-center justify-center">
+            {/* Close button */}
+            <button
+              onClick={closeCustomizeMode}
+              className="absolute top-4 right-4 z-10 p-2 bg-bg-secondary/90 hover:bg-bg-tertiary rounded-full text-text-primary transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Instructions */}
+            <div className="absolute top-4 left-4 z-10 px-3 py-2 bg-bg-secondary/90 rounded text-xs text-text-secondary">
+              {selectedFielderIndex !== null ? (
+                <span className="text-cricket-accent font-medium">Click a position to move the fielder</span>
+              ) : (
+                <span>Click a fielder to select (bowler & keeper locked)</span>
+              )}
+            </div>
+
+            {/* Zone Legend */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-4 px-4 py-2 bg-bg-secondary/90 rounded text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
+                <span className="text-text-secondary">Silly</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F97316' }}></div>
+                <span className="text-text-secondary">Close</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EAB308' }}></div>
+                <span className="text-text-secondary">Ring</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
+                <span className="text-text-secondary">Boundary</span>
+              </div>
+            </div>
+
+            {/* Full-screen field */}
+            <div className="w-full h-full max-w-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]">
+              {renderFieldSVG(true)}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

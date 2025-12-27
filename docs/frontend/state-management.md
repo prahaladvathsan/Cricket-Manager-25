@@ -376,44 +376,55 @@ const handleComplexUpdate = () => {
 
 ## Persistence Integration
 
-### Auto-Save Pattern
+### Auto-Save Pattern with Compression
+
+All major stores use **gzip compression** to reduce localStorage usage by 60-80%. This prevents quota exceeded errors during long simulation sessions.
 
 ```javascript
-// Store with localStorage persistence
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { compressedStorageOptions } from '../utils/compression.js';
+
+// Store with compressed localStorage persistence
 const useGameStore = create(
   persist(
     (set, get) => ({
       // store implementation
     }),
     {
-      name: 'cricket-manager-game',
-      storage: createJSONStorage(() => localStorage)
+      name: 'cm25-game-store',
+      version: 4,
+      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
     }
   )
 );
 ```
 
+**Compression Details** (`src/utils/compression.js`):
+- Uses pako (gzip) for compression
+- Data stored with `__COMPRESSED__:` prefix
+- Backward compatible - reads old uncompressed data
+- Typical compression ratio: 60-80%
+
+**Store Versions with Compression**:
+| Store | Version | Key |
+|-------|---------|-----|
+| gameStore | 4 | cm25-game-store |
+| teamStore | 3 | cm25-team-store |
+| playerStore | 2 | cm25-player-store |
+| leagueStore | 3 | cm25-league-store |
+| inboxStore | 2 | cm25-inbox-store |
+
 ### Save Game Management
 
 ```javascript
-// Manual save/load operations
-const saveGame = () => {
-  const gameState = {
-    game: useGameStore.getState(),
-    teams: useTeamStore.getState(),
-    players: usePlayerStore.getState()
-  };
+// Manual save/load operations use SaveGameManager
+import SaveGameManager from '../utils/SaveGameManager';
 
-  localStorage.setItem('save-slot-1', JSON.stringify(gameState));
-};
+// Save to slot (handles compression automatically)
+SaveGameManager.saveGame(0, stores, 'My Save');
 
-const loadGame = (slot) => {
-  const savedState = JSON.parse(localStorage.getItem(`save-slot-${slot}`));
-
-  useGameStore.setState(savedState.game);
-  useTeamStore.setState(savedState.teams);
-  usePlayerStore.setState(savedState.players);
-};
+// Load from slot
+SaveGameManager.loadGame(0, stores);
 ```
 
 ## Testing Patterns

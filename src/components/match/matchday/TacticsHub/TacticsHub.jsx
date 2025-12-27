@@ -54,7 +54,7 @@ export default function TacticsHub() {
   }, [tabs, activeTab]);
 
   return (
-    <div className="bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
+    <div className="tactics-hub bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
       {/* Header */}
       <div className="p-3 border-b border-border-primary">
         <h2 className="text-lg font-semibold text-text-primary">Tactics Hub</h2>

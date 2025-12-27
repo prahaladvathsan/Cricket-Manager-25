@@ -4,14 +4,14 @@
  */
 
 import auctionConfig from '../../data/config/auctionConfig.json';
-import PlayerValuation from './PlayerValuation.js';
-import AuctionAI from './AuctionAI.js';
+import AuctionTransferAI from '../ai/AuctionTransferAI.js';
+import aiCore from '../ai/AICore.js';
 
 class AuctionEngine {
   constructor(options = {}) {
     this.config = auctionConfig;
-    this.valuation = new PlayerValuation();
-    this.ai = new AuctionAI();
+    this.ai = new AuctionTransferAI();
+    this.core = aiCore;
 
     // Auction state
     this.teams = [];
@@ -22,17 +22,18 @@ class AuctionEngine {
     this.currentPlayer = null;
     this.currentBids = [];
     this.currentHighestBid = null;
+    this.roundMetadata = []; // Initialize to empty array
 
     // Fast mode: no bidding delays, random winner from willing bidders
     this.fastMode = options.fastMode || false;
   }
 
   /**
-   * Get player's primary playstyle rating based on their role
+   * Get player's primary playstyle rating score based on their role
    * @param {Object} player - Player object
-   * @returns {number} Primary playstyle rating (0-100)
+   * @returns {number} Primary playstyle rating score (0-100)
    */
-  getPrimaryPlaystyleRating(player) {
+  getPrimaryPlaystyleRatingScore(player) {
     if (!player.topPlaystyles) return 0;
 
     // Get the highest rated playstyle based on role
@@ -71,48 +72,54 @@ class AuctionEngine {
 
     // Filter and prepare player pool
     // Use primary playstyle rating >= 30 (on 0-100 scale) as minimum quality threshold
-    this.playerPool = players.filter(p => this.getPrimaryPlaystyleRating(p) >= 30).map(p => ({
+    this.playerPool = players.filter(p => this.getPrimaryPlaystyleRatingScore(p) >= 30).map(p => ({
       ...p,
-      basePrice: this.valuation.calculateBasePrice(p),
-      isMarquee: this.valuation.isMarqueePlayer(p),
+      basePrice: this.ai.calculateBasePrice(p),
+      isMarquee: this.ai.isMarqueePlayer(p),
       status: 'available'
     }));
 
     console.log(`\n🏏 AUCTION INITIALIZED`);
     console.log(`   Teams: ${this.teams.length}`);
     console.log(`   Player Pool: ${this.playerPool.length}`);
-    console.log(`   Budget per team: ${this.valuation.formatPrice(this.config.budget.total)}`);
+    console.log(`   Budget per team: ${this.core.formatPrice(this.config.budget.total)}`);
   }
 
   /**
    * Categorize players for auction order
-   * @returns {Object} Categorized players { marquee, batsmen, bowlers, allRounders, keepers }
+   * Categories: marquee (elite 90+), wicket-keepers, all-rounders, batsmen, bowlers
+   * @returns {Object} Categorized players sorted by base rating within each category
    */
   categorizePlayers() {
     const categories = {
       marquee: [],
-      batsmen: [],
-      bowlers: [],
+      keepers: [],
       allRounders: [],
-      keepers: []
+      batsmen: [],
+      bowlers: []
     };
 
+    // Sort function by base price (which is derived from combined rating)
+    const sortByBasePrice = (a, b) => b.basePrice - a.basePrice;
+
     this.playerPool.forEach(player => {
-      if (player.isMarquee) {
+      // Marquee = elite players (90+ combined rating = $200K base price)
+      if (player.basePrice >= 200000) {
         categories.marquee.push(player);
       } else {
+        // Non-marquee: categorize by role
         switch (player.role) {
+          case 'wicket-keeper':
+            categories.keepers.push(player);
+            break;
+          case 'all-rounder':
+            categories.allRounders.push(player);
+            break;
           case 'batsman':
             categories.batsmen.push(player);
             break;
           case 'bowler':
             categories.bowlers.push(player);
-            break;
-          case 'all-rounder':
-            categories.allRounders.push(player);
-            break;
-          case 'wicket-keeper':
-            categories.keepers.push(player);
             break;
           default:
             categories.batsmen.push(player); // Fallback
@@ -120,77 +127,195 @@ class AuctionEngine {
       }
     });
 
-    // Sort each category by primary playstyle rating
-    const sortByRating = (a, b) => {
-      const ratingA = this.valuation.getPrimaryPlaystyleRating(a);
-      const ratingB = this.valuation.getPrimaryPlaystyleRating(b);
-      return ratingB - ratingA; // Descending
-    };
-
-    categories.marquee.sort(sortByRating);
-    categories.batsmen.sort(sortByRating);
-    categories.bowlers.sort(sortByRating);
-    categories.allRounders.sort((a, b) => {
-      // All-rounders: sort by average of top batting and bowling ratings
-      const getRating = (player) => {
-        const batting = Math.max(...Object.values(player.playstyleRatings?.batting || {}), 0);
-        const bowling = Math.max(...Object.values(player.playstyleRatings?.bowling || {}), 0);
-        return (batting + bowling) / 2;
-      };
-      return getRating(b) - getRating(a);
-    });
-    categories.keepers.sort(sortByRating);
+    // Sort each category by base price (descending)
+    categories.marquee.sort(sortByBasePrice);
+    categories.keepers.sort(sortByBasePrice);
+    categories.allRounders.sort(sortByBasePrice);
+    categories.batsmen.sort(sortByBasePrice);
+    categories.bowlers.sort(sortByBasePrice);
 
     console.log(`\n📋 PLAYER CATEGORIZATION:`);
-    console.log(`   Marquee: ${categories.marquee.length}`);
+    console.log(`   Marquee (Elite): ${categories.marquee.length}`);
+    console.log(`   Wicket-Keepers: ${categories.keepers.length}`);
+    console.log(`   All-Rounders: ${categories.allRounders.length}`);
     console.log(`   Batsmen: ${categories.batsmen.length}`);
     console.log(`   Bowlers: ${categories.bowlers.length}`);
-    console.log(`   All-Rounders: ${categories.allRounders.length}`);
-    console.log(`   Wicket-Keepers: ${categories.keepers.length}`);
 
     return categories;
   }
 
   /**
-   * Create auction rounds - INTERLEAVED order (Marquee, then Bat→Bowl→AR→WK cycle)
-   * @param {Object} categorizedPlayers - Players organized by category
-   * @returns {Array} Array of rounds, each containing array of players
+   * Split a category into rounds of specified size
+   * Last round can be combined if small (less than half of round size)
+   * @param {Array} players - Players in this category
+   * @param {string} categoryName - Name for labeling (e.g., 'marquee', 'wicket-keepers')
+   * @param {number} playersPerRound - Players per round
+   * @returns {Array} Array of round objects { label, players }
    */
-  createAuctionRounds(categorizedPlayers) {
-    const { marquee, batsmen, bowlers, allRounders, keepers } = categorizedPlayers;
+  splitCategoryIntoRounds(players, categoryName, playersPerRound) {
+    if (players.length === 0) return [];
 
-    // Start with marquee players (auctioned first as a block)
-    const orderedPlayers = [...marquee];
-
-    // Interleave remaining roles: Bat1→Bowl1→AR1→WK1→Bat2→Bowl2→AR2→WK2...
-    const maxLength = Math.max(batsmen.length, bowlers.length, allRounders.length, keepers.length);
-
-    for (let i = 0; i < maxLength; i++) {
-      if (i < batsmen.length) orderedPlayers.push(batsmen[i]);
-      if (i < bowlers.length) orderedPlayers.push(bowlers[i]);
-      if (i < allRounders.length) orderedPlayers.push(allRounders[i]);
-      if (i < keepers.length) orderedPlayers.push(keepers[i]);
-    }
-
-    // Split into rounds of playersPerRound
     const rounds = [];
-    const playersPerRound = this.config.rounds.playersPerRound;
+    let roundNum = 1;
 
-    for (let i = 0; i < orderedPlayers.length; i += playersPerRound) {
-      const roundPlayers = orderedPlayers.slice(i, i + playersPerRound);
+    for (let i = 0; i < players.length; i += playersPerRound) {
+      const roundPlayers = players.slice(i, i + playersPerRound);
 
-      // Shuffle players within this round for variety
-      this.shuffleArray(roundPlayers);
+      // Check if this is a small last round that should be combined with previous
+      if (roundPlayers.length < playersPerRound / 2 && rounds.length > 0) {
+        // Combine with previous round
+        rounds[rounds.length - 1].players.push(...roundPlayers);
+      } else {
+        // Shuffle players within round
+        this.shuffleArray(roundPlayers);
 
-      rounds.push(roundPlayers);
+        rounds.push({
+          label: `${categoryName}${roundNum}`,
+          category: categoryName,
+          roundNumber: roundNum,
+          players: roundPlayers
+        });
+        roundNum++;
+      }
     }
-
-    console.log(`\n📅 AUCTION STRUCTURE:`);
-    console.log(`   Total Rounds: ${rounds.length}`);
-    console.log(`   Order: Marquee block, then Bat→Bowl→AR→WK interleaved`);
-    console.log(`   Players per Round: ${playersPerRound} (shuffled within round)`);
 
     return rounds;
+  }
+
+  /**
+   * Create auction rounds with new structure:
+   * 1. Split each category into rounds of 10, sorted by base rating
+   * 2. Shuffle within rounds
+   * 3. Label rounds: marquee1, marquee2..., wicket-keepers1, all-rounders1, batsmen1, bowlers1...
+   * 4. Order: All marquee first, then interleaved (wk1, ar1, bat1, bowl1, wk2, ar2, bat2, bowl2...)
+   * @param {Object} categorizedPlayers - Players organized by category
+   * @returns {Array} Array of rounds, each containing { label, players }
+   */
+  createAuctionRounds(categorizedPlayers) {
+    const { marquee, keepers, allRounders, batsmen, bowlers } = categorizedPlayers;
+    const playersPerRound = this.config.rounds.playersPerRound;
+
+    // Split each category into rounds
+    const marqueeRounds = this.splitCategoryIntoRounds(marquee, 'marquee', playersPerRound);
+    const keeperRounds = this.splitCategoryIntoRounds(keepers, 'wicket-keepers', playersPerRound);
+    const allRounderRounds = this.splitCategoryIntoRounds(allRounders, 'all-rounders', playersPerRound);
+    const batsmenRounds = this.splitCategoryIntoRounds(batsmen, 'batsmen', playersPerRound);
+    const bowlerRounds = this.splitCategoryIntoRounds(bowlers, 'bowlers', playersPerRound);
+
+    // Build final round order
+    const orderedRounds = [];
+
+    // 1. All marquee rounds first (in order)
+    marqueeRounds.forEach(round => orderedRounds.push(round));
+
+    // 2. Interleave remaining categories: wk1, ar1, bat1, bowl1, wk2, ar2, bat2, bowl2...
+    const maxRounds = Math.max(
+      keeperRounds.length,
+      allRounderRounds.length,
+      batsmenRounds.length,
+      bowlerRounds.length
+    );
+
+    for (let i = 0; i < maxRounds; i++) {
+      if (i < keeperRounds.length) orderedRounds.push(keeperRounds[i]);
+      if (i < allRounderRounds.length) orderedRounds.push(allRounderRounds[i]);
+      if (i < batsmenRounds.length) orderedRounds.push(batsmenRounds[i]);
+      if (i < bowlerRounds.length) orderedRounds.push(bowlerRounds[i]);
+    }
+
+    // Store round metadata for UI access
+    this.roundMetadata = orderedRounds.map((round, idx) => ({
+      index: idx,
+      label: round.label,
+      category: round.category,
+      playerCount: round.players.length
+    }));
+
+    // Convert to simple array of player arrays for backwards compatibility
+    const rounds = orderedRounds.map(round => round.players);
+
+    console.log(`\n📅 AUCTION STRUCTURE:`);
+    console.log(`   Total Rounds: ${orderedRounds.length}`);
+    console.log(`   Marquee Rounds: ${marqueeRounds.length}`);
+    console.log(`   Wicket-Keeper Rounds: ${keeperRounds.length}`);
+    console.log(`   All-Rounder Rounds: ${allRounderRounds.length}`);
+    console.log(`   Batsmen Rounds: ${batsmenRounds.length}`);
+    console.log(`   Bowler Rounds: ${bowlerRounds.length}`);
+    console.log(`   Order: Marquee first, then WK→AR→Bat→Bowl interleaved`);
+
+    return rounds;
+  }
+
+  /**
+   * Get round metadata for UI display
+   * @returns {Array} Array of { index, label, category, playerCount }
+   */
+  getRoundMetadata() {
+    return this.roundMetadata || [];
+  }
+
+  /**
+   * Get current round label
+   * @param {number} roundIndex - Current round index
+   * @returns {string} Round label (e.g., 'marquee1', 'batsmen2')
+   */
+  getRoundLabel(roundIndex) {
+    if (!this.roundMetadata || roundIndex >= this.roundMetadata.length) {
+      return `Round ${roundIndex + 1}`;
+    }
+    return this.roundMetadata[roundIndex].label;
+  }
+
+  /**
+   * Check if there are unsold players that need a second chance
+   * @returns {boolean} True if unsold round is needed
+   */
+  hasUnsoldPlayers() {
+    return this.unsoldPlayers.length > 0;
+  }
+
+  /**
+   * Create unsold round - all unsold players in one mega round at 50% base price
+   * @returns {Object} { players: Array, metadata: Object }
+   */
+  createUnsoldRound() {
+    if (this.unsoldPlayers.length === 0) {
+      return { players: [], metadata: null };
+    }
+
+    // Reduce base prices by 50% and mark as being in unsold round
+    const unsoldPlayers = this.unsoldPlayers.map(player => {
+      player.basePrice = Math.floor(player.basePrice * 0.5);
+      player.hasBeenInUnsoldRound = true;
+      player.status = 'available'; // Reset status for re-auction
+      return player;
+    });
+
+    // Sort by base price descending
+    unsoldPlayers.sort((a, b) => b.basePrice - a.basePrice);
+
+    // Shuffle for variety
+    this.shuffleArray(unsoldPlayers);
+
+    // Clear the unsold array (they're now in the unsold round)
+    this.unsoldPlayers = [];
+
+    // Create metadata for the unsold round
+    const metadata = {
+      index: this.roundMetadata.length,
+      label: 'unsold-round',
+      category: 'unsold',
+      playerCount: unsoldPlayers.length
+    };
+
+    // Add to round metadata
+    this.roundMetadata.push(metadata);
+
+    console.log(`\n🔄 UNSOLD ROUND CREATED:`);
+    console.log(`   Players: ${unsoldPlayers.length}`);
+    console.log(`   Base prices reduced by 50%`);
+
+    return { players: unsoldPlayers, metadata };
   }
 
   /**
@@ -233,8 +358,8 @@ class AuctionEngine {
     console.log(`🎯 NOW AUCTIONING: ${player.name}`);
     console.log(`${'='.repeat(80)}`);
     console.log(`   Role: ${player.role}`);
-    console.log(`   Primary Rating: ${this.valuation.getPrimaryPlaystyleRating(player).toFixed(1)}`);
-    console.log(`   Base Price: ${this.valuation.formatPrice(player.basePrice)}`);
+    console.log(`   Primary Rating: ${this.core.getPrimaryPlaystyleRatingScore(player).toFixed(1)}`);
+    console.log(`   Base Price: ${this.core.formatPrice(player.basePrice)}`);
     if (player.isMarquee) {
       console.log(`   ⭐ MARQUEE PLAYER`);
     }
@@ -265,23 +390,25 @@ class AuctionEngine {
 
       // If teams are willing to bid
       if (willingBidders.length > 0) {
-        // Find the highest max bid
-        let highestBid = Math.max(...willingBidders.map(b => b.maxBid));
+        // SECOND-PRICE AUCTION: Winner pays 2nd highest bid + increment
+        const bids = willingBidders.map(b => ({
+          teamId: b.team.id,
+          team: b.team,
+          amount: this.floorToValidBidAmount(b.maxBid)
+        }));
 
-        // Floor to valid bid increment
-        highestBid = this.floorToValidBidAmount(highestBid);
+        const result = this.ai.determineWinningBid(bids);
 
-        // Filter to only teams willing to bid at the highest amount
-        const highestBidders = willingBidders.filter(b => b.maxBid >= highestBid);
+        if (result) {
+          lastBidder = result.team;
+          currentPrice = result.paidPrice;
 
-        // Randomly select from highest bidders
-        const randomIndex = Math.floor(Math.random() * highestBidders.length);
-        const winner = highestBidders[randomIndex];
+          // Find how many teams were at max for logging
+          const highestAmount = Math.max(...bids.map(b => b.amount));
+          const highestBidders = bids.filter(b => b.amount === highestAmount);
 
-        lastBidder = winner.team;
-        currentPrice = highestBid;
-
-        console.log(`   💰 ${winner.team.name} wins at ${this.valuation.formatPrice(highestBid)} (${highestBidders.length} teams at max, ${willingBidders.length} total interested)`);
+          console.log(`   💰 ${result.team.name} wins at ${this.core.formatPrice(result.paidPrice)} (2nd-price auction, ${highestBidders.length} at max, ${willingBidders.length} interested)`);
+        }
       } else {
         console.log(`   ❌ No bidders`);
       }
@@ -360,7 +487,7 @@ class AuctionEngine {
           reason: winningBid.reason || ''
         });
 
-        console.log(`   💰 ${winningBid.team.name} bids ${this.valuation.formatPrice(winningBid.amount)}`);
+        console.log(`   💰 ${winningBid.team.name} bids ${this.core.formatPrice(winningBid.amount)}`);
       } else {
         // No bids - increment timer
         secondsSinceLastBid += 1;
@@ -407,8 +534,8 @@ class AuctionEngine {
 
       this.auctionedPlayers.push(result);
 
-      console.log(`\n   🏆 SOLD to ${lastBidder.name} for ${this.valuation.formatPrice(currentPrice)}!`);
-      console.log(`   💰 ${lastBidder.name} Budget Remaining: ${this.valuation.formatPrice(lastBidder.budgetRemaining)}`);
+      console.log(`\n   🏆 SOLD to ${lastBidder.name} for ${this.core.formatPrice(currentPrice)}!`);
+      console.log(`   💰 ${lastBidder.name} Budget Remaining: ${this.core.formatPrice(lastBidder.budgetRemaining)}`);
       console.log(`   📊 Squad Size: ${lastBidder.squad.length}/${this.config.squadSize.max}`);
     } else {
       // Player unsold
@@ -491,8 +618,8 @@ class AuctionEngine {
       console.log(`${team.name}:`);
       console.log(`   Squad Size: ${team.squad.length}/${this.config.squadSize.max}`);
       console.log(`   Composition: ${composition.batsmen}B, ${composition.bowlers}Bw, ${composition.allRounders}AR, ${composition.keepers}WK`);
-      console.log(`   Total Spent: ${this.valuation.formatPrice(team.totalSpent)}`);
-      console.log(`   Budget Remaining: ${this.valuation.formatPrice(team.budgetRemaining)}`);
+      console.log(`   Total Spent: ${this.core.formatPrice(team.totalSpent)}`);
+      console.log(`   Budget Remaining: ${this.core.formatPrice(team.budgetRemaining)}`);
       console.log();
     });
   }

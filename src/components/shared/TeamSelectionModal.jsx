@@ -1,9 +1,9 @@
 /**
  * @file TeamSelectionModal.jsx
- * @description Modal for initial team selection
+ * @description Modal for initial team selection - click to select, click again to confirm
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -14,12 +14,22 @@ import useNavigationStore from '../../stores/navigationStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useInboxStore from '../../stores/inboxStore';
 import MessageGenerator from '../../utils/MessageGenerator';
-import { saveGame } from '../../utils/storage';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
+import LoadingScreen from './LoadingScreen';
+
+// Focus category labels
+const FOCUS_LABELS = {
+  spin: 'Spin',
+  pace: 'Pace',
+  fielding: 'Fielding',
+  batting: 'Batting'
+};
 
 const TeamSelectionModal = ({ isOpen, onClose }) => {
-  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const { teams, initializeTeams, setUserTeam, resetAllTactics } = useTeamStore();
   const { resetForNewGame, scheduleEvent } = useGameStore();
   const gameState = useGameStore();
@@ -31,6 +41,30 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const financeStore = useFinanceStore();
   const { resetAllCareerStats } = usePlayerStore();
 
+  // Preload all team images before showing the UI
+  const preloadImages = useCallback(async (teamsList) => {
+    const imageUrls = [];
+
+    // Collect all badge and banner URLs
+    teamsList.forEach(team => {
+      imageUrls.push(getTeamBadge(team.id));
+      imageUrls.push(getTeamBanner(team.id));
+    });
+
+    // Load all images in parallel
+    const loadPromises = imageUrls.map(url => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false); // Don't fail on error, just continue
+        img.src = url;
+      });
+    });
+
+    await Promise.all(loadPromises);
+    setImagesLoaded(true);
+  }, []);
+
   useEffect(() => {
     // Initialize teams data if not already loaded
     if (Object.keys(teams).length === 0) {
@@ -38,173 +72,224 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     }
   }, [teams, initializeTeams]);
 
+  // Preload images once teams are available
+  useEffect(() => {
+    if (isOpen && Object.keys(teams).length > 0 && !imagesLoaded) {
+      const teamsList = Object.values(teams);
+      preloadImages(teamsList).then(() => {
+        // Small delay to ensure smooth transition
+        setTimeout(() => setIsLoading(false), 100);
+      });
+    }
+  }, [isOpen, teams, imagesLoaded, preloadImages]);
+
   const handleTeamSelect = (teamId) => {
-    setSelectedTeamId(teamId);
+    // If clicking an already selected team, confirm the selection
+    if (selectedTeamId === teamId) {
+      confirmSelection(teamId);
+    } else {
+      // First click - select the team
+      setSelectedTeamId(teamId);
+    }
   };
 
-  const handleConfirm = () => {
-    if (selectedTeamId) {
-      // Reset all game state for fresh start
-      resetForNewGame();
-      clearHistory();
-      clearAllMessages();
+  const confirmSelection = (teamId) => {
+    // Reset all game state for fresh start
+    resetForNewGame();
+    clearHistory();
+    clearAllMessages();
 
-      // Reset league store (clear any old fixtures, standings, etc.)
-      if (leagueStore.resetLeague) {
-        leagueStore.resetLeague();
-      }
+    // Reset league store (clear any old fixtures, standings, etc.)
+    if (leagueStore.resetLeague) {
+      leagueStore.resetLeague();
+    }
 
-      // Reset auction store
-      if (auctionStore.resetAuction) {
-        auctionStore.resetAuction();
-      }
+    // Reset auction store
+    if (auctionStore.resetAuction) {
+      auctionStore.resetAuction();
+    }
 
-      // Reset player career stats (IMPORTANT: clears stale stats from previous games)
-      resetAllCareerStats();
-      console.log('🔄 Reset all player career stats for new game');
+    // Reset player career stats (IMPORTANT: clears stale stats from previous games)
+    resetAllCareerStats();
+    console.log('🔄 Reset all player career stats for new game');
 
-      // Reset match store (clear any ongoing match data)
-      if (matchStore.resetMatch) {
-        matchStore.resetMatch();
-        console.log('🔄 Reset match store for new game');
-      }
+    // Reset match store (clear any ongoing match data)
+    if (matchStore.resetMatch) {
+      matchStore.resetMatch();
+      console.log('🔄 Reset match store for new game');
+    }
 
-      // Reset finance store (clear any old financial data)
-      if (financeStore.resetFinances) {
-        financeStore.resetFinances();
-        console.log('🔄 Reset finance store for new game');
-      }
+    // Reset finance store (clear any old financial data)
+    if (financeStore.resetFinances) {
+      financeStore.resetFinances();
+      console.log('🔄 Reset finance store for new game');
+    }
 
-      // Initialize finances for all teams at game start (with $10M each)
-      const teamsForFinances = Object.values(teams).map(team => ({
-        id: team.id,
-        name: team.name
-      }));
-      console.log('💰 TeamSelectionModal - Initializing finances for teams:', teamsForFinances);
-      if (financeStore.initializeSeason) {
-        const result = financeStore.initializeSeason(teamsForFinances, `season_${gameState.currentSeason}`, null);
-        console.log('💰 Initialized finances for all teams, result:', result);
+    // Initialize finances for all teams at game start (with $10M each)
+    const teamsForFinances = Object.values(teams).map(team => ({
+      id: team.id,
+      name: team.name
+    }));
+    console.log('💰 TeamSelectionModal - Initializing finances for teams:', teamsForFinances);
+    if (financeStore.initializeSeason) {
+      const result = financeStore.initializeSeason(teamsForFinances, `season_${gameState.currentSeason}`, null);
+      console.log('💰 Initialized finances for all teams, result:', result);
 
-        // Verify initialization worked
-        const testFinances = financeStore.getTeamFinances(selectedTeamId);
-        console.log('💰 Test finances for selected team:', selectedTeamId, ':', testFinances);
-      } else {
-        console.error('❌ financeStore.initializeSeason is not available!');
-      }
+      // Verify initialization worked
+      const testFinances = financeStore.getTeamFinances(teamId);
+      console.log('💰 Test finances for selected team:', teamId, ':', testFinances);
+    } else {
+      console.error('❌ financeStore.initializeSeason is not available!');
+    }
 
-      // Reset all team tactics (IMPORTANT: clears stale playing XI data)
-      resetAllTactics();
-      console.log('🔄 Reset all team tactics for new game');
+    // Reset all team tactics (IMPORTANT: clears stale playing XI data)
+    resetAllTactics();
+    console.log('🔄 Reset all team tactics for new game');
 
-      // Set the selected team
-      setUserTeam(selectedTeamId);
+    // Set the selected team
+    setUserTeam(teamId);
 
-      // Schedule auction event for day 7 (one week from start)
-      scheduleEvent(7, 'auction', {
-        seasonId: gameState.currentSeason,
-        phase: 'preseason'
-      });
+    // Schedule auction event for day 7 (one week from start)
+    scheduleEvent(7, 'auction', {
+      seasonId: gameState.currentSeason,
+      phase: 'preseason'
+    });
 
-      // Generate welcome messages
-      const selectedTeam = teams[selectedTeamId];
-      if (selectedTeam) {
-        addMessage(MessageGenerator.generateWelcomeMessage(selectedTeam, gameState.currentSeason));
-        addMessage(MessageGenerator.generateExpectationsMessage(selectedTeam, gameState.currentSeason));
+    // Generate welcome messages
+    const selectedTeam = teams[teamId];
+    if (selectedTeam) {
+      addMessage(MessageGenerator.generateWelcomeMessage(selectedTeam, gameState.currentSeason));
+      addMessage(MessageGenerator.generateExpectationsMessage(selectedTeam, gameState.currentSeason));
+      // Only add tutorial message if enabled in settings
+      if (gameState.settings?.tutorialEnabled !== false) {
         addMessage(MessageGenerator.generateTutorialMessage());
       }
-
-      // Auto-save the selection
-      const saveData = {
-        ...gameState,
-        userTeamId: selectedTeamId,
-        teams: teams
-      };
-      saveGame('auto_save', saveData);
-
-      onClose();
     }
+
+    // Note: Zustand persist middleware auto-saves all store changes
+    onClose();
   };
 
   if (!isOpen) return null;
 
+  // Show loading screen while images are being preloaded
+  if (isLoading) {
+    return (
+      <LoadingScreen
+        message="Preparing Team Selection"
+        submessage="Loading team graphics..."
+      />
+    );
+  }
+
   const teamsList = Object.values(teams);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-cricket-surface border-2 border-cricket-primary rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-3xl font-bold text-cricket-text-primary mb-2 text-center">
-          Choose Your Team
-        </h2>
-        <p className="text-cricket-text-secondary text-center mb-8">
-          Select the team you want to manage in the World Premier League
-        </p>
+    <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50">
+      <div className="w-full h-full flex flex-col p-6">
+        {/* Header */}
+        <div className="text-center mb-4">
+          <h2 className="text-3xl font-bold text-cricket-text-primary">
+            Choose Your Team
+          </h2>
+          <p className="text-cricket-accent text-lg mt-2 animate-pulse font-medium">
+            Click to select, click again to confirm
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {teamsList.map(team => (
+        {/* Team Grid - 5 columns x 2 rows */}
+        <div className="flex-1 grid grid-cols-5 grid-rows-2 gap-4 max-h-[calc(100vh-120px)]">
+          {teamsList.map(team => {
+            const isSelected = selectedTeamId === team.id;
+            return (
             <div
               key={team.id}
-              className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 border-2 rounded-lg ${
-                selectedTeamId === team.id
-                  ? 'border-cricket-accent bg-cricket-accent bg-opacity-20'
-                  : 'border-cricket-primary hover:border-cricket-accent'
+              className={`flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.03] hover:z-10 rounded-lg border-2 group ${
+                isSelected
+                  ? 'border-cricket-accent scale-[1.02]'
+                  : 'border-gray-700 hover:border-cricket-accent'
               }`}
+              style={{
+                backgroundColor: isSelected ? `${team.colors?.secondary || '#1a1a2e'}` : '#1a1a2e'
+              }}
               onClick={() => handleTeamSelect(team.id)}
             >
-              {/* Banner Background */}
-              <div
-                className="absolute inset-0 opacity-70"
-                style={{
-                  backgroundImage: `url(${getTeamBanner(team.id)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  filter: 'blur(2px)'
-                }}
-              />
+              {/* Banner - Top section with 3:1 aspect ratio */}
+              <div className="relative w-full" style={{ aspectRatio: '3/1' }}>
+                <img
+                  src={getTeamBanner(team.id)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient fade to card */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-1/2"
+                  style={{
+                    background: `linear-gradient(to top, ${isSelected ? team.colors?.secondary || '#1a1a2e' : '#1a1a2e'}, transparent)`
+                  }}
+                />
+              </div>
 
-              <div className="relative p-4">
-                <div className="flex items-center justify-between mb-3">
+              {/* Card Content */}
+              <div
+                className="flex-1 flex flex-col px-3 pb-3 -mt-6 relative"
+                style={isSelected ? { textShadow: '0 0 2px #000, 0 0 4px #000, 0 0 8px #000, 1px 1px 2px #000' } : {}}
+              >
+                {/* Logo - overlapping banner */}
+                <div className="flex justify-center mb-1">
                   <img
                     src={getTeamBadge(team.id)}
                     alt={team.name}
-                    className="w-12 h-12 drop-shadow-lg"
+                    className="w-11 h-11 drop-shadow-lg"
                   />
-                  <span className="text-sm font-medium text-cricket-text-secondary bg-bg-primary/80 px-2 py-1 rounded">
-                    {team.shortName}
-                  </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-cricket-text-primary mb-2 bg-bg-primary/80 px-2 py-1 rounded">
+                {/* Team Name */}
+                <h3 className="text-sm font-bold text-cricket-text-primary text-center leading-tight">
                   {team.name}
                 </h3>
 
-                <div className="text-sm text-cricket-text-secondary space-y-1 bg-bg-primary/80 px-2 py-2 rounded">
-                  <p><span className="font-medium">Coach:</span> {team.coachName}</p>
-                  <p><span className="font-medium">Budget:</span> ${team.finances.salaryCap}M</p>
+                {/* Details */}
+                <div className="mt-1 space-y-0.5 text-xs">
+                  <div className="flex items-center text-cricket-text-secondary">
+                    <span className="w-12 text-cricket-text-tertiary text-[10px]">Coach</span>
+                    <span className="truncate">{team.coachName}</span>
+                  </div>
+                  <div className="flex items-center text-cricket-text-secondary">
+                    <span className="w-12 text-cricket-text-tertiary text-[10px]">Venue</span>
+                    <span className="truncate">{team.homeVenue}</span>
+                  </div>
+                  {team.perk && (
+                    <div className="flex items-center text-cricket-text-secondary">
+                      <span className="w-12 text-cricket-text-tertiary text-[10px]">Focus</span>
+                      <span>{FOCUS_LABELS[team.perk.category] || 'Batting'}</span>
+                    </div>
+                  )}
                 </div>
 
-                {selectedTeamId === team.id && (
-                  <div className="mt-4 flex items-center text-cricket-accent bg-cricket-accent/20 px-2 py-2 rounded">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="font-medium">Selected</span>
-                  </div>
-                )}
+                {/* Team colors indicator */}
+                <div className="flex gap-1 mt-auto pt-2 justify-center">
+                  <div
+                    className="w-6 h-2 rounded-sm"
+                    style={{ backgroundColor: team.colors?.primary || '#333' }}
+                  />
+                  <div
+                    className="w-6 h-2 rounded-sm border border-gray-600"
+                    style={{ backgroundColor: team.colors?.secondary || '#666' }}
+                  />
+                </div>
               </div>
+
+              {/* Hover effect - gold border glow */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-lg shadow-[0_0_25px_rgba(212,175,55,0.4)]" />
             </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={handleConfirm}
-            disabled={!selectedTeamId}
-            className={`btn-primary px-8 py-3 text-lg font-medium ${
-              !selectedTeamId ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            Confirm Selection
-          </button>
+        {/* Footer */}
+        <div className="text-center mt-3 text-cricket-text-tertiary text-xs">
+          World Premier League • Season {gameState.currentSeason}
         </div>
       </div>
     </div>

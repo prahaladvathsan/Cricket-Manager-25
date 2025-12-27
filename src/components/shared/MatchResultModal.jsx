@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { X, Trophy } from 'lucide-react';
+import { X, Trophy, Zap } from 'lucide-react';
 import PlayerName from './PlayerName';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 
@@ -18,7 +18,8 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
     innings2,
     winner,
     margin,
-    playerOfMatch
+    playerOfMatch,
+    superOver
   } = matchResult;
 
   // Get winner team name
@@ -27,8 +28,8 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
                      'Unknown Team';
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-b from-bg-secondary to-bg-primary border border-border-primary rounded-lg shadow-2xl w-full max-w-6xl">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-gradient-to-b from-bg-secondary to-bg-primary border border-border-primary rounded-lg shadow-2xl w-full max-w-3xl my-auto">
         {/* Compact Header */}
         <div className="relative p-3 border-b border-border-primary">
           <button
@@ -219,6 +220,61 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
                 </div>
               </div>
             </div>
+
+            {/* Super Over Section (if applicable) */}
+            {superOver && (
+              <div className="border border-cricket-accent/50 rounded overflow-hidden bg-gradient-to-r from-cricket-accent/10 to-cricket-primary/10">
+                {/* Super Over Header */}
+                <div className="flex items-center justify-center gap-2 py-2 border-b border-cricket-accent/30 bg-cricket-accent/20">
+                  <Zap className="w-4 h-4 text-cricket-accent" />
+                  <span className="text-sm font-bold text-cricket-accent uppercase tracking-wide">Super Over</span>
+                  <Zap className="w-4 h-4 text-cricket-accent" />
+                </div>
+
+                {/* Super Over Scores */}
+                <div className="grid grid-cols-2 divide-x divide-cricket-accent/30">
+                  {/* Team 1 (batted first in super over) */}
+                  <div className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <img
+                        src={getTeamBadge(superOver.team1?.teamId)}
+                        alt={superOver.team1?.teamName}
+                        className="w-6 h-6"
+                      />
+                      <span className="text-xs font-semibold text-text-primary uppercase">
+                        {superOver.team1?.teamName}
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-cricket-accent font-mono">
+                      {superOver.team1?.runs}/{superOver.team1?.wickets}
+                    </div>
+                    <div className="text-xs text-text-secondary">
+                      ({Math.floor(superOver.team1?.balls / 6)}.{superOver.team1?.balls % 6} ov)
+                    </div>
+                  </div>
+
+                  {/* Team 2 (batted second in super over) */}
+                  <div className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <img
+                        src={getTeamBadge(superOver.team2?.teamId)}
+                        alt={superOver.team2?.teamName}
+                        className="w-6 h-6"
+                      />
+                      <span className="text-xs font-semibold text-text-primary uppercase">
+                        {superOver.team2?.teamName}
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-cricket-accent font-mono">
+                      {superOver.team2?.runs}/{superOver.team2?.wickets}
+                    </div>
+                    <div className="text-xs text-text-secondary">
+                      ({Math.floor(superOver.team2?.balls / 6)}.{superOver.team2?.balls % 6} ov)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

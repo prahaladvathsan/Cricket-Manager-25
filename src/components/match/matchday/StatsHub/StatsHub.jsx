@@ -35,7 +35,7 @@ export default function StatsHub() {
   ];
 
   return (
-    <div className="bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
+    <div className="stats-hub bg-bg-secondary rounded-lg border border-border-primary h-full flex flex-col">
       {/* Header */}
       <div className="p-3 border-b border-border-primary">
         <h2 className="text-lg font-semibold text-text-primary">Stats Hub</h2>

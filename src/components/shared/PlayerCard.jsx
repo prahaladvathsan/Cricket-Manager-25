@@ -4,9 +4,9 @@
  * across Auction, Squad, and other views. Football Manager-inspired design.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Award, TrendingUp, Target, Zap } from 'lucide-react';
-import PlayerValuation from '../../core/auction-system/PlayerValuation';
+import aiCore from '../../core/ai/AICore';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
 
@@ -33,9 +33,6 @@ const PlayerCard = ({
   onTeamClick = null
 }) => {
   if (!player) return null;
-
-  // Create valuation instance for price formatting
-  const valuation = useMemo(() => new PlayerValuation(), []);
 
   // Role colors
   const roleColors = {
@@ -105,7 +102,7 @@ const PlayerCard = ({
         </div>
         {soldPrice && (
           <div className="text-sm font-bold text-cricket-accent ml-3">
-            {valuation.formatPrice(soldPrice)}
+            {aiCore.formatPrice(soldPrice)}
           </div>
         )}
       </div>
@@ -214,7 +211,6 @@ const PlayerCard = ({
 
         {/* Summary Stats - Compact */}
         <div className="pt-2 border-t border-border-primary">
-          <div className="text-xxs text-text-secondary mb-1">Career</div>
           <div className="grid grid-cols-3 gap-1.5 text-center">
             <div className="p-1.5 bg-bg-secondary rounded">
               <div className="text-xxs text-text-tertiary">Matches</div>
@@ -279,7 +275,7 @@ const PlayerCard = ({
           <div className="text-right ml-4">
             <div className="text-xs text-text-secondary mb-1">Price</div>
             <div className="text-xl font-bold text-cricket-accent">
-              {valuation.formatPrice(soldPrice)}
+              {aiCore.formatPrice(soldPrice)}
             </div>
           </div>
         )}

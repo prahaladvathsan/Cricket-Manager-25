@@ -3,7 +3,7 @@
  * @description AI manager for controlling the user's team during simulation
  */
 
-import TeamSelectionManager from '../match-engine/interactive/TeamSelectionManager';
+import aiTacticsManager from './AITacticsManager';
 import TransferAI from '../finance/TransferAI';
 
 /**
@@ -46,33 +46,18 @@ class UserTeamAI {
       // Get current tactics or initialize
       let tactics = this.teamStore.getState().teamTactics[this.teamId];
 
-      if (!tactics || !tactics.squadSelection || tactics.squadSelection.length === 0) {
-        // Initialize default tactics if none exist
-        console.log(`🤖 UserTeamAI: Initializing tactics for ${team.shortName}`);
+      if (!tactics || !tactics.squadSelection || tactics.squadSelection.length < 11) {
+        // Initialize tactics using AITacticsManager
+        console.log(`🤖 UserTeamAI: Generating tactics for ${team.shortName}`);
 
         const players = squadIds
           .map(id => this.playerStore.getState().players[id])
           .filter(Boolean);
 
         if (players.length >= 11) {
-          this.teamStore.getState().initializeDefaultTactics(this.teamId, players);
+          aiTacticsManager.generateTactics(this.teamId, players, this.teamStore);
           tactics = this.teamStore.getState().teamTactics[this.teamId];
           this.decisions.tacticsUpdated++;
-        }
-      }
-
-      // Use TeamSelectionManager for squad selection if needed
-      if (!tactics || tactics.squadSelection.length < 11) {
-        console.log(`🤖 UserTeamAI: Auto-selecting squad for ${team.shortName}`);
-
-        const selectedSquad = TeamSelectionManager.autoSelectSquad(
-          squadIds,
-          this.playerStore.getState().players
-        );
-
-        if (selectedSquad.length >= 11) {
-          this.teamStore.getState().updateSquadSelection(this.teamId, selectedSquad.slice(0, 11));
-          this.decisions.matchesPrepared++;
         }
       }
 

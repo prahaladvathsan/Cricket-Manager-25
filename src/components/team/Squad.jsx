@@ -3,8 +3,9 @@
  * @description Team squad management page
  */
 
-import React, { useState, useMemo } from 'react';
-import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Tag } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Tag, Activity } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -18,10 +19,21 @@ import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
+import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
 
 const Squad = () => {
-  const [selectedTab, setSelectedTab] = useState('squad');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'squad';
+  const [selectedTab, setSelectedTab] = useState(initialTab);
   const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  // Update tab when URL changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['squad', 'condition', 'team-info', 'statistics'].includes(tabParam)) {
+      setSelectedTab(tabParam);
+    }
+  }, [searchParams]);
   const [showTacticsModal, setShowTacticsModal] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
@@ -56,6 +68,9 @@ const Squad = () => {
   const userTeam = getUserTeam();
   const squadPlayers = userTeam ? getPlayersByTeam(userTeam.id) : [];
   const finances = userTeam ? getTeamFinances(userTeam.id) : null;
+
+  // Tutorial: Screen tip for first-time visitors
+  const { shouldShow: showTip, dismiss: dismissTip } = useScreenTip('squad');
 
   // Check if transfer window is open
   const isTransferWindowOpen = transferWindow?.isOpen && currentWeek >= 22 && currentWeek <= 26;
@@ -218,6 +233,11 @@ const Squad = () => {
 
         if (!seasonStats) return null;
 
+        // Calculate total impact
+        const totalImpact = (seasonStats.battingImpact || 0) +
+                            (seasonStats.bowlingImpact || 0) +
+                            (seasonStats.fieldingImpact || 0);
+
         return {
           playerId: player.id,
           playerName: player.name,
@@ -232,7 +252,11 @@ const Squad = () => {
           centuries: seasonStats.centuries || 0,
           highestScore: seasonStats.highestScore || 0,
           highestScoreNotOut: seasonStats.highestScoreNotOut || false,
-          notOuts: seasonStats.notOuts || 0
+          notOuts: seasonStats.notOuts || 0,
+          battingImpact: seasonStats.battingImpact || 0,
+          bowlingImpact: seasonStats.bowlingImpact || 0,
+          fieldingImpact: seasonStats.fieldingImpact || 0,
+          totalImpact
         };
       })
       .filter(Boolean); // Remove threshold - show all players with stats
@@ -259,6 +283,11 @@ const Squad = () => {
         // Calculate 4W hauls (need to track this in match updates)
         const fourWickets = seasonStats.fourWickets || 0;
 
+        // Calculate total impact
+        const totalImpact = (seasonStats.battingImpact || 0) +
+                            (seasonStats.bowlingImpact || 0) +
+                            (seasonStats.fieldingImpact || 0);
+
         return {
           playerId: player.id,
           playerName: player.name,
@@ -273,7 +302,11 @@ const Squad = () => {
           bowlingStrikeRate,
           bestBowling,
           fourWickets,
-          fiveWickets: seasonStats.fiveWickets || 0
+          fiveWickets: seasonStats.fiveWickets || 0,
+          battingImpact: seasonStats.battingImpact || 0,
+          bowlingImpact: seasonStats.bowlingImpact || 0,
+          fieldingImpact: seasonStats.fieldingImpact || 0,
+          totalImpact
         };
       })
       .filter(Boolean); // Remove threshold - show all players with stats
@@ -281,6 +314,7 @@ const Squad = () => {
 
   const tabs = [
     { id: 'squad', label: 'Squad Overview', icon: Users },
+    { id: 'condition', label: 'Condition', icon: Activity },
     { id: 'team-info', label: 'Team Info', icon: Target },
     { id: 'statistics', label: 'Statistics', icon: TrendingUp }
   ];
@@ -306,30 +340,6 @@ const Squad = () => {
 
   const renderSquadOverview = () => (
     <div className="space-y-2">
-      {/* Squad Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-text-primary">{squadStats.totalPlayers}</div>
-          <div className="text-text-secondary text-xs">Total Players</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-text-primary">{squadStats.batsmen}</div>
-          <div className="text-text-secondary text-xs">Batsmen</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-text-primary">{squadStats.bowlers}</div>
-          <div className="text-text-secondary text-xs">Bowlers</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-text-primary">{squadStats.allRounders}</div>
-          <div className="text-text-secondary text-xs">All-Rounders</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-text-primary">{squadStats.wicketKeepers}</div>
-          <div className="text-text-secondary text-xs">Keepers</div>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="card p-2">
         <div className="flex flex-wrap gap-2">
@@ -551,6 +561,30 @@ const Squad = () => {
 
   const renderTeamInfo = () => (
     <div className="space-y-2">
+      {/* Squad Composition */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-text-primary">{squadStats.totalPlayers}</div>
+          <div className="text-text-secondary text-xs">Total Players</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-text-primary">{squadStats.batsmen}</div>
+          <div className="text-text-secondary text-xs">Batsmen</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-text-primary">{squadStats.bowlers}</div>
+          <div className="text-text-secondary text-xs">Bowlers</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-text-primary">{squadStats.allRounders}</div>
+          <div className="text-text-secondary text-xs">All-Rounders</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-text-primary">{squadStats.wicketKeepers}</div>
+          <div className="text-text-secondary text-xs">Keepers</div>
+        </div>
+      </div>
+
       {/* Team Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         <div className="card p-2">
@@ -735,21 +769,312 @@ const Squad = () => {
     );
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Squad Header */}
-      <div className="flex items-center gap-3">
-        <img
-          src={getTeamBadge(userTeam.id)}
-          alt={userTeam.name}
-          className="w-12 h-12"
-        />
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">{userTeam.name}</h1>
-          <p className="text-sm text-text-secondary">Squad Management</p>
+  // Helper function to get condition bar color
+  const getConditionBarColor = (value, type = 'default') => {
+    if (type === 'fatigue') {
+      // Fatigue always shows red
+      return 'bg-status-loss';
+    }
+    // For fitness, form, etc. - high is good
+    if (value >= 70) return 'bg-status-win';
+    if (value >= 40) return 'bg-yellow-500';
+    return 'bg-status-loss';
+  };
+
+  // Helper function to format injury status
+  const formatInjury = (injury) => {
+    if (!injury) return { text: 'Fit', isInjured: false };
+    return { text: injury, isInjured: true };
+  };
+
+  // Condition tab sorting - default to injured players first, then by duration
+  const [conditionSortBy, setConditionSortBy] = useState('injury');
+  const [conditionSortDirection, setConditionSortDirection] = useState('desc');
+
+  const handleConditionSort = (column) => {
+    if (conditionSortBy === column) {
+      setConditionSortDirection(conditionSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setConditionSortBy(column);
+      setConditionSortDirection(column === 'name' ? 'asc' : 'desc'); // Default desc for numeric columns
+    }
+  };
+
+  // Filtered and sorted players for condition tab
+  const conditionSortedPlayers = useMemo(() => {
+    let result = [...squadPlayers];
+
+    result.sort((a, b) => {
+      let aVal, bVal;
+      const aCondition = a.condition || {};
+      const bCondition = b.condition || {};
+
+      switch (conditionSortBy) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          return conditionSortDirection === 'asc'
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal);
+        case 'fitness':
+          aVal = aCondition.fitness ?? 0;
+          bVal = bCondition.fitness ?? 0;
+          break;
+        case 'form':
+          aVal = aCondition.form ?? 0;
+          bVal = bCondition.form ?? 0;
+          break;
+        case 'fatigue':
+          aVal = aCondition.fatigue ?? 0;
+          bVal = bCondition.fatigue ?? 0;
+          break;
+        case 'morale':
+          aVal = aCondition.morale ?? 0;
+          bVal = bCondition.morale ?? 0;
+          break;
+        case 'confidence':
+          aVal = aCondition.confidence ?? 0;
+          bVal = bCondition.confidence ?? 0;
+          break;
+        case 'energy':
+          aVal = aCondition.energy ?? 0;
+          bVal = bCondition.energy ?? 0;
+          break;
+        case 'injury':
+          // Injured players first when descending, then by duration
+          aVal = aCondition.injury ? 1 : 0;
+          bVal = bCondition.injury ? 1 : 0;
+          if (aVal !== bVal) {
+            break; // Different injury status, use normal sort
+          }
+          if (aVal === 1) {
+            // Both injured - secondary sort by duration
+            const aDur = aCondition.injuryDuration ?? 0;
+            const bDur = bCondition.injuryDuration ?? 0;
+            return conditionSortDirection === 'asc' ? aDur - bDur : bDur - aDur;
+          }
+          // Both not injured - sort by fatigue desc, then fitness asc (lower fitness = higher priority)
+          const aFatigue = aCondition.fatigue ?? 0;
+          const bFatigue = bCondition.fatigue ?? 0;
+          if (aFatigue !== bFatigue) {
+            return conditionSortDirection === 'asc' ? aFatigue - bFatigue : bFatigue - aFatigue;
+          }
+          // Tiebreak by fitness (lower fitness first when desc)
+          const aFitness = aCondition.fitness ?? 85;
+          const bFitness = bCondition.fitness ?? 85;
+          return conditionSortDirection === 'asc' ? bFitness - aFitness : aFitness - bFitness;
+          break;
+        case 'injuryDuration':
+          aVal = aCondition.injuryDuration ?? 0;
+          bVal = bCondition.injuryDuration ?? 0;
+          break;
+        default:
+          return 0;
+      }
+
+      return conditionSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    return result;
+  }, [squadPlayers, conditionSortBy, conditionSortDirection]);
+
+  // Count injured players
+  const injuredCount = useMemo(() => {
+    return squadPlayers.filter(p => p.condition?.injury).length;
+  }, [squadPlayers]);
+
+  const ConditionSortIndicator = ({ column }) => {
+    if (conditionSortBy !== column) {
+      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    }
+    return conditionSortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
+
+  const renderCondition = () => (
+    <div className="space-y-2">
+      {/* Condition Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-status-win">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 70).length}</div>
+          <div className="text-text-secondary text-xs">Match Fit</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-yellow-500">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 40 && (p.condition?.fitness ?? 85) < 70).length}</div>
+          <div className="text-text-secondary text-xs">Moderate Fitness</div>
+        </div>
+        <div className="card p-2 text-center">
+          <div className="text-2xl font-bold text-status-loss">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) < 40).length}</div>
+          <div className="text-text-secondary text-xs">Low Fitness</div>
+        </div>
+        <div className="card p-2 text-center border-2 border-status-loss">
+          <div className="text-2xl font-bold text-status-loss">{injuredCount}</div>
+          <div className="text-text-secondary text-xs">Injured</div>
         </div>
       </div>
 
+      {/* Condition Table */}
+      <div className="relative overflow-x-auto rounded-lg border border-border-primary">
+        <table className="w-full text-sm bg-bg-primary">
+          <thead>
+            <tr className="border-b border-border-primary bg-bg-secondary">
+              <th
+                onClick={() => handleConditionSort('name')}
+                className="px-4 py-2.5 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  Player <ConditionSortIndicator column="name" />
+                </div>
+              </th>
+              <th className="px-4 py-2.5 text-left font-semibold text-text-primary">Role</th>
+              <th
+                onClick={() => handleConditionSort('fitness')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Fitness <ConditionSortIndicator column="fitness" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleConditionSort('form')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Form <ConditionSortIndicator column="form" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleConditionSort('fatigue')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Fatigue <ConditionSortIndicator column="fatigue" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleConditionSort('morale')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Morale <ConditionSortIndicator column="morale" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleConditionSort('injury')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Injury Status <ConditionSortIndicator column="injury" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleConditionSort('injuryDuration')}
+                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Injury Duration <ConditionSortIndicator column="injuryDuration" />
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {conditionSortedPlayers.map((player, idx) => {
+              const condition = player.condition || {};
+              const injuryInfo = formatInjury(condition.injury);
+
+              return (
+                <tr
+                  key={player.id}
+                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
+                    injuryInfo.isInjured ? 'bg-status-loss/10' : idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
+                  }`}
+                >
+                  <td className="px-4 py-2.5 font-medium">
+                    <PlayerName playerId={player.id} player={player} className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`} />
+                  </td>
+                  <td className="px-4 py-2.5 text-text-secondary capitalize text-xs">{player.role || '-'}</td>
+
+                  {/* Fitness */}
+                  <td className="px-4 py-2.5 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-mono mb-1">{condition.fitness ?? 85}</span>
+                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+                        <div
+                          className={`h-full rounded-full ${getConditionBarColor(condition.fitness ?? 85)}`}
+                          style={{ width: `${condition.fitness ?? 85}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Form */}
+                  <td className="px-4 py-2.5 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-mono mb-1">{condition.form ?? 50}</span>
+                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+                        <div
+                          className={`h-full rounded-full ${getConditionBarColor(condition.form ?? 50)}`}
+                          style={{ width: `${condition.form ?? 50}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Fatigue */}
+                  <td className="px-4 py-2.5 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-mono mb-1">{condition.fatigue ?? 0}</span>
+                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+                        <div
+                          className={`h-full rounded-full ${getConditionBarColor(condition.fatigue ?? 0, 'fatigue')}`}
+                          style={{ width: `${condition.fatigue ?? 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Morale */}
+                  <td className="px-4 py-2.5 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-mono mb-1">{condition.morale ?? 50}</span>
+                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+                        <div
+                          className={`h-full rounded-full ${getConditionBarColor(condition.morale ?? 50)}`}
+                          style={{ width: `${condition.morale ?? 50}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Injury Status */}
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`text-xs font-medium ${
+                      injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'
+                    }`}>
+                      {injuryInfo.text}
+                    </span>
+                  </td>
+
+                  {/* Injury Duration */}
+                  <td className="px-4 py-2.5 text-center">
+                    {condition.injuryDuration ? (
+                      <span className="text-xs font-medium text-status-loss">
+                        {condition.injuryDuration} match{condition.injuryDuration > 1 ? 'es' : ''}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-text-tertiary">-</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
       {/* Tab Navigation */}
       <div className="border-b border-border-primary">
         <nav className="flex items-center justify-between gap-2">
@@ -788,6 +1113,7 @@ const Squad = () => {
 
       {/* Tab Content */}
       {selectedTab === 'squad' && renderSquadOverview()}
+      {selectedTab === 'condition' && renderCondition()}
       {selectedTab === 'team-info' && renderTeamInfo()}
       {selectedTab === 'statistics' && renderStatistics()}
 
@@ -854,6 +1180,16 @@ const Squad = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Contextual Tip for first visit */}
+      {showTip && (
+        <ContextualTip
+          title={screenTips.squad.title}
+          icon={screenTips.squad.icon}
+          tips={screenTips.squad.tips}
+          onDismiss={dismissTip}
+        />
       )}
     </div>
   );

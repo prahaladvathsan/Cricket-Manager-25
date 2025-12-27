@@ -362,8 +362,9 @@ class FieldingCalculator2D {
     }
 
     // Calculate catch probability using simplified formula
+    // Divisor of 25 means catching=10 gives 40% catch rate (reduced from 50% at divisor 20)
     const catching = closestFielder.fielder.attributes?.fielding?.catching || 10;
-    const catchProbability = catching / 20; // Simple probability
+    const catchProbability = catching / 25;
     const catchSuccess = Math.random() < catchProbability;
 
     // Shot distance = bounce distance (caught at bounce point or dropped at bounce point)

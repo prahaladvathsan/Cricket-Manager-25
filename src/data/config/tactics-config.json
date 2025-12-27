@@ -115,29 +115,22 @@
 
   "playstyleBoostAmount": 10,
   "autoTierSelection": {
-    "description": "Rules for automatic tier selection based on match situation",
+    "description": "Rules for automatic tier selection based on batting pressure (0-100 scale, 50 = neutral)",
     "enabled": true,
-    "logic": {
-      "description": "Select tier based on TRR comparison and resources left",
-      "runsBehindThresholds": {
-        "massive": 20,
-        "significant": 10,
-        "slight": 5
-      },
-      "runsAheadThresholds": {
-        "massive": 20,
-        "significant": 10,
-        "slight": 5
-      },
-      "tierMapping": {
-        "massiveBehind": "Hit Out/Get Out",
-        "significantBehind": "Blitz",
-        "slightBehind": "Cruise",
-        "onPar": "Rotate",
-        "slightAhead": "Rotate",
-        "significantAhead": "Build",
-        "massiveAhead": "Blockade"
-      }
+    "pressureThresholds": {
+      "veryLow": 20,
+      "low": 35,
+      "neutral": 50,
+      "high": 65,
+      "veryHigh": 80
+    },
+    "tierMapping": {
+      "veryLowPressure": "Blockade",
+      "lowPressure": "Build",
+      "neutralPressure": "Rotate",
+      "highPressure": "Cruise",
+      "veryHighPressure": "Blitz",
+      "extremePressure": "Hit Out/Get Out"
     }
   }
 }

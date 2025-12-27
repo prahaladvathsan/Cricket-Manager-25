@@ -22,7 +22,7 @@ const Component = () => {
 
 **Purpose**: Manages season progression, calendar, and global game settings.
 
-**Location**: `src/stores/gameStore.js` (persisted: `cm25-game-store` v2)
+**Location**: `src/stores/gameStore.js` (persisted: `cm25-game-store` v4, compressed)
 
 ### State Properties
 
@@ -1174,14 +1174,17 @@ const MatchProgression = () => {
 
 ### Persistence
 
-leagueStore uses Zustand's `persist` middleware:
+leagueStore uses Zustand's `persist` middleware with **gzip compression**:
 
 ```javascript
+import { compressedStorageOptions } from '../utils/compression.js';
+
 persist(
   (set, get) => ({ ... }),
   {
     name: 'cm25-league-store',
-    version: 2
+    version: 3,
+    storage: createJSONStorage(() => localStorage, compressedStorageOptions)
   }
 )
 ```
@@ -1196,7 +1199,8 @@ persist(
 **Benefits:**
 - Survives page refresh
 - Resume season after closing browser
-- Debug-friendly (inspect localStorage)
+- **60-80% storage reduction** via gzip compression
+- Prevents localStorage quota exceeded errors during full season simulation
 
 ---
 
@@ -1304,7 +1308,7 @@ Only tracks in-game routes (not menu routes).
 
 **Purpose**: Manages in-game messages and notifications.
 
-**Location**: `src/stores/inboxStore.js` (persisted: `cm25-inbox-store`)
+**Location**: `src/stores/inboxStore.js` (persisted: `cm25-inbox-store` v2, compressed)
 
 ### State Properties
 
@@ -1440,9 +1444,10 @@ addMessage(welcomeMsg);
 
 ### Persistence
 
-Persisted via Zustand middleware:
+Persisted via Zustand middleware with **gzip compression**:
 - Survives page refresh
 - Includes all messages and unreadCount
-- Version: 1
+- Version: 2
+- Uses `compressedStorageOptions` for 60-80% storage reduction
 
 ---
