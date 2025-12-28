@@ -26,14 +26,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     @apply bg-bg-primary text-text-primary;
-    /* Custom cricket bat cursor */
-    cursor: url('/assets/cursors/cricket-bat.cur'), auto;
-  }
-
-  /* Custom cricket ball cursor for clickable elements */
-  a, button, [role="button"], input[type="submit"], input[type="button"],
-  select, .cursor-pointer, [onclick] {
-    cursor: url('/assets/cursors/cricket-ball.cur'), pointer !important;
   }
 
   #root {
