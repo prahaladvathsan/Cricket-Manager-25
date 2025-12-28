@@ -11,10 +11,10 @@ import {
   ArrowRightLeft,
   Calendar,
   Square,
-  Loader2,
   HeartPulse
 } from 'lucide-react';
 import TeamName from './TeamName';
+import CricketBallSpinner from './CricketBallSpinner';
 
 /**
  * Match result summary item (reuses League Results patterns)
@@ -180,7 +180,7 @@ const SimulationOverlay = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Loader2 className="w-8 h-8 text-cricket-accent animate-spin" />
+                  <CricketBallSpinner className="w-8 h-8" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-text-primary">
@@ -279,7 +279,7 @@ const SimulationOverlay = ({
               </div>
             ) : (
               <div className="text-center py-8 text-text-tertiary">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
+                <CricketBallSpinner className="w-6 h-6 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Waiting for events...</p>
               </div>
             )}

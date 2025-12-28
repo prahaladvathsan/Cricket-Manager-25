@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import { getGameLogo } from '../../utils/assetHelpers';
+import CricketBallSpinner from './CricketBallSpinner';
 
 /**
  * LoadingScreen - Fullscreen loading overlay
@@ -31,7 +31,7 @@ const LoadingScreen = ({
           />
         )}
         <div className="relative mb-4">
-          <Loader2 className="w-12 h-12 text-cricket-accent animate-spin mx-auto" />
+          <CricketBallSpinner className="w-12 h-12 mx-auto" />
         </div>
         <p className="text-cricket-text-primary text-xl font-semibold">
           {message}

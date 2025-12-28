@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { BarChart3, Clock, Zap, Target, AlertTriangle } from 'lucide-react';
+import CricketBallSpinner from '../shared/CricketBallSpinner';
 
 const Bar = ({ label, value, maxValue, color = 'bg-cricket-accent' }) => {
   const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
@@ -30,7 +31,7 @@ const ResultsDisplay = ({ results, isRunning }) => {
   if (isRunning) {
     return (
       <div className="card p-2 h-full flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cricket-accent mb-2" />
+        <CricketBallSpinner className="h-8 w-8 mb-2" />
         <div className="text-xs text-text-primary">Running simulation...</div>
         <div className="text-[10px] text-text-muted">Please wait</div>
       </div>

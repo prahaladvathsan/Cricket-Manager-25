@@ -16,6 +16,7 @@ import useNavigationStore from '../../stores/navigationStore';
 import useInboxStore from '../../stores/inboxStore';
 import useAuctionStore from '../../stores/auctionStore';
 import SaveGameModal from '../shared/SaveGameModal';
+import CricketBallSpinner from '../shared/CricketBallSpinner';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
 import MessageGenerator from '../../utils/MessageGenerator';
@@ -686,7 +687,7 @@ const Header = () => {
                 }`}
               >
                 {isSimulating ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <CricketBallSpinner className="h-4 w-4" />
                 ) : (() => {
                   const event = getCurrentEvent();
                   if (event && event.type === 'match') {

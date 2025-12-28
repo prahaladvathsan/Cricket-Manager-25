@@ -19,6 +19,7 @@ import Inbox from './components/inbox/Inbox';
 import TacticsPage from './components/tactics/TacticsPage';
 import TeamSelectionModal from './components/shared/TeamSelectionModal';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import CricketBallSpinner from './components/shared/CricketBallSpinner';
 import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
@@ -79,7 +80,7 @@ function App() {
             alt="Cricket Manager 25"
             className="h-24 mx-auto mb-6 animate-pulse"
           />
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-primary mx-auto mb-4"></div>
+          <CricketBallSpinner className="h-12 w-12 mx-auto mb-4" />
           <p className="text-cricket-text-primary text-xl font-semibold">Loading Cricket Manager...</p>
           <p className="text-cricket-text-secondary text-sm mt-2">Initializing database...</p>
         </div>
