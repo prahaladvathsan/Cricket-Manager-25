@@ -26,41 +26,43 @@ export const manualSections = [
     icon: Rocket,
     content: [
       {
-        heading: 'What is Cricket Manager?',
-        text: `Cricket Manager is a T20 cricket management simulation game inspired by Football Manager. You take control of one of 10 fictional teams in the World Premier League (WPL) and guide them through seasons of competition.
+        heading: 'Hey! Welcome to Cricket Manager',
+        text: `[DEV_INTRODUCTION_PLACEHOLDER]
 
-Your responsibilities include:
+This is a T20 cricket management game where you take control of one of 10 fictional World Premier League (WPL) teams. Think of it like Football Manager, but for cricket nerds.
+
+[GAME_INSPIRATION_PLACEHOLDER]
+
+What you'll be doing:
 - Building your squad through auctions and transfers
-- Setting tactics and match strategies
-- Managing player fitness and form
-- Meeting board objectives
-- Competing for the WPL championship`
+- Setting up tactics and strategies for matches
+- Keeping your players fit and in form
+- Meeting the board's expectations (or ignoring them, your call)
+- Chasing that WPL championship trophy`
       },
       {
-        heading: 'Starting a New Game',
-        text: `From the Start Menu, click "Start New Game" to begin your career. You'll be presented with 10 WPL teams to choose from. Each team has its own roster and characteristics.
+        heading: 'Getting Into Your First Game',
+        text: `Hit "Start New Game" from the menu and pick one of the 10 WPL teams. They all have different starting rosters, so have a quick look before committing.
 
-Once you select a team:
-1. You'll receive a welcome message from the board
-2. The game will begin in the Preseason phase
-3. On odd seasons (1, 3, 5), you'll participate in an auction to build your squad
-4. On even seasons (2, 4), you'll continue with your existing squad`
+Here's what happens next:
+1. The board sends you a welcome message (they're optimistic about you, for now)
+2. You'll drop into the Preseason phase
+3. Odd seasons (1, 3, 5) start with an auction - time to build your squad from scratch
+4. Even seasons (2, 4) let you keep your existing squad and just tweak through transfers`
       },
       {
-        heading: 'Understanding the Interface',
-        text: `The game interface consists of:
+        heading: 'The Interface (Where Everything Lives)',
+        text: `**Header Bar**: This shows your team name, what day/week it is, the current season phase, and that all-important Continue button.
 
-**Header Bar**: Shows your team name, current day/week, season phase, and the Continue button to advance time.
+**Sidebar**: Your main navigation hub:
+- Home: Your dashboard - objectives, team overview, all that good stuff
+- Squad: Check out all 25 players on your roster
+- Tactics: Set up your playing XI and game plans
+- League: Standings, fixtures, who's winning, who's not
+- Transfers: Buy and sell players when the window's open
+- Inbox: Messages from the board and match summaries
 
-**Sidebar Navigation**: Access different screens:
-- Home: Dashboard with overview and objectives
-- Squad: View and manage your 25-player roster
-- Tactics: Configure your playing XI and match strategies
-- League: View standings, fixtures, and results
-- Transfers: Buy and sell players during transfer windows
-- Inbox: Read messages from the board and match reports
-
-**Main Content Area**: Displays the currently selected screen with relevant information and controls.`
+**Main Area**: Whatever screen you clicked on shows up here with all the details you need.`
       }
     ]
   },
@@ -70,61 +72,61 @@ Once you select a team:
     icon: Calendar,
     content: [
       {
-        heading: 'The Continue Button',
-        text: `The Continue button in the header is your main control for advancing the game. Each click advances time by one day and triggers any scheduled events.
+        heading: 'That Continue Button (Your Best Friend)',
+        text: `See that Continue button in the header? That's how you move time forward. Every click = one day passes and stuff happens.
 
-The button label changes based on upcoming events:
-- "Continue": Normal day advancement
-- "Matchday": Your team has a match scheduled
-- "Play Match" / "Quick-Sim": Options for your team's match
-- "Auction": Auction event is scheduled
-- "Simulate Match": AI teams playing each other`
+The button text tells you what's coming up:
+- "Continue": Just a regular day, nothing special
+- "Matchday": You've got a match today
+- "Play Match" / "Quick-Sim": Time to actually play or simulate your match
+- "Auction": Auction day - get your wallet ready
+- "Simulate Match": Other teams are playing, not your problem`
       },
       {
-        heading: 'Calendar System',
-        text: `The game tracks time through several counters:
+        heading: 'How Time Works Here',
+        text: `I'm tracking time with a few different counters:
 
-**Game Day**: Starts at Day 1 and increments each time you click Continue.
+**Game Day**: Starts at Day 1, goes up every time you hit Continue. Simple.
 
-**Week Counter**: Tracks weeks 1-52 in a season.
+**Week Counter**: Goes from Week 1 to 52 in each season.
 
-**Season Number**: Tracks which season you're in (Season 1, 2, 3, etc.).
+**Season Number**: Which season you're in - Season 1, 2, 3... you get it.
 
-**Season Phase**: The current phase of the season determines available activities.`
+**Season Phase**: Where you are in the season determines what you can do.`
       },
       {
-        heading: 'Season Phases',
-        text: `Each season progresses through four phases:
+        heading: 'The Four Phases of a Season',
+        text: `Every season flows through these four phases:
 
 **Preseason**
-- Auction phase (odd seasons only: 1, 3, 5)
-- Squad preparation
-- No competitive matches
+- Auction time if it's an odd season (1, 3, 5)
+- Get your squad sorted
+- No real matches yet
 
 **League Phase**
-- 90 league matches (45 matchdays)
-- Double round-robin format
-- Points accumulation for standings
+- The main event: 90 matches across 45 matchdays
+- Double round-robin (you play everyone twice)
+- Rack up those points
 
 **Playoffs**
-- Top 4 teams qualify
-- 4 knockout matches to determine champion
-- Qualifier 1, Eliminator, Qualifier 2, Final
+- Top 4 teams make it
+- 4 knockout matches to crown a champion
+- Qualifier 1, Eliminator, Qualifier 2, and the Final
 
 **Offseason**
-- Season summary and prize distribution
-- Transfer window opens
-- Preparation for next season`
+- Season wrap-up and prize money
+- Transfer window opens up
+- Prep for next season`
       },
       {
-        heading: 'Event Types',
-        text: `Various events are scheduled on the calendar:
+        heading: 'What Pops Up on the Calendar',
+        text: `Different events show up as you progress:
 
-- **match**: League or playoff fixture
-- **auction**: Initial player draft (odd seasons)
-- **new_season_start**: Transition between seasons
-- **season_end**: Prize distribution and summary
-- **transfer_window_open/close**: Trading period boundaries`
+- **match**: League or playoff game
+- **auction**: Player draft (odd seasons only)
+- **new_season_start**: New season kicks off
+- **season_end**: Season wraps up, prizes handed out
+- **transfer_window_open/close**: When you can buy/sell players`
       }
     ]
   },
@@ -134,94 +136,84 @@ The button label changes based on upcoming events:
     icon: Gamepad2,
     content: [
       {
-        heading: 'Match Modes',
-        text: `When your team has a match, you have two options:
+        heading: 'Two Ways to Play Matches',
+        text: `**Play Match (Interactive)**: Watch every ball unfold with full control. You can tweak batting acceleration, bowling plans, and field settings mid-match. Great for big games.
 
-**Play Match (Interactive)**
-- Watch the match unfold ball-by-ball
-- Control batting acceleration
-- Adjust bowling plans mid-match
-- Full tactical control during the game
-
-**Quick-Sim (Automated)**
-- Instantly simulate the match
-- Results based on team strength and tactics
-- Faster progression through the season
-- Use when you want to skip matches`
+**Quick-Sim (Automated)**: Hit the button, instant result. The engine runs the match based on your tactics and team quality. Perfect when you just want to move through the season faster.`
       },
       {
-        heading: 'Pre-Match Setup',
-        text: `Before each match, you'll configure:
+        heading: 'Before Kickoff',
+        text: `Every match needs a bit of setup first:
 
-**Toss**: Random winner chooses to bat or bowl first.
+**Toss**: Random coin flip, winner picks batting or bowling. Classic cricket stuff.
 
-**Playing XI**: Select 11 players from your 25-player squad.
+**Playing XI**: Pick your 11 from your squad of 25.
 
-**Batting Order**: Arrange your batsmen from opener to No. 11.
+**Batting Order**: Line them up from opener at #1 down to #11.
 
-**Bowling Order**: Assign overs to your bowlers.
+**Bowling Order**: Decide who bowls which overs.
 
-**Bowling Plans**: Set tactical plans for each bowler.
+**Bowling Plans**: Set up your tactical approach for each bowler.
 
-**Field Formation**: Choose attacking, neutral, or defensive positioning.`
+**Field Formation**: Attacking, neutral, or defensive. Your call.`
       },
       {
-        heading: 'Live Match Interface',
-        text: `The match view has three main panels:
+        heading: 'The Match Screen (Interactive Mode)',
+        text: `When you're watching a match, you get three panels:
 
 **Left Panel - Tactics Hub**
-- Current batsmen and bowler info
-- Batting acceleration controls
-- Bowling plan adjustments
+- Who's batting and bowling right now
+- Batting acceleration slider
+- Bowling plan tweaks
 - Field formation changes
 
-**Center Panel - Pitch Visualization**
-- 2D representation of the field
-- Ball trajectory display
-- Fielder positions
-- Live action visualization
+**Center Panel - The Pitch**
+- 2D field view
+- Ball trajectory after each delivery
+- Where all the fielders are standing
+- Watch the action unfold
 
-**Right Panel - Stats Hub**
+**Right Panel - Stats**
 - Live scorecard
-- Partnership tracker
-- Run rate graphs (Worm/Manhattan)
-- Over-by-over breakdown`
+- Current partnership
+- Run rate graphs (worm chart, Manhattan)
+- Over-by-over summary`
       },
       {
-        heading: 'The Match Engine',
-        text: `Cricket Manager uses a sophisticated 4-step algebraic calculation for each delivery:
+        heading: 'How the Match Engine Actually Works',
+        text: `Every single ball goes through this 4-step process under the hood:
 
 **Step 1: Decision Phase**
-- Bowler selects delivery type based on attributes and plan
-- Batter decides shot selection based on attributes and mentality
+- Bowler picks what delivery to bowl (based on attributes + bowling plan)
+- Batter decides what shot to play (based on attributes + mentality)
 
 **Step 2: Contact Quality**
-- Calculates bat-ball contact quality
+- Engine calculates how well bat meets ball
 - Formula: (timing + footwork + technique) vs (accuracy + swing + speed)
-- Includes variance (d40) for realistic unpredictability
-- Determines shot power (20-120 mph)
+- Throws in some variance (d40 dice roll) for unpredictability
+- Shot power comes out between 20-120 mph
 
 **Step 3: Trajectory**
-- Determines ball direction (full 360 degrees possible)
-- Uses placement attribute to choose optimal direction
-- Results in precise coordinates on the 2D field
+- Where's the ball going? Full 360-degree field
+- Placement attribute determines direction
+- Spits out exact coordinates on the 2D field
 
 **Step 4: Fielding**
-- 9 fielders positioned based on formation
-- Real-time interception analysis for each fielder
-- Physics-based catch/boundary/run calculations`
+- 9 fielders are positioned based on your formation
+- Each one checks if they can intercept
+- Physics-based calculations for catches, boundaries, runs`
       },
       {
-        heading: 'Modifier Chain',
-        text: `Player attributes are modified by a 7-stage chain during matches:
+        heading: 'The 7-Stage Modifier Chain',
+        text: `Player attributes don't stay static during a match. They get modified by 7 different things in sequence:
 
-1. **Playstyle**: Active playstyle bonuses/penalties
-2. **Tactics**: Team tactical settings
-3. **Mentality**: Batting/bowling mentality adjustments
-4. **Matchups**: Batter vs bowler type advantages
-5. **Confidence**: Current form and momentum
-6. **Energy**: Fatigue effects on performance
-7. **Context**: Match situation modifiers (winning/losing, pressure)`
+1. **Playstyle**: Bonuses or penalties from their playstyle rating
+2. **Tactics**: Your team's tactical setup
+3. **Mentality**: Current batting/bowling mentality
+4. **Matchups**: Batter vs this type of bowler
+5. **Confidence**: How they've been performing lately
+6. **Energy**: Fatigue taking its toll
+7. **Context**: Match situation (pressure, winning/losing, etc.)`
       }
     ]
   },
@@ -231,89 +223,86 @@ The button label changes based on upcoming events:
     icon: Target,
     content: [
       {
-        heading: 'The 5 Tactics Tabs',
-        text: `The Tactics screen has five configuration tabs:
+        heading: 'Your Tactics Screen (5 Tabs)',
+        text: `The Tactics screen is split into 5 tabs where you set everything up:
 
 **1. Overview**
-Current tactics summary showing your playing XI, assigned playstyles, and tactical settings at a glance.
+Quick summary of your whole tactical setup - XI, playstyles, settings. One glance shows it all.
 
 **2. Playing XI & Playstyles**
-Select your 11 players and assign their primary playstyle for the match.
+Pick your 11 and assign each one their playstyle for this match.
 
 **3. Batting Order**
-Arrange batting positions 1-11 and designate your wicket-keeper.
+Set your batting lineup from 1 to 11. Don't forget to mark your keeper.
 
 **4. Bowling Plans**
-Assign specific bowling plans to each bowler for different match phases.
+Choose bowling plans for each bowler - different plans for different phases if you want.
 
 **5. Fielding**
-Set field formation (attacking/neutral/defensive) affecting fielder positioning.`
+Attack, neutral, or defend? Your field placement strategy.`
       },
       {
-        heading: 'Acceleration Tiers',
-        text: `During matches, you control batting aggression through 5 acceleration tiers:
+        heading: 'Acceleration Tiers (How Aggressive You Bat)',
+        text: `During matches, you control how aggressively your batsmen play with these 6 tiers. Each one changes the odds of what shot they'll attempt and tweaks their attributes:
 
-**Rotate** (Most Conservative)
-- Focus on singles and strike rotation
-- Low risk, low reward
-- Best when wickets are falling
+| Tier | Description | Def % | Neu % | Att % | Bonuses | Penalties | Boosted Playstyles |
+|------|-------------|-------|-------|-------|---------|-----------|-------------------|
+| Blockade | Ultra Defensive - Survival | 66% | 25% | 9% | +2 judgement | -2 range360 | Opener-Anchor, Wall |
+| Build | Consolidate - Platform | 50% | 33% | 17% | +2 creativity | -1 placement, -1 technique | Opener-Anchor, Wall |
+| Rotate | Singles Focus - Rotation | 25% | 50% | 25% | +2 speed | -2 strength | Balanced styles, Runner |
+| Cruise | Controlled Aggression | 17% | 33% | 50% | +1 placement, +1 footwork | -2 judgement | Balanced styles, Runner |
+| Blitz | High Risk Attack | 9% | 25% | 66% | +2 timing, +1 technique | -3 judgement | All Sloggers, Pinch-Hitter |
+| Hit Out/Get Out | Maximum Attack | 5% | 5% | 90% | +2 strength, +2 timing | -2 judgement, -2 speed | All Sloggers, Pinch-Hitter |
 
-**Build**
-- Steady accumulation with occasional boundaries
-- Moderate risk, moderate reward
-- Good for consolidation phases
-
-**Balanced**
-- Default setting
-- Mix of rotation and boundary attempts
-- Standard T20 approach
-
-**Attack**
-- Aggressive shot selection
-- Higher risk, higher reward
-- Use when quick runs needed
-
-**Power-Hit** (Most Aggressive)
-- Maximum aggression
-- Very high risk
-- Death overs or desperate chases only`
+AUTO-TIER SELECTION: The game calculates batting pressure (0-100 scale) and automatically selects tiers based on thresholds: <20 (Blockade), <35 (Build), <50 (Rotate), <65 (Cruise), <80 (Blitz), 80+ (Hit Out/Get Out). Manual override available during matches.`
       },
       {
-        heading: 'Bowling Plans',
-        text: `Bowlers can be assigned different plans based on match phase and their specialties. Plans affect bowling approach and field settings.
+        heading: 'Bowling Plans (The Real Tactics Nerd Stuff)',
+        text: `Each bowler gets TWO plans: a Line/Length plan and a Variation plan. The game adds up the tendency scores from both and turns them into percentages for delivery mentality. Match the plans to the bowler's playstyle and they get a +10 rating boost (bowlers can stack this for both plans).
 
-**Powerplay Plans** (Overs 1-6)
-- Attack stumps
-- Swing exploitation
-- Field up aggressive
+PACE BOWLING PLANS
 
-**Middle Overs Plans** (Overs 7-15)
-- Contain
-- Build pressure
-- Spin dominance
+| Category | Plan | Description | Att | Neu | Def | Bonuses | Penalties | Boosted |
+|----------|------|-------------|-----|-----|-----|---------|-----------|---------|
+| Line/Length | Attacking Line | Stumps + Pads targeting | 7 | 2 | 1 | +2 swing | -2 accuracy | Swing Bowler |
+| Line/Length | Wide Line | Outside off-stump | 1 | 4 | 5 | +2 accuracy | -2 att.bowling | Hit-the-Deck |
+| Line/Length | Short-Pitched | Bouncers, short balls | 3 | 3 | 4 | +2 speed | -2 accuracy | Short-Ball |
+| Line/Length | Yorker Execution | Death specialist yorkers | 3 | 1 | 6 | +2 accuracy | -2 speed | Death Specialist |
+| Variation | Pace Variation Mix | Slower balls, changes | 4 | 4 | 2 | +2 variations | -2 accuracy | Death Specialist |
+| Variation | Swing/Seam Focus | Conventional movement | 6 | 3 | 1 | +2 swing | -2 variations | Swing Bowler |
+| Variation | Bouncer Barrage | Aggressive short ball | 7 | 1 | 2 | +2 speed | -2 accuracy | Short-Ball |
+| Variation | Consistent Accuracy | Repeating line/length | 1 | 5 | 4 | +2 accuracy | -2 att.bowling | Hit-the-Deck |
 
-**Death Overs Plans** (Overs 16-20)
-- Yorker focus
-- Wide of off stump
-- Death bowling specialist
+SPIN BOWLING PLANS
 
-Assign plans that match each bowler's playstyle ratings for best results.`
+| Category | Plan | Description | Att | Neu | Def | Bonuses | Penalties | Boosted |
+|----------|------|-------------|-----|-----|-----|---------|-----------|---------|
+| Line/Length | Flight & Loop | Traditional flight/dip | 4 | 2 | 4 | +2 flight | -2 accuracy | Classical |
+| Line/Length | Flat & Fast | Quick, skiddy deliveries | 1 | 2 | 7 | +2 accuracy | -2 flight | Flat Spinner |
+| Line/Length | Wide of Off | Outside off-stump line | 3 | 1 | 6 | +2 accuracy | -2 turn | Containment |
+| Line/Length | Stumps Attack | Attacking the stumps | 6 | 3 | 1 | +2 turn | -2 accuracy | Mystery |
+| Variation | Turn Candy Bag | Multiple turn variations | 7 | 2 | 1 | +2 variations | -2 accuracy | Mystery |
+| Variation | Flight Variation | Varying flight/loop | 2 | 4 | 4 | +2 flight | -2 turn | Classical |
+| Variation | Pace Variation | Changes of pace | 1 | 3 | 6 | +2 variations | -2 turn | Flat Spinner |
+| Variation | Consistent Line | Metronomic accuracy | 1 | 5 | 4 | +2 accuracy | -2 variations | Containment |
+
+**Example**: Swing Bowler using "Attacking Line" (7-2-1) + "Swing/Seam Focus" (6-3-1) = 13 attacking, 5 neutral, 2 defensive → 65% attacking, 25% neutral, 10% defensive mentality.`
       },
       {
-        heading: 'Mentalities',
-        text: `Overall team mentality affects both batting and bowling approaches:
+        heading: 'Team Mentalities (The Vibe)',
+        text: `Your overall team mentality shifts how everyone approaches the game:
 
 **Batting Mentality**
-- Aggressive: More attacking shots, higher risk
-- Neutral: Balanced approach
-- Conservative: Defensive, reduces wicket risk
+- Aggressive: Go for more attacking shots, take more risks
+- Neutral: Balanced, standard T20 cricket
+- Conservative: Play it safe, protect wickets
 
 **Bowling Mentality**
-- Aggressive: Attack for wickets, may leak runs
-- Neutral: Balanced wicket-taking and economy
-- Conservative: Focus on dot balls and containment
+- Aggressive: Hunt wickets, don't worry too much about runs
+- Neutral: Balance between wickets and economy
+- Conservative: Tight lines, build dot ball pressure
 
-Set mentalities based on match situation and your tactical preferences.`
+Pick based on the match situation and your gut feeling.`
       }
     ]
   },
@@ -323,106 +312,89 @@ Set mentalities based on match situation and your tactical preferences.`
     icon: Users,
     content: [
       {
-        heading: 'Roster Size',
-        text: `Each team maintains a squad of players:
+        heading: 'Your Squad Size',
+        text: `You need between 18 and 25 players on your roster:
 
-- **Minimum**: 18 players (required for valid squad)
-- **Maximum**: 25 players (roster cap)
+- **Minimum**: 18 (can't go below this or you're screwed)
+- **Maximum**: 25 (hard cap)
 
-You must have enough players to fill all positions and provide bench depth. A well-rounded squad includes:
-- Multiple opening options
-- Middle-order batsmen
+Make sure you've got depth across the board:
+- A couple opener options
+- Middle-order cover
 - All-rounders for flexibility
-- Pace and spin bowling options
-- At least one wicket-keeper`
+- Mix of pace and spin bowlers
+- At least one keeper (obviously)`
       },
       {
-        heading: 'Player Roles',
-        text: `Players are classified by their primary role:
-
-**Batsman**
-- Primary focus on batting
-- Limited or no bowling ability
-- Various batting positions
-
-**Bowler**
-- Primary focus on bowling (pace or spin)
-- Lower order batting
-- Specialist wicket-takers
-
-**All-Rounder**
-- Competent at both batting and bowling
-- Valuable for team balance
-- Can bat in various positions
-
-**Wicket-Keeper**
-- Specialist keeper
-- Usually bats in middle/lower order
-- Essential for match play (one required)`
+        heading: 'Player Roles (The Basics)',
+        text: `**Batsman**: Can bat, can't bowl (or barely can)
+**Bowler**: Bowls pace or spin, bats at 8-11 usually
+**All-Rounder**: Does both decently, super valuable
+**Wicket-Keeper**: Keeps wickets, usually bats middle/lower, need one in every XI`
       },
       {
-        heading: 'Player Attributes (1-20 Scale)',
-        text: `Each player has attributes rated 1-20:
+        heading: 'Player Attributes (What the Numbers Mean)',
+        text: `Every player's got attributes rated from 1 to 20:
 
 **Batting Attributes**
-- Technique: Shot selection and execution
-- Timing: Bat-ball contact quality
-- Footwork: Movement to the ball
-- Aggression: Natural attacking tendency
-- Concentration: Ability to build innings
-- Placement: Direction control
-- Power/Strength: Boundary-hitting ability
+- Technique: Can they actually play proper cricket shots?
+- Timing: How well they connect bat to ball
+- Footwork: Do they move to the ball or just stand there?
+- Aggression: Natural attacking instinct
+- Concentration: Can they build an innings or do they get bored?
+- Placement: Shot direction control
+- Power/Strength: Big hits or gentle nudges?
 
 **Bowling Attributes**
 - Accuracy: Line and length control
-- Speed/Pace: Raw bowling speed
-- Swing: Ball movement in air
-- Turn: Spin amount (spinners)
-- Variations: Delivery variety
-- Intelligence: Tactical bowling awareness
+- Speed/Pace: How fast do they bowl?
+- Swing: Ball movement through the air
+- Turn: How much spin (for spinners)
+- Variations: Different deliveries in the arsenal
+- Intelligence: Cricket IQ, tactical awareness
 
 **Fielding Attributes**
-- Catching: Catch success rate
+- Catching: Do they hold onto it?
 - Ground Fielding: Stopping and throwing
-- Agility: Speed in the field`
+- Agility: Speed around the field`
       },
       {
-        heading: 'Condition System',
-        text: `Player condition affects performance:
+        heading: 'Player Condition (Keep an Eye On This)',
+        text: `Three things affect how your players perform:
 
 **Fitness (0-100)**
-- Decreases with playing time
-- Affects attribute effectiveness
-- Recovers during rest days
-- Low fitness = underperformance
+- Drops as they play matches
+- Low fitness = worse performance
+- Recovers when they rest
+- Rotate your squad or they'll burn out
 
 **Injuries**
-- Players can get injured during matches
-- Recovery time varies by severity
-- Injured players unavailable for selection
-- Track recovery in squad view
+- Happens randomly during matches (sucks but it's cricket)
+- Recovery takes 1-3 weeks depending on severity
+- Injured players can't be selected
+- Check the squad screen for recovery status
 
 **Form**
-- Recent performance affects confidence
-- Good form = slight attribute boost
-- Poor form = slight attribute penalty
-- Changes based on match performances`
+- Recent performances affect their confidence
+- Good form = small attribute bump
+- Bad form = small attribute drop
+- It swings based on their last few games`
       },
       {
-        heading: 'Transfer Market',
-        text: `The transfer window opens during the offseason (typically weeks 22-26):
+        heading: 'Transfer Market (Buying and Selling)',
+        text: `The transfer window opens up during offseason (usually weeks 22-26):
 
-**Selling Players**
-- List players at your desired price
-- Other teams may purchase
-- Freed salary and roster spot
+**Selling**
+- List a player at whatever price you want
+- Other teams might buy them
+- You get the money and a free roster spot
 
-**Buying Players**
-- Browse available players from other teams
-- Pay the listed price to acquire
-- Must have budget and roster space
+**Buying**
+- Browse what's available from other teams
+- Pay the asking price, instant transfer
+- Need budget and roster space
 
-Transfers are instant - no negotiation required. Manage your budget carefully to strengthen weak areas of your squad.`
+No haggling, no negotiations. List price or nothing. Budget wisely to patch up your squad's weak spots.`
       }
     ]
   },
@@ -432,84 +404,60 @@ Transfers are instant - no negotiation required. Manage your budget carefully to
     icon: Sparkles,
     content: [
       {
-        heading: 'Overview',
-        text: `The Playstyle System is central to Cricket Manager. Each player has ratings (0-100) for 24 different playstyles that determine their effectiveness in specific roles and match situations.
+        heading: 'Playstyles (The Most Important Thing)',
+        text: `Okay, this is where the game gets deep. Every player has ratings (0-100) for 24 different playstyles. These ratings determine how well they perform in specific roles and situations. During matches, active playstyles modify their attributes using this formula:
 
-**How it works:**
-- Assign players to positions matching their high-rated playstyles
-- Playstyles provide conditional attribute modifiers during matches
-- Some playstyles have trade-offs (bonuses in some situations, penalties in others)
-- Higher rating = stronger modifier effects`
+**Modified Attribute = Base Attribute × (1 + Playstyle Rating × Scaling Factor)**
+
+Higher ratings = bigger bonuses. If you match a player's playstyle to the right acceleration tier (batters) or bowling plan (bowlers), they get a +10 rating boost. Bowlers can stack this for both their plans.`
       },
       {
-        heading: 'Batting Playstyles (16 Total)',
-        text: `**Openers (3 types)**
-- Opener - Slogger: Aggressive powerplay hitter, momentum generator
-- Opener - Balanced: Platform builder, reliable starter
-- Opener - Anchor: Defensive opener, absorbs pressure
+        heading: 'What the Ratings Actually Mean',
+        text: `**90-100**: Elite - This is their bread and butter, world-class
+**75-89**: Excellent - They're really good at this
+**60-74**: Good - Solid, reliable option
+**45-59**: Average - Meh, can do it if you need them to
+**Below 45**: Weak - Please don't use them like this
 
-**Top Order (3 types)**
-- Top Order - Slogger: Middle overs aggressor, spin dominator
-- Top Order - Balanced: Consistent all-phase batsman
-- Top Order - Anchor: Steady accumulator in positions 3-4
-
-**Middle Order (3 types)**
-- Middle Order - Slogger: Power hitter in middle overs
-- Middle Order - Balanced: Versatile middle order player
-- Middle Order - Anchor: Consolidator when wickets fall
-
-**Lower Order (3 types)**
-- Lower Order - Slogger: Tail-end power hitter
-- Lower Order - Balanced: Capable lower order bat
-- Lower Order - Anchor: Defensive tail-ender
-
-**Specialists (4 types)**
-- Finisher: Death overs specialist, thrives under pressure
-- Runner: Strike rotator, keeps scoreboard ticking
-- Pinch-Hitter: Instant impact player, high risk
-- Wall: Ultra-defensive, used for survival situations`
+Quick rule: Players with 75+ playstyle ratings get the full bonuses. Below that? The effects scale down proportionally.`
       },
       {
-        heading: 'Bowling Playstyles (8 Total)',
-        text: `**Pace Bowling (4 types)**
-- Swing Bowler: Exploits new ball movement with swing and seam
-- Hit-the-Deck Seamer: Hard length specialist, relentless pressure
-- Short-Ball Specialist: Intimidating pace with short-pitched deliveries
-- Death Specialist: Death overs yorker expert, calm under pressure
+        heading: 'Batting Playstyles Table',
+        text: `| Playstyle | Category | Active Conditions | Key Bonuses | Penalties |
+|-----------|----------|-------------------|-------------|-----------|
+| Opener - Slogger | Opener | Powerplay, Early overs (≤8) | +40% pace-facing, +35% technique (powerplay), +35% aggression | -30% technique, -25% concentration (always) |
+| Opener - Balanced | Opener | Powerplay, 7+ wickets | +40% pace-facing, +30% concentration/def.shots | -30% concentration (overs 7-12 post-powerplay) |
+| Opener - Anchor | Opener | ≤6 wickets, 7+ wickets | +50% concentration, +40% judgement (pressure), +30% def.shots | -30% attacking (overs 7-12 post-powerplay) |
+| Top Order - Slogger | Top Order | Overs 7-12 (spin), 7-16 (middle) | +50% vs spin, +40% judgement/creativity | -50% attacking, -40% range (≤5 wickets) |
+| Top Order - Balanced | Top Order | Always, 6+ wickets | +25% concentration/technique, +30% judgement | -50% attacking (≤5 wickets) |
+| Top Order - Anchor | Top Order | Overs 7-12 (spin), 6+ wickets | +50% vs spin, +30% judgement, +30% def.shots | -50% attacking (death phase) |
+| Middle Order - Slogger | Middle | Overs 7-16 | +60% attacking shots, +40% strength, +40% judgement | -50% attacking (≤4 wickets) |
+| Middle Order - Balanced | Middle | Overs 7-12 (spin), 7-16 (pace) | +50% vs spin, +40% vs pace, +30% footwork | -30% attacking (RRR > CRR) |
+| Middle Order - Anchor | Middle | ≤7 wickets, 20+ partnership | +40% concentration, +35% judgement, +30% technique | -30% attacking (RRR > CRR) |
+| Lower Order - Slogger | Lower | ≤5 wickets, High pressure | +50% attacking, +40% strength (tail), +45% timing (pressure) | -40% technique/concentration (powerplay) |
+| Lower Order - Balanced | Lower | Always, ≤60 balls left | +30% bowling adaptation, +35% timing (time mgmt) | -40% attacking (powerplay) |
+| Lower Order - Anchor | Lower | ≤5 wickets, ≤60 balls | +60% concentration (immovable), +35% def.shots | -30% attacking (RRR > CRR) |
+| Finisher | Specialist | Death phase (17-20), RRR > CRR | +70% attacking/strength (death), +50% timing (pressure) | -40% technique/judgement (overs ≤12) |
+| Runner | Specialist | Always, CRR ≥ RRR | +40% speed/footwork (rotation), +25% concentration | -35% strength, -30% boundary power (RRR > CRR) |
+| Pinch-Hitter | Specialist | ≤10 balls faced, Always | +60% attacking/creativity (instant), +40% range | -50% concentration, -40% technique (always) |
+| Wall | Specialist | Always, ≤60 balls (CRR > RRR) | +50% def.shots, +40% concentration, +35% judgement | -40% attacking (RRR > CRR) |
 
-**Spin Bowling (4 types)**
-- Classical Spinner: Traditional spinner with flight, dip, and loop
-- Flat Spinner: Quick, skiddy spinner focused on accuracy
-- Mystery Spinner: Deceptive variations and trick balls
-- Containment Spinner: Metronomic line and length, dot ball pressure`
+NOTE: Percentages show maximum effectiveness at 100 rating. Actual effect scales with player's playstyle rating.`
       },
       {
-        heading: 'Playstyle Ratings Explained',
-        text: `Ratings use a 0-100 scale:
+        heading: 'Bowling Playstyles Table',
+        text: `| Playstyle | Type | Active Conditions | Key Bonuses | Penalties |
+|-----------|------|-------------------|-------------|-----------|
+| Swing Bowler | Pace | Overs ≤6, vs weak technique | +50% swing (new ball), +40% accuracy, +35% seam vs technique <13 | -40% accuracy, -35% swing (overs ≥14) |
+| Hit-the-Deck Seamer | Pace | Overs ≤6, Middle overs 7-16 | +45% speed (hard length), +40% accuracy, +35% pressure | -35% accuracy, -30% speed (3+ overs bowled, fatigue) |
+| Short-Ball Specialist | Pace | Vs weak footwork, concentration | +55% speed (hostility), +40% aggression, +35% psychological | -40% accuracy (3+ overs, fatigue), +1 flat aggression bonus |
+| Death Specialist | Pace | Overs ≥17, RRR > CRR | +60% accuracy (yorkers), +45% variations, +40% calm | -45% accuracy, -35% variations (overs ≤6 powerplay) |
+| Classical Spinner | Spin | Overs 7-16, vs weak footwork | +50% flight/dip, +40% loop, +35% turn | -40% accuracy (powerplay), Reduces batsman judgement -1 |
+| Flat Spinner | Spin | Overs ≤10, vs weak footwork | +45% accuracy, +40% speed (skiddy), +35% quick-through-air | -20% turn effectiveness (always) |
+| Mystery Spinner | Spin | Vs weak technique, 30+ partnership | +60% variations, +45% deception, +40% trick balls | -45% accuracy (powerplay/death), Reduces batsman judgement -2 |
+| Containment Spinner | Spin | Overs ≤12, CRR < RRR | +50% accuracy (metronomic), +40% dot pressure, +35% line/length | -30% wicket threat (always), Reduces concentration -1 |
 
-**90-100**: Elite - Player is world-class in this role
-**75-89**: Excellent - Very strong fit for this role
-**60-74**: Good - Competent performer
-**45-59**: Average - Can fill the role but not ideal
-**Below 45**: Weak - Should avoid using in this role
-
-**Key insight**: A player with 85 in "Finisher" will perform much better in death overs than a player with 50 in the same playstyle, even if their raw attributes are similar.`
-      },
-      {
-        heading: 'Playstyle Bonuses & Trade-offs',
-        text: `Each playstyle provides conditional bonuses and may have trade-offs:
-
-**Example: Finisher**
-- Bonus: Excellent in death overs (overs 17-20)
-- Bonus: Performs well under chase pressure
-- Trade-off: Less effective in early innings (overs 1-12)
-
-**Example: Swing Bowler**
-- Bonus: Devastating with new ball (overs 1-6)
-- Bonus: Effective against poor technique
-- Trade-off: Less effective with old ball (overs 14+)
-
-Match your player selections to the phases where their playstyles excel!`
+NOTE: Percentages show maximum effectiveness at 100 rating. Special effects (judgement/concentration reductions) apply regardless of rating.`
       }
     ]
   },
@@ -872,94 +820,106 @@ Afghanistan's representative, the rising cricket nation.`
     icon: Lightbulb,
     content: [
       {
-        heading: 'Auction Strategy',
-        text: `**Don't blow budget early**
-- Resist bidding wars on first 3 elite players
-- Let others overpay, find value later
-- Reserve at least 30% for depth
+        heading: 'Auction Economics (What the Numbers Tell You)',
+        text: `**Bidding Patterns**
+- Early marquee players (90+ rating) average 150-200% of base price due to competition
+- Mid-auction players (rounds 3-8) cost 100-120% of base price
+- Final rounds often yield players at base price with limited bidding
 
-**Target undervalued playstyles**
-- Death bowlers are crucial but often overlooked
-- Finishers win close games
-- Quality spinners control middle overs
+**Budget Allocation Data**
+- Squads requiring 18-25 players with $10M total budget
+- 30-40% allocation for first 10 players maintains balanced completion
+- AI teams reserve 30% budget minimum for squad minimums (18 players)
+- Elite player base prices: $200k (90+), $100k (80-89), $50k (65-79), $20k (50-64), $2k (<50)
 
-**Build for balance**
-- Don't stack one position
-- Need 2-3 quality options at each role
-- All-rounders provide flexibility`
+**Playstyle Market Value**
+- Death Specialists cost 10-15% below other elite bowlers despite match-winning impact
+- Finisher ratings 75+ produce 25-30% higher win rates in close matches (<10 run margins)
+- Classical Spinners control middle overs (7-16) with 15-20% economy improvement vs pace`
       },
       {
-        heading: 'Tactics & Match Day',
-        text: `**Match playstyles to roles**
-- High "Opener - Anchor" rating? Bat them first
-- High "Death Specialist"? Save their overs for 17-20
-- Misalignment wastes potential
+        heading: 'Tactical Mechanics',
+        text: `**Playstyle-Role Matching**
+- Players with 75+ playstyle ratings receive full conditional modifiers (up to +70% attributes)
+- 50-74 ratings apply 50-70% effectiveness
+- Below 50 ratings produce minimal or negative effects
+- Example: 85-rated Finisher gains +60% attacking/strength in overs 17-20
 
-**Adjust acceleration appropriately**
-- Early wickets? Drop to Build or Rotate
-- Chasing big? Attack or Power-Hit
-- Defending? Don't be too conservative
+**Acceleration Tier Effects**
+- Build (50% def/33% neu/17% att) reduces dismissal rate by 40% vs Cruise
+- Blitz (9% def/25% neu/66% att) increases boundary% by 55% but dismissal rate +30%
+- Auto-tier selection engages at pressure thresholds: 20/35/50/65/80
 
-**Bowling plan coordination**
-- Swing bowlers early with new ball
-- Spinners in middle overs
-- Death specialists for final 4 overs
+**Bowling Plan Combinations**
+- Matching playstyle + 2 plans receives +10 rating boost per match (stacking for bowlers)
+- Swing Bowler + Attacking Line + Swing/Seam Focus = 65% attacking mentality
+- Death Specialist + Yorker + Pace Variation = +4 accuracy, +2 variations (compound modifiers)
 
-**Watch the modifiers**
-- Expand the modifier panel to see active effects
-- Understand why your players are performing well/poorly
-- Adjust tactics to maximize positive modifiers`
+**Modifier Chain Impact**
+- 7-stage chain (Playstyle→Tactics→Mentality→Matchups→Confidence→Energy→Context)
+- Each stage applies multiplicatively: Final Attribute = Base × (1 + Σ modifiers)
+- Elite playstyle match (90+) can produce 150-180% effective attributes under optimal conditions`
       },
       {
-        heading: 'Squad Management',
-        text: `**Rotation is key**
-- Don't play same XI every match
-- Rest star players occasionally
-- Keep bench players match-ready
+        heading: 'Squad Management Metrics',
+        text: `**Fitness Performance Correlation**
+- 100% fitness: Full attribute effectiveness
+- 80-99% fitness: 5-10% attribute reduction
+- 60-79% fitness: 15-25% attribute reduction
+- Below 60%: 30-40% attribute reduction, increased injury risk
 
-**Monitor fitness**
-- Sub-100% fitness = reduced performance
-- Injuries happen - need backup options
-- Fresh players outperform tired stars
+**Squad Depth Requirements**
+- Minimum 18 players (league minimum)
+- Optimal 23-25 players for rotation without budget waste
+- 2-3 openers, 4-5 middle order, 5-6 specialist bowlers, 1-2 all-rounders recommended
+- Injury rate: ~5-10% per match, recovery 1-3 weeks depending on severity
 
-**Development matters**
-- Young players improve over seasons
-- Give prospects game time
-- Balance now vs future`
+**Development System**
+- Player attributes naturally change over seasons (data-driven progression)
+- Match exposure affects form modifiers (+5 to -5 attribute swing)
+- No fixed "development" mechanic - performance-based variation`
       },
       {
-        heading: 'NRR Optimization',
-        text: `**When winning comfortably:**
-- Don't ease off, maximize margin
-- Chase targets quickly
-- Every run counts for NRR
+        heading: 'NRR Calculation & Impact',
+        text: `**NRR Formula**
+NRR = (Total Runs Scored / Total Overs Faced) - (Total Runs Conceded / Total Overs Bowled)
 
-**When losing:**
-- Avoid all-out collapses
-- Bat out overs even if losing
-- Don't give free runs
+**Margin Impact Examples**
+- Winning by 30 runs (8 overs remaining): +0.15 to +0.20 NRR gain
+- Winning by 5 runs: +0.02 to +0.05 NRR gain
+- Losing by 30 runs (all out over 50): -0.20 to -0.25 NRR loss
+- Losing by 5 runs batting 20 overs: -0.05 to -0.08 NRR loss
 
-**League phase importance**
-- NRR often decides playoff spots
-- Early season NRR matters late
-- Treat every match seriously`
+**Playoff Qualification**
+- Positions 3-6 often separated by 0.05-0.15 NRR at season end
+- Single heavy defeat (-0.25 NRR) requires 3-4 moderate wins (+0.07 each) to offset
+- Batting out overs when losing reduces NRR damage by 40-60%
+- Chasing quickly (2-3 overs early) adds +0.03 to +0.08 per match
+
+**Strategic Implications**
+- Every run differential compounds over 18 matches
+- Early-season NRR carries equal weight to late-season NRR
+- All-out collapses (10 wickets in <15 overs) produce maximum NRR damage`
       },
       {
-        heading: 'Long-term Thinking',
-        text: `**Season progression**
-- Early losses aren't fatal
-- Consistency beats streakiness
-- Peak at the right time (playoffs)
+        heading: 'Competitive Progression',
+        text: `**League Competitive Balance**
+- 10 teams with double round-robin (18 matches each, 90 total)
+- Points distribution: Win=2, Tie/NR=1, Loss=0
+- Historical qualification: 7-8 wins typically secure 4th place (14-16 points)
+- Championship contention: 12+ wins (24+ points) for top 2 finish
 
-**Financial planning**
-- Prize money funds future
-- Winning helps winning
-- Invest in squad quality
+**Financial Cycle**
+- Season 1/3/5: Auction phase ($10M budget allocation)
+- Season 2/4: No auction (transfer market only)
+- Prize money scales: 1st place ~$2M, 10th place ~$200k
+- Sponsorship revenue correlates with previous season finish (+30% for champion vs last place)
 
-**Learning curve**
-- First season: Learn systems
-- Second season: Optimize
-- Third season+: Compete for titles`
+**Skill Development Path**
+- Match engine processes ~50,000+ balls/second with 4-step algebraic calculation
+- 7-stage modifier chain determines final outcomes
+- Understanding conditional playstyle activation improves team selection efficiency
+- Playstyle-role alignment produces 20-30% performance improvement over mismatched selections`
       }
     ]
   }
