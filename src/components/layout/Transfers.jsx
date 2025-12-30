@@ -1463,18 +1463,24 @@ const Transfers = () => {
                 {isAuctioning && (
                   <>
                     {squadCapReached ? (
-                      /* Squad Cap Reached Message */
-                      <div className="bg-yellow-900/30 border-2 border-yellow-600 rounded p-4 text-center">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <Users className="w-5 h-5 text-yellow-500" />
-                          <p className="text-lg font-bold text-yellow-500">Squad Cap Reached!</p>
+                      /* Squad Cap Reached Message with Skip to End Button */
+                      <div className="bg-yellow-900/30 border-2 border-yellow-600 rounded p-3">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-yellow-500" />
+                            <div className="text-left">
+                              <p className="text-sm font-bold text-yellow-500">Squad Cap Reached! (25/25 players)</p>
+                              <p className="text-xs text-text-secondary">You cannot bid on more players.</p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-text-secondary mb-3">
-                          You have reached the maximum squad size of 25 players.
-                        </p>
-                        <p className="text-sm text-cricket-accent font-semibold">
-                          You may skip to the end of the auction now!
-                        </p>
+                        <button
+                          onClick={handleSkipToEnd}
+                          className="btn-primary w-full text-base py-2.5 flex items-center justify-center gap-2 bg-cricket-accent hover:bg-cricket-accent-dark"
+                        >
+                          <FastForward className="w-5 h-5" />
+                          Skip to End of Auction
+                        </button>
                       </div>
                     ) : highestBidder?.id !== userTeamId ? (
                       <>
