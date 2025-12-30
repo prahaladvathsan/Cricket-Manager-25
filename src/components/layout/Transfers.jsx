@@ -905,6 +905,10 @@ const Transfers = () => {
   const bidTimer = auctionEngine?.config.timing.bidTimer || 10;
   const timeRemaining = Math.max(0, bidTimer - secondsSinceLastBid);
 
+  // Check if user's squad has reached the cap (25 players)
+  const userSquadSize = userTeamData?.squad.length || 0;
+  const squadCapReached = userSquadSize >= (auctionEngine?.config.squadSize.max || 25);
+
   const tabs = [
     { id: 'auction', label: 'Live Auction', icon: Gavel },
     { id: 'rounds', label: 'Rounds', icon: List },
@@ -1458,13 +1462,27 @@ const Transfers = () => {
               <div className="card p-2">
                 {isAuctioning && (
                   <>
-                    {highestBidder?.id !== userTeamId ? (
+                    {squadCapReached ? (
+                      /* Squad Cap Reached Message */
+                      <div className="bg-yellow-900/30 border-2 border-yellow-600 rounded p-4 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Users className="w-5 h-5 text-yellow-500" />
+                          <p className="text-lg font-bold text-yellow-500">Squad Cap Reached!</p>
+                        </div>
+                        <p className="text-sm text-text-secondary mb-3">
+                          You have reached the maximum squad size of 25 players.
+                        </p>
+                        <p className="text-sm text-cricket-accent font-semibold">
+                          You may skip to the end of the auction now!
+                        </p>
+                      </div>
+                    ) : highestBidder?.id !== userTeamId ? (
                       <>
                         {/* Row 1: Bid Button OR Set Custom Max Bid */}
                         <div className="auction-bid-controls flex items-center gap-3 mb-3">
                           <button
                             onClick={handleBid}
-                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining}
+                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining || squadCapReached}
                             className="btn-primary flex-1 text-base py-3"
                           >
                             <Gavel className="w-5 h-5 inline mr-2" />
@@ -1486,10 +1504,11 @@ const Transfers = () => {
                               placeholder="e.g. 900 for 900K"
                               className="input-field flex-1 text-sm"
                               min={(currentPrice + getValidIncrement(currentPrice)) / 1000}
+                              disabled={squadCapReached}
                             />
                             <button
                               onClick={handleSetMaxBid}
-                              disabled={!maxBidInput}
+                              disabled={!maxBidInput || squadCapReached}
                               className="btn-secondary px-4 py-2 text-sm whitespace-nowrap"
                             >
                               Set Max

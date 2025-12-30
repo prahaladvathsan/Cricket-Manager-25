@@ -18,7 +18,7 @@ export default class UserTransferHandler {
 
     // Squad constraints
     this.MIN_SQUAD_SIZE = 11; // Cannot sell below this
-    this.MAX_SQUAD_SIZE = 20; // Cannot sign above this
+    this.MAX_SQUAD_SIZE = 25; // Cannot sign above this (must match auctionConfig.squadSize.max)
     this.MIN_BID_INCREMENT = 10000; // $10K minimum bid increment
   }
 

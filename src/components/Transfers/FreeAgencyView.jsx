@@ -28,7 +28,7 @@ const FreeAgencyView = ({ userTeamId, transferHandler }) => {
   const userBudget = userFinances?.currentBudget || 0;
   const userSquad = squadLists[userTeamId] || [];
   const squadSize = userSquad.length;
-  const MAX_SQUAD_SIZE = 20;
+  const MAX_SQUAD_SIZE = 25; // Must match auctionConfig.squadSize.max
 
   // Filter free agents
   const filteredAgents = useMemo(() => {

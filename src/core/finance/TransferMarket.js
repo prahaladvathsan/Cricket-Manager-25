@@ -295,6 +295,18 @@ export default class TransferMarket {
     const winningBid = listing.currentBid;
     const buyerTeamId = listing.currentBidder;
 
+    // Check buyer squad size (must be < 25)
+    if (this.teamStore) {
+      const buyerSquad = this.teamStore.getState().squadLists[buyerTeamId] || [];
+      const MAX_SQUAD_SIZE = 25; // Must match auctionConfig.squadSize.max
+      if (buyerSquad.length >= MAX_SQUAD_SIZE) {
+        console.warn(`⚠️  Transfer failed: ${buyerTeamId} has reached squad cap (${MAX_SQUAD_SIZE} players)`);
+        listing.status = 'expired';
+        this.listings.delete(listing.id);
+        return { success: false, error: `Buyer has reached maximum squad size (${MAX_SQUAD_SIZE} players)` };
+      }
+    }
+
     // Final budget validation
     if (this.financeStore) {
       const validation = this.financeStore.getState().validateBudget(buyerTeamId, winningBid);
