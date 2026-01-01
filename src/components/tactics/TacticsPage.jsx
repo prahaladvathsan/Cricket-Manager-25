@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   Target,
@@ -11,10 +12,14 @@ import {
   Shield,
   RotateCcw,
   CheckCircle,
-  Eye
+  Eye,
+  Lock,
+  ArrowRight,
+  Wand2
 } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
+import useAuctionStore from '../../stores/auctionStore';
 import OverviewTab from './tabs/OverviewTab';
 import SquadPlaystyleTab from './tabs/SquadPlaystyleTab';
 import BattingOrderTab from './tabs/BattingOrderTab';
@@ -22,6 +27,7 @@ import BowlingPlansTab from './tabs/BowlingPlansTab';
 import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
+import { AITacticsManager } from '../../core/ai/AITacticsManager';
 
 const TacticsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -32,6 +38,7 @@ const TacticsPage = () => {
 
   const { getUserTeam, getTeamTactics, hasTactics, initializeDefaultTactics, resetTacticsToDefaults } = useTeamStore();
   const { players } = usePlayerStore();
+  const { auctionState } = useAuctionStore();
 
   const userTeam = getUserTeam();
   const teamId = userTeam?.id;
@@ -63,18 +70,54 @@ const TacticsPage = () => {
     }
   }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
 
-  // Auto-validate tactics when component unmounts (user leaves page)
+  // Warn user if they try to close browser/tab with invalid tactics
   useEffect(() => {
-    return () => {
-      // Validate on unmount
+    const handleBeforeUnload = (e) => {
       const errors = validateTactics();
       if (errors.length > 0) {
-        console.warn('⚠️ Tactics validation errors detected:', errors);
-        // Display warning message briefly before unmounting
-        alert(`⚠️ Tactics validation errors:\n\n${errors.join('\n')}\n\nPlease fix these issues before your next match.`);
+        e.preventDefault();
+        e.returnValue = 'You have invalid tactics. Please fix errors before leaving.';
+        return e.returnValue;
       }
     };
-  }, []); // Empty deps - only run on mount/unmount
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      // Final validation check on unmount
+      const errors = validateTactics();
+      if (errors.length > 0) {
+        console.warn('⚠️ Tactics validation errors:', errors);
+        alert(`⚠️ Tactics validation errors:\n\n${errors.join('\n')}\n\nPlease fix these before your next match.`);
+      }
+    };
+  }, [teamTactics, players]);
+
+  // Block access until auction is complete
+  if (auctionState !== 'completed') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="max-w-md text-center">
+          <Lock className="w-16 h-16 text-cricket-accent mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-3">Tactics Locked</h2>
+          <p className="text-cricket-text-secondary mb-6">
+            Complete the auction to build your squad before setting tactics.
+          </p>
+          {auctionState === 'in_progress' ? (
+            <Link to="/game/transfers" className="btn-primary inline-flex items-center gap-2">
+              Go to Auction <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <p className="text-sm text-cricket-text-tertiary">
+              The auction will begin when the season starts.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (!teamId) {
     return (
@@ -120,6 +163,34 @@ const TacticsPage = () => {
     setValidationErrors([]);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const handleGenerateDefaultTactics = () => {
+    if (!confirm('Generate default tactics? This will replace your current tactics with AI-generated ones.')) {
+      return;
+    }
+
+    try {
+      const aiTacticsManager = new AITacticsManager();
+
+      // Generate tactics using AI pipeline (5-stage process)
+      const tactics = aiTacticsManager.generateTactics(teamId, teamPlayers, useTeamStore.getState());
+
+      if (tactics) {
+        // Clear errors and show success
+        setValidationErrors([]);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+
+        // Refresh active tab to show new tactics
+        setActiveTab('overview');
+      } else {
+        setValidationErrors(['Failed to generate tactics. Ensure you have at least 11 eligible players.']);
+      }
+    } catch (error) {
+      console.error('Error generating default tactics:', error);
+      setValidationErrors(['An error occurred while generating tactics. Please try manually.']);
+    }
   };
 
   const validateTactics = () => {
@@ -193,11 +264,21 @@ const TacticsPage = () => {
       {validationErrors.length > 0 && (
         <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded">
           <p className="text-red-400 text-sm font-semibold mb-1">Validation errors:</p>
-          <ul className="text-red-400 text-sm space-y-0.5">
+          <ul className="text-red-400 text-sm space-y-0.5 mb-3">
             {validationErrors.map((error, idx) => (
               <li key={idx}>• {error}</li>
             ))}
           </ul>
+          <button
+            onClick={handleGenerateDefaultTactics}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            <Wand2 className="w-4 h-4" />
+            Generate Default Tactics (Auto-fix)
+          </button>
+          <p className="text-xs text-cricket-text-tertiary mt-2">
+            This will automatically create valid tactics using AI
+          </p>
         </div>
       )}
 

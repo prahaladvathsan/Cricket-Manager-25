@@ -1,0 +1,17 @@
+# Cricket Manager 25 - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /game/
+Disallow: /api/
+
+# Crawl-delay for polite crawlers
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://cricket-manager.com/sitemap.xml
+
+# Block common bad bots
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+Crawl-delay: 10

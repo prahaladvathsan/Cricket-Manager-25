@@ -16,22 +16,26 @@ import {
   ChevronRight,
   Mail,
   Clipboard,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 import useUIStore from '../../stores/uiStore';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
 import useInboxStore from '../../stores/inboxStore';
+import useAuctionStore from '../../stores/auctionStore';
 import { getTeamIcon, getGameLogo } from '../../utils/assetHelpers';
 
 const Sidebar = ({ currentPath }) => {
   const navigate = useNavigate();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showAuctionLockModal, setShowAuctionLockModal] = useState(false);
   const { preferences, toggleSidebar } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
   const { currentSeason, currentWeek, currentPhase, isSimulating } = useGameStore();
   const { unreadCount } = useInboxStore();
+  const { auctionState } = useAuctionStore();
 
   const userTeam = getUserTeam();
 
@@ -91,6 +95,40 @@ const Sidebar = ({ currentPath }) => {
           {navItems.map((item) => {
             const Icon = item.icon;
             const hasBadge = item.badge && item.badge > 0;
+            const isAuctionInProgress = auctionState === 'in_progress';
+            const isTransfersPage = item.path === '/game/transfers';
+            const isBlocked = isAuctionInProgress && !isTransfersPage;
+
+            if (isBlocked) {
+              return (
+                <li key={item.path}>
+                  <button
+                    onClick={() => setShowAuctionLockModal(true)}
+                    className={`${item.path === '/game/inbox' ? 'inbox-link ' : ''}flex items-center justify-between p-2.5 rounded transition-colors w-full text-left ${
+                      currentPath === item.path
+                        ? 'bg-cricket-primary text-white shadow-md'
+                        : 'text-gray-300 hover:text-white hover:bg-cricket-primary/30'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <Icon className="w-5 h-5" />
+                      {!sidebarCollapsed && (
+                        <span className="ml-3 font-bold text-[15px]">{item.label}</span>
+                      )}
+                    </div>
+                    {hasBadge && !sidebarCollapsed && (
+                      <span className="ml-auto bg-cricket-accent text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+                        {item.badge}
+                      </span>
+                    )}
+                    {hasBadge && sidebarCollapsed && (
+                      <span className="absolute top-1 right-1 bg-cricket-accent text-white text-xxs font-bold rounded-full w-2 h-2"></span>
+                    )}
+                  </button>
+                </li>
+              );
+            }
+
             return (
               <li key={item.path}>
                 <Link
@@ -164,6 +202,32 @@ const Sidebar = ({ currentPath }) => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auction Lock Modal */}
+      {showAuctionLockModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-cricket-surface border-2 border-red-500/50 rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-2">Auction In Progress</h3>
+                <p className="text-sm text-cricket-text-secondary mb-3">
+                  You cannot navigate away while the auction is active. Complete the auction before accessing other pages.
+                </p>
+                <p className="text-xs text-cricket-text-tertiary">
+                  💡 Tip: Use "Skip to End" to quickly finish the auction.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAuctionLockModal(false)}
+              className="btn-primary w-full"
+            >
+              Continue Auction
+            </button>
           </div>
         </div>
       )}

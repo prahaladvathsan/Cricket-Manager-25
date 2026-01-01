@@ -18,6 +18,7 @@ const useAuctionStore = create(
       soldPlayers: [], // History of sold players: { playerId, teamId, price, timestamp }
       userMaxBid: null, // User's max bid for current player (null = not set)
       userMaxBidPlayerId: null, // Player ID for which max bid is set
+      userAutoBidEnabled: true, // Control whether AI bids for user during skip operations (default ON)
 
       // Actions
       /**
@@ -82,7 +83,8 @@ const useAuctionStore = create(
         currentPlayerIndex: 0,
         soldPlayers: [],
         userMaxBid: null,
-        userMaxBidPlayerId: null
+        userMaxBidPlayerId: null,
+        userAutoBidEnabled: true // Reset to default (ON)
       }),
 
       /**
@@ -99,6 +101,20 @@ const useAuctionStore = create(
       clearUserMaxBid: () => set({
         userMaxBid: null,
         userMaxBidPlayerId: null
+      }),
+
+      /**
+       * Toggle auto-bid on/off
+       */
+      toggleAutoBid: () => set((state) => ({
+        userAutoBidEnabled: !state.userAutoBidEnabled
+      })),
+
+      /**
+       * Set auto-bid state explicitly
+       */
+      setAutoBid: (enabled) => set({
+        userAutoBidEnabled: enabled
       }),
 
       /**

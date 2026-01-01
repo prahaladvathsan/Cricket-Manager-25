@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar, List } from 'lucide-react';
+import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar, List, Zap, HelpCircle } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -33,7 +33,7 @@ const Transfers = () => {
   const { initializeSeason: initializeFinances, processAuctionSpending } = useFinanceStore();
   const { addMessage } = useInboxStore();
   const savedAuction = useAuctionStore();
-  const { setUserMaxBid, clearUserMaxBid, getUserMaxBid, userMaxBid, userMaxBidPlayerId } = useAuctionStore();
+  const { setUserMaxBid, clearUserMaxBid, getUserMaxBid, userMaxBid, userMaxBidPlayerId, userAutoBidEnabled, toggleAutoBid, setAutoBid } = useAuctionStore();
   const { transferWindow, openTransferWindow, closeTransferWindow } = useTransferStore();
 
   // Initialize transfer system
@@ -168,6 +168,20 @@ const Transfers = () => {
       closeTransferWindow();
     }
   }, [currentWeek, transferWindow.isOpen, transferMarket, isReady, openTransferWindow, closeTransferWindow, auctionCompleted]);
+
+  // Warn user if they try to close browser/tab during active auction
+  useEffect(() => {
+    if (savedAuction.auctionState === 'in_progress') {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = 'Auction in progress. Are you sure you want to leave?';
+        return e.returnValue;
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [savedAuction.auctionState]);
 
   // Check for saved auction state on mount
   useEffect(() => {
@@ -415,9 +429,14 @@ const Transfers = () => {
     for (const team of auctionEngine.teams) {
       if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
 
-      if (team.isUserControlled && userMaxBidPlayerId === currentPlayer.id && userMaxBid) {
-        willingBidders.push({ team, maxBid: userMaxBid });
-      } else if (!team.isUserControlled) {
+      if (team.isUserControlled) {
+        // Only auto-bid if toggle is ON and max bid is set
+        if (userAutoBidEnabled && userMaxBidPlayerId === currentPlayer.id && userMaxBid) {
+          willingBidders.push({ team, maxBid: userMaxBid });
+        }
+        // If toggle is OFF, user team never participates in skip bidding
+      } else {
+        // AI teams always bid
         const decision = auctionEngine.ai.shouldBid(currentPlayer, price, team, auctionProgress);
         if (decision.shouldBid) {
           willingBidders.push({ team, maxBid: decision.maxBid });
@@ -517,9 +536,21 @@ const Transfers = () => {
       const willingBidders = [];
       for (const team of auctionEngine.teams) {
         if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
-        const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
-        if (decision.shouldBid) {
-          willingBidders.push({ team, maxBid: decision.maxBid });
+
+        if (team.isUserControlled) {
+          // Only include user team if auto-bid is enabled
+          if (userAutoBidEnabled) {
+            const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+            if (decision.shouldBid) {
+              willingBidders.push({ team, maxBid: decision.maxBid });
+            }
+          }
+        } else {
+          // AI teams always bid
+          const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+          if (decision.shouldBid) {
+            willingBidders.push({ team, maxBid: decision.maxBid });
+          }
         }
       }
 
@@ -606,9 +637,21 @@ const Transfers = () => {
         const willingBidders = [];
         for (const team of auctionEngine.teams) {
           if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
-          const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
-          if (decision.shouldBid) {
-            willingBidders.push({ team, maxBid: decision.maxBid });
+
+          if (team.isUserControlled) {
+            // Only include user team if auto-bid is enabled
+            if (userAutoBidEnabled) {
+              const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+              if (decision.shouldBid) {
+                willingBidders.push({ team, maxBid: decision.maxBid });
+              }
+            }
+          } else {
+            // AI teams always bid
+            const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+            if (decision.shouldBid) {
+              willingBidders.push({ team, maxBid: decision.maxBid });
+            }
           }
         }
 
@@ -650,6 +693,16 @@ const Transfers = () => {
       }
     }
 
+    // Check if user needs minimum squad enforcement before unsold round
+    const userTeamData = auctionEngine.teams.find(t => t.id === userTeamId);
+    const needsMinimumEnforcement = userTeamData && userTeamData.squad.length < auctionEngine.config.squadSize.min;
+    const originalAutoBidState = userAutoBidEnabled;
+
+    if (needsMinimumEnforcement && !originalAutoBidState) {
+      addToLog('⚠️ Squad below minimum (18 players). Auto-bid temporarily enabled for unsold round.', 'system');
+      setAutoBid(true);
+    }
+
     // Check for unsold players and run unsold round
     if (auctionEngine.hasUnsoldPlayers()) {
       const { players: unsoldPlayers } = auctionEngine.createUnsoldRound();
@@ -667,9 +720,21 @@ const Transfers = () => {
           const willingBidders = [];
           for (const team of auctionEngine.teams) {
             if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
-            const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
-            if (decision.shouldBid) {
-              willingBidders.push({ team, maxBid: decision.maxBid });
+
+            if (team.isUserControlled) {
+              // In unsold round, use current auto-bid state (which may have been forced ON)
+              if (useAuctionStore.getState().userAutoBidEnabled) {
+                const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+                if (decision.shouldBid) {
+                  willingBidders.push({ team, maxBid: decision.maxBid });
+                }
+              }
+            } else {
+              // AI teams always bid
+              const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+              if (decision.shouldBid) {
+                willingBidders.push({ team, maxBid: decision.maxBid });
+              }
             }
           }
 
@@ -708,6 +773,17 @@ const Transfers = () => {
             await new Promise(resolve => setTimeout(resolve, 50));
           }
         }
+      }
+    }
+
+    // Restore original auto-bid state if we forced it ON for minimum squad
+    if (needsMinimumEnforcement && !originalAutoBidState) {
+      const finalUserTeamData = auctionEngine.teams.find(t => t.id === userTeamId);
+      const finalSquadSize = finalUserTeamData?.squad.length || 0;
+
+      if (finalSquadSize >= auctionEngine.config.squadSize.min) {
+        setAutoBid(false);
+        addToLog('✓ Minimum squad reached (18+ players). Auto-bid disabled as per your preference.', 'system');
       }
     }
 
@@ -1488,7 +1564,7 @@ const Transfers = () => {
                         <div className="auction-bid-controls flex items-center gap-3 mb-3">
                           <button
                             onClick={handleBid}
-                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining || squadCapReached}
+                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining || squadCapReached || userAutoBidEnabled}
                             className="btn-primary flex-1 text-base py-3"
                           >
                             <Gavel className="w-5 h-5 inline mr-2" />
@@ -1510,11 +1586,11 @@ const Transfers = () => {
                               placeholder="e.g. 900 for 900K"
                               className="input-field flex-1 text-sm"
                               min={(currentPrice + getValidIncrement(currentPrice)) / 1000}
-                              disabled={squadCapReached}
+                              disabled={squadCapReached || userAutoBidEnabled}
                             />
                             <button
                               onClick={handleSetMaxBid}
-                              disabled={!maxBidInput || squadCapReached}
+                              disabled={!maxBidInput || squadCapReached || userAutoBidEnabled}
                               className="btn-secondary px-4 py-2 text-sm whitespace-nowrap"
                             >
                               Set Max
@@ -1538,6 +1614,58 @@ const Transfers = () => {
                             </button>
                           </div>
                         )}
+
+                        {/* Auto-Bid Toggle Control */}
+                        <div className="mb-3 p-3 bg-cricket-surface/50 border border-border-primary rounded">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={toggleAutoBid}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                  userAutoBidEnabled ? 'bg-green-600' : 'bg-gray-600'
+                                }`}
+                                title={userAutoBidEnabled ? 'Auto-bid enabled' : 'Auto-bid disabled'}
+                              >
+                                <span
+                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    userAutoBidEnabled ? 'translate-x-6' : 'translate-x-1'
+                                  }`}
+                                />
+                              </button>
+                              <div className="flex items-center gap-1.5">
+                                {userAutoBidEnabled ? (
+                                  <Zap className="w-4 h-4 text-green-400" />
+                                ) : (
+                                  <Zap className="w-4 h-4 text-gray-500" />
+                                )}
+                                <span className={`text-sm font-medium ${userAutoBidEnabled ? 'text-green-400' : 'text-gray-400'}`}>
+                                  Auto-Bid
+                                </span>
+                              </div>
+                              <div className="group relative">
+                                <HelpCircle className="w-3.5 h-3.5 text-cricket-text-tertiary cursor-help" />
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 bg-cricket-surface border border-border-primary rounded shadow-lg text-xs z-10">
+                                  <p className="text-cricket-text-secondary">
+                                    {userAutoBidEnabled ? (
+                                      <>
+                                        <strong className="text-green-400">Auto-bid ON:</strong> AI will bid for you when using skip buttons. Manual bidding is disabled.
+                                      </>
+                                    ) : (
+                                      <>
+                                        <strong className="text-gray-400">Auto-bid OFF:</strong> AI will NOT bid for you when skipping. You must bid manually or skip without acquiring players.
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {!userAutoBidEnabled && (
+                            <p className="text-xxs text-yellow-500 mt-2">
+                              ⚠️ With auto-bid off, skipping will not acquire players. Ensure you have at least 18 players before ending the auction.
+                            </p>
+                          )}
+                        </div>
 
                         {/* Row 2: Skip Player | Skip Round | Skip to End */}
                         <div className="auction-skip-controls flex items-center gap-2">
