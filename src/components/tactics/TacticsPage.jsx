@@ -27,7 +27,7 @@ import BowlingPlansTab from './tabs/BowlingPlansTab';
 import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
-import { AITacticsManager } from '../../core/ai/AITacticsManager';
+import aiTacticsManager from '../../core/ai/AITacticsManager';
 
 const TacticsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -171,8 +171,6 @@ const TacticsPage = () => {
     }
 
     try {
-      const aiTacticsManager = new AITacticsManager();
-
       // Generate tactics using AI pipeline (5-stage process)
       const tactics = aiTacticsManager.generateTactics(teamId, teamPlayers, useTeamStore.getState());
 

@@ -24,13 +24,28 @@
     var pathSegmentsToKeep = 0;
 
     var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
+
+    // Don't redirect static SEO files - let them 404 naturally so the server can handle them
+    var staticFiles = ['sitemap.xml', 'robots.txt', 'favicon.ico', '.well-known'];
+    var pathname = l.pathname;
+    var shouldRedirect = true;
+
+    for (var i = 0; i < staticFiles.length; i++) {
+      if (pathname.indexOf(staticFiles[i]) !== -1) {
+        shouldRedirect = false;
+        break;
+      }
+    }
+
+    if (shouldRedirect) {
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    }
 
   </script>
 </head>
