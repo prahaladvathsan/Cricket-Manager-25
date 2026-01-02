@@ -34,8 +34,8 @@ const ContributeDropdown = () => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all duration-200 border border-transparent ${isOpen
-                            ? 'bg-cricket-primary/10 text-cricket-primary border-cricket-primary/20'
-                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'bg-cricket-primary/20 text-cricket-primary border-cricket-primary/30'
+                        : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                         }`}
                     title="Contribute and Support"
                 >
@@ -45,25 +45,25 @@ const ContributeDropdown = () => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-                        <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Support & Help</p>
+                    <div className="absolute right-0 mt-2 w-48 bg-bg-secondary rounded-lg shadow-xl border border-border-primary py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                        <div className="px-3 py-2 border-b border-border-primary mb-1">
+                            <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Support & Help</p>
                         </div>
 
                         <a
                             href="https://ko-fi.com/prahaladvathsan"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer"
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-amber-500/10 hover:text-amber-500 transition-colors cursor-pointer"
                             onClick={() => setIsOpen(false)}
                         >
-                            <Coffee className="w-4 h-4 text-amber-600" />
+                            <Coffee className="w-4 h-4 text-amber-500" />
                             <span>Buy me a coffee</span>
                         </a>
 
                         <button
                             onClick={() => handleAction('bug')}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors text-left"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-red-500/10 hover:text-red-500 transition-colors text-left"
                         >
                             <Bug className="w-4 h-4 text-red-500" />
                             <span>Report a bug</span>
@@ -71,7 +71,7 @@ const ContributeDropdown = () => {
 
                         <button
                             onClick={() => handleAction('feedback')}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-blue-500/10 hover:text-blue-500 transition-colors text-left"
                         >
                             <MessageSquare className="w-4 h-4 text-blue-500" />
                             <span>Provide feedback</span>

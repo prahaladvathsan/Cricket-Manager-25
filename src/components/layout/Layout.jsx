@@ -27,9 +27,8 @@ const Layout = ({ children }) => {
     <div className="h-full flex app-wallpaper">
       <Sidebar currentPath={location.pathname} />
 
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        preferences.sidebarCollapsed ? 'ml-16' : 'ml-48'
-      }`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${preferences.sidebarCollapsed ? 'ml-16' : 'ml-48'
+        }`}>
         <Header />
 
         <main className="flex-1 overflow-auto p-3">

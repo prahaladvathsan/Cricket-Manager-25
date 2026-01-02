@@ -29,6 +29,7 @@ import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGener
 import PlayoffGenerator from '../../core/league/PlayoffGenerator';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
 import ContributeDropdown from './ContributeDropdown';
+import JoinCommunityDropdown from './JoinCommunityDropdown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -730,6 +731,7 @@ const Header = () => {
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-2">
+            <JoinCommunityDropdown />
             <ContributeDropdown />
 
             <button
