@@ -406,264 +406,259 @@ const CalendarPage = () => {
 
   return (
     <>
-    <div className="p-6 pb-20">
-      {/* Fullscreen Simulation Overlay */}
-      <SimulationOverlay
-        isVisible={isSimulating}
-        progress={simProgress}
-        events={simEvents}
-        onStop={handleStopSimulation}
-        message={simProgress.message}
-      />
+      <div className="p-6 pb-20">
+        {/* Fullscreen Simulation Overlay */}
+        <SimulationOverlay
+          isVisible={isSimulating}
+          progress={simProgress}
+          events={simEvents}
+          onStop={handleStopSimulation}
+          message={simProgress.message}
+        />
 
-      {/* Fixed Legend at Bottom with View Toggle */}
-      <div className={`fixed bottom-0 right-0 bg-bg-primary/95 backdrop-blur-sm border-t border-border-primary p-3 z-40 ${sidebarCollapsed ? 'left-16' : 'left-48'}`}>
-        <div className="flex items-center justify-between">
-          {/* Legend Items */}
-          <div className="flex flex-wrap gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-blue-900/30 border border-blue-500/30" />
-            <span className="text-text-secondary">Upcoming</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-green-900/30 border border-green-500/30" />
-            <span className="text-text-secondary">Completed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-purple-900/30 border border-purple-500/30" />
-            <span className="text-text-secondary">Auction</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-yellow-900/30 border border-yellow-500/30" />
-            <span className="text-text-secondary">Playoffs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-cricket-accent/20 border border-cricket-accent/30" />
-            <span className="text-text-secondary">Transfer</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-red-900/30 border border-red-500/30" />
-            <span className="text-text-secondary">Season End</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-gray-700/30 border border-gray-600/30" />
-            <span className="text-text-secondary">Offseason</span>
-          </div>
-          </div>
+        {/* Fixed Legend at Bottom with View Toggle */}
+        <div className={`fixed bottom-0 right-0 bg-bg-primary/95 backdrop-blur-sm border-t border-border-primary p-3 z-40 ${sidebarCollapsed ? 'left-16' : 'left-48'}`}>
+          <div className="flex items-center justify-between">
+            {/* Legend Items */}
+            <div className="flex flex-wrap gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-blue-900/30 border border-blue-500/30" />
+                <span className="text-text-secondary">Upcoming</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-900/30 border border-green-500/30" />
+                <span className="text-text-secondary">Completed</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-purple-900/30 border border-purple-500/30" />
+                <span className="text-text-secondary">Auction</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-yellow-900/30 border border-yellow-500/30" />
+                <span className="text-text-secondary">Playoffs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-cricket-accent/20 border border-cricket-accent/30" />
+                <span className="text-text-secondary">Transfer</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-red-900/30 border border-red-500/30" />
+                <span className="text-text-secondary">Season End</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-gray-700/30 border border-gray-600/30" />
+                <span className="text-text-secondary">Offseason</span>
+              </div>
+            </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-bg-secondary rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-cricket-accent text-cricket-dark'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Grid3X3 className="w-3 h-3" />
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-cricket-accent text-cricket-dark'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <List className="w-3 h-3" />
-              List
-            </button>
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-bg-secondary rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'grid'
+                    ? 'bg-cricket-accent text-cricket-dark'
+                    : 'text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                <Grid3X3 className="w-3 h-3" />
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list'
+                    ? 'bg-cricket-accent text-cricket-dark'
+                    : 'text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                <List className="w-3 h-3" />
+                List
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="card p-4">
-          <CalendarListView
-            events={upcomingEventsList}
-            clubs={clubs}
-            currentDate={currentDate}
-            userTeamId={userTeamId}
-            compact={false}
-            onSimToDate={handleSimToDate}
-            isSimulating={isSimulating}
-          />
-        </div>
-      )}
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="card p-4">
+            <CalendarListView
+              events={upcomingEventsList}
+              clubs={clubs}
+              currentDate={currentDate}
+              userTeamId={userTeamId}
+              compact={false}
+              onSimToDate={handleSimToDate}
+              isSimulating={isSimulating}
+            />
+          </div>
+        )}
 
-      {/* Calendar Grid View */}
-      {viewMode === 'grid' && (
-        <div className="space-y-6">
-          {Object.keys(fixturesByMonth)
-            .sort()
-            .map(monthKey => {
-              const monthData = fixturesByMonth[monthKey];
-              const [year, month] = monthKey.split('-').map(Number);
-              const calendarGrid = generateCalendarGrid(year, month - 1, monthData.events);
+        {/* Calendar Grid View */}
+        {viewMode === 'grid' && (
+          <div className="space-y-6">
+            {Object.keys(fixturesByMonth)
+              .sort()
+              .map(monthKey => {
+                const monthData = fixturesByMonth[monthKey];
+                const [year, month] = monthKey.split('-').map(Number);
+                const calendarGrid = generateCalendarGrid(year, month - 1, monthData.events);
 
-              return (
-                <div key={monthKey} id={`month-${monthKey}`} className="card border-2 border-border-primary overflow-hidden">
-                  {/* Month Header */}
-                  <div className="bg-cricket-secondary px-6 py-4 border-b-2 border-border-primary">
-                    <h2 className="text-2xl font-bold text-text-primary">
-                      {monthData.monthName}
-                    </h2>
-                  </div>
-
-                  {/* Calendar Grid */}
-                  <div className="p-6">
-                    {/* Day of Week Headers */}
-                    <div className="grid grid-cols-7 gap-2 mb-3">
-                      {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                        <div
-                          key={day}
-                          className="text-center text-sm font-bold text-cricket-accent py-2 border-b border-border-primary"
-                        >
-                          {day}
-                        </div>
-                      ))}
+                return (
+                  <div key={monthKey} id={`month-${monthKey}`} className="card border-2 border-border-primary overflow-hidden">
+                    {/* Month Header */}
+                    <div className="bg-cricket-secondary px-6 py-4 border-b-2 border-border-primary">
+                      <h2 className="text-2xl font-bold text-text-primary">
+                        {monthData.monthName}
+                      </h2>
                     </div>
 
-                    {/* Calendar Days */}
-                    <div className="grid grid-cols-7 gap-2">
-                      {calendarGrid.map((week, weekIdx) =>
-                        week.map((dayData, dayIdx) => {
-                          if (!dayData) {
+                    {/* Calendar Grid */}
+                    <div className="p-6">
+                      {/* Day of Week Headers */}
+                      <div className="grid grid-cols-7 gap-2 mb-3">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                          <div
+                            key={day}
+                            className="text-center text-sm font-bold text-cricket-accent py-2 border-b border-border-primary"
+                          >
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Calendar Days */}
+                      <div className="grid grid-cols-7 gap-2">
+                        {calendarGrid.map((week, weekIdx) =>
+                          week.map((dayData, dayIdx) => {
+                            if (!dayData) {
+                              return (
+                                <div
+                                  key={`empty-${weekIdx}-${dayIdx}`}
+                                  className="min-h-32 bg-bg-tertiary/20 rounded border border-border-primary"
+                                />
+                              );
+                            }
+
+                            const hasEvents = dayData.events.length > 0;
+
+                            // Check if this is today (use date string comparison to avoid timezone issues)
+                            const todayDate = new Date(currentDate);
+                            const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+                            const isToday = dayData.date === todayKey;
+                            const isFuture = dayData.date > todayKey;
+
                             return (
                               <div
-                                key={`empty-${weekIdx}-${dayIdx}`}
-                                className="min-h-32 bg-bg-tertiary/20 rounded border border-border-primary"
-                              />
-                            );
-                          }
-
-                          const hasEvents = dayData.events.length > 0;
-
-                          // Check if this is today (use date string comparison to avoid timezone issues)
-                          const todayDate = new Date(currentDate);
-                          const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
-                          const isToday = dayData.date === todayKey;
-                          const isFuture = dayData.date > todayKey;
-
-                          return (
-                            <div
-                              key={dayData.date}
-                              className={`min-h-32 border-2 rounded-lg transition-all group ${
-                                isToday
-                                  ? 'border-cricket-accent bg-cricket-accent/10 ring-2 ring-cricket-accent/30'
-                                  : hasEvents
-                                  ? 'border-cricket-accent/40 bg-bg-secondary hover:bg-bg-tertiary'
-                                  : 'border-border-primary bg-bg-secondary hover:bg-bg-tertiary'
-                              }`}
-                            >
-                              <div className="p-2 h-full flex flex-col">
-                                {/* Day Number */}
-                                <div className={`text-lg font-bold mb-2 ${
-                                  isToday
-                                    ? 'text-cricket-accent'
+                                key={dayData.date}
+                                className={`min-h-32 border-2 rounded-lg transition-all group ${isToday
+                                    ? 'border-cricket-accent bg-cricket-accent/10 ring-2 ring-cricket-accent/30'
                                     : hasEvents
-                                    ? 'text-text-primary'
-                                    : 'text-text-tertiary'
-                                }`}>
-                                  {dayData.day}
-                                  {isToday && (
-                                    <span className="ml-2 text-xs bg-cricket-accent text-cricket-dark px-2 py-0.5 rounded-full">
-                                      TODAY
-                                    </span>
+                                      ? 'border-cricket-accent/40 bg-bg-secondary hover:bg-bg-tertiary'
+                                      : 'border-border-primary bg-bg-secondary hover:bg-bg-tertiary'
+                                  }`}
+                              >
+                                <div className="p-2 h-full flex flex-col">
+                                  {/* Day Number */}
+                                  <div className={`text-lg font-bold mb-2 ${isToday
+                                      ? 'text-cricket-accent'
+                                      : hasEvents
+                                        ? 'text-text-primary'
+                                        : 'text-text-tertiary'
+                                    }`}>
+                                    {dayData.day}
+                                    {isToday && (
+                                      <span className="ml-2 text-xs bg-cricket-accent text-cricket-dark px-2 py-0.5 rounded-full">
+                                        TODAY
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Events */}
+                                  {hasEvents && (
+                                    <div className="flex-1 space-y-1 overflow-y-auto">
+                                      {dayData.events.map((event, idx) => {
+                                        const { icon: EventIcon, style } = getEventStyle(event);
+
+                                        // Render based on event type
+                                        if (event.type === 'match') {
+                                          const fixture = event.data;
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className={`text-xs px-2 py-1.5 rounded border ${style} flex items-center gap-1`}
+                                              title={`${clubs[fixture.homeTeam]?.name || 'TBD'} vs ${clubs[fixture.awayTeam]?.name || 'TBD'}`}
+                                            >
+                                              <EventIcon className="w-3 h-3 flex-shrink-0" />
+                                              <span className="truncate">
+                                                {clubs[fixture.homeTeam]?.shortName?.slice(0, 3) || 'TBD'} v {clubs[fixture.awayTeam]?.shortName?.slice(0, 3) || 'TBD'}
+                                              </span>
+                                            </div>
+                                          );
+                                        } else {
+                                          // Other event types
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className={`text-xs px-2 py-1.5 rounded border ${style} flex items-center gap-1`}
+                                            >
+                                              <EventIcon className="w-3 h-3 flex-shrink-0" />
+                                              <span className="truncate">
+                                                {event.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Sim to Date Button (for future dates - only visible on hover) */}
+                                  {isFuture && (
+                                    <button
+                                      onClick={() => handleSimToDate(dayData.date)}
+                                      disabled={isSimulating}
+                                      className={`mt-auto w-full px-2 py-1.5 rounded text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 ${isSimulating
+                                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                          : 'bg-cricket-accent text-cricket-dark hover:bg-cricket-accent/80'
+                                        }`}
+                                    >
+                                      {isSimulating ? 'Simulating...' : 'Sim to Date'}
+                                    </button>
                                   )}
                                 </div>
-
-                                {/* Events */}
-                                {hasEvents && (
-                                  <div className="flex-1 space-y-1 overflow-y-auto">
-                                    {dayData.events.map((event, idx) => {
-                                      const { icon: EventIcon, style } = getEventStyle(event);
-
-                                      // Render based on event type
-                                      if (event.type === 'match') {
-                                        const fixture = event.data;
-                                        return (
-                                          <div
-                                            key={idx}
-                                            className={`text-xs px-2 py-1.5 rounded border ${style} flex items-center gap-1`}
-                                            title={`${clubs[fixture.homeTeam]?.name || 'TBD'} vs ${clubs[fixture.awayTeam]?.name || 'TBD'}`}
-                                          >
-                                            <EventIcon className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">
-                                              {clubs[fixture.homeTeam]?.shortName?.slice(0, 3) || 'TBD'} v {clubs[fixture.awayTeam]?.shortName?.slice(0, 3) || 'TBD'}
-                                            </span>
-                                          </div>
-                                        );
-                                      } else {
-                                        // Other event types
-                                        return (
-                                          <div
-                                            key={idx}
-                                            className={`text-xs px-2 py-1.5 rounded border ${style} flex items-center gap-1`}
-                                          >
-                                            <EventIcon className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">
-                                              {event.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                            </span>
-                                          </div>
-                                        );
-                                      }
-                                    })}
-                                  </div>
-                                )}
-
-                                {/* Sim to Date Button (for future dates - only visible on hover) */}
-                                {isFuture && (
-                                  <button
-                                    onClick={() => handleSimToDate(dayData.date)}
-                                    disabled={isSimulating}
-                                    className={`mt-auto w-full px-2 py-1.5 rounded text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 ${
-                                      isSimulating
-                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                        : 'bg-cricket-accent text-cricket-dark hover:bg-cricket-accent/80'
-                                    }`}
-                                  >
-                                    {isSimulating ? 'Simulating...' : 'Sim to Date'}
-                                  </button>
-                                )}
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-          {Object.keys(fixturesByMonth).length === 0 && (
-            <div className="card p-12 text-center">
-              <Calendar className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
-              <p className="text-text-secondary text-lg">
-                No events scheduled yet
-              </p>
-              <p className="text-text-tertiary text-sm mt-2">
-                Events will appear here once the season begins
-              </p>
-            </div>
-          )}
-        </div>
+            {Object.keys(fixturesByMonth).length === 0 && (
+              <div className="card p-12 text-center">
+                <Calendar className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
+                <p className="text-text-secondary text-lg">
+                  No events scheduled yet
+                </p>
+                <p className="text-text-tertiary text-sm mt-2">
+                  Events will appear here once the season begins
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Contextual Tip for first visit */}
+      {showTip && (
+        <ContextualTip
+          title={screenTips.calendar.title}
+          icon={screenTips.calendar.icon}
+          tips={screenTips.calendar.tips}
+          onDismiss={dismissTip}
+        />
       )}
-    </div>
-
-    {/* Contextual Tip for first visit */}
-    {showTip && (
-      <ContextualTip
-        title={screenTips.calendar.title}
-        icon={screenTips.calendar.icon}
-        tips={screenTips.calendar.tips}
-        onDismiss={dismissTip}
-      />
-    )}
     </>
   );
 };

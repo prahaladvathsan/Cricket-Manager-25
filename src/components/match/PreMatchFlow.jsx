@@ -7,7 +7,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle,
+  Settings
 } from 'lucide-react';
 import useLeagueStore from '../../stores/leagueStore';
 import useTeamStore from '../../stores/teamStore';
@@ -37,6 +39,9 @@ const PreMatchFlow = () => {
   });
 
   const userTeam = getUserTeam();
+
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
     if (!matchId) return;
@@ -165,9 +170,8 @@ const PreMatchFlow = () => {
       // CRITICAL: Validate tactics before allowing user to continue from Preview & Tactics phase
       const validation = validateUserTactics();
       if (!validation.valid) {
-        alert(
-          `⚠️ Cannot continue - Tactics validation errors:\n\n${validation.errors.join('\n')}\n\nPlease click "Configure Tactics" to fix these issues.`
-        );
+        setValidationErrors(validation.errors);
+        setShowValidationModal(true);
         return; // Block progression
       }
       setCurrentPhase(1);
@@ -236,24 +240,22 @@ const PreMatchFlow = () => {
               {phases.map((phase, idx) => (
                 <div key={idx} className="flex flex-col items-center gap-1 min-w-[100px]">
                   {/* Tab title */}
-                  <div className={`text-xs font-semibold drop-shadow-lg transition-colors ${
-                    idx === currentPhase
-                      ? 'text-cricket-accent'
-                      : idx < currentPhase
+                  <div className={`text-xs font-semibold drop-shadow-lg transition-colors ${idx === currentPhase
+                    ? 'text-cricket-accent'
+                    : idx < currentPhase
                       ? 'text-white'
                       : 'text-white/40'
-                  }`}>
+                    }`}>
                     {phase}
                   </div>
                   {/* Progress bar */}
                   <div
-                    className={`w-20 h-1.5 rounded-full transition-colors ${
-                      idx === currentPhase
-                        ? 'bg-cricket-accent shadow-lg'
-                        : idx < currentPhase
+                    className={`w-20 h-1.5 rounded-full transition-colors ${idx === currentPhase
+                      ? 'bg-cricket-accent shadow-lg'
+                      : idx < currentPhase
                         ? 'bg-cricket-primary/80'
                         : 'bg-white/20'
-                    }`}
+                      }`}
                   />
                 </div>
               ))}
@@ -265,11 +267,10 @@ const PreMatchFlow = () => {
             <button
               onClick={handleContinue}
               disabled={!canContinue()}
-              className={`flex items-center gap-2 px-4 py-2 rounded font-semibold transition-all shadow-sm flex-shrink-0 ${
-                canContinue()
-                  ? 'bg-cricket-primary hover:bg-cricket-primary-light text-white hover:shadow-md'
-                  : 'bg-white/10 text-white/40 cursor-not-allowed'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded font-semibold transition-all shadow-sm flex-shrink-0 ${canContinue()
+                ? 'bg-cricket-primary hover:bg-cricket-primary-light text-white hover:shadow-md'
+                : 'bg-white/10 text-white/40 cursor-not-allowed'
+                }`}
             >
               <span>{getContinueButtonText()}</span>
               <ArrowRight className="w-4 h-4" />
@@ -304,6 +305,55 @@ const PreMatchFlow = () => {
           </div>
         </div>
       </div>
+
+      {/* Validation Error Modal */}
+      {showValidationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-bg-secondary border border-red-500/50 rounded-lg shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-red-500/10 px-6 py-4 border-b border-red-500/20 flex items-center gap-3">
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Issues Detected</h3>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-text-secondary mb-4">
+                Please resolve the following issues with your team tactics before proceeding to the match:
+              </p>
+
+              <div className="bg-red-950/30 border border-red-500/20 rounded-md p-4 mb-6">
+                <ul className="space-y-2">
+                  {validationErrors.map((error, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-red-200 text-sm">
+                      <span className="text-red-500 mt-0.5">•</span>
+                      <span>{error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => navigate('/game/tactics')}
+                  className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-semibold"
+                >
+                  <Settings className="w-5 h-5" />
+                  Resolve in Tactics Page
+                </button>
+                <button
+                  onClick={() => setShowValidationModal(false)}
+                  className="btn-secondary w-full py-2 text-text-secondary hover:text-white"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

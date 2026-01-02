@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Save, ChevronRight, Users, Play, FastForward, ArrowLeft, ChevronDown, Coffee } from 'lucide-react';
+import { Settings, Save, ChevronRight, Users, Play, FastForward, ArrowLeft, ChevronDown, Coffee, AlertTriangle } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -28,6 +28,7 @@ import { getTeamBadge } from '../../utils/assetHelpers';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 import PlayoffGenerator from '../../core/league/PlayoffGenerator';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
+import ContributeDropdown from './ContributeDropdown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -35,6 +36,8 @@ const Header = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [showMatchDropdown, setShowMatchDropdown] = useState(false);
   const [showSeasonSummary, setShowSeasonSummary] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
   const dropdownRef = useRef(null);
 
   // Animation states for visual feedback
@@ -110,51 +113,101 @@ const Header = () => {
         throw new Error('Team data not found for match');
       }
 
-      // Helper function to validate and regenerate tactics if needed
-      const ensureValidTactics = (teamId, teamName) => {
+      // Check which team is the user team
+      const userTeamId = userTeam?.id;
+      const isUserHome = homeTeam.id === userTeamId;
+      const isUserAway = awayTeam.id === userTeamId;
+
+      // Helper for STRICT validation (User Team) - purely checks, no modifications
+      const validateStrict = (teamId) => {
+        const tactics = useTeamStore.getState().getTeamTactics(teamId);
+        const players = usePlayerStore.getState().players;
+        const errors = [];
+
+        if (!tactics) {
+          errors.push('Tactics not initialized');
+          return errors;
+        }
+
+        // Validate squad selection
+        if (!tactics.squadSelection || tactics.squadSelection.length !== 11) {
+          errors.push('Must select exactly 11 players');
+        }
+
+        // Validate minimum bowlers (5)
+        const bowlers = tactics.squadSelection?.filter(playerId => {
+          const player = players[playerId];
+          return player && (player.role === 'bowler' || player.role === 'all-rounder');
+        }) || [];
+
+        if (bowlers.length < 5) {
+          errors.push('Must have at least 5 bowling options');
+        }
+
+        // Validate wicket-keeper
+        const hasWicketKeeper = tactics.squadSelection?.some(playerId => {
+          const player = players[playerId];
+          return player && player.role === 'wicket-keeper';
+        });
+
+        if (!hasWicketKeeper) {
+          errors.push('Must have at least 1 wicket-keeper');
+        }
+
+        // Validate batting order
+        if (!tactics.battingOrder || tactics.battingOrder.length !== 11) {
+          errors.push('Batting order must have all 11 players');
+        }
+
+        // Check for injuries
+        const injuredPlayers = tactics.squadSelection?.filter(playerId => {
+          const player = players[playerId];
+          return player && player.condition?.injury;
+        }) || [];
+
+        if (injuredPlayers.length > 0) {
+          const injuredPlayerNames = injuredPlayers.map(id => {
+            const player = players[id];
+            return `${player.name} (${player.condition.injuryDuration}d)`;
+          }).join(', ');
+          errors.push(`Injured players in XI: ${injuredPlayerNames}`);
+        }
+
+        return errors;
+      };
+
+      // Helper for AI tactics (Auto-regenerate if invalid)
+      const ensureValidAiTactics = (teamId, teamName) => {
         const tactics = useTeamStore.getState().getTeamTactics(teamId);
         const squadIds = useTeamStore.getState().squadLists[teamId] || [];
         const playingXI = tactics?.squadSelection || [];
         const overAssignments = tactics?.overAssignments || {};
 
-        // Validation checks
         let needsRegeneration = false;
         let reason = '';
 
-        // Check 1: squadSelection has 11 players
         if (!tactics?.squadSelection || tactics.squadSelection.length !== 11) {
           needsRegeneration = true;
-          reason = `squadSelection has ${tactics?.squadSelection?.length || 0} players (need 11)`;
-        }
-
-        // Check 2: All squadSelection players are in the squad
-        if (!needsRegeneration) {
+          reason = `squadSelection has ${tactics?.squadSelection?.length || 0} players`;
+        } else {
+          // Check consistency
           const invalidPlayers = playingXI.filter(id => !squadIds.includes(id));
           if (invalidPlayers.length > 0) {
             needsRegeneration = true;
-            reason = `${invalidPlayers.length} player(s) in squadSelection not in squad`;
+            reason = 'Players not in squad';
           }
         }
 
-        // Check 3: overAssignments has 20 overs
+        // Basic bowler check for AI
         if (!needsRegeneration) {
           if (Object.keys(overAssignments).length < 20) {
             needsRegeneration = true;
-            reason = `overAssignments has ${Object.keys(overAssignments).length} overs (need 20)`;
-          }
-        }
-
-        // Check 4: All bowlers in overAssignments are in playing XI
-        if (!needsRegeneration) {
-          const invalidBowlers = Object.values(overAssignments).filter(id => id && !playingXI.includes(id));
-          if (invalidBowlers.length > 0) {
-            needsRegeneration = true;
-            reason = `${invalidBowlers.length} bowler(s) in overAssignments not in playing XI`;
+            reason = 'Incomplete over assignments';
           }
         }
 
         if (needsRegeneration) {
-          console.log(`[Header] ${teamName} tactics invalid: ${reason} - regenerating via AITacticsManager`);
+          console.log(`[Header] ${teamName} (AI) tactics invalid: ${reason} - regenerating`);
           const squad = squadIds
             .map(id => usePlayerStore.getState().players[id])
             .filter(Boolean);
@@ -163,17 +216,39 @@ const Header = () => {
           }
         }
 
-        // Return the (possibly regenerated) tactics
-        const finalTactics = useTeamStore.getState().getTeamTactics(teamId);
-        return finalTactics?.squadSelection || [];
+        return useTeamStore.getState().getTeamTactics(teamId)?.squadSelection || [];
       };
 
-      // Ensure both teams have valid tactics
-      const homePlayingXI = ensureValidTactics(homeTeam.id, homeTeam.name);
-      const awayPlayingXI = ensureValidTactics(awayTeam.id, awayTeam.name);
+      let homePlayingXI, awayPlayingXI;
 
-      if (homePlayingXI.length !== 11 || awayPlayingXI.length !== 11) {
-        throw new Error(`Failed to generate valid playing XI: Home=${homePlayingXI.length}, Away=${awayPlayingXI.length}`);
+      // 1. Process User Team (Strict Validation)
+      if (isUserHome) {
+        const errors = validateStrict(homeTeam.id);
+        if (errors.length > 0) {
+          setValidationErrors(errors);
+          setShowValidationModal(true);
+          setIsSimulating(false); // Stop simulation
+          return;
+        }
+        // If valid, use existing tactics
+        homePlayingXI = useTeamStore.getState().getTeamTactics(homeTeam.id).squadSelection;
+      } else {
+        // AI Home Team
+        homePlayingXI = ensureValidAiTactics(homeTeam.id, homeTeam.name);
+      }
+
+      if (isUserAway) {
+        const errors = validateStrict(awayTeam.id);
+        if (errors.length > 0) {
+          setValidationErrors(errors);
+          setShowValidationModal(true);
+          setIsSimulating(false); // Stop simulation
+          return;
+        }
+        awayPlayingXI = useTeamStore.getState().getTeamTactics(awayTeam.id).squadSelection;
+      } else {
+        // AI Away Team
+        awayPlayingXI = ensureValidAiTactics(awayTeam.id, awayTeam.name);
       }
 
       const tossWinnerId = Math.random() < 0.5 ? homeTeam.id : awayTeam.id;
@@ -183,8 +258,8 @@ const Header = () => {
         id: fixture.matchId,
         homeTeam: {
           ...homeTeam,
-          playingXI: homePlayingXI,  // matchStore expects playingXI
-          players: homePlayingXI      // MatchEngine expects players
+          playingXI: homePlayingXI,
+          players: homePlayingXI
         },
         awayTeam: {
           ...awayTeam,
@@ -614,9 +689,8 @@ const Header = () => {
 
   return (
     <>
-      <header className={`bg-cricket-surface border-b border-gray-700 px-4 py-2 ${
-        globalIsSimulating ? 'pointer-events-none opacity-50' : ''
-      }`}>
+      <header className={`bg-cricket-surface border-b border-gray-700 px-4 py-2 ${globalIsSimulating ? 'pointer-events-none opacity-50' : ''
+        }`}>
         <div className="flex items-center justify-between">
           {/* Current Context */}
           <div className="flex items-center space-x-4">
@@ -645,11 +719,10 @@ const Header = () => {
               <h2 className="text-base font-semibold text-cricket-text-primary">
                 {userTeam ? userTeam.name : 'Select Team'}
               </h2>
-              <p className={`calendar-display text-xs transition-all duration-300 ${
-                dateJustChanged
-                  ? 'text-trophy-gold scale-105 font-semibold'
-                  : 'text-cricket-text-secondary'
-              }`}>
+              <p className={`calendar-display text-xs transition-all duration-300 ${dateJustChanged
+                ? 'text-trophy-gold scale-105 font-semibold'
+                : 'text-cricket-text-secondary'
+                }`}>
                 Season {currentSeason} • Week {currentWeek} • Day {gameDay} • {formattedDate}
               </p>
             </div>
@@ -657,17 +730,7 @@ const Header = () => {
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-2">
-            {/* Ko-fi Donation Button */}
-            <a
-              href="https://ko-fi.com/prahaladvathsan"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-white text-amber-800 rounded hover:bg-gray-100 transition-colors"
-              title="Support Cricket Manager on Ko-fi"
-            >
-              <Coffee className="w-3.5 h-3.5" />
-              <span>Buy me a coffee</span>
-            </a>
+            <ContributeDropdown />
 
             <button
               onClick={handleSave}
@@ -682,9 +745,8 @@ const Header = () => {
               <button
                 onClick={handleContinue}
                 disabled={isSimulating}
-                className={`continue-button btn-primary text-sm flex items-center gap-1.5 px-4 py-2 disabled:opacity-50 transition-all duration-200 ${
-                  buttonSuccess ? 'bg-green-600 scale-105' : ''
-                }`}
+                className={`continue-button btn-primary text-sm flex items-center gap-1.5 px-4 py-2 disabled:opacity-50 transition-all duration-200 ${buttonSuccess ? 'bg-green-600 scale-105' : ''
+                  }`}
               >
                 {isSimulating ? (
                   <CricketBallSpinner className="h-4 w-4" />
@@ -768,6 +830,57 @@ const Header = () => {
                   advanceDay();
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Validation Error Modal */}
+      {showValidationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-bg-secondary border border-red-500/50 rounded-lg shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-red-500/10 px-6 py-4 border-b border-red-500/20 flex items-center gap-3">
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Issues Detected</h3>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-text-secondary mb-4">
+                Please resolve the following issues with your team tactics before proceeding:
+              </p>
+
+              <div className="bg-red-950/30 border border-red-500/20 rounded-md p-4 mb-6">
+                <ul className="space-y-2">
+                  {validationErrors.map((error, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-red-200 text-sm">
+                      <span className="text-red-500 mt-0.5">•</span>
+                      <span>{error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowValidationModal(false);
+                    navigate('/game/tactics');
+                  }}
+                  className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-semibold"
+                >
+                  <Settings className="w-5 h-5" />
+                  Resolve in Tactics Page
+                </button>
+                <button
+                  onClick={() => setShowValidationModal(false)}
+                  className="btn-secondary w-full py-2 text-text-secondary hover:text-white"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

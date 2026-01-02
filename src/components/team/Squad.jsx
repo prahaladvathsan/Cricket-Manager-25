@@ -13,7 +13,7 @@ import useFinanceStore from '../../stores/financeStore';
 import useTransferStore from '../../stores/transferStore';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
 import PlayerCard from '../shared/PlayerCard';
-import SetTacticsModal from '../tactics/SetTacticsModal';
+
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
@@ -34,7 +34,7 @@ const Squad = () => {
       setSelectedTab(tabParam);
     }
   }, [searchParams]);
-  const [showTacticsModal, setShowTacticsModal] = useState(false);
+
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
@@ -1093,15 +1093,7 @@ const Squad = () => {
               );
             })}
           </div>
-          <div className="flex space-x-2 pb-2">
-            <button
-              className="btn-secondary text-sm px-3 py-1.5"
-              onClick={() => setShowTacticsModal(true)}
-            >
-              Set Tactics
-            </button>
-            <button className="btn-primary text-sm px-3 py-1.5">Manage Squad</button>
-          </div>
+
         </nav>
       </div>
 
@@ -1111,12 +1103,7 @@ const Squad = () => {
       {selectedTab === 'team-info' && renderTeamInfo()}
       {selectedTab === 'statistics' && renderStatistics()}
 
-      {/* Set Tactics Modal */}
-      <SetTacticsModal
-        isOpen={showTacticsModal}
-        onClose={() => setShowTacticsModal(false)}
-        teamId={userTeam?.id}
-      />
+
 
       {/* Player Card Modal */}
       <PlayerCardModal

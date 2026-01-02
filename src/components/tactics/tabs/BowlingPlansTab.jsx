@@ -11,9 +11,10 @@ import HelpIcon from '../../shared/HelpIcon';
 import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 import { getPrimaryBowlingRating, formatRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
+import aiTacticsManager from '../../../core/ai/AITacticsManager';
 
 const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { updateBowlingPlans, updateOverAssignments, updatePlaystyleOverride, autoAssignBowlingRotation } = useTeamStore();
+  const { updateBowlingPlans, updateOverAssignments, updatePlaystyleOverride } = useTeamStore();
   const { players } = usePlayerStore();
 
   // Subscribe to team tactics changes to ensure UI updates when playing XI changes
@@ -75,22 +76,21 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     updateOverAssignments(teamId, newAssignmentsObj);
   };
 
-  // Auto-assign bowling rotation using teamStore method
+  // Auto-assign bowling rotation using AI manager
   const handleAutoAssign = () => {
     if (primaryBowlers.length === 0 && partTimers.length === 0) {
       alert('No bowlers available for auto-assignment');
       return;
     }
 
-    const newAssignmentsArray = autoAssignBowlingRotation(teamId);
-    if (newAssignmentsArray.length === 20) {
-      // Convert array to object format { 1: 'id', 2: 'id', ... }
-      const newAssignmentsObj = {};
-      newAssignmentsArray.forEach((id, idx) => {
-        if (id) newAssignmentsObj[idx + 1] = id;
-      });
-      updateOverAssignments(teamId, newAssignmentsObj);
-    } else {
+    // Use the advanced AI tactics manager logic
+    const newAssignments = aiTacticsManager.regenerateBowlingRotation(
+      teamId,
+      useTeamStore,
+      usePlayerStore
+    );
+
+    if (!newAssignments) {
       alert('Failed to auto-assign bowling rotation. Please check your playing XI.');
     }
   };

@@ -337,8 +337,8 @@ class SimulationEngine {
     // Check if auction needs to happen for Season 1 ONLY (preseason phase, first day)
     // For Season 2+ transitions, new_season_start event handles everything
     if (this.gameStore.getState().currentPhase === 'preseason' &&
-        this.gameStore.getState().gameDay === 1 &&
-        this.gameStore.getState().currentSeason === 1) {
+      this.gameStore.getState().gameDay === 1 &&
+      this.gameStore.getState().currentSeason === 1) {
       // Season 1 initial auction and league setup
       console.log('📋 Season 1 - Running initial auction...');
       // Yield before auction to ensure UI shows the starting state
