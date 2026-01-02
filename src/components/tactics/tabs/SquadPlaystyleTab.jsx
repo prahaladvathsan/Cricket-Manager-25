@@ -4,11 +4,13 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Plus, X, Search, Users as UsersIcon, UserCheck } from 'lucide-react';
+import { Plus, X, Search, Users as UsersIcon, UserCheck, HelpCircle } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import { getPlayerRating, formatRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
+import ConditionBar from '../../shared/ConditionBar';
+import HelpIcon from '../../shared/HelpIcon';
 
 const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -170,6 +172,23 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           <h3 className="text-base font-semibold text-text-primary">
             Available Squad
           </h3>
+          <HelpIcon className="ml-2" width="w-3.5" height="h-3.5">
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-text-primary mb-1">Player Conditions Guide:</h4>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-1.5 bg-gray-700 rounded-sm overflow-hidden flex-shrink-0"><div className="h-full bg-[#22C55E]" style={{ width: '75%' }}></div></div>
+                <span><strong className="text-green-500">Green Bar:</strong> Energy/Fitness - Affects performance & fatigue buildup</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-1.5 bg-gray-700 rounded-sm overflow-hidden flex-shrink-0"><div className="h-full bg-[#D4AF37]" style={{ width: '75%' }}></div></div>
+                <span><strong className="text-yellow-500">Gold Bar:</strong> Confidence/Morale - Affects performance under pressure</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-red-400 font-medium flex-shrink-0">⚡ 15%</span>
+                <span><strong className="text-red-400">Fatigue:</strong> Increases injury risk if high</span>
+              </div>
+            </div>
+          </HelpIcon>
           <span className="ml-auto text-xs text-text-secondary">
             {availablePlayers.length} players
           </span>
@@ -195,11 +214,10 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               <button
                 key={role}
                 onClick={() => setRoleFilter(role)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  roleFilter === role
-                    ? 'bg-cricket-accent/20 text-cricket-accent'
-                    : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${roleFilter === role
+                  ? 'bg-cricket-accent/20 text-cricket-accent'
+                  : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+                  }`}
               >
                 {role === 'all' ? 'All' : role.charAt(0).toUpperCase() + role.slice(1)}
               </button>
@@ -240,6 +258,34 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                         <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                           {player.role}
                         </span>
+
+                        {/* Condition Bars */}
+                        <div className="flex items-center gap-2 ml-1">
+                          <ConditionBar
+                            type="energy"
+                            value={player.condition?.fitness ?? 100}
+                            showValue={false}
+                            width="w-[70px]"
+                            height="h-1.5"
+                            tooltip={`Fitness: ${Math.round(player.condition?.fitness ?? 100)}`}
+                          />
+                          <ConditionBar
+                            type="confidence"
+                            value={player.condition?.morale ?? 50}
+                            showValue={false}
+                            width="w-[70px]"
+                            height="h-1.5"
+                            tooltip={`Morale: ${Math.round(player.condition?.morale ?? 50)}`}
+                          />
+                        </div>
+
+                        {/* Fatigue Indicator */}
+                        {player.condition?.fatigue > 10 && (
+                          <span className="text-[10px] items-center flex px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-medium" title={`Fatigue: ${Math.round(player.condition.fatigue)}%`}>
+                            ⚡ {Math.round(player.condition.fatigue)}%
+                          </span>
+                        )}
+
                         {player.condition?.injury && (
                           <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
                             🔴 Injured {player.condition.injuryDuration}d
@@ -312,9 +358,8 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           <h3 className="text-base font-semibold text-text-primary">
             Playing XI
           </h3>
-          <span className={`ml-auto text-xs ${
-            selectedPlayers.length === 11 ? 'text-text-positive' : 'text-text-secondary'
-          }`}>
+          <span className={`ml-auto text-xs ${selectedPlayers.length === 11 ? 'text-text-positive' : 'text-text-secondary'
+            }`}>
             {selectedPlayers.length}/11 selected
           </span>
         </div>
@@ -375,6 +420,34 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                         <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
                           {player.role}
                         </span>
+
+                        {/* Condition Bars */}
+                        <div className="flex items-center gap-2 ml-1">
+                          <ConditionBar
+                            type="energy"
+                            value={player.condition?.fitness ?? 100}
+                            showValue={false}
+                            width="w-[70px]"
+                            height="h-1.5"
+                            tooltip={`Fitness: ${Math.round(player.condition?.fitness ?? 100)}`}
+                          />
+                          <ConditionBar
+                            type="confidence"
+                            value={player.condition?.morale ?? 50}
+                            showValue={false}
+                            width="w-[70px]"
+                            height="h-1.5"
+                            tooltip={`Morale: ${Math.round(player.condition?.morale ?? 50)}`}
+                          />
+                        </div>
+
+                        {/* Fatigue Indicator */}
+                        {player.condition?.fatigue > 10 && (
+                          <span className="text-[10px] items-center flex px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-medium" title={`Fatigue: ${Math.round(player.condition.fatigue)}%`}>
+                            ⚡ {Math.round(player.condition.fatigue)}%
+                          </span>
+                        )}
+
                         {player.condition?.injury && (
                           <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400 font-semibold" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
                             ⚠ Injured {player.condition.injuryDuration}d

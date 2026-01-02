@@ -235,8 +235,8 @@ const Squad = () => {
 
         // Calculate total impact
         const totalImpact = (seasonStats.battingImpact || 0) +
-                            (seasonStats.bowlingImpact || 0) +
-                            (seasonStats.fieldingImpact || 0);
+          (seasonStats.bowlingImpact || 0) +
+          (seasonStats.fieldingImpact || 0);
 
         return {
           playerId: player.id,
@@ -285,8 +285,8 @@ const Squad = () => {
 
         // Calculate total impact
         const totalImpact = (seasonStats.battingImpact || 0) +
-                            (seasonStats.bowlingImpact || 0) +
-                            (seasonStats.fieldingImpact || 0);
+          (seasonStats.bowlingImpact || 0) +
+          (seasonStats.fieldingImpact || 0);
 
         return {
           playerId: player.id,
@@ -502,9 +502,8 @@ const Squad = () => {
               {filteredSortedPlayers.map((player, idx) => (
                 <tr
                   key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
-                    idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                  }`}
+                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
+                    }`}
                 >
                   <td className="px-3 py-2 font-medium">
                     <PlayerName playerId={player.id} player={player} className="font-medium" />
@@ -681,21 +680,19 @@ const Squad = () => {
         <div className="flex items-center gap-2 border-b border-border-primary pb-2">
           <button
             onClick={() => setStatsSubTab('batting')}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              statsSubTab === 'batting'
-                ? 'bg-cricket-accent text-cricket-primary'
-                : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
-            }`}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${statsSubTab === 'batting'
+              ? 'bg-cricket-accent text-cricket-primary'
+              : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+              }`}
           >
             Batting Statistics
           </button>
           <button
             onClick={() => setStatsSubTab('bowling')}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              statsSubTab === 'bowling'
-                ? 'bg-cricket-accent text-cricket-primary'
-                : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
-            }`}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${statsSubTab === 'bowling'
+              ? 'bg-cricket-accent text-cricket-primary'
+              : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+              }`}
           >
             Bowling Statistics
           </button>
@@ -984,9 +981,8 @@ const Squad = () => {
               return (
                 <tr
                   key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
-                    injuryInfo.isInjured ? 'bg-status-loss/10' : idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                  }`}
+                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${injuryInfo.isInjured ? 'bg-status-loss/10' : idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
+                    }`}
                 >
                   <td className="px-4 py-2.5 font-medium">
                     <PlayerName playerId={player.id} player={player} className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`} />
@@ -996,7 +992,7 @@ const Squad = () => {
                   {/* Fitness */}
                   <td className="px-4 py-2.5 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{condition.fitness ?? 85}</span>
+                      <span className="text-xs font-mono mb-1">{Math.round(condition.fitness ?? 85)}</span>
                       <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
                         <div
                           className={`h-full rounded-full ${getConditionBarColor(condition.fitness ?? 85)}`}
@@ -1009,7 +1005,7 @@ const Squad = () => {
                   {/* Form */}
                   <td className="px-4 py-2.5 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{condition.form ?? 50}</span>
+                      <span className="text-xs font-mono mb-1">{Math.round(condition.form ?? 50)}</span>
                       <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
                         <div
                           className={`h-full rounded-full ${getConditionBarColor(condition.form ?? 50)}`}
@@ -1022,7 +1018,7 @@ const Squad = () => {
                   {/* Fatigue */}
                   <td className="px-4 py-2.5 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{condition.fatigue ?? 0}</span>
+                      <span className="text-xs font-mono mb-1">{Math.round(condition.fatigue ?? 0)}</span>
                       <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
                         <div
                           className={`h-full rounded-full ${getConditionBarColor(condition.fatigue ?? 0, 'fatigue')}`}
@@ -1035,7 +1031,7 @@ const Squad = () => {
                   {/* Morale */}
                   <td className="px-4 py-2.5 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{condition.morale ?? 50}</span>
+                      <span className="text-xs font-mono mb-1">{Math.round(condition.morale ?? 50)}</span>
                       <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
                         <div
                           className={`h-full rounded-full ${getConditionBarColor(condition.morale ?? 50)}`}
@@ -1047,9 +1043,8 @@ const Squad = () => {
 
                   {/* Injury Status */}
                   <td className="px-4 py-2.5 text-center">
-                    <span className={`text-xs font-medium ${
-                      injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'
-                    }`}>
+                    <span className={`text-xs font-medium ${injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'
+                      }`}>
                       {injuryInfo.text}
                     </span>
                   </td>
@@ -1058,7 +1053,7 @@ const Squad = () => {
                   <td className="px-4 py-2.5 text-center">
                     {condition.injuryDuration ? (
                       <span className="text-xs font-medium text-status-loss">
-                        {condition.injuryDuration} match{condition.injuryDuration > 1 ? 'es' : ''}
+                        {condition.injuryDuration} day{condition.injuryDuration > 1 ? 's' : ''}
                       </span>
                     ) : (
                       <span className="text-xs text-text-tertiary">-</span>
@@ -1085,11 +1080,10 @@ const Squad = () => {
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
-                  className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
-                    selectedTab === tab.id
-                      ? 'border-cricket-accent text-cricket-accent'
-                      : 'border-transparent text-text-secondary hover:text-text-primary'
-                  }`}
+                  className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${selectedTab === tab.id
+                    ? 'border-cricket-accent text-cricket-accent'
+                    : 'border-transparent text-text-secondary hover:text-text-primary'
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <Icon className="w-4 h-4" />

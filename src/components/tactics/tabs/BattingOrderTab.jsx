@@ -4,9 +4,10 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { GripVertical, Info } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
+import HelpIcon from '../../shared/HelpIcon';
 import tacticsConfig from '../../../data/config/tactics-config.json';
 import { getPrimaryBattingRating, formatRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
@@ -136,10 +137,46 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       <div className="card p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-cricket-accent" />
             <h3 className="text-base font-semibold text-text-primary">
               Batting Order & Acceleration Tiers
             </h3>
+            <HelpIcon width="w-4" height="h-4" tooltipClassName="min-w-[400px]">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-text-primary mb-2">Setting Batting Order</h4>
+                  <p className="mb-2">Match playstyles to positions. The position labels show recommended placements:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">Opener (1-2)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-green-500/20 text-green-400 font-medium">Top (3-4)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 font-medium">Middle (5-6)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-medium">Lower (7-8)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-medium">Tail (9-11)</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-text-primary mb-2">Acceleration Tiers</h4>
+                  <p className="mb-2">Set each batter's aggression level:</p>
+                  <div className="space-y-1 text-xs">
+                    {accelerationTiers.map(({ name, description }) => (
+                      <div key={name} className="flex items-start gap-2">
+                        <span className={`font-medium whitespace-nowrap ${getTierColor(name)}`}>{name}:</span>
+                        <span className="text-text-secondary">{description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </HelpIcon>
           </div>
           <span className="text-xs text-text-secondary">
             Drag to reorder | Configure playstyle & acceleration tier
@@ -148,7 +185,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Batting Order List with Drag and Drop */}
-      <div className="card p-3">
+      < div className="card p-3" >
         <div className="flex flex-col gap-1">
           {orderedPlayers.map((player, index) => {
             const currentTier = teamTactics?.accelerationTiers[player.id] || 'Rotate';
@@ -170,11 +207,10 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`${isFirstRow ? 'batting-order-row-first ' : ''}flex items-center gap-2 p-1 rounded transition-all ${
-                  isDragging
-                    ? 'bg-cricket-primary/20 border border-cricket-accent'
-                    : 'bg-bg-tertiary border border-transparent cursor-move hover:border-cricket-accent'
-                }`}
+                className={`${isFirstRow ? 'batting-order-row-first ' : ''}flex items-center gap-2 p-1 rounded transition-all ${isDragging
+                  ? 'bg-cricket-primary/20 border border-cricket-accent'
+                  : 'bg-bg-tertiary border border-transparent cursor-move hover:border-cricket-accent'
+                  }`}
               >
                 {/* Drag Handle */}
                 <GripVertical className={`${isFirstRow ? 'batting-drag-handle ' : ''}w-4 h-4 text-text-secondary flex-shrink-0`} />
@@ -226,53 +262,10 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             );
           })}
         </div>
-      </div>
+      </div >
 
-      {/* Legend */}
-      <div className="card p-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Position Labels */}
-          <div>
-            <p className="text-xs font-semibold text-text-primary mb-2">Position Labels:</p>
-            <div className="space-y-1 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">Opener</span>
-                <span className="text-text-secondary">1-2</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-green-500/20 text-green-400 font-medium">Top</span>
-                <span className="text-text-secondary">3-4</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 font-medium">Middle</span>
-                <span className="text-text-secondary">5-6</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-medium">Lower</span>
-                <span className="text-text-secondary">7-8</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-medium">Tail</span>
-                <span className="text-text-secondary">9-11</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Acceleration Tier Guide */}
-          <div>
-            <p className="text-xs font-semibold text-text-primary mb-2">Acceleration Guide:</p>
-            <div className="space-y-1 text-xs">
-              {accelerationTiers.map(({ name, description }) => (
-                <div key={name} className="flex items-start gap-2">
-                  <span className={`font-medium ${getTierColor(name)}`}>{name}:</span>
-                  <span className="text-text-secondary flex-1">{description}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </div >
   );
 };
 

@@ -13,9 +13,14 @@ import React from 'react';
  * @param {number} props.value - Value (0-100)
  * @param {boolean} [props.showValue=false] - Show numeric value
  * @param {string} [props.className=''] - Additional CSS classes
+ * @param {string} [props.width='w-[60px]'] - Width class for the bar
+ * @param {string} [props.height='h-1'] - Height class for the bar
+ * @param {string} [props.tooltip] - Optional tooltip text to override default
  * @returns {JSX.Element}
  */
-export default function ConditionBar({ type, value, showValue = false, className = '' }) {
+export default function ConditionBar({ type, value, showValue = false, className = '', width = 'w-[60px]', height = 'h-1', tooltip }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+
   // Clamp value between 0 and 100
   const clampedValue = Math.max(0, Math.min(100, value));
 
@@ -26,12 +31,18 @@ export default function ConditionBar({ type, value, showValue = false, className
   // Calculate opacity based on value (0.3 to 1.0)
   const opacity = 0.3 + (clampedValue / 100) * 0.7;
 
+  // Determine tooltip text
+  const tooltipText = tooltip || `${type === 'energy' ? 'Energy' : 'Confidence'}: ${Math.round(clampedValue)}`;
+
   return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
+    <div
+      className={`relative flex items-center gap-1.5 ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Bar container */}
       <div
-        className="relative w-[60px] h-1 bg-gray-700 rounded-sm overflow-hidden"
-        title={`${type === 'energy' ? 'Energy' : 'Confidence'}: ${Math.round(clampedValue)}`}
+        className={`relative ${width} ${height} bg-gray-700 rounded-sm overflow-hidden`}
       >
         {/* Filled portion */}
         <div
@@ -49,6 +60,13 @@ export default function ConditionBar({ type, value, showValue = false, className
         <span className="text-xs text-gray-400 w-6 text-right font-mono">
           {Math.round(clampedValue)}
         </span>
+      )}
+
+      {/* Custom Tooltip */}
+      {isHovered && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-gray-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap z-50 pointer-events-none border border-gray-700">
+          {tooltipText}
+        </div>
       )}
     </div>
   );

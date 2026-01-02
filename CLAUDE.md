@@ -241,6 +241,4 @@ See `docs/dev/testing.md` for testing guidelines.
 ---
 
 **Current Phase**: Phase 5 - Frontend UI (Match View, State Persistence, 2D Visualization)
-**Last Updated**: January 2025
-
-For detailed status and roadmap, see `ROADMAP.md`.
+**Last Updated**: January 2026

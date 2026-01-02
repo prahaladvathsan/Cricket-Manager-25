@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
+import HelpIcon from '../../shared/HelpIcon';
 import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 import { getPrimaryBowlingRating, formatRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
@@ -232,6 +233,33 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               <h3 className="text-sm font-semibold text-text-primary">
                 Over assignment
               </h3>
+              <HelpIcon width="w-3.5" height="h-3.5" tooltipClassName="min-w-[400px]" align="left">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-text-primary mb-2">Over Assignments</h4>
+                    <p className="mb-2">Assign a bowler to each of the 20 overs. Max 4 overs per bowler.</p>
+                    <div className="text-xs space-y-1">
+                      <p className="text-text-secondary font-medium mt-1">Match Phases:</p>
+                      <ul className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
+                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-cricket-accent"></div>Powerplay (1-6)</li>
+                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>Early Middle (7-12)</li>
+                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>Late Middle (13-16)</li>
+                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>Death (17-20)</li>
+                      </ul>
+                      <p className="mt-2 text-text-tertiary italic">Tip: Use "Auto Assign" for a quick setup.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-text-primary mb-2">Bowling Plans</h4>
+                    <p>Set Line & Length for each bowler. Different plans boost specific playstyles:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-0.5 text-xs text-text-secondary">
+                      <li>Line & Length (e.g., Yorker Attack)</li>
+                      <li>Variations (e.g., Slower Balls)</li>
+                    </ul>
+                    <p className="mt-1 text-xs text-cricket-accent">Plans marked with ⭐ boost the bowler.</p>
+                  </div>
+                </div>
+              </HelpIcon>
             </div>
             <button
               onClick={handleAutoAssign}
@@ -337,9 +365,8 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       <div className="flex-1 min-w-0">
                         <PlayerName playerId={player.id} player={player} className="text-xs font-semibold" />
                       </div>
-                      <span className={`px-1 py-0.5 text-xs rounded ${
-                        bowlingType === 'pace' ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'
-                      }`}>
+                      <span className={`px-1 py-0.5 text-xs rounded ${bowlingType === 'pace' ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'
+                        }`}>
                         {bowlingType === 'pace' ? 'Pace' : 'Spin'}
                       </span>
                     </div>
