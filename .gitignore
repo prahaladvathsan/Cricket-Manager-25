@@ -113,4 +113,11 @@ consolidated_dev_guide.md
 comprehensive_ball_flowchart.mermaid
 
 # Claude settings (local only)
-.claude/settings.local.json~$*.xlsx
+.claude/
+settings.local.json
+
+# Ignore misc
+misc/
+
+# Ignore system files
+nul

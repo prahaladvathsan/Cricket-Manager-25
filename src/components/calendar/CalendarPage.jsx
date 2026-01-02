@@ -368,6 +368,9 @@ const CalendarPage = () => {
             stopSimulation(); // Clear global state
             setSimProgress({ daysSimulated: 0, totalDays: 0, message: '' });
             setSimEvents([]);
+            if (simulationEngineRef.current) {
+              simulationEngineRef.current.cleanup();
+            }
             simulationEngineRef.current = null;
           }, 1500);
         },
@@ -378,6 +381,9 @@ const CalendarPage = () => {
           stopSimulation(); // Clear global state
           setSimProgress({ daysSimulated: 0, totalDays: 0, message: '' });
           setSimEvents([]);
+          if (simulationEngineRef.current) {
+            simulationEngineRef.current.cleanup();
+          }
           simulationEngineRef.current = null;
         },
         // Event callback for live feed
@@ -391,6 +397,9 @@ const CalendarPage = () => {
       stopSimulation(); // Clear global state
       setSimProgress({ daysSimulated: 0, totalDays: 0, message: '' });
       setSimEvents([]);
+      if (simulationEngineRef.current) {
+        simulationEngineRef.current.cleanup();
+      }
       simulationEngineRef.current = null;
     }
   };

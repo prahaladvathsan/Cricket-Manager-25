@@ -57,6 +57,18 @@ class SimulationEngine {
       matchesSimulated: 0,
       transfersProcessed: 0
     };
+
+    // Track tab visibility for adaptive yielding
+    this.isTabVisible = !document.hidden;
+    this.handleVisibilityChange = () => {
+      this.isTabVisible = !document.hidden;
+      console.log(`📊 Tab visibility changed: ${this.isTabVisible ? 'visible' : 'hidden'}`);
+    };
+
+    // Listen for visibility changes
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    }
   }
 
   /**
@@ -126,7 +138,10 @@ class SimulationEngine {
 
         // Call progress callback
         if (onProgress) {
-          onProgress({ ...this.currentProgress });
+          // When hidden, only update every 10 days to reduce overhead
+          if (this.isTabVisible || this.currentProgress.daysSimulated % 10 === 0) {
+            onProgress({ ...this.currentProgress });
+          }
         }
 
         // Yield to browser EVERY day to keep UI responsive
@@ -891,22 +906,35 @@ class SimulationEngine {
   }
 
   /**
-   * Yield to browser to allow UI updates (uses requestAnimationFrame + setTimeout)
-   * This ensures React has time to commit state and the browser has painted
+   * Yield to browser to allow UI updates (adaptive based on tab visibility)
+   * Visible: Uses requestAnimationFrame for smooth 60fps UI updates
+   * Hidden: Uses minimal delays to avoid browser throttling
    * @returns {Promise}
    */
   yieldToBrowser() {
     return new Promise(resolve => {
-      // Use requestAnimationFrame to wait for the next frame
-      if (typeof requestAnimationFrame !== 'undefined') {
-        requestAnimationFrame(() => {
-          // Add a small setTimeout after RAF to ensure React has committed
-          // This gives React's scheduler time to process pending state updates
-          setTimeout(resolve, 0);
-        });
+      if (this.isTabVisible) {
+        // VISIBLE TAB: Use RAF for smooth 60fps UI updates
+        if (typeof requestAnimationFrame !== 'undefined') {
+          requestAnimationFrame(() => {
+            setTimeout(resolve, 0); // Let React commit
+          });
+        } else {
+          setTimeout(resolve, 16); // ~60fps fallback
+        }
       } else {
-        // Fallback for environments without RAF
-        setTimeout(resolve, 16); // ~60fps
+        // HIDDEN TAB: Use minimal delay to avoid throttling
+        const now = Date.now();
+
+        // Only yield every 50ms to maintain performance while allowing
+        // browser to process pending tasks (visibility changes, stop button, etc.)
+        if (!this._lastYieldTime || (now - this._lastYieldTime) > 50) {
+          this._lastYieldTime = now;
+          setTimeout(resolve, 1); // Minimal delay
+        } else {
+          // Immediate resolution - no yield needed
+          resolve();
+        }
       }
     });
   }
@@ -919,6 +947,15 @@ class SimulationEngine {
   emitEvent(type, data) {
     if (this.onEventCallback) {
       this.onEventCallback({ type, data });
+    }
+  }
+
+  /**
+   * Clean up event listeners (call when simulation completes/errors)
+   */
+  cleanup() {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     }
   }
 }

@@ -20,6 +20,7 @@ import {
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useAuctionStore from '../../stores/auctionStore';
+import useUIStore from '../../stores/uiStore';
 import OverviewTab from './tabs/OverviewTab';
 import SquadPlaystyleTab from './tabs/SquadPlaystyleTab';
 import BattingOrderTab from './tabs/BattingOrderTab';
@@ -39,6 +40,7 @@ const TacticsPage = () => {
   const { getUserTeam, getTeamTactics, hasTactics, initializeDefaultTactics, resetTacticsToDefaults } = useTeamStore();
   const { players } = usePlayerStore();
   const { auctionState } = useAuctionStore();
+  const { setHasInvalidTactics } = useUIStore();
 
   const userTeam = getUserTeam();
   const teamId = userTeam?.id;
@@ -58,139 +60,7 @@ const TacticsPage = () => {
   // Get team players
   const teamPlayers = teamId ? Object.values(players).filter(p => p.currentTeam === teamId) : [];
 
-  // Scroll to top when page loads
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
-
-  // Initialize tactics if they don't exist
-  useEffect(() => {
-    if (teamId && !hasTactics(teamId) && teamPlayers.length > 0) {
-      initializeDefaultTactics(teamId, teamPlayers);
-    }
-  }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
-
-  // Warn user if they try to close browser/tab with invalid tactics
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      const errors = validateTactics();
-      if (errors.length > 0) {
-        e.preventDefault();
-        e.returnValue = 'You have invalid tactics. Please fix errors before leaving.';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-
-      // Final validation check on unmount
-      const errors = validateTactics();
-      if (errors.length > 0) {
-        console.warn('⚠️ Tactics validation errors:', errors);
-        alert(`⚠️ Tactics validation errors:\n\n${errors.join('\n')}\n\nPlease fix these before your next match.`);
-      }
-    };
-  }, [teamTactics, players]);
-
-  // Block access until auction is complete
-  if (auctionState !== 'completed') {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="max-w-md text-center">
-          <Lock className="w-16 h-16 text-cricket-accent mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-3">Tactics Locked</h2>
-          <p className="text-cricket-text-secondary mb-6">
-            Complete the auction to build your squad before setting tactics.
-          </p>
-          {auctionState === 'in_progress' ? (
-            <Link to="/game/transfers" className="btn-primary inline-flex items-center gap-2">
-              Go to Auction <ArrowRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <p className="text-sm text-cricket-text-tertiary">
-              The auction will begin when the season starts.
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (!teamId) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Users className="w-12 h-12 text-text-secondary mx-auto mb-4" />
-          <p className="text-text-secondary">No team selected</p>
-        </div>
-      </div>
-    );
-  }
-
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: Eye },
-    { id: 'squad', label: 'Playing XI & Playstyles', icon: Users },
-    { id: 'batting', label: 'Batting Order', icon: Target },
-    { id: 'bowling', label: 'Bowling Plans', icon: Activity },
-    { id: 'fielding', label: 'Fielding', icon: Shield }
-  ];
-
-  const handlePlayerClick = (playerId) => {
-    setSelectedPlayerId(playerId);
-    setShowPlayerModal(true);
-  };
-
-  const handleResetToDefaults = () => {
-    if (window.confirm('Reset all tactics to default values? This cannot be undone.')) {
-      resetTacticsToDefaults(teamId, teamPlayers);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    }
-  };
-
-  const handleValidate = () => {
-    // Validate tactics
-    const errors = validateTactics();
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-
-    // Tactics are already saved to store via individual tab updates
-    setValidationErrors([]);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  const handleGenerateDefaultTactics = () => {
-    if (!confirm('Generate default tactics? This will replace your current tactics with AI-generated ones.')) {
-      return;
-    }
-
-    try {
-      // Generate tactics using AI pipeline (5-stage process)
-      const tactics = aiTacticsManager.generateTactics(teamId, teamPlayers, useTeamStore.getState());
-
-      if (tactics) {
-        // Clear errors and show success
-        setValidationErrors([]);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-
-        // Refresh active tab to show new tactics
-        setActiveTab('overview');
-      } else {
-        setValidationErrors(['Failed to generate tactics. Ensure you have at least 11 eligible players.']);
-      }
-    } catch (error) {
-      console.error('Error generating default tactics:', error);
-      setValidationErrors(['An error occurred while generating tactics. Please try manually.']);
-    }
-  };
-
+  // Define validation function before hooks that use it
   const validateTactics = () => {
     const errors = [];
 
@@ -246,6 +116,158 @@ const TacticsPage = () => {
     return errors;
   };
 
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
+  // Silently check validation in background to enable/disable navigation blocking
+  // But DON'T show errors to user unless they click Validate or try to leave
+  useEffect(() => {
+    if (!teamTactics) {
+      setHasInvalidTactics(false);
+      return;
+    }
+
+    const errors = validateTactics();
+    // Update the flag silently - this doesn't show errors to user
+    setHasInvalidTactics(errors.length > 0);
+  }, [teamTactics, players, setHasInvalidTactics]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setHasInvalidTactics(false);
+    };
+  }, [setHasInvalidTactics]);
+
+  // Initialize tactics if they don't exist
+  useEffect(() => {
+    if (teamId && !hasTactics(teamId) && teamPlayers.length > 0) {
+      initializeDefaultTactics(teamId, teamPlayers);
+    }
+  }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
+
+  // Warn user if they try to close browser/tab with invalid tactics
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const errors = validateTactics();
+      if (errors.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'You have invalid tactics. Please fix errors before leaving.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      // Log warning on unmount if tactics invalid (no popup - user sees inline errors)
+      const errors = validateTactics();
+      if (errors.length > 0) {
+        console.warn('⚠️ Tactics validation errors on page leave:', errors);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run on mount/unmount, not on every tactics change
+
+  // Block access until auction is complete
+  if (auctionState !== 'completed') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="max-w-md text-center">
+          <Lock className="w-16 h-16 text-cricket-accent mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-3">Tactics Locked</h2>
+          <p className="text-cricket-text-secondary mb-6">
+            Complete the auction to build your squad before setting tactics.
+          </p>
+          {auctionState === 'in_progress' ? (
+            <Link to="/game/transfers" className="btn-primary inline-flex items-center gap-2">
+              Go to Auction <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <p className="text-sm text-cricket-text-tertiary">
+              The auction will begin when the season starts.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!teamId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Users className="w-12 h-12 text-text-secondary mx-auto mb-4" />
+          <p className="text-text-secondary">No team selected</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Eye },
+    { id: 'squad', label: 'Playing XI & Playstyles', icon: Users },
+    { id: 'batting', label: 'Batting Order', icon: Target },
+    { id: 'bowling', label: 'Bowling Plans', icon: Activity },
+    { id: 'fielding', label: 'Fielding', icon: Shield }
+  ];
+
+  const handlePlayerClick = (playerId) => {
+    setSelectedPlayerId(playerId);
+    setShowPlayerModal(true);
+  };
+
+  const handleResetToDefaults = () => {
+    if (!confirm('Generate default tactics? This will replace your current tactics with AI-generated ones.')) {
+      return;
+    }
+
+    try {
+      // Generate tactics using AI pipeline (5-stage process)
+      // aiTacticsManager is a singleton instance, use it directly
+      const tactics = aiTacticsManager.generateTactics(teamId, teamPlayers, useTeamStore);
+
+      if (tactics) {
+        // Clear errors and show success
+        setValidationErrors([]);
+        setHasInvalidTactics(false);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      } else {
+        setValidationErrors(['Failed to generate tactics. Ensure you have at least 11 eligible players.']);
+        setHasInvalidTactics(true);
+      }
+    } catch (error) {
+      console.error('Error generating default tactics:', error);
+      setValidationErrors(['An error occurred while generating tactics. Please try manually.']);
+      setHasInvalidTactics(true);
+    }
+  };
+
+  // Also create handleGenerateDefaultTactics that points to the same function
+  const handleGenerateDefaultTactics = handleResetToDefaults;
+
+  const handleValidate = () => {
+    // Validate tactics
+    const errors = validateTactics();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setHasInvalidTactics(true);
+      return;
+    }
+
+    // Tactics are already saved to store via individual tab updates
+    setValidationErrors([]);
+    setHasInvalidTactics(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+
   return (
     <div className="flex flex-col h-full">
       {/* Success Message */}
@@ -262,21 +284,11 @@ const TacticsPage = () => {
       {validationErrors.length > 0 && (
         <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded">
           <p className="text-red-400 text-sm font-semibold mb-1">Validation errors:</p>
-          <ul className="text-red-400 text-sm space-y-0.5 mb-3">
+          <ul className="text-red-400 text-sm space-y-0.5">
             {validationErrors.map((error, idx) => (
               <li key={idx}>• {error}</li>
             ))}
           </ul>
-          <button
-            onClick={handleGenerateDefaultTactics}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            <Wand2 className="w-4 h-4" />
-            Generate Default Tactics (Auto-fix)
-          </button>
-          <p className="text-xs text-cricket-text-tertiary mt-2">
-            This will automatically create valid tactics using AI
-          </p>
         </div>
       )}
 
@@ -344,8 +356,8 @@ const TacticsPage = () => {
           onClick={handleResetToDefaults}
           className="btn-secondary flex items-center gap-2 text-sm px-4 py-2"
         >
-          <RotateCcw className="w-4 h-4" />
-          <span>Reset to Defaults</span>
+          <Wand2 className="w-4 h-4" />
+          <span>Generate Default Tactics</span>
         </button>
         <div className="flex-1"></div>
         <button

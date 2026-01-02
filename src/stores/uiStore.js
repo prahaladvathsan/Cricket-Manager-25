@@ -48,6 +48,10 @@ const useUIStore = create(
     canGoForward: false
   },
 
+  // Tactics validation state (for navigation blocking)
+  hasInvalidTactics: false,
+  setHasInvalidTactics: (invalid) => set({ hasInvalidTactics: invalid }),
+
   // Actions
   /**
    * Navigate to a specific view

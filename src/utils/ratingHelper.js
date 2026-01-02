@@ -14,18 +14,18 @@ export function getPrimaryBattingRating(player) {
 
   // Try to get from topPlaystyles first (most reliable)
   if (player.topPlaystyles?.batting?.[0]?.rating) {
-    return player.topPlaystyles.batting[0].rating;
+    return Math.round(player.topPlaystyles.batting[0].rating);
   }
 
   // Fallback: Try to get from playstyleRatings using primaryPlaystyle
   if (player.primaryPlaystyle?.batting && player.playstyleRatings?.batting) {
     const rating = player.playstyleRatings.batting[player.primaryPlaystyle.batting];
-    if (rating !== undefined) return rating;
+    if (rating !== undefined) return Math.round(rating);
   }
 
   // Last resort: Scale batting_overall from 1-20 to 0-100
   if (player.attributes?.overall?.batting_overall) {
-    return player.attributes.overall.batting_overall * 5;
+    return Math.round(player.attributes.overall.batting_overall * 5);
   }
 
   return 0;
@@ -41,18 +41,18 @@ export function getPrimaryBowlingRating(player) {
 
   // Try to get from topPlaystyles first (most reliable)
   if (player.topPlaystyles?.bowling?.[0]?.rating) {
-    return player.topPlaystyles.bowling[0].rating;
+    return Math.round(player.topPlaystyles.bowling[0].rating);
   }
 
   // Fallback: Try to get from playstyleRatings using primaryPlaystyle
   if (player.primaryPlaystyle?.bowling && player.playstyleRatings?.bowling) {
     const rating = player.playstyleRatings.bowling[player.primaryPlaystyle.bowling];
-    if (rating !== undefined) return rating;
+    if (rating !== undefined) return Math.round(rating);
   }
 
   // Last resort: Scale bowling_overall from 1-20 to 0-100
   if (player.attributes?.overall?.bowling_overall) {
-    return player.attributes.overall.bowling_overall * 5;
+    return Math.round(player.attributes.overall.bowling_overall * 5);
   }
 
   return 0;
@@ -68,13 +68,13 @@ export function getPrimaryFieldingRating(player) {
 
   // Try to get from topPlaystyles first (most reliable)
   if (player.topPlaystyles?.fielding?.[0]?.rating) {
-    return player.topPlaystyles.fielding[0].rating;
+    return Math.round(player.topPlaystyles.fielding[0].rating);
   }
 
   // Fallback: Try to get from playstyleRatings using primaryPlaystyle
   if (player.primaryPlaystyle?.fielding && player.playstyleRatings?.fielding) {
     const rating = player.playstyleRatings.fielding[player.primaryPlaystyle.fielding];
-    if (rating !== undefined) return rating;
+    if (rating !== undefined) return Math.round(rating);
   }
 
   // Last resort: Calculate from keeping attributes (keeping=40%, collecting=25%, stumping=20%, reflexes=15%)
@@ -86,7 +86,7 @@ export function getPrimaryFieldingRating(player) {
     const reflexes = fielding.reflexes || 0;
 
     // Weighted average, scaled to 0-100
-    return ((keeping * 0.40 + collecting * 0.25 + stumping * 0.20 + reflexes * 0.15) / 20) * 100;
+    return Math.round(((keeping * 0.40 + collecting * 0.25 + stumping * 0.20 + reflexes * 0.15) / 20) * 100);
   }
 
   return 0;
@@ -131,12 +131,12 @@ export function getPlayerRating(player) {
 }
 
 /**
- * Get formatted rating string for display (e.g., "78.5" or "N/A")
+ * Get formatted rating string for display (e.g., "78" or "N/A")
  * @param {number} rating - Rating value
- * @param {number} decimals - Number of decimal places (default: 1)
+ * @param {number} decimals - Number of decimal places (default: 0)
  * @returns {string} Formatted rating string
  */
-export function formatRating(rating, decimals = 1) {
+export function formatRating(rating, decimals = 0) {
   if (rating === 0 || rating === null || rating === undefined) {
     return 'N/A';
   }

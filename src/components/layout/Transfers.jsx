@@ -1560,7 +1560,7 @@ const Transfers = () => {
                       </div>
                     ) : highestBidder?.id !== userTeamId ? (
                       <>
-                        {/* Row 1: Bid Button OR Set Custom Max Bid */}
+                        {/* Row 1: Bid Button OR Set Custom Max Bid + Auto-Bid Toggle */}
                         <div className="auction-bid-controls flex items-center gap-3 mb-3">
                           <button
                             onClick={handleBid}
@@ -1596,6 +1596,46 @@ const Transfers = () => {
                               Set Max
                             </button>
                           </div>
+
+                          <div className="flex items-center gap-2 border-l border-border-primary pl-3">
+                            <span className={`text-xs font-medium whitespace-nowrap ${userAutoBidEnabled ? 'text-green-400' : 'text-red-400'}`}>
+                              Auto-Bid {userAutoBidEnabled ? 'ON' : 'OFF'}
+                            </span>
+                            <button
+                              onClick={toggleAutoBid}
+                              className={`relative inline-flex h-6 w-6 items-center justify-center rounded transition-colors border-2 ${
+                                userAutoBidEnabled
+                                  ? 'bg-green-600 border-green-600'
+                                  : 'bg-transparent border-red-600'
+                              }`}
+                              title="Toggle auto-bid"
+                            >
+                              {userAutoBidEnabled && (
+                                <Zap className="w-3.5 h-3.5 text-white" />
+                              )}
+                            </button>
+                            <div className="group relative">
+                              <HelpCircle className="w-3.5 h-3.5 text-cricket-text-tertiary cursor-help" />
+                              <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 border-2 border-gray-700 rounded shadow-xl text-xs z-10">
+                                <p className="text-cricket-text-primary mb-2">
+                                  {userAutoBidEnabled ? (
+                                    <>
+                                      <strong className="text-green-400">Auto-bid ON:</strong> AI will bid for you when using skip buttons. Manual bidding is disabled.
+                                    </>
+                                  ) : (
+                                    <>
+                                      <strong className="text-red-400">Auto-bid OFF:</strong> AI will NOT bid for you when skipping. You must bid manually or skip without acquiring players.
+                                    </>
+                                  )}
+                                </p>
+                                {!userAutoBidEnabled && (
+                                  <p className="text-yellow-400 text-xxs">
+                                    ⚠️ With auto-bid off, ensure you have at least 18 players before ending the auction.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Max Bid Active Indicator */}
@@ -1615,59 +1655,7 @@ const Transfers = () => {
                           </div>
                         )}
 
-                        {/* Auto-Bid Toggle Control */}
-                        <div className="mb-3 p-3 bg-cricket-surface/50 border border-border-primary rounded">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={toggleAutoBid}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                  userAutoBidEnabled ? 'bg-green-600' : 'bg-gray-600'
-                                }`}
-                                title={userAutoBidEnabled ? 'Auto-bid enabled' : 'Auto-bid disabled'}
-                              >
-                                <span
-                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                    userAutoBidEnabled ? 'translate-x-6' : 'translate-x-1'
-                                  }`}
-                                />
-                              </button>
-                              <div className="flex items-center gap-1.5">
-                                {userAutoBidEnabled ? (
-                                  <Zap className="w-4 h-4 text-green-400" />
-                                ) : (
-                                  <Zap className="w-4 h-4 text-gray-500" />
-                                )}
-                                <span className={`text-sm font-medium ${userAutoBidEnabled ? 'text-green-400' : 'text-gray-400'}`}>
-                                  Auto-Bid
-                                </span>
-                              </div>
-                              <div className="group relative">
-                                <HelpCircle className="w-3.5 h-3.5 text-cricket-text-tertiary cursor-help" />
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 bg-cricket-surface border border-border-primary rounded shadow-lg text-xs z-10">
-                                  <p className="text-cricket-text-secondary">
-                                    {userAutoBidEnabled ? (
-                                      <>
-                                        <strong className="text-green-400">Auto-bid ON:</strong> AI will bid for you when using skip buttons. Manual bidding is disabled.
-                                      </>
-                                    ) : (
-                                      <>
-                                        <strong className="text-gray-400">Auto-bid OFF:</strong> AI will NOT bid for you when skipping. You must bid manually or skip without acquiring players.
-                                      </>
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {!userAutoBidEnabled && (
-                            <p className="text-xxs text-yellow-500 mt-2">
-                              ⚠️ With auto-bid off, skipping will not acquire players. Ensure you have at least 18 players before ending the auction.
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Row 2: Skip Player | Skip Round | Skip to End */}
+                        {/* Skip Buttons Row */}
                         <div className="auction-skip-controls flex items-center gap-2">
                           <button
                             onClick={handlePass}

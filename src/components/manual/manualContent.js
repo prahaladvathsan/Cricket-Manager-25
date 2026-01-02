@@ -27,11 +27,10 @@ export const manualSections = [
     content: [
       {
         heading: 'Hey! Welcome to Cricket Manager',
-        text: `[DEV_INTRODUCTION_PLACEHOLDER]
+        text: `First off, thanks for checking out Cricket Manager! I'm super excited to have you here. This was a passion prject that I built while moonlighting my job and coding over the weekends , so it really means a lot to me that you're interested in playing.
 
 This is a T20 cricket management game where you take control of one of 10 fictional World Premier League (WPL) teams. Think of it like Football Manager, but for cricket nerds.
 
-[GAME_INSPIRATION_PLACEHOLDER]
 
 What you'll be doing:
 - Building your squad through auctions and transfers
@@ -239,7 +238,9 @@ Set your batting lineup from 1 to 11. Don't forget to mark your keeper.
 Choose bowling plans for each bowler - different plans for different phases if you want.
 
 **5. Fielding**
-Attack, neutral, or defend? Your field placement strategy.`
+Attack, neutral, or defend? Your field placement strategy.
+
+**Note**: Tactics screen is locked until you complete the auction (can't set tactics without players!). If you have validation errors, use the "Generate Default Tactics" button to auto-fix.`
       },
       {
         heading: 'Acceleration Tiers (How Aggressive You Bat)',
@@ -595,7 +596,19 @@ Budget management is crucial - overspending on stars leaves no money for depth p
 - $5k-20k: $2,000 increments
 - $20k-50k: $5,000 increments
 - $50k-100k: $10,000 increments
-- $100k+: $20,000 increments`
+- $100k+: $20,000 increments
+
+**Auto-Bid Toggle**
+- Controls AI bidding behavior when you skip players
+- **ON (Green)**: AI automatically bids for you during skips (default)
+- **OFF (Red)**: You maintain full manual control - skipping won't acquire players
+- Safety: If you try to end auction with <18 players and auto-bid OFF, it temporarily enables to meet minimum
+- Located in the bid controls row next to manual bid buttons
+
+**Navigation Lock**
+- You cannot navigate away from the auction screen while it's in progress
+- This prevents accidental data loss or auction abandonment
+- Complete the auction (or use "Skip to End") to unlock navigation`
       },
       {
         heading: 'Base Prices',

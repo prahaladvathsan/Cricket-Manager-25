@@ -30,7 +30,8 @@ const Sidebar = ({ currentPath }) => {
   const navigate = useNavigate();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showAuctionLockModal, setShowAuctionLockModal] = useState(false);
-  const { preferences, toggleSidebar } = useUIStore();
+  const [showTacticsLockModal, setShowTacticsLockModal] = useState(false);
+  const { preferences, toggleSidebar, hasInvalidTactics } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
   const { currentSeason, currentWeek, currentPhase, isSimulating } = useGameStore();
@@ -97,13 +98,25 @@ const Sidebar = ({ currentPath }) => {
             const hasBadge = item.badge && item.badge > 0;
             const isAuctionInProgress = auctionState === 'in_progress';
             const isTransfersPage = item.path === '/game/transfers';
-            const isBlocked = isAuctionInProgress && !isTransfersPage;
+            const isTacticsPage = item.path === '/game/tactics';
+            const isOnTacticsPage = currentPath === '/game/tactics';
+
+            // Block if auction in progress (except Transfers page)
+            const isBlockedByAuction = isAuctionInProgress && !isTransfersPage;
+
+            // Block if on tactics page with invalid tactics and trying to leave
+            const isBlockedByTactics = isOnTacticsPage && hasInvalidTactics && !isTacticsPage;
+
+            const isBlocked = isBlockedByAuction || isBlockedByTactics;
 
             if (isBlocked) {
               return (
                 <li key={item.path}>
                   <button
-                    onClick={() => setShowAuctionLockModal(true)}
+                    onClick={() => {
+                      if (isBlockedByAuction) setShowAuctionLockModal(true);
+                      if (isBlockedByTactics) setShowTacticsLockModal(true);
+                    }}
                     className={`${item.path === '/game/inbox' ? 'inbox-link ' : ''}flex items-center justify-between p-2.5 rounded transition-colors w-full text-left ${
                       currentPath === item.path
                         ? 'bg-cricket-primary text-white shadow-md'
@@ -208,16 +221,16 @@ const Sidebar = ({ currentPath }) => {
 
       {/* Auction Lock Modal */}
       {showAuctionLockModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-cricket-surface border-2 border-red-500/50 rounded-lg p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-cricket-surface border-2 border-red-500 rounded-lg p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">Auction In Progress</h3>
-                <p className="text-sm text-cricket-text-secondary mb-3">
+                <p className="text-sm text-cricket-text-primary mb-3">
                   You cannot navigate away while the auction is active. Complete the auction before accessing other pages.
                 </p>
-                <p className="text-xs text-cricket-text-tertiary">
+                <p className="text-xs text-cricket-text-secondary">
                   💡 Tip: Use "Skip to End" to quickly finish the auction.
                 </p>
               </div>
@@ -227,6 +240,32 @@ const Sidebar = ({ currentPath }) => {
               className="btn-primary w-full"
             >
               Continue Auction
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tactics Lock Modal */}
+      {showTacticsLockModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-cricket-surface border-2 border-yellow-500/50 rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-2">Invalid Tactics</h3>
+                <p className="text-sm text-cricket-text-secondary mb-3">
+                  You have validation errors in your tactics. Please fix them before navigating away.
+                </p>
+                <p className="text-xs text-cricket-text-tertiary">
+                  💡 Tip: Click "Generate Default Tactics" button in the red error box to auto-fix all errors.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowTacticsLockModal(false)}
+              className="btn-primary w-full"
+            >
+              Stay on Tactics Page
             </button>
           </div>
         </div>

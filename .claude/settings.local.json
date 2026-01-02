@@ -50,7 +50,10 @@
       "Bash(git reset:*)",
       "Bash(git pull:*)",
       "Bash(del \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\\utils\\storage.js\")",
-      "Bash(del \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\\utils\\autosave.js\")"
+      "Bash(del \"C:\\Users\\praha\\Documents\\Projects\\Cricket-Manager-25\\src\\utils\\autosave.js\")",
+      "Bash(git merge:*)",
+      "Bash(copy:*)",
+      "WebFetch(domain:cricket-manager.com)"
     ],
     "deny": []
   }

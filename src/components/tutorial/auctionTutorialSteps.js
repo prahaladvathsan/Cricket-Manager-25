@@ -17,11 +17,12 @@ import {
   SkipForward,
   ChevronRight,
   TrendingUp,
-  Award
+  Award,
+  Zap
 } from 'lucide-react';
 
 /**
- * Auction tutorial steps (12 total)
+ * Auction tutorial steps (13 total)
  * Shown when auction begins (auctionState changes to 'in_progress')
  *
  * Each step can have:
@@ -82,7 +83,7 @@ export const auctionTutorialSteps = [
     position: 'right'
   },
 
-  // ===== BIDDING AREA (3 steps) =====
+  // ===== BIDDING AREA (4 steps) =====
   {
     id: 'auction-current-bid',
     tab: 'auction',
@@ -102,11 +103,20 @@ export const auctionTutorialSteps = [
     position: 'top'
   },
   {
+    id: 'auction-auto-bid-toggle',
+    tab: 'auction',
+    targetSelector: '.auction-bid-controls',
+    title: 'Auto-Bid Control',
+    description: 'The Auto-Bid toggle controls AI bidding when you skip. When ON (green), AI bids for you during skips. When OFF (red), you must bid manually - skipping won\'t acquire players. Hover over the ? icon for details.',
+    icon: Zap,
+    position: 'top'
+  },
+  {
     id: 'auction-skip-controls',
     tab: 'auction',
     targetSelector: '.auction-skip-controls',
     title: 'Skip Controls',
-    description: '"Skip Player" fast-forwards the current auction. "Skip Round" completes the entire round instantly. "Skip to End" finishes the whole auction. AI teams will still make bids when you skip.',
+    description: '"Skip Player" fast-forwards the current auction. "Skip Round" completes the entire round instantly. "Skip to End" finishes the whole auction. Your Auto-Bid setting determines if AI bids for you when skipping.',
     icon: FastForward,
     position: 'top'
   },
