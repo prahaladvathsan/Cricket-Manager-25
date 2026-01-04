@@ -25,19 +25,19 @@ export const supportsWebP = () => {
 /**
  * Get team badge path (circular badge with team name)
  * @param {string} teamId - Team ID (e.g., 't_chennai')
- * @returns {string} Path to team badge PNG
+ * @returns {string} Path to team badge SVG (vector graphics, better than raster)
  */
 export const getTeamBadge = (teamId) => {
-  return `/assets/teams/badges/${teamId}-badge.png`;
+  return `/assets/teams/badges/${teamId}-badge.svg`;
 };
 
 /**
  * Get team icon path (simplified mascot only, no text)
  * @param {string} teamId - Team ID (e.g., 't_london')
- * @returns {string} Path to team icon PNG
+ * @returns {string} Path to team icon SVG (vector graphics, better than raster)
  */
 export const getTeamIcon = (teamId) => {
-  return `/assets/teams/icons/${teamId}-icon.png`;
+  return `/assets/teams/icons/${teamId}-icon.svg`;
 };
 
 /**
