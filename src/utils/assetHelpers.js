@@ -3,6 +3,25 @@
  * @description Centralized asset path helpers for consistent asset loading
  */
 
+// WebP support detection (cached result)
+let webpSupport = null;
+
+/**
+ * Detect WebP support in browser
+ * @returns {boolean} True if browser supports WebP format
+ */
+export const supportsWebP = () => {
+  if (webpSupport !== null) return webpSupport;
+
+  const canvas = document.createElement('canvas');
+  if (canvas.getContext && canvas.getContext('2d')) {
+    webpSupport = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  } else {
+    webpSupport = false;
+  }
+  return webpSupport;
+};
+
 /**
  * Get team badge path (circular badge with team name)
  * @param {string} teamId - Team ID (e.g., 't_chennai')
@@ -31,20 +50,26 @@ export const getTeamBanner = (teamId) => {
 };
 
 /**
- * Get game logo path
+ * Get game logo path (WebP with PNG fallback)
  * @param {('light'|'dark')} variant - Logo variant (default: 'light')
- * @returns {string} Path to game logo PNG
+ * @returns {string} Path to game logo (WebP if supported, PNG otherwise)
  */
 export const getGameLogo = (variant = 'light') => {
+  if (supportsWebP()) {
+    return `/assets/branding/cm25-logo-${variant}.webp`;
+  }
   return `/assets/branding/cm25-logo-${variant}.png`;
 };
 
 /**
- * Get game icon path (icon only, no text)
+ * Get game icon path (icon only, no text) - WebP with PNG fallback
  * @param {('light'|'dark')} variant - Icon variant (default: 'light')
- * @returns {string} Path to game icon PNG
+ * @returns {string} Path to game icon (WebP if supported, PNG otherwise)
  */
 export const getGameIcon = (variant = 'light') => {
+  if (supportsWebP()) {
+    return `/assets/branding/cm25-icon-${variant}.webp`;
+  }
   return `/assets/branding/cm25-icon-${variant}.png`;
 };
 

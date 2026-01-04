@@ -1003,6 +1003,9 @@ const Transfers = () => {
 
   return (
     <div className="space-y-2">
+      <h1 className="sr-only">
+        {currentPhase === 'auction' ? 'Player Auction' : 'Transfer Market'}
+      </h1>
       {/* Transfer Window Banner - Only show after auction if league is active */}
       {auctionCompleted && isLeagueActive && !isTransferWindowOpen && (
         <div className="card p-3 bg-cricket-primary/10 border border-cricket-accent">

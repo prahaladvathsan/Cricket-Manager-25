@@ -1070,6 +1070,7 @@ const Squad = () => {
 
   return (
     <div className="space-y-4">
+      <h1 className="sr-only">Team Squad</h1>
       {/* Tab Navigation */}
       <div className="border-b border-border-primary">
         <nav className="flex items-center justify-between gap-2">

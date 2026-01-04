@@ -91,6 +91,7 @@ const Matches = () => {
 
   return (
     <div className="space-y-2">
+      <h1 className="sr-only">Fixtures & Results</h1>
       {/* Quick Stats */}
       {userTeam && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">

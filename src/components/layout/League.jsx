@@ -948,6 +948,7 @@ const League = () => {
 
   return (
     <div className="space-y-2">
+      <h1 className="sr-only">League Standings & Fixtures</h1>
       {/* Navigation Tabs */}
       <div className="flex gap-2 border-b border-border-primary">
         <button

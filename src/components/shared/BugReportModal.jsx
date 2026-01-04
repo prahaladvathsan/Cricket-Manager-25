@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, Send, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { getDeviceInfo, formatDeviceInfo } from '../../utils/DeviceInfo';
 import { FORM_CONFIG } from '../../utils/formConfig';
 
@@ -26,6 +25,9 @@ const BugReportModal = ({ isOpen, onClose }) => {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
+            // Lazy load html2canvas only when needed (saves ~100KB from main bundle)
+            const { default: html2canvas } = await import('html2canvas');
+
             const canvas = await html2canvas(document.body, {
                 useCORS: true,
                 allowTaint: true,
@@ -41,7 +43,7 @@ const BugReportModal = ({ isOpen, onClose }) => {
             }, 'image/png');
 
         } catch (error) {
-            console.error('Screenshot failed:', error);
+            console.error('Screenshot capture failed:', error);
         } finally {
             if (modalElement) modalElement.style.opacity = '1';
             setIsCapturing(false);

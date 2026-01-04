@@ -539,9 +539,9 @@ const Home = () => {
         {/* Team Selection - Show if no team */}
         {!userTeam && (
           <div className="card p-8">
-            <h2 className="text-2xl font-semibold text-text-primary mb-4">
+            <h1 className="text-2xl font-semibold text-text-primary mb-4">
               Welcome to Cricket Manager
-            </h2>
+            </h1>
             <p className="text-text-secondary mb-6 text-lg">
               Choose your team to begin your World Premier League management journey.
             </p>
@@ -553,7 +553,9 @@ const Home = () => {
 
         {/* Dashboard Grid - Show if team selected */}
         {userTeam && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <>
+            <h1 className="sr-only">Dashboard</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {/* Next Match Card - Compact Match Preview - Spans 2 columns */}
           <div
             className="card-interactive p-2 md:col-span-2"
@@ -1098,6 +1100,7 @@ const Home = () => {
             )}
           </div>
         </div>
+      </>
       )}
       </div>
 

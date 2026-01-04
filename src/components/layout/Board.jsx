@@ -29,6 +29,7 @@ const Board = () => {
 
   return (
     <div className="space-y-4">
+      <h1 className="sr-only">Board Room</h1>
       {/* Tabs */}
       <div className="border-b border-border-primary">
         <nav className="flex gap-4">

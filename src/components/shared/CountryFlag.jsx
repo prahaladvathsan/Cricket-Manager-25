@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import * as FlagIcons from 'country-flag-icons/react/3x2';
+import { FLAG_COMPONENTS } from '../../utils/flagRegistry';
 import { getISOFromNationality } from '../../utils/nationalityMapper';
 
 /**
@@ -53,8 +53,8 @@ const CountryFlag = ({ nationality, className = 'w-6 h-4', title }) => {
     );
   }
 
-  // Get the specific flag component from the library
-  const FlagComponent = FlagIcons[isoCode];
+  // Get the specific flag component from the registry (selective imports)
+  const FlagComponent = FLAG_COMPONENTS[isoCode];
 
   if (!FlagComponent) {
     // Fallback if flag component doesn't exist

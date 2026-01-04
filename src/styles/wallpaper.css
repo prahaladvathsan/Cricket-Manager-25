@@ -5,6 +5,12 @@
 
 /* Base wallpaper container with dark overlay */
 .app-wallpaper {
+  /* Modern browsers get WebP, fallback to JPG for older browsers */
+  background-image: image-set(
+    url('/wallpaper.webp') type('image/webp'),
+    url('/wallpaper.jpg') type('image/jpeg')
+  );
+  /* Fallback for browsers without image-set support */
   background-image: url('/wallpaper.jpg');
   background-size: cover;
   background-position: center;
