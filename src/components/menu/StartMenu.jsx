@@ -93,13 +93,7 @@ const StartMenu = () => {
             alt="Cricket Manager 25"
             className="h-32 mx-auto mb-4"
           />
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            The Ultimate Cricket Manager Game
-          </h1>
-          <p className="text-base text-cricket-text-secondary max-w-2xl mx-auto">
-            Experience the most realistic browser-based cricket manager game. Build your dream T20 team,
-            master tactical strategies, and simulate matches ball-by-ball with 545 real players.
-          </p>
+
         </div>
 
         {/* Menu Options Grid */}
