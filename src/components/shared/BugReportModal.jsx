@@ -59,34 +59,37 @@ const BugReportModal = ({ isOpen, onClose }) => {
             const formData = new FormData();
             const deviceInfo = getDeviceInfo();
 
-            // 1. Add Text Fields
+            // 1. Add Web3Forms Access Key (required)
+            formData.append('access_key', FORM_CONFIG.accessKey);
+
+            // 2. Add Text Fields
+            formData.append('from_name', email || 'Anonymous User');
             formData.append('email', email || 'anonymous@cricketmanager.com');
+            formData.append('subject', `Bug Report: ${description.slice(0, 50)}`);
             formData.append('message', description);
             formData.append('device_info', formatDeviceInfo(deviceInfo));
-            formData.append('_subject', `Bug Report: ${description.slice(0, 30)}...`);
 
-            // 2. Add Screenshot (if captured)
+            // 3. Add Screenshot (if captured) - Web3Forms supports file uploads
             if (screenshotBlob) {
                 formData.append('attachment', screenshotBlob, 'screenshot.png');
             }
 
-            // 3. Send to Formspree
+            // 4. Send to Web3Forms
             const response = await fetch(FORM_CONFIG.endpoint, {
                 method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
+                body: formData
             });
 
-            if (response.ok) {
+            const result = await response.json();
+
+            if (result.success) {
                 setStatus('success');
                 setTimeout(() => {
                     onClose();
                     resetForm();
                 }, 2000);
             } else {
-                console.error("Formspree Error:", await response.json());
+                console.error("Web3Forms Error:", result);
                 setStatus('error');
             }
         } catch (error) {
