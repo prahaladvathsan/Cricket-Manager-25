@@ -20,6 +20,7 @@ import {
 import PlayerName from '../shared/PlayerName';
 import CricketBallSpinner from '../shared/CricketBallSpinner';
 import { getPrimaryBattingRating, getPrimaryBowlingRating } from '../../utils/ratingHelper';
+import usePlayerStore from '../../stores/playerStore';
 import '../../styles/wallpaper.css';
 
 // Column group definitions
@@ -138,10 +139,12 @@ const PlayerBrowser = () => {
     fieldingAttributes: false
   });
 
-  // Load players on mount
+  // Load players when store is populated
   useEffect(() => {
-    loadPlayers();
-  }, []);
+    if (playersFromStore && playersFromStore.length > 0) {
+      loadPlayers();
+    }
+  }, [playersFromStore]);
 
   // Handle scroll to make scrollbar and headers fixed
   useEffect(() => {
@@ -223,15 +226,13 @@ const PlayerBrowser = () => {
     };
   }, [players, visibleColumns, isScrollbarFixed]);
 
-  const loadPlayers = async () => {
-    try {
-      const playersModule = await import('../../data/players/master_player_database.json');
-      setPlayers(playersModule.default.players || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading players:', error);
-      setLoading(false);
-    }
+  // Get players from store (already loaded by App.jsx via web worker)
+  const { players: playersFromStore } = usePlayerStore();
+
+  const loadPlayers = () => {
+    // Use already-loaded data from playerStore (no re-fetch needed)
+    setPlayers(playersFromStore || []);
+    setLoading(false);
   };
 
   // Multi-field search function

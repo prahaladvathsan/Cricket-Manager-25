@@ -115,6 +115,8 @@ comprehensive_ball_flowchart.mermaid
 # Claude settings (local only)
 .claude/
 settings.local.json
+CLAUDE.md
+GEMINI.md
 
 # Ignore misc
 misc/

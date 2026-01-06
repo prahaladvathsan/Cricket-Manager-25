@@ -3,37 +3,42 @@
  * @description Main application component with routing
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import Home from './components/layout/Home';
-import Squad from './components/team/Squad';
-import Matches from './components/match/Matches';
-import MatchdayUI from './components/match/matchday/MatchdayUI';
-import MatchPreview from './components/match/MatchPreview';
-import PreMatchFlow from './components/match/PreMatchFlow';
-import League from './components/layout/League';
-import Transfers from './components/layout/Transfers';
-import Board from './components/layout/Board';
-import Inbox from './components/inbox/Inbox';
-import TacticsPage from './components/tactics/TacticsPage';
-import TeamSelectionModal from './components/shared/TeamSelectionModal';
-import ErrorBoundary from './components/shared/ErrorBoundary';
-import CricketBallSpinner from './components/shared/CricketBallSpinner';
-import StartMenu from './components/menu/StartMenu';
-import LoadGame from './components/menu/LoadGame';
-import PlayerBrowser from './components/menu/PlayerBrowser';
-import Credits from './components/menu/Credits';
-import Settings from './components/menu/Settings';
-import { GameManual } from './components/manual';
-import { TutorialController } from './components/tutorial';
-import CalendarPage from './components/calendar/CalendarPage';
-import TestingDashboard from './components/testing/TestingDashboard';
+import { RouteLoadingFallback } from './components/shared/LoadingFallback';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
 import './styles/wallpaper.css';
 import { getGameLogo } from './utils/assetHelpers';
+
+// Components needed for initial load (not lazy)
+import ErrorBoundary from './components/shared/ErrorBoundary';
+import CricketBallSpinner from './components/shared/CricketBallSpinner';
+import StartMenu from './components/menu/StartMenu';
+import TeamSelectionModal from './components/shared/TeamSelectionModal';
+
+// Lazy load all route components for code splitting
+const Layout = lazy(() => import('./components/layout/Layout'));
+const Home = lazy(() => import('./components/layout/Home'));
+const Squad = lazy(() => import('./components/team/Squad'));
+const Matches = lazy(() => import('./components/match/Matches'));
+const MatchdayUI = lazy(() => import('./components/match/matchday/MatchdayUI'));
+const MatchPreview = lazy(() => import('./components/match/MatchPreview'));
+const PreMatchFlow = lazy(() => import('./components/match/PreMatchFlow'));
+const League = lazy(() => import('./components/layout/League'));
+const Transfers = lazy(() => import('./components/layout/Transfers'));
+const Board = lazy(() => import('./components/layout/Board'));
+const Inbox = lazy(() => import('./components/inbox/Inbox'));
+const TacticsPage = lazy(() => import('./components/tactics/TacticsPage'));
+const LoadGame = lazy(() => import('./components/menu/LoadGame'));
+const PlayerBrowser = lazy(() => import('./components/menu/PlayerBrowser'));
+const Credits = lazy(() => import('./components/menu/Credits'));
+const Settings = lazy(() => import('./components/menu/Settings'));
+const GameManual = lazy(() => import('./components/manual').then(m => ({ default: m.GameManual })));
+const TutorialController = lazy(() => import('./components/tutorial').then(m => ({ default: m.TutorialController })));
+const CalendarPage = lazy(() => import('./components/calendar/CalendarPage'));
+const TestingDashboard = lazy(() => import('./components/testing/TestingDashboard'));
 
 function App() {
   const [showTeamSelection, setShowTeamSelection] = useState(false);
@@ -52,14 +57,31 @@ function App() {
         initializeTeams(teamsModule.default);
         console.log('✅ Teams loaded');
 
-        // Load master player database
-        const playersModule = await import('./data/players/master_player_database.json');
-        initializePlayers(playersModule.default.players);
-        console.log('✅ Players loaded:', playersModule.default.players.length);
+        // Load master player database using web worker (off main thread)
+        const playerWorker = new Worker(
+          new URL('./workers/playerDatabaseWorker.js', import.meta.url),
+          { type: 'module' }
+        );
 
-        setDataLoaded(true);
+        // Request player data
+        playerWorker.postMessage({ type: 'LOAD_PLAYERS' });
+
+        // Handle response
+        playerWorker.addEventListener('message', (e) => {
+          if (e.data.type === 'PLAYERS_LOADED') {
+            initializePlayers(e.data.players);
+            console.log('✅ Players loaded:', e.data.players.length);
+            setDataLoaded(true);
+            playerWorker.terminate(); // Clean up worker
+          } else if (e.data.type === 'PLAYERS_ERROR') {
+            console.error('❌ Failed to load players:', e.data.error);
+            setDataLoaded(true); // Show error state
+          }
+        });
+
       } catch (error) {
         console.error('❌ Error loading game data:', error);
+        setDataLoaded(true);
       }
     };
 
@@ -95,15 +117,39 @@ function App() {
           {/* Start Menu (Root) */}
           <Route path="/" element={<StartMenu />} />
 
-          {/* Menu Routes (No Layout) */}
-          <Route path="/load-game" element={<LoadGame />} />
-          <Route path="/player-browser" element={<PlayerBrowser />} />
-          <Route path="/credits" element={<Credits />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/manual" element={<GameManual />} />
+          {/* Menu Routes (No Layout) - Wrapped in Suspense */}
+          <Route path="/load-game" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <LoadGame />
+            </Suspense>
+          } />
+          <Route path="/player-browser" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <PlayerBrowser />
+            </Suspense>
+          } />
+          <Route path="/credits" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <Credits />
+            </Suspense>
+          } />
+          <Route path="/settings" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <Settings />
+            </Suspense>
+          } />
+          <Route path="/manual" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <GameManual />
+            </Suspense>
+          } />
 
           {/* Developer Testing Mode (URL access only - no menu link) */}
-          <Route path="/testing" element={<TestingDashboard />} />
+          <Route path="/testing" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <TestingDashboard />
+            </Suspense>
+          } />
 
           {/* Team Selection (Transition to Game) */}
           <Route
@@ -118,33 +164,45 @@ function App() {
             }
           />
 
-          {/* Full-screen Match Routes (No Layout) */}
-          <Route path="/game/match/:matchId/live" element={<MatchdayUI />} />
-          <Route path="/game/match/:matchId/pre-match" element={<PreMatchFlow />} />
+          {/* Full-screen Match Routes (No Layout) - Wrapped in Suspense */}
+          <Route path="/game/match/:matchId/live" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <MatchdayUI />
+            </Suspense>
+          } />
+          <Route path="/game/match/:matchId/pre-match" element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <PreMatchFlow />
+            </Suspense>
+          } />
 
-          {/* Game Routes (With Layout + Tutorial) */}
+          {/* Game Routes (With Layout + Tutorial) - Wrapped in Suspense */}
           <Route
             path="/game/*"
             element={
-              <TutorialController>
-                <Layout>
-                  <Routes>
-                    <Route path="home" element={<Home />} />
-                    <Route path="inbox" element={<Inbox />} />
-                    <Route path="squad" element={<Squad />} />
-                    <Route path="tactics" element={<TacticsPage />} />
-                    <Route path="matches" element={<Matches />} />
-                    <Route path="match/:matchId/preview" element={<MatchPreview />} />
-                    {/* Redirect old match route to preview screen */}
-                    <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
-                    <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="league" element={<League />} />
-                    <Route path="transfers" element={<Transfers />} />
-                    <Route path="board" element={<Board />} />
-                    <Route path="*" element={<Navigate to="/game/home" replace />} />
-                  </Routes>
-                </Layout>
-              </TutorialController>
+              <Suspense fallback={<RouteLoadingFallback />}>
+                <TutorialController>
+                  <Layout>
+                    <Suspense fallback={<RouteLoadingFallback />}>
+                      <Routes>
+                        <Route path="home" element={<Home />} />
+                        <Route path="inbox" element={<Inbox />} />
+                        <Route path="squad" element={<Squad />} />
+                        <Route path="tactics" element={<TacticsPage />} />
+                        <Route path="matches" element={<Matches />} />
+                        <Route path="match/:matchId/preview" element={<MatchPreview />} />
+                        {/* Redirect old match route to preview screen */}
+                        <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
+                        <Route path="calendar" element={<CalendarPage />} />
+                        <Route path="league" element={<League />} />
+                        <Route path="transfers" element={<Transfers />} />
+                        <Route path="board" element={<Board />} />
+                        <Route path="*" element={<Navigate to="/game/home" replace />} />
+                      </Routes>
+                    </Suspense>
+                  </Layout>
+                </TutorialController>
+              </Suspense>
             }
           />
 
