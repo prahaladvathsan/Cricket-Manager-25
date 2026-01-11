@@ -3,8 +3,8 @@
  * @description Core AI decision engine with shared utilities for Cricket Manager 25
  */
 
-import aiConfig from '../../data/config/ai-config.json' with { type: 'json' };
-import auctionConfig from '../../data/config/auctionConfig.json' with { type: 'json' };
+import aiConfig from '../../data/config/ai-config.json';
+import auctionConfig from '../../data/config/auctionConfig.json';
 
 class AICore {
   constructor() {

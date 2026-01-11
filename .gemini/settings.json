@@ -1,0 +1,8 @@
+{
+  "general": {
+    "sessionRetention": {
+      "enabled": true
+    },
+    "enablePromptCompletion": true
+  }
+}

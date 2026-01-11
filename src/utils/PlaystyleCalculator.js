@@ -5,7 +5,7 @@
  */
 
 // Load playstyle weightings configuration using ES6 import (browser-compatible)
-import playstyleWeightings from '../data/config/playstyle-weightings.json' with { type: 'json' };
+import playstyleWeightings from '../data/config/playstyle-weightings.json';
 
 /**
  * PlaystyleCalculator class for calculating playstyle ratings

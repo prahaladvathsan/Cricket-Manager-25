@@ -52,14 +52,31 @@ function App() {
         initializeTeams(teamsModule.default);
         console.log('✅ Teams loaded');
 
-        // Load master player database
-        const playersModule = await import('./data/players/master_player_database.json');
-        initializePlayers(playersModule.default.players);
-        console.log('✅ Players loaded:', playersModule.default.players.length);
+        // Load master player database using web worker (off main thread)
+        const playerWorker = new Worker(
+          new URL('./workers/playerDatabaseWorker.js', import.meta.url),
+          { type: 'module' }
+        );
 
-        setDataLoaded(true);
+        // Request player data
+        playerWorker.postMessage({ type: 'LOAD_PLAYERS' });
+
+        // Handle response
+        playerWorker.addEventListener('message', (e) => {
+          if (e.data.type === 'PLAYERS_LOADED') {
+            initializePlayers(e.data.players);
+            console.log('✅ Players loaded:', e.data.players.length);
+            setDataLoaded(true);
+            playerWorker.terminate(); // Clean up worker
+          } else if (e.data.type === 'PLAYERS_ERROR') {
+            console.error('❌ Failed to load players:', e.data.error);
+            setDataLoaded(true); // Show error state
+          }
+        });
+
       } catch (error) {
         console.error('❌ Error loading game data:', error);
+        setDataLoaded(true);
       }
     };
 

@@ -11,7 +11,7 @@
  */
 
 import aiCore from './AICore.js';
-import aiConfig from '../../data/config/ai-config.json' with { type: 'json' };
+import aiConfig from '../../data/config/ai-config.json';
 
 class AITacticsManager {
   constructor() {
