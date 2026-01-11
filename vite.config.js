@@ -34,37 +34,6 @@ export default defineConfig({
         manualChunks(id) {
           // Vendor chunks (rarely change)
           if (id.includes('node_modules')) {
-            // React ecosystem
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-
-            // Icons library
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-
-            // State management
-            if (id.includes('zustand')) {
-              return 'vendor-state';
-            }
-
-            // Charting library (heavy)
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
-            }
-
-            // Utilities
-            if (id.includes('pako') || id.includes('seedrandom')) {
-              return 'vendor-utils';
-            }
-
-            // Country flags (already optimized)
-            if (id.includes('country-flag-icons')) {
-              return 'vendor-flags';
-            }
-
-            // All other vendor code
             return 'vendor';
           }
 
