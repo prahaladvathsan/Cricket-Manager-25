@@ -5,7 +5,9 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 const useAuctionStore = create(
   persist(
@@ -148,7 +150,14 @@ const useAuctionStore = create(
     }),
     {
       name: 'cm25-auction-store',
-      version: 1
+      version: 1,
+      storage: createJSONStorage(() => indexedDBStorage),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate auctionStore:', error);
+        }
+        markHydrated('auction');
+      }
     }
   )
 );

@@ -8,6 +8,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import usePlayerStore from './playerStore';
 import { compressedStorageOptions } from '../utils/compression.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 import aiCore from '../core/ai/AICore.js';
 
 /**
@@ -1161,7 +1163,13 @@ const useTeamStore = create(
     {
       name: 'cm25-team-store',
       version: 3, // Bumped version for compressed storage migration
-      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
+      storage: createJSONStorage(() => indexedDBStorage, compressedStorageOptions),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate teamStore:', error);
+        }
+        markHydrated('team');
+      }
     }
   )
 );

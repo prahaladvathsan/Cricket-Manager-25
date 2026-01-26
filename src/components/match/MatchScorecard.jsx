@@ -107,9 +107,8 @@ const MatchScorecard = ({ matchData, innings, currentInnings = 1 }) => {
               battingData.map((batsman, idx) => (
                 <tr
                   key={idx}
-                  className={`border-b border-border-secondary ${
-                    batsman.isOnStrike ? 'bg-cricket-primary/10' : ''
-                  }`}
+                  className={`border-b border-border-secondary ${batsman.isOnStrike ? 'bg-cricket-primary/10' : ''
+                    }`}
                 >
                   <td className="py-2 px-2">
                     <div className="flex items-center gap-1">
@@ -153,7 +152,7 @@ const MatchScorecard = ({ matchData, innings, currentInnings = 1 }) => {
       </div>
 
       {/* Extras and Total */}
-      <div className="card p-3 bg-bg-tertiary">
+      <div className="card p-3 bg-transparent border border-white/10">
         <div className="flex items-center justify-between text-sm">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -246,9 +245,8 @@ const MatchScorecard = ({ matchData, innings, currentInnings = 1 }) => {
             bowlingFigures.map((bowler, idx) => (
               <tr
                 key={idx}
-                className={`border-b border-border-secondary ${
-                  bowler.isBowling ? 'bg-cricket-primary/10' : ''
-                }`}
+                className={`border-b border-border-secondary ${bowler.isBowling ? 'bg-cricket-primary/10' : ''
+                  }`}
               >
                 <td className="py-2 px-2">
                   <div className="flex items-center gap-1">
@@ -308,21 +306,19 @@ const MatchScorecard = ({ matchData, innings, currentInnings = 1 }) => {
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab('batting')}
-            className={`px-3 py-1 text-xs rounded transition-colors ${
-              activeTab === 'batting'
+            className={`px-3 py-1 text-xs rounded transition-colors ${activeTab === 'batting'
                 ? 'bg-cricket-accent text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
-            }`}
+                : 'bg-transparent border border-white/10 text-text-secondary hover:text-text-primary'
+              }`}
           >
             Batting
           </button>
           <button
             onClick={() => setActiveTab('bowling')}
-            className={`px-3 py-1 text-xs rounded transition-colors ${
-              activeTab === 'bowling'
+            className={`px-3 py-1 text-xs rounded transition-colors ${activeTab === 'bowling'
                 ? 'bg-cricket-accent text-white'
-                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
-            }`}
+                : 'bg-transparent border border-white/10 text-text-secondary hover:text-text-primary'
+              }`}
           >
             Bowling
           </button>

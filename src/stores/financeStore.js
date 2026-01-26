@@ -7,6 +7,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import FinanceEngine from '../core/finance/FinanceEngine.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} FinanceState
@@ -512,7 +514,7 @@ const useFinanceStore = create(
     {
       name: 'cm25-finance-store',
       version: 1,
-      storage: createJSONStorage(() => localStorage, {
+      storage: createJSONStorage(() => indexedDBStorage, {
         // Custom serialization to handle Map and FinanceEngine
         serialize: (state) => {
           console.log('💰 SERIALIZE - state.state:', state.state);
@@ -609,6 +611,9 @@ const useFinanceStore = create(
           }
           state.engine = newEngine;
         }
+
+        // Mark as hydrated
+        markHydrated('finance');
       }
     }
   )

@@ -23,7 +23,7 @@ export default {
         // Background hierarchy
         bg: {
           primary: '#0F1419',
-          secondary: '#1A1F26',
+          secondary: '#00000066',
           tertiary: '#242B33',
           hover: '#2D3540',
         },
@@ -85,7 +85,10 @@ export default {
       fontFamily: {
         primary: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],
-        mono: ['SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'ui-monospace', 'monospace'],
+        display: ['Bebas Neue', 'sans-serif'],
+        heading: ['Rajdhani', 'sans-serif'],
+        data: ['Rajdhani', 'ui-monospace', 'monospace'], // Using Rajdhani for data consistency within 3-font limit
+        mono: ['ui-monospace', 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
         serif: ['Georgia', 'Times New Roman', 'serif'],
       },
 

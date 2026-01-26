@@ -10,6 +10,8 @@ import PlayoffGenerator from '../core/league/PlayoffGenerator.js';
 import MatchWeekScheduleGenerator from '../core/league/MatchWeekScheduleGenerator.js';
 import useGameStore from './gameStore';
 import { compressedStorageOptions } from '../utils/compression.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} LeagueState
@@ -927,7 +929,13 @@ const useLeagueStore = create(
     {
       name: 'cm25-league-store',
       version: 3, // Bumped version for compressed storage migration
-      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
+      storage: createJSONStorage(() => indexedDBStorage, compressedStorageOptions),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate leagueStore:', error);
+        }
+        markHydrated('league');
+      }
     }
   )
 );

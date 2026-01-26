@@ -29,8 +29,8 @@ Cricket Manager is a T20 cricket management simulation game (Football Manager fo
 ## Tech Stack
 
 - **Frontend**: React 18 + Vite + React Router + Tailwind CSS + Lucide React icons
-- **State**: Zustand stores
-- **Persistence**: LocalStorage (no backend)
+- **State**: Zustand stores with persist middleware
+- **Persistence**: IndexedDB via idb-keyval (50MB+ capacity, async hydration)
 - **Design**: Football Manager-inspired data-dense UI (Cricket Green #2D5F3F, Trophy Gold #D4AF37, 14px base font)
 - **Language**: JavaScript with JSDoc (no TypeScript)
 
@@ -53,8 +53,32 @@ src/
 - **Playstyle System**: 24 dynamic modifiers (16 batting + 8 bowling)
 - **League System**: 10 teams, 90 matches, playoffs with NRR calculation
 - **Auction System**: Playstyle-based player bidding with quota system
+- **Save System**: Multi-slot saves with autosave after matches/auctions
 
 See `docs/architecture/system-overview.md` for detailed architecture.
+
+## Persistence & Save System
+
+**Storage**: IndexedDB (not localStorage) - provides 50MB+ capacity vs 5-10MB limit.
+
+**Key Files**:
+- `src/utils/indexedDBStorage.js` - IndexedDB adapter for Zustand
+- `src/utils/storeHydration.js` - Tracks async hydration of all stores
+- `src/utils/SaveGameManager.js` - Multi-slot save/load/export/import
+
+**How It Works**:
+1. All 9 Zustand stores use `persist` middleware with IndexedDB
+2. On app load, stores rehydrate asynchronously from IndexedDB
+3. `App.jsx` waits for `waitForHydration()` before rendering
+4. Autosaves trigger after user matches and auctions (keeps last 10)
+
+**CRITICAL**: When modifying stores, always add `onRehydrateStorage` callback:
+```javascript
+onRehydrateStorage: () => (state, error) => {
+  if (error) console.error('Rehydration failed:', error);
+  markHydrated('storeName'); // Required for hydration tracking
+}
+```
 
 ## Development Documentation Structure
 

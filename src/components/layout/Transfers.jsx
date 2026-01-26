@@ -24,6 +24,8 @@ import TransferMarketView from '../Transfers/TransferMarketView';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
 import { ContextualTip, useScreenTip, screenTips, TutorialSpotlight, useAuctionTutorial, auctionTutorialSteps } from '../tutorial';
+import SaveGameManager from '../../utils/SaveGameManager';
+import useMatchStore from '../../stores/matchStore';
 
 const Transfers = () => {
   const { teams, userTeamId, getUserTeam, addPlayerToSquad, initializeAllTeamsTactics } = useTeamStore();
@@ -912,6 +914,32 @@ const Transfers = () => {
     clearEvents();
     setTimeout(() => {
       initializeLeague();
+
+      // Autosave after auction completion
+      const userTeamPlayers = savedAuction.soldPlayers?.filter(p => p.teamId === userTeamId) || [];
+      const totalSpent = userTeamPlayers.reduce((sum, p) => sum + (p.price || 0), 0);
+
+      SaveGameManager.autosaveAfterAuction(
+        {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          playerStore: usePlayerStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          matchStore: useMatchStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          transferStore: useTransferStore
+        },
+        {
+          playersAcquired: userTeamPlayers.length,
+          budgetSpent: totalSpent
+        }
+      ).then(result => {
+        if (result.success) {
+          console.log('💾 Autosave created after auction');
+        }
+      });
     }, 500);
   };
 

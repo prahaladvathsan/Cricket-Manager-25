@@ -20,10 +20,12 @@
     "build-player-db": "node scripts/build-final-player-database.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "country-flag-icons": "^1.6.4",
     "html2canvas": "^1.4.1",
+    "idb-keyval": "^6.2.1",
     "lucide-react": "^0.552.0",
     "pako": "^2.1.0",
     "react": "^18.2.0",

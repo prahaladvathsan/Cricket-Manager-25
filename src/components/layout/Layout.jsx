@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import AutosaveIndicator from '../shared/AutosaveIndicator';
 import useUIStore from '../../stores/uiStore';
 import useNavigationStore from '../../stores/navigationStore';
 import '../../styles/wallpaper.css';
@@ -37,6 +38,9 @@ const Layout = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* Global autosave indicator */}
+      <AutosaveIndicator />
     </div>
   );
 };

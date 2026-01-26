@@ -226,7 +226,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
         )}
 
         {/* Over Assignment List - Grouped by Phase */}
-        <div className="bowling-over-assignment card p-2">
+        <div className="bowling-over-assignment bg-transparent border border-white/10 rounded-lg p-2">
           <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-border-primary">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-cricket-accent" />
@@ -290,7 +290,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       <select
                         value={playerId || ''}
                         onChange={(e) => handleOverAssignment(overIndex, e.target.value)}
-                        className={`${isFirstOver ? 'bowling-over-select-first ' : ''}w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
+                        className={`${isFirstOver ? 'bowling-over-select-first ' : ''}w-full px-1.5 py-0.5 bg-transparent border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                       >
                         <option value="">—</option>
                         {primaryBowlers.length > 0 && (
@@ -322,7 +322,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Side Panel: Bowling Plans */}
-      <div className="bowling-plans-panel lg:col-span-2 card p-2">
+      <div className="bowling-plans-panel lg:col-span-2 bg-transparent border border-white/10 rounded-lg p-2">
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border-primary">
           <CheckCircle className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-sm font-semibold text-text-primary">
@@ -358,7 +358,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               const isFirstBowler = bowlerIndex === 0;
 
               return (
-                <div key={player.id} className={`${isFirstBowler ? 'bowling-plans-first ' : ''}p-1 bg-bg-tertiary rounded`}>
+                <div key={player.id} className={`${isFirstBowler ? 'bowling-plans-first ' : ''}p-1 bg-transparent border border-border-primary rounded`}>
                   {/* Row 1: Name, Role, Playstyle */}
                   <div className="grid grid-cols-2 gap-1 mb-0.5">
                     <div className="flex items-center gap-1">

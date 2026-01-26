@@ -5,7 +5,9 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 const useTransferStore = create(
   persist(
@@ -366,7 +368,14 @@ const useTransferStore = create(
     }),
     {
       name: 'transfer-storage',
-      version: 1
+      version: 1,
+      storage: createJSONStorage(() => indexedDBStorage),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate transferStore:', error);
+        }
+        markHydrated('transfer');
+      }
     }
   )
 );

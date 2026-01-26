@@ -123,15 +123,14 @@ const Matches = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
                   ? 'border-cricket-primary text-cricket-primary'
                   : 'border-transparent text-text-secondary hover:text-text-primary'
-              }`}
+                }`}
             >
               {tab.label}
               {tab.count > 0 && (
-                <span className="ml-2 px-1.5 py-0.5 bg-bg-tertiary rounded text-xs">
+                <span className="ml-2 px-1.5 py-0.5 bg-transparent border border-white/10 rounded text-xs">
                   {tab.count}
                 </span>
               )}
@@ -167,7 +166,7 @@ const Matches = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded">
+                            <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-transparent border border-white/10 rounded">
                               MD {fixture.matchday}
                             </span>
                             {fixture.date && (
@@ -175,9 +174,8 @@ const Matches = () => {
                                 {fixture.date}
                               </span>
                             )}
-                            <span className={`text-xs font-medium ${
-                              isHome ? 'text-cricket-accent' : 'text-blue-400'
-                            }`}>
+                            <span className={`text-xs font-medium ${isHome ? 'text-cricket-accent' : 'text-blue-400'
+                              }`}>
                               {isHome ? 'Home' : 'Away'}
                             </span>
                           </div>
@@ -237,22 +235,20 @@ const Matches = () => {
                   return (
                     <div
                       key={idx}
-                      className={`p-3 border rounded transition-colors ${
-                        won
+                      className={`p-3 border rounded transition-colors ${won
                           ? 'border-status-win/30 bg-status-win/5'
                           : 'border-status-loss/30 bg-status-loss/5'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded">
+                          <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-transparent border border-white/10 rounded">
                             MD {result.matchday || idx + 1}
                           </span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            won
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${won
                               ? 'bg-status-win/20 text-status-win'
                               : 'bg-status-loss/20 text-status-loss'
-                          }`}>
+                            }`}>
                             {won ? 'WON' : 'LOST'}
                           </span>
                         </div>
@@ -287,9 +283,8 @@ const Matches = () => {
                         </div>
                       </div>
                       {result.margin && (
-                        <div className={`text-xs mt-2 pt-2 border-t ${
-                          won ? 'border-status-win/20 text-status-win' : 'border-status-loss/20 text-status-loss'
-                        }`}>
+                        <div className={`text-xs mt-2 pt-2 border-t ${won ? 'border-status-win/20 text-status-win' : 'border-status-loss/20 text-status-loss'
+                          }`}>
                           {result.margin}
                         </div>
                       )}

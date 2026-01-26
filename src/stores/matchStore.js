@@ -5,7 +5,9 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} MatchState
@@ -835,6 +837,7 @@ const useMatchStore = create(
     {
       name: 'cm25-match-store',
       version: 1,
+      storage: createJSONStorage(() => indexedDBStorage),
       // Exclude large arrays to avoid localStorage quota issues
       partialize: (state) => {
         // Don't persist match data - it's ephemeral and causes quota issues
@@ -843,6 +846,12 @@ const useMatchStore = create(
           matchId: null,
           status: 'scheduled'
         };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate matchStore:', error);
+        }
+        markHydrated('match');
       }
     }
   )

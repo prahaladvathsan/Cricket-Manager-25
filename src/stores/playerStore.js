@@ -8,6 +8,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 import { compressedStorageOptions } from '../utils/compression.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} PlayerStore
@@ -955,14 +957,20 @@ const usePlayerStore = create(
     {
       name: 'cm25-player-store',
       version: 2, // Bumped version for compressed storage migration
-      storage: createJSONStorage(() => localStorage, compressedStorageOptions),
+      storage: createJSONStorage(() => indexedDBStorage, compressedStorageOptions),
       // Exclude filters from persistence (UI state only)
       partialize: (state) => ({
         players: state.players,
         availablePlayers: state.availablePlayers,
         careerStats: state.careerStats,
         currentSeasonId: state.currentSeasonId
-      })
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate playerStore:', error);
+        }
+        markHydrated('player');
+      }
     }
   )
 );

@@ -24,8 +24,8 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
 
   // Get winner team name
   const winnerTeam = innings1.teamId === winner ? innings1.teamName :
-                     innings2.teamId === winner ? innings2.teamName :
-                     'Unknown Team';
+    innings2.teamId === winner ? innings2.teamName :
+      'Unknown Team';
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">

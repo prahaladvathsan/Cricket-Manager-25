@@ -33,9 +33,9 @@ const ContributeDropdown = () => {
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all duration-200 border border-transparent ${isOpen
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all duration-200 border ${isOpen
                         ? 'bg-cricket-primary/20 text-cricket-primary border-cricket-primary/30'
-                        : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                        : 'bg-black/80 text-text-secondary hover:bg-black/90 hover:text-text-primary border-white/10'
                         }`}
                     title="Contribute and Support"
                 >
@@ -45,7 +45,7 @@ const ContributeDropdown = () => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-bg-secondary rounded-lg shadow-xl border border-border-primary py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-lg shadow-xl border border-border-primary py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                         <div className="px-3 py-2 border-b border-border-primary mb-1">
                             <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Support & Help</p>
                         </div>

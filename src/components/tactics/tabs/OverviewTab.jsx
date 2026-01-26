@@ -94,7 +94,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
   if (battingOrder.length === 0) {
     return (
-      <div className="card p-6 text-center">
+      <div className="bg-transparent border border-white/10 rounded-lg p-6 text-center">
         <p className="text-text-secondary">
           Please configure your tactics in the other tabs first
         </p>
@@ -151,7 +151,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
       {/* Batting Overview */}
-      <div className="card p-2 lg:col-span-2">
+      <div className="bg-transparent border border-white/10 rounded-lg p-2 lg:col-span-2">
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border-primary">
           <Target className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-sm font-semibold text-text-primary">Batting Order</h3>
@@ -190,7 +190,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               : 0;
 
             return (
-              <div key={player.id} className="grid grid-cols-[auto_1fr_1fr_auto] gap-1 p-0.5 bg-bg-tertiary rounded text-xs">
+              <div key={player.id} className="grid grid-cols-[auto_1fr_1fr_auto] gap-1 p-0.5 bg-transparent border border-white/10 rounded text-xs">
                 <div className="font-mono font-bold text-text-primary w-5">{index + 1}</div>
                 <div className="truncate text-text-primary">
                   <PlayerName playerId={player.id} player={player} />
@@ -208,7 +208,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Bowling Overview - Reduced width */}
-      <div className="card p-2 lg:col-span-2">
+      <div className="bg-transparent border border-white/10 rounded-lg p-2 lg:col-span-2">
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border-primary">
           <Activity className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-sm font-semibold text-text-primary">Bowling Rotation</h3>
@@ -238,7 +238,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               return (
                 <div
                   key={player.id}
-                  className="p-0.5 bg-bg-tertiary rounded space-y-0.5"
+                  className="p-0.5 bg-transparent border border-white/10 rounded space-y-0.5"
                 >
                   {/* Row 1: Name, Playstyle, Overs */}
                   <div className="grid grid-cols-[1fr_1fr_auto] gap-1 text-xs">
@@ -273,7 +273,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Fielding Setup */}
-      <div className="card p-2 lg:col-span-2">
+      <div className="bg-transparent border border-white/10 rounded-lg p-2 lg:col-span-2">
         <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-border-primary">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-cricket-accent" />
@@ -325,7 +325,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               : null;
 
             return (
-              <div key={player.id} className="grid grid-cols-3 gap-1 p-0.5 bg-bg-tertiary rounded text-xs">
+              <div key={player.id} className="grid grid-cols-3 gap-1 p-0.5 bg-transparent border border-white/10 rounded text-xs">
                 <div className="truncate text-text-primary">
                   <PlayerName playerId={player.id} player={player} />
                 </div>
@@ -342,7 +342,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Role Assignment */}
-      <div className="card p-2 lg:col-span-6">
+      <div className="bg-transparent border border-white/10 rounded-lg p-2 lg:col-span-6">
         <div className="flex items-center gap-2 mb-1.5 pb-1.5 border-b border-border-primary">
           <Shield className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-sm font-semibold text-text-primary">Role Assignment</h3>
@@ -350,7 +350,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
         <div className="grid grid-cols-3 gap-2">
           {/* Wicket-keeper */}
-          <div className="p-1.5 bg-bg-tertiary rounded">
+          <div className="p-1.5 bg-transparent border border-white/10 rounded">
             <label className="block text-xs text-text-secondary mb-1">Wicket-keeper</label>
             <select
               value={teamTactics?.wicketKeeper || ''}
@@ -372,7 +372,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           </div>
 
           {/* Captain */}
-          <div className="p-1.5 bg-bg-tertiary rounded">
+          <div className="p-1.5 bg-transparent border border-white/10 rounded">
             <label className="block text-xs text-text-secondary mb-1">Captain</label>
             <select
               value={teamTactics?.captain || ''}
@@ -392,7 +392,7 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           </div>
 
           {/* Vice-Captain */}
-          <div className="p-1.5 bg-bg-tertiary rounded">
+          <div className="p-1.5 bg-transparent border border-white/10 rounded">
             <label className="block text-xs text-text-secondary mb-1">Vice-Captain</label>
             <select
               value={teamTactics?.viceCaptain || ''}

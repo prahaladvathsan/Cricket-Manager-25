@@ -159,14 +159,14 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       case 'bowler': return 'bg-red-500/20 text-red-400';
       case 'all-rounder': return 'bg-purple-500/20 text-purple-400';
       case 'wicket-keeper': return 'bg-cyan-500/20 text-cyan-400';
-      default: return 'bg-bg-tertiary text-text-secondary';
+      default: return 'bg-transparent border border-white/10 text-text-secondary';
     }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
       {/* Left Column: Available Squad */}
-      <div className="card p-3">
+      <div className="bg-transparent border border-white/10 rounded-lg p-3">
         <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1.5">
           <UsersIcon className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-base font-semibold text-text-primary">
@@ -204,7 +204,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               placeholder="Search players..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+              className="w-full pl-8 pr-3 py-1.5 bg-transparent border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
             />
           </div>
 
@@ -216,7 +216,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 onClick={() => setRoleFilter(role)}
                 className={`px-2 py-1 text-xs rounded transition-colors ${roleFilter === role
                   ? 'bg-cricket-accent/20 text-cricket-accent'
-                  : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+                  : 'bg-transparent border border-border-primary text-text-secondary hover:text-text-primary'
                   }`}
               >
                 {role === 'all' ? 'All' : role.charAt(0).toUpperCase() + role.slice(1)}
@@ -247,7 +247,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               return (
                 <div
                   key={player.id}
-                  className="p-1.5 bg-bg-tertiary rounded"
+                  className="p-1.5 bg-transparent border border-white/10 rounded"
                 >
                   <div className="flex items-start gap-2 mb-1">
                     <div className="flex-1 min-w-0">
@@ -406,105 +406,110 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               return (
                 <div
                   key={player.id}
-                  className="p-1.5 bg-bg-tertiary rounded"
+                  className="flex bg-transparent border border-white/10 rounded overflow-hidden"
                 >
-                  <div className="flex items-start gap-2 mb-1">
-                    <span className="text-xs text-text-secondary font-mono min-w-[20px]">
-                      {idx + 1}.
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="text-sm font-medium">
-                          <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
-                        </div>
-                        <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
-                          {player.role}
-                        </span>
-
-                        {/* Condition Bars */}
-                        <div className="flex items-center gap-2 ml-1">
-                          <ConditionBar
-                            type="energy"
-                            value={player.condition?.fitness ?? 100}
-                            showValue={false}
-                            width="w-[70px]"
-                            height="h-1.5"
-                            tooltip={`Fitness: ${Math.round(player.condition?.fitness ?? 100)}`}
-                          />
-                          <ConditionBar
-                            type="confidence"
-                            value={player.condition?.morale ?? 50}
-                            showValue={false}
-                            width="w-[70px]"
-                            height="h-1.5"
-                            tooltip={`Morale: ${Math.round(player.condition?.morale ?? 50)}`}
-                          />
-                        </div>
-
-                        {/* Fatigue Indicator */}
-                        {player.condition?.fatigue > 10 && (
-                          <span className="text-[10px] items-center flex px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-medium" title={`Fatigue: ${Math.round(player.condition.fatigue)}%`}>
-                            ⚡ {Math.round(player.condition.fatigue)}%
-                          </span>
-                        )}
-
-                        {player.condition?.injury && (
-                          <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400 font-semibold" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
-                            ⚠ Injured {player.condition.injuryDuration}d
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemovePlayer(player.id)}
-                      className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                      title="Remove from playing XI"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                  {/* Index Column */}
+                  <div className="w-10 flex items-center justify-center bg-white/5 font-display text-4xl font-bold text-cricket-accent/50 border-r border-white/10 flex-shrink-0">
+                    {idx + 1}
                   </div>
 
-                  {/* Playstyle Selectors */}
-                  <div className="ml-5 grid grid-cols-2 gap-2">
-                    {/* Batting Playstyle */}
-                    <select
-                      value={currentBattingPlaystyle}
-                      onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
-                      className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                    >
-                      {availableBattingPlaystyles.map(({ name, rating }) => (
-                        <option key={name} value={name}>
-                          {name} ({rating.toFixed(0)})
-                          {name === player.primaryPlaystyle?.batting && ' ⭐'}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Content Column */}
+                  <div className="flex-1 p-1.5 min-w-0">
+                    <div className="flex items-start gap-2 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="text-sm font-medium">
+                            <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                          </div>
+                          <span className={`px-1.5 py-0.5 text-xs rounded ${getRoleBadgeColor(player.role)}`}>
+                            {player.role}
+                          </span>
 
-                    {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
-                    {player.role === 'wicket-keeper' ? (
-                      player.topPlaystyles?.fielding?.[0] && (
-                        <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
-                          {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
+                          {/* Condition Bars */}
+                          <div className="flex items-center gap-2 ml-1">
+                            <ConditionBar
+                              type="energy"
+                              value={player.condition?.fitness ?? 100}
+                              showValue={false}
+                              width="w-[70px]"
+                              height="h-1.5"
+                              tooltip={`Fitness: ${Math.round(player.condition?.fitness ?? 100)}`}
+                            />
+                            <ConditionBar
+                              type="confidence"
+                              value={player.condition?.morale ?? 50}
+                              showValue={false}
+                              width="w-[70px]"
+                              height="h-1.5"
+                              tooltip={`Morale: ${Math.round(player.condition?.morale ?? 50)}`}
+                            />
+                          </div>
+
+                          {/* Fatigue Indicator */}
+                          {player.condition?.fatigue > 10 && (
+                            <span className="text-[10px] items-center flex px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-medium" title={`Fatigue: ${Math.round(player.condition.fatigue)}%`}>
+                              ⚡ {Math.round(player.condition.fatigue)}%
+                            </span>
+                          )}
+
+                          {player.condition?.injury && (
+                            <span className="px-1.5 py-0.5 text-xs rounded bg-red-500/20 text-red-400 font-semibold" title={`${player.condition.injury} injury - ${player.condition.injuryDuration} days remaining`}>
+                              ⚠ Injured {player.condition.injuryDuration}d
+                            </span>
+                          )}
                         </div>
-                      )
-                    ) : (
-                      availableBowlingPlaystyles.length > 0 ? (
-                        <select
-                          value={currentBowlingPlaystyle}
-                          onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
-                          className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
-                        >
-                          {availableBowlingPlaystyles.map(({ name, rating }) => (
-                            <option key={name} value={name}>
-                              {name} ({rating.toFixed(0)})
-                              {name === player.primaryPlaystyle?.bowling && ' ⭐'}
-                            </option>
-                          ))}
-                        </select>
+                      </div>
+                      <button
+                        onClick={() => handleRemovePlayer(player.id)}
+                        className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                        title="Remove from playing XI"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Playstyle Selectors */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Batting Playstyle */}
+                      <select
+                        value={currentBattingPlaystyle}
+                        onChange={(e) => handleBattingPlaystyleChange(player.id, e.target.value)}
+                        className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                      >
+                        {availableBattingPlaystyles.map(({ name, rating }) => (
+                          <option key={name} value={name}>
+                            {name} ({rating.toFixed(0)})
+                            {name === player.primaryPlaystyle?.batting && ' ⭐'}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Fielding Playstyle (for wicket-keepers) OR Bowling Playstyle (for others) */}
+                      {player.role === 'wicket-keeper' ? (
+                        player.topPlaystyles?.fielding?.[0] && (
+                          <div className="px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary">
+                            {player.topPlaystyles.fielding[0].name} ({player.topPlaystyles.fielding[0].rating.toFixed(0)}) ⭐
+                          </div>
+                        )
                       ) : (
-                        <div className="text-xs text-text-tertiary italic px-2 py-1">No bowling data</div>
-                      )
-                    )}
+                        availableBowlingPlaystyles.length > 0 ? (
+                          <select
+                            value={currentBowlingPlaystyle}
+                            onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
+                            className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                          >
+                            {availableBowlingPlaystyles.map(({ name, rating }) => (
+                              <option key={name} value={name}>
+                                {name} ({rating.toFixed(0)})
+                                {name === player.primaryPlaystyle?.bowling && ' ⭐'}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="text-xs text-text-tertiary italic px-2 py-1">No bowling data</div>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               );

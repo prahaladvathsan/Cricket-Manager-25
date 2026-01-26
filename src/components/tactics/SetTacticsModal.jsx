@@ -118,7 +118,7 @@ const SetTacticsModal = ({ isOpen, onClose, teamId }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
-      <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl w-[98vw] h-[98vh] flex flex-col">
+      <div className="bg-black/60 backdrop-blur-md border border-border-primary rounded-lg shadow-xl w-[98vw] h-[98vh] flex flex-col">
         {/* Header - Compact */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border-primary">
           <div className="flex items-center gap-2">
@@ -158,11 +158,10 @@ const SetTacticsModal = ({ isOpen, onClose, teamId }) => {
                   setActiveTab(tab.id);
                   setValidationErrors([]); // Clear errors when switching tabs
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-cricket-accent text-cricket-accent'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${activeTab === tab.id
+                  ? 'border-cricket-accent text-cricket-accent'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>

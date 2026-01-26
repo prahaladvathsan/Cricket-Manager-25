@@ -146,8 +146,26 @@ const StartMenu = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-4 text-center text-xs text-cricket-text-secondary">
-          <p>Version 1.0.0</p>
+        <div className="mt-4 text-center text-xs text-cricket-text-secondary flex justify-center gap-4 items-center">
+          <span>Version 1.0.0</span>
+          <span className="text-cricket-text-secondary/50">•</span>
+          <a
+            href="/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-cricket-primary transition-colors hover:underline"
+          >
+            Privacy Policy
+          </a>
+          <span className="text-cricket-text-secondary/50">•</span>
+          <a
+            href="/terms.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-cricket-primary transition-colors hover:underline"
+          >
+            Terms of Service
+          </a>
         </div>
       </div>
     </div>

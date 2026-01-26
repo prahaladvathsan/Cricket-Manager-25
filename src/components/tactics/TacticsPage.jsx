@@ -29,6 +29,13 @@ import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
+import SaveGameManager from '../../utils/SaveGameManager';
+import useGameStore from '../../stores/gameStore';
+import useLeagueStore from '../../stores/leagueStore';
+import useFinanceStore from '../../stores/financeStore';
+import useMatchStore from '../../stores/matchStore';
+import useInboxStore from '../../stores/inboxStore';
+import useTransferStore from '../../stores/transferStore';
 
 const TacticsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -149,6 +156,7 @@ const TacticsPage = () => {
   }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
 
   // Warn user if they try to close browser/tab with invalid tactics
+  // Autosave when leaving with valid tactics
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       const errors = validateTactics();
@@ -164,9 +172,29 @@ const TacticsPage = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
-      // Log warning on unmount if tactics invalid (no popup - user sees inline errors)
+      // On unmount: autosave if tactics are valid
       const errors = validateTactics();
-      if (errors.length > 0) {
+      if (errors.length === 0) {
+        // Valid tactics - autosave
+        SaveGameManager.createAutosave(
+          {
+            gameStore: useGameStore,
+            teamStore: useTeamStore,
+            playerStore: usePlayerStore,
+            leagueStore: useLeagueStore,
+            financeStore: useFinanceStore,
+            matchStore: useMatchStore,
+            auctionStore: useAuctionStore,
+            inboxStore: useInboxStore,
+            transferStore: useTransferStore
+          },
+          'Tactics updated'
+        ).then(result => {
+          if (result.success) {
+            console.log('💾 Autosave created after tactics update');
+          }
+        });
+      } else {
         console.warn('⚠️ Tactics validation errors on page leave:', errors);
       }
     };

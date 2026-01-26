@@ -28,7 +28,7 @@ export const supportsWebP = () => {
  * @returns {string} Path to team badge SVG (vector graphics, better than raster)
  */
 export const getTeamBadge = (teamId) => {
-  return `/assets/teams/badges/${teamId}-badge.svg`;
+  return `/assets/teams/badges/${teamId}-badge.png`;
 };
 
 /**
@@ -37,7 +37,7 @@ export const getTeamBadge = (teamId) => {
  * @returns {string} Path to team icon SVG (vector graphics, better than raster)
  */
 export const getTeamIcon = (teamId) => {
-  return `/assets/teams/icons/${teamId}-icon.svg`;
+  return `/assets/teams/icons/${teamId}-icon.png`;
 };
 
 /**

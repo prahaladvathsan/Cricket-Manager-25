@@ -89,7 +89,7 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="card p-2 flex items-center justify-between">
+      <div className="bg-transparent border border-white/10 rounded-lg p-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-cricket-accent" />
           <h3 className="text-base font-semibold text-text-primary">Fielding Setup</h3>
@@ -98,7 +98,7 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
               <div>
                 <h4 className="font-semibold text-text-primary mb-2">Fielding Phases</h4>
                 <p className="mb-2">T20 fielding restrictions:</p>
-                <div className="grid grid-cols-2 gap-4 text-xs bg-bg-tertiary p-2 rounded">
+                <div className="grid grid-cols-2 gap-4 text-xs bg-transparent border border-white/10 p-2 rounded">
                   <div>
                     <span className="font-semibold text-cricket-accent block mb-0.5">Powerplay (1-6)</span>
                     <span className="text-text-secondary">Max 2 fielders outside circle</span>
@@ -129,7 +129,7 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
           onClick={() => setPhase('powerplay')}
           className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${phase === 'powerplay'
             ? 'bg-cricket-primary text-white'
-            : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
+            : 'bg-transparent border border-white/10 text-text-secondary hover:text-text-primary border border-border-primary'
             }`}
         >
           Powerplay (1-6) • Max 2 outside
@@ -138,7 +138,7 @@ const FieldingTab = ({ teamId, onPlayerClick }) => {
           onClick={() => setPhase('postPowerplay')}
           className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${phase === 'postPowerplay'
             ? 'bg-cricket-primary text-white'
-            : 'bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary'
+            : 'bg-transparent border border-white/10 text-text-secondary hover:text-text-primary border border-border-primary'
             }`}
         >
           Post-Powerplay (7-20) • Max 5 outside

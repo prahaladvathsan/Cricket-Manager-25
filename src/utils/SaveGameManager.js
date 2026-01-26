@@ -1,216 +1,235 @@
 /**
  * @file SaveGameManager.js
- * @description Single-save game manager with autosave and export/import support
+ * @description Multi-slot save game manager with autosave support
  *
- * Model:
- * - One "current game" auto-saved to localStorage
- * - Export to .cm25 file for backup/sharing
- * - Import .cm25 file to replace current game
+ * Features:
+ * - Multiple save slots (autosaves + manual saves)
+ * - Autosave after user matches and auctions
+ * - IndexedDB storage for larger capacity
+ * - Export/import to .cm25 files
  */
 
 import { compressData, decompressData, getCompressionStats } from './compression';
+import { get, set, del, keys } from 'idb-keyval';
 
-const SAVE_KEY = 'cm25_current_save';
-const SAVE_FORMAT_VERSION = '2.0.0';
+const SAVE_PREFIX = 'cm25_save_';
+const SAVE_INDEX_KEY = 'cm25_save_index';
+const SAVE_FORMAT_VERSION = '2.1.0';
 const MIN_COMPATIBLE_VERSION = '1.0.0';
 
+// Default autosave settings
+const DEFAULT_AUTOSAVE_SETTINGS = {
+  enabled: true,
+  maxAutosavesAnonymous: 2,  // Limit for non-logged-in users
+  maxAutosavesLoggedIn: 10,  // Limit for logged-in users
+  saveAfterMatch: true,
+  saveAfterAuction: true
+};
+
+/**
+ * @typedef {Object} SaveSlot
+ * @property {string} id - Unique save ID
+ * @property {string} type - 'autosave' | 'manual'
+ * @property {string} label - Human-readable label
+ * @property {string} timestamp - ISO date string
+ * @property {Object} metadata - Quick info (team, season, phase, position)
+ */
+
 class SaveGameManager {
-  /**
-   * Check if a saved game exists
-   * @returns {boolean}
-   */
-  hasSave() {
-    return localStorage.getItem(SAVE_KEY) !== null;
+  constructor() {
+    this.autosaveSettings = { ...DEFAULT_AUTOSAVE_SETTINGS };
   }
 
-  /**
-   * Get current save metadata (for display without loading full save)
-   * @returns {Object|null}
-   */
-  getSaveInfo() {
-    try {
-      const saveStr = localStorage.getItem(SAVE_KEY);
-      if (!saveStr) return null;
+  // ============================================
+  // Save Index Management
+  // ============================================
 
-      const save = JSON.parse(saveStr);
-      return {
-        saveName: save.saveName,
-        timestamp: save.timestamp,
-        metadata: save.metadata,
-        version: save.version
-      };
+  /**
+   * Get list of all saves (metadata only, not full data)
+   * @returns {Promise<SaveSlot[]>}
+   */
+  async listSaves() {
+    try {
+      const index = await get(SAVE_INDEX_KEY);
+      if (!index) return [];
+
+      // Sort by timestamp descending (newest first)
+      return index.sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
     } catch (error) {
-      console.error('Error reading save info:', error);
-      return null;
+      console.error('Error listing saves:', error);
+      return [];
     }
   }
 
   /**
-   * Save current game state (used for both manual and auto-save)
-   * @param {Object} stores - All Zustand stores
-   * @param {string} reason - Why save was triggered (for logging)
-   * @returns {boolean} Success status
+   * Get saves filtered by type
+   * @param {'autosave' | 'manual'} type
+   * @returns {Promise<SaveSlot[]>}
    */
-  saveGame(stores, reason = 'manual') {
+  async listSavesByType(type) {
+    const saves = await this.listSaves();
+    return saves.filter(s => s.type === type);
+  }
+
+  /**
+   * Check if any save exists
+   * @returns {Promise<boolean>}
+   */
+  async hasSave() {
+    const saves = await this.listSaves();
+    return saves.length > 0;
+  }
+
+  /**
+   * Get the most recent save info
+   * @returns {Promise<SaveSlot|null>}
+   */
+  async getMostRecentSave() {
+    const saves = await this.listSaves();
+    return saves.length > 0 ? saves[0] : null;
+  }
+
+  // ============================================
+  // Save Operations
+  // ============================================
+
+  /**
+   * Create a new save (autosave or manual)
+   * @param {Object} stores - All Zustand stores
+   * @param {Object} options - Save options
+   * @param {string} options.label - Save label
+   * @param {'autosave' | 'manual'} options.type - Save type
+   * @returns {Promise<{success: boolean, saveId?: string, error?: string}>}
+   */
+  async createSave(stores, options = {}) {
     try {
-      console.log(`Saving game (${reason})...`);
+      const { label, type = 'manual' } = options;
 
-      // Extract state from all stores
-      const gameState = stores.gameStore.getState();
-      const teamState = stores.teamStore.getState();
-      const playerState = stores.playerStore.getState();
-      const leagueState = stores.leagueStore.getState();
-      const financeState = stores.financeStore.getState();
-      const matchState = stores.matchStore.getState();
-      const auctionState = stores.auctionStore?.getState();
-      const inboxState = stores.inboxStore?.getState();
-      const transferState = stores.transferStore?.getState();
+      // Validate stores have actual data before saving (prevent empty saves)
+      const validation = this._validateStoresNotEmpty(stores);
+      if (!validation.valid) {
+        console.warn(`⚠️ Save blocked: ${validation.reason}`);
+        return { success: false, error: validation.reason };
+      }
 
-      const saveData = {
-        version: SAVE_FORMAT_VERSION,
-        timestamp: new Date().toISOString(),
-        lastSaveReason: reason,
-        saveName: this._generateSaveName(gameState, teamState),
+      // Generate unique save ID
+      const saveId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const storageKey = SAVE_PREFIX + saveId;
 
-        gameState: {
-          currentSeason: gameState.currentSeason,
-          currentPhase: gameState.currentPhase,
-          currentWeek: gameState.currentWeek,
-          currentDate: gameState.currentDate,
-          gameDay: gameState.gameDay || 1,
-          calendarEvents: gameState.calendarEvents || [],
-          settings: gameState.settings,
-          seasonObjectives: gameState.seasonObjectives || [],
-          objectiveTracking: gameState.objectiveTracking || {}
-        },
+      // Build save data
+      const saveData = this._buildSaveData(stores, { label, type, saveId });
 
-        teamState: {
-          teams: teamState.teams,
-          userTeamId: teamState.userTeamId,
-          squadLists: Object.fromEntries(
-            Object.entries(teamState.squadLists || {}).map(([teamId, playerIds]) => [
-              teamId,
-              Array.isArray(playerIds) ? playerIds : []
-            ])
-          ),
-          teamTactics: teamState.teamTactics || {},
-          playerStats: teamState.playerStats,
-          teamStats: teamState.teamStats
-        },
+      // Store the save
+      await set(storageKey, JSON.stringify(saveData));
 
-        playerState: {
-          careerStats: playerState.careerStats,
-          currentSeasonId: playerState.currentSeasonId,
-          playerTeamAssignments: Object.entries(playerState.players)
-            .filter(([_, player]) => player.currentTeam)
-            .reduce((acc, [playerId, player]) => {
-              acc[playerId] = player.currentTeam;
-              return acc;
-            }, {}),
-          playerConditions: Object.entries(playerState.players)
-            .reduce((acc, [playerId, player]) => {
-              if (player.condition) {
-                acc[playerId] = player.condition;
-              }
-              return acc;
-            }, {})
-        },
+      // Update index
+      await this._addToIndex({
+        id: saveId,
+        type,
+        label: saveData.label,
+        timestamp: saveData.timestamp,
+        metadata: saveData.metadata
+      });
 
-        leagueState: {
-          seasonId: leagueState.seasonId,
-          seasonName: leagueState.seasonName,
-          currentMatchday: leagueState.currentMatchday,
-          currentWeek: leagueState.currentWeek,
-          currentFixtureIndex: leagueState.currentFixtureIndex,
-          stage: leagueState.stage,
-          fixtures: leagueState.fixtures,
-          matchWeeks: leagueState.matchWeeks,
-          results: leagueState.results,
-          standings: leagueState.standings,
-          clubs: leagueState.clubs,
-          stats: leagueState.stats,
-          playoffFixtures: leagueState.playoffFixtures,
-          playoffResults: leagueState.playoffResults,
-          champion: leagueState.champion
-        },
+      // Enforce autosave limit
+      if (type === 'autosave') {
+        await this._enforceAutosaveLimit();
+      }
 
-        financeState: {
-          seasonId: financeState.seasonId,
-          initialized: financeState.initialized,
-          teamFinances: financeState.teamFinances instanceof Map
-            ? Array.from(financeState.teamFinances.entries())
-            : Array.isArray(financeState.teamFinances)
-              ? financeState.teamFinances
-              : [],
-          transactionHistory: financeState.transactionHistory
-        },
+      console.log(`💾 Save created: ${saveData.label} (${type})`);
 
-        matchState: {
-          matchId: matchState.matchId,
-          status: matchState.status
-        },
+      // Dispatch custom event for UI indicator
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('autosave', {
+          detail: { type, label: saveData.label, saveId }
+        }));
+      }
 
-        auctionState: auctionState ? {
-          auctionState: auctionState.auctionState,
-          rounds: auctionState.rounds,
-          currentRound: auctionState.currentRound,
-          currentPlayerIndex: auctionState.currentPlayerIndex,
-          soldPlayers: auctionState.soldPlayers,
-          userMaxBid: auctionState.userMaxBid,
-          userMaxBidPlayerId: auctionState.userMaxBidPlayerId
-        } : null,
-
-        inboxState: inboxState ? {
-          messages: inboxState.messages || [],
-          unreadCount: inboxState.unreadCount || 0
-        } : null,
-
-        transferState: transferState ? {
-          activeListings: transferState.activeListings || [],
-          userListings: transferState.userListings || [],
-          userBids: transferState.userBids || [],
-          freeAgents: transferState.freeAgents || [],
-          notifications: transferState.notifications || [],
-          transferWindow: transferState.transferWindow || { isOpen: false }
-        } : null,
-
-        metadata: {
-          userTeamName: teamState.teams[teamState.userTeamId]?.name || 'Unknown',
-          season: gameState.currentSeason,
-          phase: gameState.currentPhase,
-          matchday: leagueState.currentMatchday,
-          position: this._getTeamPosition(leagueState.standings, teamState.userTeamId),
-          budget: financeState.teamFinances instanceof Map
-            ? financeState.teamFinances.get(teamState.userTeamId)?.currentBudget || 0
-            : 0
-        }
-      };
-
-      // Generate checksum
-      saveData.checksum = this._generateChecksum(saveData);
-
-      // Save to localStorage
-      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-
-      console.log(`Game saved: ${saveData.saveName}`);
-      return true;
+      return { success: true, saveId };
     } catch (error) {
-      console.error('Error saving game:', error);
-      return false;
+      console.error('Error creating save:', error);
+      return { success: false, error: error.message };
     }
   }
 
   /**
-   * Load saved game
+   * Validate that stores have actual game data (not empty/default state)
    * @param {Object} stores - All Zustand stores
-   * @returns {boolean} Success status
+   * @returns {{valid: boolean, reason?: string}}
    */
-  loadGame(stores) {
+  _validateStoresNotEmpty(stores) {
+    const teamState = stores.teamStore.getState();
+    const gameState = stores.gameStore.getState();
+    const leagueState = stores.leagueStore.getState();
+
+    // Check 1: Must have a user team selected
+    if (!teamState.userTeamId) {
+      return { valid: false, reason: 'No team selected' };
+    }
+
+    // Check 2: Must have teams data
+    if (!teamState.teams || Object.keys(teamState.teams).length === 0) {
+      return { valid: false, reason: 'Teams data is empty' };
+    }
+
+    // Check 3: User team must exist in teams
+    const userTeam = teamState.teams[teamState.userTeamId];
+    if (!userTeam) {
+      return { valid: false, reason: 'User team not found in teams data' };
+    }
+
+    // Check 4: Must have squad lists with players (after auction)
+    const userSquad = teamState.squadLists?.[teamState.userTeamId];
+    if (!userSquad || userSquad.length === 0) {
+      return { valid: false, reason: 'User team has no players' };
+    }
+
+    // Check 5: Game state must be initialized
+    if (!gameState.currentSeason || !gameState.currentPhase) {
+      return { valid: false, reason: 'Game state not initialized' };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Create an autosave with a specific label
+   * @param {Object} stores - All Zustand stores
+   * @param {string} label - Autosave label (e.g., "After Match vs London Lions")
+   * @returns {Promise<{success: boolean, saveId?: string}>}
+   */
+  async createAutosave(stores, label) {
+    if (!this.autosaveSettings.enabled) {
+      return { success: false, error: 'Autosave disabled' };
+    }
+    return this.createSave(stores, { label, type: 'autosave' });
+  }
+
+  /**
+   * Create a manual save with a custom name
+   * @param {Object} stores - All Zustand stores
+   * @param {string} name - Save name
+   * @returns {Promise<{success: boolean, saveId?: string}>}
+   */
+  async createManualSave(stores, name) {
+    return this.createSave(stores, { label: name, type: 'manual' });
+  }
+
+  /**
+   * Load a save by ID
+   * @param {string} saveId - Save ID to load
+   * @param {Object} stores - All Zustand stores
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async loadSave(saveId, stores) {
     try {
-      const saveStr = localStorage.getItem(SAVE_KEY);
+      const storageKey = SAVE_PREFIX + saveId;
+      const saveStr = await get(storageKey);
+
       if (!saveStr) {
-        console.error('No save found');
-        return false;
+        return { success: false, error: 'Save not found' };
       }
 
       let saveData = JSON.parse(saveStr);
@@ -221,22 +240,38 @@ class SaveGameManager {
       // Restore states
       this._restoreStoreStates(saveData, stores);
 
-      console.log(`Game loaded: ${saveData.saveName}`);
-      return true;
+      console.log(`Game loaded: ${saveData.label}`);
+      return { success: true };
     } catch (error) {
-      console.error('Error loading game:', error);
-      return false;
+      console.error('Error loading save:', error);
+      return { success: false, error: error.message };
     }
   }
 
   /**
-   * Delete current save
-   * @returns {boolean}
+   * Load the most recent save
+   * @param {Object} stores - All Zustand stores
+   * @returns {Promise<{success: boolean, error?: string}>}
    */
-  deleteSave() {
+  async loadMostRecent(stores) {
+    const mostRecent = await this.getMostRecentSave();
+    if (!mostRecent) {
+      return { success: false, error: 'No saves found' };
+    }
+    return this.loadSave(mostRecent.id, stores);
+  }
+
+  /**
+   * Delete a save by ID
+   * @param {string} saveId - Save ID to delete
+   * @returns {Promise<boolean>}
+   */
+  async deleteSave(saveId) {
     try {
-      localStorage.removeItem(SAVE_KEY);
-      console.log('Save deleted');
+      const storageKey = SAVE_PREFIX + saveId;
+      await del(storageKey);
+      await this._removeFromIndex(saveId);
+      console.log(`Save deleted: ${saveId}`);
       return true;
     } catch (error) {
       console.error('Error deleting save:', error);
@@ -245,15 +280,106 @@ class SaveGameManager {
   }
 
   /**
-   * Export current save to .cm25 file
-   * @param {string} filename - Optional custom filename
-   * @returns {boolean}
+   * Delete all saves
+   * @returns {Promise<boolean>}
    */
-  exportSave(filename = null) {
+  async deleteAllSaves() {
     try {
-      const saveStr = localStorage.getItem(SAVE_KEY);
+      const allKeys = await keys();
+      const saveKeys = allKeys.filter(k =>
+        typeof k === 'string' && k.startsWith(SAVE_PREFIX)
+      );
+
+      for (const key of saveKeys) {
+        await del(key);
+      }
+
+      await del(SAVE_INDEX_KEY);
+      console.log('All saves deleted');
+      return true;
+    } catch (error) {
+      console.error('Error deleting all saves:', error);
+      return false;
+    }
+  }
+
+  // ============================================
+  // Autosave Triggers
+  // ============================================
+
+  /**
+   * Trigger autosave after a user match
+   * @param {Object} stores - All Zustand stores
+   * @param {Object} matchInfo - Match info for label
+   * @returns {Promise<{success: boolean, saveId?: string}>}
+   */
+  async autosaveAfterMatch(stores, matchInfo = {}) {
+    if (!this.autosaveSettings.enabled || !this.autosaveSettings.saveAfterMatch) {
+      return { success: false };
+    }
+
+    const { opponentName, result, score } = matchInfo;
+    let label = 'After Match';
+
+    if (opponentName) {
+      label = result === 'win'
+        ? `Won vs ${opponentName}`
+        : result === 'loss'
+          ? `Lost vs ${opponentName}`
+          : `Drew vs ${opponentName}`;
+      if (score) {
+        label += ` (${score})`;
+      }
+    }
+
+    return this.createAutosave(stores, label);
+  }
+
+  /**
+   * Trigger autosave after auction completes
+   * @param {Object} stores - All Zustand stores
+   * @param {Object} auctionInfo - Auction info for label
+   * @returns {Promise<{success: boolean, saveId?: string}>}
+   */
+  async autosaveAfterAuction(stores, auctionInfo = {}) {
+    if (!this.autosaveSettings.enabled || !this.autosaveSettings.saveAfterAuction) {
+      return { success: false };
+    }
+
+    const { playersAcquired = 0, budgetSpent = 0 } = auctionInfo;
+    const label = `After Auction (${playersAcquired} players, $${(budgetSpent / 1000000).toFixed(1)}M spent)`;
+
+    return this.createAutosave(stores, label);
+  }
+
+  // ============================================
+  // Export/Import
+  // ============================================
+
+  /**
+   * Export a save to .cm25 file
+   * @param {string} saveId - Save ID to export (or null for most recent)
+   * @param {string} filename - Optional custom filename
+   * @returns {Promise<boolean>}
+   */
+  async exportSave(saveId = null, filename = null) {
+    try {
+      let storageKey;
+
+      if (saveId) {
+        storageKey = SAVE_PREFIX + saveId;
+      } else {
+        const mostRecent = await this.getMostRecentSave();
+        if (!mostRecent) {
+          console.error('No save to export');
+          return false;
+        }
+        storageKey = SAVE_PREFIX + mostRecent.id;
+      }
+
+      const saveStr = await get(storageKey);
       if (!saveStr) {
-        console.error('No save to export');
+        console.error('Save not found');
         return false;
       }
 
@@ -275,8 +401,7 @@ class SaveGameManager {
       const blob = new Blob([compressed], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
 
-      const safeName = (saveData.saveName || 'save').replace(/[^a-z0-9]/gi, '_');
-      // Use in-game day for filename
+      const safeName = (saveData.label || 'save').replace(/[^a-z0-9]/gi, '_');
       const gameDay = saveData.gameState?.gameDay || 1;
       const defaultFilename = filename || `cm25_${safeName}_Day${gameDay}.cm25`;
 
@@ -297,9 +422,9 @@ class SaveGameManager {
   }
 
   /**
-   * Import save from .cm25 file (replaces current save)
+   * Import save from .cm25 file
    * @param {File} file
-   * @returns {Promise<{success: boolean, error?: string, saveName?: string}>}
+   * @returns {Promise<{success: boolean, error?: string, saveId?: string}>}
    */
   async importSave(file) {
     return new Promise((resolve) => {
@@ -310,7 +435,7 @@ class SaveGameManager {
 
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           let saveData;
           try {
@@ -330,16 +455,34 @@ class SaveGameManager {
             return;
           }
 
-          // Migrate and save
+          // Migrate if needed
           saveData = this._migrateSaveData(saveData);
+
+          // Generate new save ID for import
+          const saveId = `manual_${Date.now()}_imported`;
+          const storageKey = SAVE_PREFIX + saveId;
+
+          saveData.id = saveId;
           saveData.importedAt = new Date().toISOString();
           saveData.importedFrom = file.name;
+          saveData.type = 'manual';
+          saveData.label = saveData.label || saveData.saveName || `Imported from ${file.name}`;
           saveData.checksum = this._generateChecksum(saveData);
 
-          localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+          // Store the save
+          await set(storageKey, JSON.stringify(saveData));
 
-          console.log(`Imported: ${saveData.saveName}`);
-          resolve({ success: true, saveName: saveData.saveName });
+          // Update index
+          await this._addToIndex({
+            id: saveId,
+            type: 'manual',
+            label: saveData.label,
+            timestamp: saveData.timestamp,
+            metadata: saveData.metadata
+          });
+
+          console.log(`Imported: ${saveData.label}`);
+          resolve({ success: true, saveId, saveName: saveData.label });
         } catch (error) {
           console.error('Import error:', error);
           resolve({ success: false, error: 'Failed to parse save file.' });
@@ -351,16 +494,554 @@ class SaveGameManager {
     });
   }
 
+  // ============================================
+  // Settings
+  // ============================================
+
+  /**
+   * Get autosave settings
+   * @returns {Object}
+   */
+  getAutosaveSettings() {
+    return { ...this.autosaveSettings };
+  }
+
+  /**
+   * Get the maximum number of autosaves allowed based on auth state
+   * Anonymous users: 2 autosaves
+   * Logged-in users: 10 autosaves
+   * @returns {number}
+   */
+  getMaxAutosaves() {
+    try {
+      // Dynamically check auth store to avoid circular dependencies
+      const authStore = window.__authStore;
+      if (authStore) {
+        const state = authStore.getState();
+        const isLoggedIn = !state.isAnonymous && !!state.user;
+        return isLoggedIn
+          ? this.autosaveSettings.maxAutosavesLoggedIn
+          : this.autosaveSettings.maxAutosavesAnonymous;
+      }
+    } catch (error) {
+      console.warn('Could not check auth state for autosave limit:', error);
+    }
+
+    // Default to anonymous limit if auth check fails
+    return this.autosaveSettings.maxAutosavesAnonymous;
+  }
+
+  /**
+   * Update autosave settings
+   * @param {Object} settings
+   */
+  setAutosaveSettings(settings) {
+    this.autosaveSettings = {
+      ...this.autosaveSettings,
+      ...settings
+    };
+  }
+
   /**
    * Get save format version
+   * @returns {string}
    */
   getVersion() {
     return SAVE_FORMAT_VERSION;
   }
 
   // ============================================
+  // Cloud Save Operations
+  // ============================================
+
+  /**
+   * Upload a save to cloud storage (Supabase)
+   * @param {string} saveId - Save ID to upload
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async uploadToCloud(saveId) {
+    try {
+      const { supabase, isSupabaseConfigured, getCurrentUserId } = await import('./supabaseClient.js');
+
+      if (!isSupabaseConfigured()) {
+        return { success: false, error: 'Cloud saves not configured' };
+      }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        return { success: false, error: 'Not logged in' };
+      }
+
+      // Get the save data
+      const storageKey = SAVE_PREFIX + saveId;
+      const saveStr = await get(storageKey);
+
+      if (!saveStr) {
+        return { success: false, error: 'Save not found' };
+      }
+
+      const saveData = JSON.parse(saveStr);
+
+      // Upload to Supabase
+      const { error } = await supabase
+        .from('game_saves')
+        .upsert({
+          id: saveId,
+          user_id: userId,
+          save_type: saveData.type || 'manual',
+          label: saveData.label,
+          save_data: saveData,
+          metadata: saveData.metadata,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        });
+
+      if (error) {
+        console.error('Cloud upload error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log(`☁️ Uploaded to cloud: ${saveData.label}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Cloud upload error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Download all saves from cloud storage
+   * @returns {Promise<Array>} Array of cloud save metadata
+   */
+  async downloadFromCloud() {
+    try {
+      const { supabase, isSupabaseConfigured, getCurrentUserId } = await import('./supabaseClient.js');
+
+      if (!isSupabaseConfigured()) {
+        return [];
+      }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('game_saves')
+        .select('id, save_type, label, metadata, created_at, updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Cloud download error:', error);
+        return [];
+      }
+
+      console.log(`☁️ Found ${data?.length || 0} cloud saves`);
+      return data || [];
+    } catch (error) {
+      console.error('Cloud download error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Download a specific save from cloud and store locally
+   * @param {string} cloudSaveId - Cloud save ID to download
+   * @returns {Promise<{success: boolean, saveId?: string, error?: string}>}
+   */
+  async downloadCloudSave(cloudSaveId) {
+    try {
+      const { supabase, isSupabaseConfigured, getCurrentUserId } = await import('./supabaseClient.js');
+
+      if (!isSupabaseConfigured()) {
+        return { success: false, error: 'Cloud saves not configured' };
+      }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        return { success: false, error: 'Not logged in' };
+      }
+
+      // Fetch full save data from cloud
+      const { data, error } = await supabase
+        .from('game_saves')
+        .select('*')
+        .eq('id', cloudSaveId)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Cloud fetch error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (!data || !data.save_data) {
+        return { success: false, error: 'Save not found in cloud' };
+      }
+
+      // Store locally
+      const storageKey = SAVE_PREFIX + cloudSaveId;
+      await set(storageKey, JSON.stringify(data.save_data));
+
+      // Update local index
+      await this._addToIndex({
+        id: cloudSaveId,
+        type: data.save_type || 'manual',
+        label: data.label,
+        timestamp: data.updated_at || data.created_at,
+        metadata: data.metadata,
+        isCloudSave: true
+      });
+
+      console.log(`☁️ Downloaded from cloud: ${data.label}`);
+      return { success: true, saveId: cloudSaveId };
+    } catch (error) {
+      console.error('Cloud download error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Sync all local saves to cloud
+   * @returns {Promise<{success: boolean, uploaded: number, errors: number}>}
+   */
+  async syncToCloud() {
+    try {
+      const { isSupabaseConfigured, getCurrentUserId } = await import('./supabaseClient.js');
+
+      if (!isSupabaseConfigured()) {
+        return { success: false, uploaded: 0, errors: 0, error: 'Cloud saves not configured' };
+      }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        return { success: false, uploaded: 0, errors: 0, error: 'Not logged in' };
+      }
+
+      const localSaves = await this.listSaves();
+      let uploaded = 0;
+      let errors = 0;
+
+      for (const save of localSaves) {
+        const result = await this.uploadToCloud(save.id);
+        if (result.success) {
+          uploaded++;
+        } else {
+          errors++;
+        }
+      }
+
+      console.log(`☁️ Sync complete: ${uploaded} uploaded, ${errors} errors`);
+      return { success: errors === 0, uploaded, errors };
+    } catch (error) {
+      console.error('Cloud sync error:', error);
+      return { success: false, uploaded: 0, errors: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Delete a save from cloud storage
+   * @param {string} saveId - Save ID to delete from cloud
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteFromCloud(saveId) {
+    try {
+      const { supabase, isSupabaseConfigured, getCurrentUserId } = await import('./supabaseClient.js');
+
+      if (!isSupabaseConfigured()) {
+        return { success: false, error: 'Cloud saves not configured' };
+      }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        return { success: false, error: 'Not logged in' };
+      }
+
+      const { error } = await supabase
+        .from('game_saves')
+        .delete()
+        .eq('id', saveId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Cloud delete error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log(`☁️ Deleted from cloud: ${saveId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Cloud delete error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // Legacy Compatibility
+  // ============================================
+
+  /**
+   * Check for legacy localStorage save and migrate to IndexedDB
+   * @returns {Promise<{migrated: boolean, saveId?: string}>}
+   */
+  async migrateLegacySave() {
+    try {
+      const legacySaveKey = 'cm25_current_save';
+      const legacySaveStr = localStorage.getItem(legacySaveKey);
+
+      if (!legacySaveStr) {
+        return { migrated: false };
+      }
+
+      const legacySave = JSON.parse(legacySaveStr);
+
+      // Create new save from legacy data
+      const saveId = `manual_${Date.now()}_migrated`;
+      const storageKey = SAVE_PREFIX + saveId;
+
+      const saveData = {
+        ...legacySave,
+        id: saveId,
+        type: 'manual',
+        label: legacySave.saveName || 'Migrated Save',
+        migratedFromLegacy: true,
+        migratedAt: new Date().toISOString()
+      };
+
+      await set(storageKey, JSON.stringify(saveData));
+
+      await this._addToIndex({
+        id: saveId,
+        type: 'manual',
+        label: saveData.label,
+        timestamp: saveData.timestamp,
+        metadata: saveData.metadata
+      });
+
+      // Remove legacy save
+      localStorage.removeItem(legacySaveKey);
+
+      console.log('Legacy save migrated to IndexedDB');
+      return { migrated: true, saveId };
+    } catch (error) {
+      console.error('Error migrating legacy save:', error);
+      return { migrated: false };
+    }
+  }
+
+  // ============================================
   // Private Methods
   // ============================================
+
+  _buildSaveData(stores, options = {}) {
+    const { label, type = 'manual', saveId } = options;
+
+    const gameState = stores.gameStore.getState();
+    const teamState = stores.teamStore.getState();
+    const playerState = stores.playerStore.getState();
+    const leagueState = stores.leagueStore.getState();
+    const financeState = stores.financeStore.getState();
+    const matchState = stores.matchStore.getState();
+    const auctionState = stores.auctionStore?.getState();
+    const inboxState = stores.inboxStore?.getState();
+    const transferState = stores.transferStore?.getState();
+
+    // Get user team position from standings
+    const position = this._getTeamPosition(leagueState.standings, teamState.userTeamId);
+
+    // Get user team stats from standings
+    const userStanding = leagueState.standings?.find(s => s.clubId === teamState.userTeamId);
+
+    const metadata = {
+      // Team info
+      userTeamId: teamState.userTeamId,
+      userTeamName: teamState.teams[teamState.userTeamId]?.name || 'Unknown',
+      userTeamColors: teamState.teams[teamState.userTeamId]?.colors || null,
+
+      // Game progress
+      season: gameState.currentSeason,
+      phase: gameState.currentPhase,
+      matchday: leagueState.currentMatchday || 0,
+      gameDay: gameState.gameDay || 1,
+      inGameDate: gameState.currentDate, // In-game calendar date
+
+      // League position
+      position: position,
+      points: userStanding?.points || 0,
+      played: userStanding?.played || 0,
+      won: userStanding?.won || 0,
+      lost: userStanding?.lost || 0,
+
+      // Financial
+      budget: financeState.teamFinances instanceof Map
+        ? financeState.teamFinances.get(teamState.userTeamId)?.currentBudget || 0
+        : 0,
+
+      // Real-world timestamp (for "9 hours ago" display)
+      savedAt: new Date().toISOString()
+    };
+
+    const autoLabel = label || this._generateSaveName(gameState, teamState, type);
+
+    const saveData = {
+      id: saveId,
+      version: SAVE_FORMAT_VERSION,
+      type,
+      label: autoLabel,
+      timestamp: new Date().toISOString(),
+
+      gameState: {
+        currentSeason: gameState.currentSeason,
+        currentPhase: gameState.currentPhase,
+        currentWeek: gameState.currentWeek,
+        currentDate: gameState.currentDate,
+        gameDay: gameState.gameDay || 1,
+        calendarEvents: gameState.calendarEvents || [],
+        settings: gameState.settings,
+        seasonObjectives: gameState.seasonObjectives || [],
+        objectiveTracking: gameState.objectiveTracking || {}
+      },
+
+      teamState: {
+        teams: teamState.teams,
+        userTeamId: teamState.userTeamId,
+        squadLists: Object.fromEntries(
+          Object.entries(teamState.squadLists || {}).map(([teamId, playerIds]) => [
+            teamId,
+            Array.isArray(playerIds) ? playerIds : []
+          ])
+        ),
+        teamTactics: teamState.teamTactics || {},
+        playerStats: teamState.playerStats,
+        teamStats: teamState.teamStats
+      },
+
+      playerState: {
+        careerStats: playerState.careerStats,
+        currentSeasonId: playerState.currentSeasonId,
+        playerTeamAssignments: Object.entries(playerState.players)
+          .filter(([_, player]) => player.currentTeam)
+          .reduce((acc, [playerId, player]) => {
+            acc[playerId] = player.currentTeam;
+            return acc;
+          }, {}),
+        playerConditions: Object.entries(playerState.players)
+          .reduce((acc, [playerId, player]) => {
+            if (player.condition) {
+              acc[playerId] = player.condition;
+            }
+            return acc;
+          }, {})
+      },
+
+      leagueState: {
+        seasonId: leagueState.seasonId,
+        seasonName: leagueState.seasonName,
+        currentMatchday: leagueState.currentMatchday,
+        currentWeek: leagueState.currentWeek,
+        currentFixtureIndex: leagueState.currentFixtureIndex,
+        stage: leagueState.stage,
+        fixtures: leagueState.fixtures,
+        matchWeeks: leagueState.matchWeeks,
+        results: leagueState.results,
+        standings: leagueState.standings,
+        clubs: leagueState.clubs,
+        stats: leagueState.stats,
+        playoffFixtures: leagueState.playoffFixtures,
+        playoffResults: leagueState.playoffResults,
+        champion: leagueState.champion
+      },
+
+      financeState: {
+        seasonId: financeState.seasonId,
+        initialized: financeState.initialized,
+        teamFinances: financeState.teamFinances instanceof Map
+          ? Array.from(financeState.teamFinances.entries())
+          : Array.isArray(financeState.teamFinances)
+            ? financeState.teamFinances
+            : [],
+        transactionHistory: financeState.transactionHistory
+      },
+
+      matchState: {
+        matchId: matchState.matchId,
+        status: matchState.status
+      },
+
+      auctionState: auctionState ? {
+        auctionState: auctionState.auctionState,
+        rounds: auctionState.rounds,
+        currentRound: auctionState.currentRound,
+        currentPlayerIndex: auctionState.currentPlayerIndex,
+        soldPlayers: auctionState.soldPlayers,
+        userMaxBid: auctionState.userMaxBid,
+        userMaxBidPlayerId: auctionState.userMaxBidPlayerId
+      } : null,
+
+      inboxState: inboxState ? {
+        messages: inboxState.messages || [],
+        unreadCount: inboxState.unreadCount || 0
+      } : null,
+
+      transferState: transferState ? {
+        activeListings: transferState.activeListings || [],
+        userListings: transferState.userListings || [],
+        userBids: transferState.userBids || [],
+        freeAgents: transferState.freeAgents || [],
+        notifications: transferState.notifications || [],
+        transferWindow: transferState.transferWindow || { isOpen: false }
+      } : null,
+
+      metadata
+    };
+
+    saveData.checksum = this._generateChecksum(saveData);
+
+    return saveData;
+  }
+
+  async _addToIndex(slot) {
+    try {
+      const index = await get(SAVE_INDEX_KEY) || [];
+
+      // Remove if already exists (update)
+      const filteredIndex = index.filter(s => s.id !== slot.id);
+      filteredIndex.push(slot);
+
+      await set(SAVE_INDEX_KEY, filteredIndex);
+    } catch (error) {
+      console.error('Error updating save index:', error);
+    }
+  }
+
+  async _removeFromIndex(saveId) {
+    try {
+      const index = await get(SAVE_INDEX_KEY) || [];
+      const filteredIndex = index.filter(s => s.id !== saveId);
+      await set(SAVE_INDEX_KEY, filteredIndex);
+    } catch (error) {
+      console.error('Error removing from save index:', error);
+    }
+  }
+
+  async _enforceAutosaveLimit() {
+    try {
+      let autosaves = await this.listSavesByType('autosave');
+      const maxSlots = this.getMaxAutosaves();
+
+      // Delete oldest autosaves beyond limit (autosaves are sorted newest first)
+      while (autosaves.length > maxSlots) {
+        const oldest = autosaves[autosaves.length - 1];
+        await this.deleteSave(oldest.id);
+        console.log(`Deleted old autosave: ${oldest.label} (limit: ${maxSlots})`);
+        autosaves = autosaves.slice(0, -1); // Remove from array
+      }
+    } catch (error) {
+      console.error('Error enforcing autosave limit:', error);
+    }
+  }
 
   _restoreStoreStates(saveData, stores) {
     // Game Store
@@ -502,6 +1183,7 @@ class SaveGameManager {
   _migrateSaveData(saveData) {
     let data = { ...saveData };
 
+    // v1.0.0 to v2.0.0 migration
     if (!data.version || data.version === '1.0.0') {
       console.log('Migrating save from v1.0.0 to v2.0.0');
 
@@ -527,6 +1209,23 @@ class SaveGameManager {
       }
 
       data.version = '2.0.0';
+    }
+
+    // v2.0.0 to v2.1.0 migration (add type/label if missing)
+    if (data.version === '2.0.0') {
+      console.log('Migrating save from v2.0.0 to v2.1.0');
+
+      if (!data.type) {
+        data.type = 'manual';
+      }
+      if (!data.label) {
+        data.label = data.saveName || 'Unnamed Save';
+      }
+
+      data.version = '2.1.0';
+    }
+
+    if (data.version !== SAVE_FORMAT_VERSION) {
       data.migratedAt = new Date().toISOString();
     }
 
@@ -551,9 +1250,10 @@ class SaveGameManager {
     return hash.toString(16);
   }
 
-  _generateSaveName(gameState, teamState) {
+  _generateSaveName(gameState, teamState, type) {
     const teamName = teamState.teams[teamState.userTeamId]?.name || 'Unknown';
-    return `${teamName} - S${gameState.currentSeason} ${gameState.currentPhase}`;
+    const prefix = type === 'autosave' ? 'Auto: ' : '';
+    return `${prefix}${teamName} - S${gameState.currentSeason} ${gameState.currentPhase}`;
   }
 
   _getTeamPosition(standings, teamId) {

@@ -346,7 +346,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
           <h4 className="text-xs font-semibold text-text-primary">Field Setup</h4>
           <button
             onClick={() => setCustomizeMode(true)}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded transition-colors bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border-primary"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded transition-colors bg-transparent border border-white/10 text-text-secondary hover:text-text-primary border border-border-primary"
           >
             <Edit3 className="w-3 h-3" />
             Customize
@@ -357,7 +357,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Field Visualization - 2/3 width */}
           <div className="lg:col-span-2">
-            <div className="bg-bg-tertiary rounded-lg p-2" style={{ aspectRatio: '1 / 1' }}>
+            <div className="bg-transparent border border-white/10 rounded-lg p-2" style={{ aspectRatio: '1 / 1' }}>
               {renderFieldSVG(false)}
             </div>
 
@@ -384,7 +384,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
 
           {/* Position List with Player Assignment - 1/3 width */}
           <div className="lg:col-span-1">
-            <div className="fielding-player-assignments card p-2 bg-bg-tertiary">
+            <div className="fielding-player-assignments card p-2 bg-transparent border border-white/10">
               <h5 className="text-xs font-semibold text-text-primary mb-2 pb-1 border-b border-border-primary">
                 Player Assignments
               </h5>
@@ -398,67 +398,67 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
                     return a.originalIndex - b.originalIndex;
                   })
                   .map(({ position, originalIndex: index }) => {
-                  const isKeeper = index === 1;
-                  const isBowler = index === 0;
-                  const color = getFielderColor(position);
+                    const isKeeper = index === 1;
+                    const isBowler = index === 0;
+                    const color = getFielderColor(position);
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1.5 p-1.5 rounded bg-bg-secondary border border-border-primary"
-                    >
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium text-text-primary truncate">
-                          {index + 1}. {position.name?.replace(/_/g, ' ').split(' ').map(w =>
-                            w.charAt(0).toUpperCase() + w.slice(1)
-                          ).join(' ')}
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-1.5 p-1.5 rounded bg-bg-secondary border border-border-primary"
+                      >
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-text-primary truncate">
+                            {index + 1}. {position.name?.replace(/_/g, ' ').split(' ').map(w =>
+                              w.charAt(0).toUpperCase() + w.slice(1)
+                            ).join(' ')}
+                          </div>
+
+                          {isBowler ? (
+                            <div className="text-xs text-text-secondary">Bowler (auto)</div>
+                          ) : isKeeper ? (
+                            <select
+                              value={playerAssignments[index] || ''}
+                              onChange={(e) => handlePlayerAssignment(index, e.target.value)}
+                              className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
+                            >
+                              <option value="">Auto-assign wicketkeeper</option>
+                              {wicketkeeperCandidates.map(player => {
+                                const wicketkeeperRating = Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0);
+                                return (
+                                  <option key={player.id} value={player.id}>
+                                    {player.name} ({wicketkeeperRating})
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          ) : (
+                            <select
+                              value={playerAssignments[index] || ''}
+                              onChange={(e) => handlePlayerAssignment(index, e.target.value)}
+                              className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
+                            >
+                              <option value="">Auto-assign</option>
+                              {teamPlayers.map(player => {
+                                // Calculate fielding rating from attributes
+                                const fieldingAttrs = player.attributes?.fielding || {};
+                                const catching = fieldingAttrs.catching || 0;
+                                const groundFielding = fieldingAttrs.groundFielding || 0;
+                                const throwAccuracy = fieldingAttrs.throwAccuracy || 0;
+                                const fieldingRating = Math.round((catching + groundFielding + throwAccuracy) / 3);
+                                return (
+                                  <option key={player.id} value={player.id}>
+                                    {player.name} ({fieldingRating})
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          )}
                         </div>
-
-                        {isBowler ? (
-                          <div className="text-xs text-text-secondary">Bowler (auto)</div>
-                        ) : isKeeper ? (
-                          <select
-                            value={playerAssignments[index] || ''}
-                            onChange={(e) => handlePlayerAssignment(index, e.target.value)}
-                            className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
-                          >
-                            <option value="">Auto-assign wicketkeeper</option>
-                            {wicketkeeperCandidates.map(player => {
-                              const wicketkeeperRating = Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0);
-                              return (
-                                <option key={player.id} value={player.id}>
-                                  {player.name} ({wicketkeeperRating})
-                                </option>
-                              );
-                            })}
-                          </select>
-                        ) : (
-                          <select
-                            value={playerAssignments[index] || ''}
-                            onChange={(e) => handlePlayerAssignment(index, e.target.value)}
-                            className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
-                          >
-                            <option value="">Auto-assign</option>
-                            {teamPlayers.map(player => {
-                              // Calculate fielding rating from attributes
-                              const fieldingAttrs = player.attributes?.fielding || {};
-                              const catching = fieldingAttrs.catching || 0;
-                              const groundFielding = fieldingAttrs.groundFielding || 0;
-                              const throwAccuracy = fieldingAttrs.throwAccuracy || 0;
-                              const fieldingRating = Math.round((catching + groundFielding + throwAccuracy) / 3);
-                              return (
-                                <option key={player.id} value={player.id}>
-                                  {player.name} ({fieldingRating})
-                                </option>
-                              );
-                            })}
-                          </select>
-                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           </div>

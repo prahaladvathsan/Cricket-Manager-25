@@ -9,6 +9,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import MessageGenerator from '../utils/MessageGenerator';
 import { generateSeasonObjectives, calculateBoardScore, updateAllObjectives } from '../utils/ObjectiveGenerator';
 import { compressedStorageOptions } from '../utils/compression.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} GameState
@@ -682,7 +684,7 @@ const useGameStore = create(
     {
       name: 'cm25-game-store',
       version: 4, // Bumped version for compressed storage migration
-      storage: createJSONStorage(() => localStorage, compressedStorageOptions),
+      storage: createJSONStorage(() => indexedDBStorage, compressedStorageOptions),
       // Merge function to ensure new state properties are added to existing saves
       merge: (persistedState, currentState) => {
         // Deep merge settings to preserve new default settings
@@ -703,6 +705,12 @@ const useGameStore = create(
           settings: mergedSettings,
           tutorialProgress: mergedTutorialProgress
         };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate gameStore:', error);
+        }
+        markHydrated('game');
       }
     }
   )

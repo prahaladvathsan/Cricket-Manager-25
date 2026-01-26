@@ -6,12 +6,15 @@
   * {
     box-sizing: border-box;
     /* Hide scrollbars globally while keeping scroll functionality */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
   }
 
   *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
   }
 
   html {
@@ -31,6 +34,21 @@
   #root {
     height: 100%;
   }
+
+  h1 {
+    @apply font-display text-4xl uppercase tracking-wider;
+  }
+
+  h2 {
+    @apply font-heading text-3xl font-semibold;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-medium;
+  }
 }
 
 @layer components {
@@ -39,7 +57,7 @@
   }
 
   .btn-secondary {
-    @apply bg-bg-tertiary hover:bg-bg-hover text-text-primary border border-border-primary font-medium px-6 py-3 rounded-md transition-colors;
+    @apply bg-transparent hover:bg-bg-hover text-text-primary border border-border-primary font-medium px-6 py-3 rounded-md transition-colors;
   }
 
   .btn-danger {
@@ -52,9 +70,7 @@
 
   /* Interactive card variant for clickable dashboard cards */
   .card-interactive {
-    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md
-           hover:border-cricket-accent/50 hover:bg-cricket-primary/10
-           transition-colors cursor-pointer;
+    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md hover:border-cricket-accent/50 hover:bg-cricket-primary/10 transition-colors cursor-pointer;
   }
 
   .input-field {
@@ -94,11 +110,14 @@
   }
 
   .scrollbar-hide {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
   }
 
   .scrollbar-hide::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
   }
 }

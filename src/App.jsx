@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Home from './components/layout/Home';
 import Squad from './components/team/Squad';
@@ -32,8 +32,57 @@ import TestingDashboard from './components/testing/TestingDashboard';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
+import useAuthStore from './stores/authStore';
 import './styles/wallpaper.css';
 import { getGameLogo } from './utils/assetHelpers';
+import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBStorage';
+import { waitForHydration } from './utils/storeHydration';
+
+/**
+ * Validate that game state is properly populated
+ * Returns true if state is valid, false if stores are empty/corrupted
+ */
+function validateGameState() {
+  const teamState = useTeamStore.getState();
+  const gameState = useGameStore.getState();
+
+  // If no user team selected, state may be empty but that's OK for new games
+  // We only consider it "corrupted" if we're on a /game/* route with no data
+  const hasUserTeam = !!teamState.userTeamId;
+  const hasTeams = teamState.teams && Object.keys(teamState.teams).length > 0;
+  const hasGamePhase = !!gameState.currentPhase;
+
+  // Valid if: no game started yet OR game has all required data
+  return !hasUserTeam || (hasTeams && hasGamePhase);
+}
+
+/**
+ * Protected route wrapper that validates game state
+ * Redirects to load-game with recovery flag if state is invalid
+ */
+function GameStateValidator({ children }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const userTeamId = useTeamStore(s => s.userTeamId);
+  const teams = useTeamStore(s => s.teams);
+  const currentPhase = useGameStore(s => s.currentPhase);
+
+  useEffect(() => {
+    // Only check if we're on a game route and have a user team selected
+    if (location.pathname.startsWith('/game') && userTeamId) {
+      const hasTeams = teams && Object.keys(teams).length > 0;
+      const hasGamePhase = !!currentPhase;
+
+      // If we have a userTeamId but missing critical data, redirect to recovery
+      if (!hasTeams || !hasGamePhase) {
+        console.warn('Game state validation failed - redirecting to recovery');
+        navigate('/load-game?recovery=true', { replace: true });
+      }
+    }
+  }, [location.pathname, userTeamId, teams, currentPhase, navigate]);
+
+  return children;
+}
 
 function App() {
   const [showTeamSelection, setShowTeamSelection] = useState(false);
@@ -47,6 +96,19 @@ function App() {
       console.log('🎮 Loading game data...');
 
       try {
+        // Migrate localStorage to IndexedDB for existing users (one-time migration)
+        const migrated = await isMigrationComplete();
+        if (!migrated) {
+          console.log('🔄 Migrating localStorage to IndexedDB...');
+          const result = await migrateFromLocalStorage();
+          if (result.migrated.length > 0) {
+            console.log(`✅ Migrated ${result.migrated.length} stores to IndexedDB`);
+          }
+          if (result.errors.length > 0) {
+            console.warn('⚠️ Migration errors:', result.errors);
+          }
+        }
+
         // Load teams data
         const teamsModule = await import('./data/teams/wpl-teams.json');
         initializeTeams(teamsModule.default);
@@ -62,20 +124,38 @@ function App() {
         playerWorker.postMessage({ type: 'LOAD_PLAYERS' });
 
         // Handle response
-        playerWorker.addEventListener('message', (e) => {
+        playerWorker.addEventListener('message', async (e) => {
           if (e.data.type === 'PLAYERS_LOADED') {
             initializePlayers(e.data.players);
             console.log('✅ Players loaded:', e.data.players.length);
+
+            // Initialize auth BEFORE waiting for hydration
+            // This ensures OAuth redirects are processed immediately
+            const initAuth = useAuthStore.getState().initAuth;
+            if (initAuth) {
+              initAuth();
+              console.log('✅ Auth state listener initialized');
+            }
+
+            // Wait for all Zustand stores to rehydrate from IndexedDB
+            console.log('⏳ Waiting for store hydration...');
+            await waitForHydration();
+            console.log('✅ All stores hydrated');
+
             setDataLoaded(true);
             playerWorker.terminate(); // Clean up worker
           } else if (e.data.type === 'PLAYERS_ERROR') {
             console.error('❌ Failed to load players:', e.data.error);
+            // Still wait for hydration before showing error state
+            await waitForHydration();
             setDataLoaded(true); // Show error state
           }
         });
 
       } catch (error) {
         console.error('❌ Error loading game data:', error);
+        // Still wait for hydration before showing error state
+        await waitForHydration();
         setDataLoaded(true);
       }
     };
@@ -139,29 +219,31 @@ function App() {
           <Route path="/game/match/:matchId/live" element={<MatchdayUI />} />
           <Route path="/game/match/:matchId/pre-match" element={<PreMatchFlow />} />
 
-          {/* Game Routes (With Layout + Tutorial) */}
+          {/* Game Routes (With Layout + Tutorial + State Validation) */}
           <Route
             path="/game/*"
             element={
-              <TutorialController>
-                <Layout>
-                  <Routes>
-                    <Route path="home" element={<Home />} />
-                    <Route path="inbox" element={<Inbox />} />
-                    <Route path="squad" element={<Squad />} />
-                    <Route path="tactics" element={<TacticsPage />} />
-                    <Route path="matches" element={<Matches />} />
-                    <Route path="match/:matchId/preview" element={<MatchPreview />} />
-                    {/* Redirect old match route to preview screen */}
-                    <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
-                    <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="league" element={<League />} />
-                    <Route path="transfers" element={<Transfers />} />
-                    <Route path="board" element={<Board />} />
-                    <Route path="*" element={<Navigate to="/game/home" replace />} />
-                  </Routes>
-                </Layout>
-              </TutorialController>
+              <GameStateValidator>
+                <TutorialController>
+                  <Layout>
+                    <Routes>
+                      <Route path="home" element={<Home />} />
+                      <Route path="inbox" element={<Inbox />} />
+                      <Route path="squad" element={<Squad />} />
+                      <Route path="tactics" element={<TacticsPage />} />
+                      <Route path="matches" element={<Matches />} />
+                      <Route path="match/:matchId/preview" element={<MatchPreview />} />
+                      {/* Redirect old match route to preview screen */}
+                      <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
+                      <Route path="calendar" element={<CalendarPage />} />
+                      <Route path="league" element={<League />} />
+                      <Route path="transfers" element={<Transfers />} />
+                      <Route path="board" element={<Board />} />
+                      <Route path="*" element={<Navigate to="/game/home" replace />} />
+                    </Routes>
+                  </Layout>
+                </TutorialController>
+              </GameStateValidator>
             }
           />
 

@@ -7,6 +7,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { compressedStorageOptions } from '../utils/compression.js';
+import { indexedDBStorage } from '../utils/indexedDBStorage.js';
+import { markHydrated } from '../utils/storeHydration.js';
 
 /**
  * @typedef {Object} Message
@@ -235,7 +237,13 @@ const useInboxStore = create(
     {
       name: 'cm25-inbox-store',
       version: 2, // Bumped version for compressed storage migration
-      storage: createJSONStorage(() => localStorage, compressedStorageOptions)
+      storage: createJSONStorage(() => indexedDBStorage, compressedStorageOptions),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate inboxStore:', error);
+        }
+        markHydrated('inbox');
+      }
     }
   )
 );

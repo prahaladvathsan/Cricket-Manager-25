@@ -36,6 +36,11 @@ import { getTeamIcon } from '../../../utils/assetHelpers';
 import SuperOverSelectionModal from '../SuperOverSelectionModal';
 import { TutorialSpotlight } from '../../tutorial';
 import useMatchdayTutorial from '../../tutorial/useMatchdayTutorial';
+import SaveGameManager from '../../../utils/SaveGameManager';
+import useInboxStore from '../../../stores/inboxStore';
+import useAuctionStore from '../../../stores/auctionStore';
+import useTransferStore from '../../../stores/transferStore';
+import AutosaveIndicator from '../../shared/AutosaveIndicator';
 
 /**
  * MatchHeader - Broadcast-style HUD with 2-row layout
@@ -1253,6 +1258,35 @@ export default function MatchdayUI() {
       setHasProcessedResult(true);
 
       console.log('✅ Match result processed successfully');
+
+      // Autosave after user match completion
+      const userTeam = userTeamId === homeTeam.id ? homeTeam : awayTeam;
+      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      const userWon = winner === userTeamId;
+      const score = `${innings1.totalScore}/${innings1.wickets} vs ${innings2.totalScore}/${innings2.wickets}`;
+
+      SaveGameManager.autosaveAfterMatch(
+        {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          playerStore: usePlayerStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          matchStore: useMatchStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          transferStore: useTransferStore
+        },
+        {
+          opponentName: opponentTeam.name,
+          result: userWon ? 'win' : 'loss',
+          score
+        }
+      ).then(result => {
+        if (result.success) {
+          console.log('💾 Autosave created after match');
+        }
+      });
     } catch (error) {
       console.error('Error processing match result:', error);
     }
@@ -1625,6 +1659,9 @@ export default function MatchdayUI() {
           onSkip={skipTutorial}
         />
       )}
+
+      {/* Autosave indicator */}
+      <AutosaveIndicator />
     </div>
   );
 }

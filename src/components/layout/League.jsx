@@ -206,8 +206,8 @@ const League = () => {
       .map(p => ({
         ...p,
         totalImpact: (p.seasonStats.battingImpact || 0) +
-                     (p.seasonStats.bowlingImpact || 0) +
-                     (p.seasonStats.fieldingImpact || 0)
+          (p.seasonStats.bowlingImpact || 0) +
+          (p.seasonStats.fieldingImpact || 0)
       }))
       .filter(p => p.totalImpact !== 0 || p.seasonStats.matches > 0)
       .sort((a, b) => b.totalImpact - a.totalImpact)
@@ -264,13 +264,12 @@ const League = () => {
                   return (
                     <tr
                       key={team.clubId}
-                      className={`border-b border-border-secondary hover:bg-bg-secondary transition-colors ${
-                        isUserTeam
-                          ? 'bg-cricket-accent/20 font-semibold'
-                          : isPlayoffSpot
+                      className={`border-b border-border-secondary hover:bg-bg-secondary transition-colors ${isUserTeam
+                        ? 'bg-cricket-accent/20 font-semibold'
+                        : isPlayoffSpot
                           ? 'bg-green-900/20'
                           : ''
-                      }`}
+                        }`}
                     >
                       <td className={`py-2 px-2 font-mono text-xs ${isUserTeam ? 'text-cricket-accent' : 'text-text-secondary'}`}>
                         {idx + 1}
@@ -287,9 +286,8 @@ const League = () => {
                       <td className="py-2 px-2 text-center text-text-negative font-mono text-xs">
                         {team.lost}
                       </td>
-                      <td className={`py-2 px-2 text-center font-mono text-xs ${
-                        team.netRunRate >= 0 ? 'text-text-positive' : 'text-text-negative'
-                      }`}>
+                      <td className={`py-2 px-2 text-center font-mono text-xs ${team.netRunRate >= 0 ? 'text-text-positive' : 'text-text-negative'
+                        }`}>
                         {team.netRunRate >= 0 ? '+' : ''}{team.netRunRate.toFixed(3)}
                       </td>
                       <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
@@ -345,22 +343,20 @@ const League = () => {
         <div className="flex gap-1 bg-bg-tertiary rounded p-1">
           <button
             onClick={() => setFixturesView('list')}
-            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-              fixturesView === 'list'
-                ? 'bg-cricket-primary text-white'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
+            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${fixturesView === 'list'
+              ? 'bg-cricket-primary text-white'
+              : 'text-text-secondary hover:text-text-primary'
+              }`}
           >
             <List className="w-3 h-3" />
             List
           </button>
           <button
             onClick={() => setFixturesView('calendar')}
-            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-              fixturesView === 'calendar'
-                ? 'bg-cricket-primary text-white'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
+            className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-colors ${fixturesView === 'calendar'
+              ? 'bg-cricket-primary text-white'
+              : 'text-text-secondary hover:text-text-primary'
+              }`}
           >
             <CalendarDays className="w-3 h-3" />
             Calendar
@@ -380,11 +376,10 @@ const League = () => {
                 return (
                   <div
                     key={idx}
-                    className={`p-3 border rounded transition-colors ${
-                      isCompleted
-                        ? 'border-border-secondary bg-bg-tertiary/50'
-                        : 'border-border-primary hover:bg-bg-secondary'
-                    }`}
+                    className={`p-3 border rounded transition-colors ${isCompleted
+                      ? 'border-border-secondary bg-bg-tertiary/50'
+                      : 'border-border-primary hover:bg-bg-secondary'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -487,23 +482,21 @@ const League = () => {
                               return (
                                 <div
                                   key={dayData.date}
-                                  className={`h-16 border rounded transition-colors ${
-                                    isToday
-                                      ? 'border-cricket-accent border-2 bg-cricket-accent/10 ring-2 ring-cricket-accent/20'
-                                      : hasFixtures
+                                  className={`h-16 border rounded transition-colors ${isToday
+                                    ? 'border-cricket-accent border-2 bg-cricket-accent/10 ring-2 ring-cricket-accent/20'
+                                    : hasFixtures
                                       ? 'border-cricket-accent/30 bg-cricket-accent/5 hover:bg-cricket-accent/10'
                                       : 'border-border-primary bg-bg-secondary'
-                                  }`}
+                                    }`}
                                 >
                                   <div className="p-1 h-full flex flex-col">
                                     {/* Day Number */}
-                                    <div className={`text-xs font-semibold mb-0.5 ${
-                                      isToday
-                                        ? 'text-cricket-accent'
-                                        : hasFixtures
+                                    <div className={`text-xs font-semibold mb-0.5 ${isToday
+                                      ? 'text-cricket-accent'
+                                      : hasFixtures
                                         ? 'text-cricket-accent'
                                         : 'text-text-secondary'
-                                    }`}>
+                                      }`}>
                                       {dayData.day}
                                       {isToday && <span className="ml-0.5 text-xxs">•</span>}
                                     </div>
@@ -630,20 +623,18 @@ const League = () => {
               <div
                 key={idx}
                 onClick={handleResultClick}
-                className={`p-3 border border-border-primary rounded transition-colors ${
-                  hasFullScorecard
-                    ? 'cursor-pointer hover:bg-cricket-primary/10 hover:border-cricket-accent'
-                    : 'hover:bg-bg-secondary'
-                }`}
+                className={`p-3 border border-border-primary rounded transition-colors ${hasFullScorecard
+                  ? 'cursor-pointer hover:bg-cricket-primary/10 hover:border-cricket-accent'
+                  : 'hover:bg-bg-secondary'
+                  }`}
                 title={hasFullScorecard ? 'Click to view full scorecard' : ''}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1 space-y-1">
                     {/* First Innings */}
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`font-medium ${
-                        result.winner === firstInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
-                      }`}>
+                      <span className={`font-medium ${result.winner === firstInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
+                        }`}>
                         <TeamName teamId={firstInnings.teamId} inline={true} showHoverEffect={result.winner === firstInnings.teamId} disableClick={hasFullScorecard} />
                       </span>
                       <span className="font-mono text-text-primary">
@@ -652,9 +643,8 @@ const League = () => {
                     </div>
                     {/* Second Innings */}
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`font-medium ${
-                        result.winner === secondInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
-                      }`}>
+                      <span className={`font-medium ${result.winner === secondInnings.teamId ? 'text-text-primary' : 'text-text-secondary'
+                        }`}>
                         <TeamName teamId={secondInnings.teamId} inline={true} showHoverEffect={result.winner === secondInnings.teamId} disableClick={hasFullScorecard} />
                       </span>
                       <span className="font-mono text-text-primary">
@@ -694,41 +684,37 @@ const League = () => {
         <div className="flex gap-1 p-1 bg-bg-tertiary rounded-lg mb-4">
           <button
             onClick={() => setLeaderboardCategory('mvp')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
-              leaderboardCategory === 'mvp'
-                ? 'bg-cricket-primary text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-            }`}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'mvp'
+              ? 'bg-cricket-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+              }`}
           >
             MVP
           </button>
           <button
             onClick={() => setLeaderboardCategory('batting')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
-              leaderboardCategory === 'batting'
-                ? 'bg-cricket-primary text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-            }`}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'batting'
+              ? 'bg-cricket-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+              }`}
           >
             Batting
           </button>
           <button
             onClick={() => setLeaderboardCategory('bowling')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
-              leaderboardCategory === 'bowling'
-                ? 'bg-cricket-primary text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-            }`}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'bowling'
+              ? 'bg-cricket-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+              }`}
           >
             Bowling
           </button>
           <button
             onClick={() => setLeaderboardCategory('fielding')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
-              leaderboardCategory === 'fielding'
-                ? 'bg-cricket-primary text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-            }`}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'fielding'
+              ? 'bg-cricket-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+              }`}
           >
             Fielding
           </button>
@@ -814,24 +800,20 @@ const League = () => {
                     </td>
                     {leaderboardCategory === 'mvp' && (
                       <>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${
-                          (player.seasonStats?.battingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
+                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.battingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
                           {(player.seasonStats?.battingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.battingImpact || 0).toFixed(1)}
                         </td>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${
-                          (player.seasonStats?.bowlingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
+                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.bowlingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
                           {(player.seasonStats?.bowlingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.bowlingImpact || 0).toFixed(1)}
                         </td>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${
-                          (player.seasonStats?.fieldingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
+                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.fieldingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
                           {(player.seasonStats?.fieldingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.fieldingImpact || 0).toFixed(1)}
                         </td>
-                        <td className={`py-2 px-2 text-center font-bold font-mono ${
-                          player.totalImpact >= 0 ? 'text-trophy-gold' : 'text-red-400'
-                        }`}>
+                        <td className={`py-2 px-2 text-center font-bold font-mono ${player.totalImpact >= 0 ? 'text-trophy-gold' : 'text-red-400'
+                          }`}>
                           {player.totalImpact >= 0 ? '+' : ''}{player.totalImpact.toFixed(1)}
                         </td>
                       </>
@@ -953,11 +935,10 @@ const League = () => {
       <div className="flex gap-2 border-b border-border-primary">
         <button
           onClick={() => setActiveTab('standings')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'standings'
-              ? 'border-cricket-accent text-cricket-accent'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'standings'
+            ? 'border-cricket-accent text-cricket-accent'
+            : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
         >
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4" />
@@ -966,11 +947,10 @@ const League = () => {
         </button>
         <button
           onClick={() => setActiveTab('fixtures')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'fixtures'
-              ? 'border-cricket-accent text-cricket-accent'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'fixtures'
+            ? 'border-cricket-accent text-cricket-accent'
+            : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
         >
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
@@ -979,11 +959,10 @@ const League = () => {
         </button>
         <button
           onClick={() => setActiveTab('results')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'results'
-              ? 'border-cricket-accent text-cricket-accent'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'results'
+            ? 'border-cricket-accent text-cricket-accent'
+            : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
         >
           <div className="flex items-center gap-2">
             <History className="w-4 h-4" />
@@ -992,11 +971,10 @@ const League = () => {
         </button>
         <button
           onClick={() => setActiveTab('leaderboards')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'leaderboards'
-              ? 'border-cricket-accent text-cricket-accent'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'leaderboards'
+            ? 'border-cricket-accent text-cricket-accent'
+            : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
         >
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4" />
@@ -1007,11 +985,10 @@ const League = () => {
         {(stage === 'playoffs' || stage === 'completed') && (
           <button
             onClick={() => setActiveTab('playoffs')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-              activeTab === 'playoffs'
-                ? 'border-cricket-accent text-cricket-accent'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'playoffs'
+              ? 'border-cricket-accent text-cricket-accent'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
           >
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />

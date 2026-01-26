@@ -90,11 +90,10 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase, comp
                 key={template.id}
                 onClick={() => onSelectTemplate(template.id)}
                 title={template.description}
-                className={`relative px-2 py-1.5 rounded text-xs font-medium transition-colors truncate ${
-                  isSelected
+                className={`relative px-2 py-1.5 rounded text-xs font-medium transition-colors truncate ${isSelected
                     ? `${config.bgSelected} border ${config.color}`
                     : `bg-bg-tertiary border border-border-primary text-text-secondary ${config.bgHover} hover:text-text-primary`
-                }`}
+                  }`}
               >
                 {isSelected && (
                   <Check className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3" />
@@ -123,19 +122,18 @@ const FieldTemplateSelector = ({ selectedTemplate, onSelectTemplate, phase, comp
           const isSelected = selectedTemplate === template.id;
           const style = template.formationStyle || 'neutral';
           const config = style === 'attacking' ? mentalityConfig.attacking :
-                        style === 'defensive' ? mentalityConfig.defensive :
-                        mentalityConfig.balanced;
+            style === 'defensive' ? mentalityConfig.defensive :
+              mentalityConfig.balanced;
 
           return (
             <button
               key={template.id}
               onClick={() => onSelectTemplate(template.id)}
               title={template.description}
-              className={`px-1.5 py-1 rounded text-[10px] font-medium transition-colors truncate ${
-                isSelected
+              className={`px-1.5 py-1 rounded text-[10px] font-medium transition-colors truncate ${isSelected
                   ? `${config.bgSelected} border ${config.color}`
                   : `bg-bg-tertiary border border-border-primary text-text-secondary ${config.bgHover} hover:text-text-primary`
-              }`}
+                }`}
             >
               {template.name.replace(' Formation', '').replace(' Setup', '')}
             </button>

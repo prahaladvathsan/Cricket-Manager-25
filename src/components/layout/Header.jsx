@@ -30,6 +30,8 @@ import PlayoffGenerator from '../../core/league/PlayoffGenerator';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
 import ContributeDropdown from './ContributeDropdown';
 import JoinCommunityDropdown from './JoinCommunityDropdown';
+import SaveGameManager from '../../utils/SaveGameManager';
+import useTransferStore from '../../stores/transferStore';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -344,6 +346,34 @@ const Header = () => {
 
       // Show result modal using hook
       showResult(fullScorecard);
+
+      // Autosave after quick-sim user match
+      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      const userWon = result.winner === userTeamId;
+      const score = `${result.innings1.totalScore}/${result.innings1.wickets} vs ${result.innings2.totalScore}/${result.innings2.wickets}`;
+
+      SaveGameManager.autosaveAfterMatch(
+        {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          playerStore: usePlayerStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          matchStore: useMatchStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          transferStore: useTransferStore
+        },
+        {
+          opponentName: opponentTeam.name,
+          result: userWon ? 'win' : 'loss',
+          score
+        }
+      ).then(saveResult => {
+        if (saveResult.success) {
+          console.log('💾 Autosave created after quick-sim');
+        }
+      });
 
       // Don't advance day yet - wait for user to close modal
     } catch (error) {
@@ -736,7 +766,7 @@ const Header = () => {
 
             <button
               onClick={handleSave}
-              className="save-button btn-secondary text-xs flex items-center gap-1.5 px-3 py-1.5"
+              className="save-button bg-cricket-accent hover:bg-cricket-accent-light text-bg-primary font-medium text-xs flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Save</span>
@@ -784,7 +814,7 @@ const Header = () => {
                   (fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id);
 
                 return isUserMatch ? (
-                  <div className="absolute right-0 mt-1 w-48 bg-bg-secondary border border-border-primary rounded shadow-lg z-50">
+                  <div className="absolute right-0 mt-1 w-48 bg-gray-900 border border-border-primary rounded shadow-lg z-50">
                     <button
                       onClick={() => {
                         setShowMatchDropdown(false);

@@ -134,7 +134,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="card p-3">
+      <div className="bg-transparent border border-white/10 rounded-lg p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-semibold text-text-primary">
@@ -185,7 +185,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
       </div>
 
       {/* Batting Order List with Drag and Drop */}
-      < div className="card p-3" >
+      <div className="bg-transparent border border-white/10 rounded-lg p-3">
         <div className="flex flex-col gap-1">
           {orderedPlayers.map((player, index) => {
             const currentTier = teamTactics?.accelerationTiers[player.id] || 'Rotate';
@@ -209,7 +209,7 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 onDrop={(e) => handleDrop(e, index)}
                 className={`${isFirstRow ? 'batting-order-row-first ' : ''}flex items-center gap-2 p-1 rounded transition-all ${isDragging
                   ? 'bg-cricket-primary/20 border border-cricket-accent'
-                  : 'bg-bg-tertiary border border-transparent cursor-move hover:border-cricket-accent'
+                  : 'bg-transparent border border-border-primary cursor-move hover:border-cricket-accent'
                   }`}
               >
                 {/* Drag Handle */}
