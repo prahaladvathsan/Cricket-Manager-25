@@ -549,13 +549,6 @@ const LoadGame = () => {
               <div className="w-28 flex-shrink-0 text-right">Actions</div>
             </div>
 
-            {/* Current Session */}
-            <SaveTile
-              save={{ label: 'Current Session', timestamp: new Date().toISOString() }}
-              onClick={handleContinue}
-              isCurrent={true}
-            />
-
             {/* Checkpoints */}
             {saves.length > 0 && (
               <>

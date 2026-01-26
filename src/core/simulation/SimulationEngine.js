@@ -13,6 +13,7 @@ import PrizeDistributor from '../offseason/PrizeDistributor';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
 import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
+import SaveGameManager from '../../utils/SaveGameManager';
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -324,6 +325,43 @@ class SimulationEngine {
   }
 
   /**
+   * Trigger autosave after auction completes
+   * Mirrors the behavior in Transfers.jsx completeAuction
+   */
+  async autosaveAfterAuction() {
+    const userTeamId = this.teamStore.getState().userTeamId;
+    const soldPlayers = this.auctionStore.getState().soldPlayers || [];
+    const userTeamPlayers = soldPlayers.filter(p => p.teamId === userTeamId);
+    const totalSpent = userTeamPlayers.reduce((sum, p) => sum + (p.price || 0), 0);
+
+    try {
+      const result = await SaveGameManager.autosaveAfterAuction(
+        {
+          gameStore: this.gameStore,
+          teamStore: this.teamStore,
+          playerStore: this.playerStore,
+          leagueStore: this.leagueStore,
+          financeStore: this.financeStore,
+          matchStore: this.matchStore,
+          auctionStore: this.auctionStore,
+          inboxStore: this.inboxStore,
+          transferStore: this.transferStore
+        },
+        {
+          playersAcquired: userTeamPlayers.length,
+          budgetSpent: totalSpent
+        }
+      );
+
+      if (result.success) {
+        console.log('💾 Autosave created after auction (sim engine)');
+      }
+    } catch (error) {
+      console.error('Failed to autosave after auction:', error);
+    }
+  }
+
+  /**
    * Simulate a single day
    * @returns {Object} Day summary {eventsProcessed, matchesPlayed, transfersCompleted}
    */
@@ -349,6 +387,9 @@ class SimulationEngine {
       console.log('🏏 Season 1 - Initializing league after auction...');
       await this.initializeLeague();
       summary.eventsProcessed++;
+
+      // Autosave after auction completion
+      await this.autosaveAfterAuction();
     }
 
     // Get current day's event
@@ -381,6 +422,8 @@ class SimulationEngine {
         console.log(`🏏 Season ${newSeason} is ODD - Running auction...`);
         await this.runAuction();
         await this.initializeLeague();
+        // Autosave after auction completion
+        await this.autosaveAfterAuction();
       } else {
         // Even season (2, 4, 6...): Initialize league with existing squads (no auction)
         console.log(`🏏 Season ${newSeason} is EVEN - Initializing league directly...`);

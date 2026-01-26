@@ -800,6 +800,32 @@ const Transfers = () => {
     clearEvents();
     setTimeout(() => {
       initializeLeague();
+
+      // Autosave after auction completion (same as completeAuction)
+      const userTeamPlayers = savedAuction.soldPlayers?.filter(p => p.teamId === userTeamId) || [];
+      const totalSpent = userTeamPlayers.reduce((sum, p) => sum + (p.price || 0), 0);
+
+      SaveGameManager.autosaveAfterAuction(
+        {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          playerStore: usePlayerStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          matchStore: useMatchStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          transferStore: useTransferStore
+        },
+        {
+          playersAcquired: userTeamPlayers.length,
+          budgetSpent: totalSpent
+        }
+      ).then(result => {
+        if (result.success) {
+          console.log('💾 Autosave created after auction (skip to end)');
+        }
+      });
     }, 500);
   };
 

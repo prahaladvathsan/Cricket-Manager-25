@@ -125,6 +125,11 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       console.log('🔄 Reset finance store for new game');
     }
 
+    // CRITICAL: Re-initialize teams with fresh data from JSON
+    // This resets squadLists to empty arrays, clearing old player assignments
+    initializeTeams(wplTeamsData);
+    console.log('🔄 Re-initialized teams with fresh data (squadLists reset)');
+
     // Initialize finances for all teams at game start (with $10M each)
     const teamsForFinances = Object.values(teams).map(team => ({
       id: team.id,
