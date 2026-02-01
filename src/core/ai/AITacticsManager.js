@@ -96,7 +96,9 @@ class AITacticsManager {
 
     // Stage 4: Bowling Over Assignment + Plans
     const isUserTeam = teamStore ? teamId === teamStore.getState().userTeamId : false;
-    const partTimerIds = tactics?.partTimers || [];
+    // Fresh tactics generation: start with no manual part-timers. 
+    // AI teams will auto-detect bowlers via assignBowlingTactics logic.
+    const partTimerIds = []; 
     const { bowlingRotation, overAssignments, bowlingPlans } = this.assignBowlingTactics(playingXI, playstyleOverrides, isUserTeam, partTimerIds);
 
     // Stage 5: Field Setup
@@ -1221,7 +1223,8 @@ class AITacticsManager {
           break;
         }
         const player = players[bowlerId];
-        if (!player || !aiCore.canBowl(player)) {
+        const isPartTimer = tactics.partTimers?.includes(bowlerId);
+        if (!player || (!aiCore.canBowl(player) && !isPartTimer)) {
           needsRegeneration = true;
           console.log(`[AITacticsManager] Team ${teamId} over ${over} assigned to non-bowler ${player?.name || bowlerId} - regenerating`);
           break;
