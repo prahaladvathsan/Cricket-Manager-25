@@ -86,6 +86,8 @@ const MyComponent = () => {
 | `hoverRows` | `boolean` | `true` | Whether to highlight rows on hover |
 | `onRowClick` | `Function` | `null` | Row click handler `(item, index) => void` |
 | `getRowClassName` | `Function` | `null` | Custom row class generator `(item, index) => string` |
+| `enableScrollSync` | `boolean` | `false` | Enable fixed header and dual scrollbar sync for wide tables |
+| `maxHeight` | `number` | `null` | Optional max height for the table container with vertical scroll |
 
 ## Column Definition
 
@@ -281,6 +283,25 @@ const getRowClassName = (player, index) => {
   getRowClassName={getRowClassName}
 />
 ```
+
+### With Fixed Header Scroll Sync
+
+For wide tables with many columns (like PlayerBrowser), enable the scroll sync feature for a better UX:
+
+```jsx
+<SortableTable
+  data={players}
+  columns={columns}
+  enableScrollSync={true}
+/>
+```
+
+This provides:
+- **Fixed header**: Header stays visible when scrolling down the page
+- **Top scrollbar**: Horizontal scrollbar at the top for wide tables
+- **Synchronized scrolling**: Top scrollbar, fixed header, and table body scroll together
+
+This is especially useful for data-dense tables with 10+ columns.
 
 ## Migration from Existing Code
 

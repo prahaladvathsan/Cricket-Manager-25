@@ -151,13 +151,10 @@ function App() {
                         const initAuth = useAuthStore.getState().initAuth;
                         if (initAuth) {
                             initAuth();
-                            console.log('✅ Auth state listener initialized');
                         }
 
                         // Wait for all Zustand stores to rehydrate from IndexedDB
-                        console.log('⏳ Waiting for store hydration...');
                         await waitForHydration();
-                        console.log('✅ All stores hydrated');
 
                         setDataLoaded(true);
                         playerWorker.terminate(); // Clean up worker
@@ -226,7 +223,7 @@ function App() {
                             <div className="min-h-screen app-wallpaper flex items-center justify-center p-4">
                                 <TeamSelectionModal
                                     isOpen={true}
-                                    onClose={() => window.location.href = '/game/home'}
+                                    onClose={() => {}}
                                 />
                             </div>
                         }

@@ -258,7 +258,10 @@ const PlayerCard = ({
               <CountryFlag nationality={player.nationality} className="w-5 h-3" />
               {player.nationality}
             </span>
-            <span className="text-text-secondary">{player.age} years</span>
+            <span className="text-text-secondary">
+              {player.age} years
+              {player.DOB && <span className="text-text-tertiary text-xs ml-1">({player.DOB})</span>}
+            </span>
             {player.battingHand && (
               <span className="text-text-tertiary text-xs">
                 Bats: {player.battingHand}

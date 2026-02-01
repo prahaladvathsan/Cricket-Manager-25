@@ -18,7 +18,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   const [customizeMode, setCustomizeMode] = useState(false);
   const [selectedFielderIndex, setSelectedFielderIndex] = useState(null);
 
-  const { getUserTeam, getTeamTactics } = useTeamStore();
+  const { getUserTeam, getTeamTactics, updateWicketKeeper } = useTeamStore();
   const { players } = usePlayerStore();
 
   const userTeam = getUserTeam();
@@ -53,11 +53,15 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   // Get assigned wicketkeeper ID (prioritize explicit assignment, then teamTactics.wicketKeeper)
   const assignedWicketkeeperId = playerAssignments[1];
 
-  // For wicketkeeper position: show only wicketkeepers with wicketkeeper playstyle rating
-  const wicketkeeperCandidates = allXIPlayers.filter(p =>
+  // For wicketkeeper position: show ALL players, natural keepers first
+  const naturalKeepers = allXIPlayers.filter(p =>
     p.role === 'wicket-keeper' || p.primaryRole === 'wicket-keeper' ||
     p.role === 'Wicketkeeper' || p.primaryRole === 'Wicketkeeper'
   );
+  const otherPlayers = allXIPlayers.filter(p =>
+    p.role !== 'wicket-keeper' && p.primaryRole !== 'wicket-keeper' &&
+    p.role !== 'Wicketkeeper' && p.primaryRole !== 'Wicketkeeper'
+  ).sort((a, b) => (b.playstyleRatings?.fielding?.Wicketkeeper || 0) - (a.playstyleRatings?.fielding?.Wicketkeeper || 0));
 
   // For non-wicketkeeper positions: exclude the assigned wicketkeeper
   const teamPlayers = allXIPlayers.filter(p => p.id !== assignedWicketkeeperId);
@@ -122,6 +126,12 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
   // Handle player assignment change
   const handlePlayerAssignment = (positionIndex, playerId) => {
     if (!onUpdateSetup) return;
+
+    // For keeper position (index 1), sync to global store
+    if (positionIndex === 1 && teamId) {
+      updateWicketKeeper(teamId, playerId || null);
+      return;
+    }
 
     const newAssignments = { ...playerAssignments };
 
@@ -424,14 +434,24 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
                               className="w-full text-xs bg-bg-tertiary border border-border-primary rounded px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-cricket-accent"
                             >
                               <option value="">Auto-assign wicketkeeper</option>
-                              {wicketkeeperCandidates.map(player => {
-                                const wicketkeeperRating = Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0);
-                                return (
-                                  <option key={player.id} value={player.id}>
-                                    {player.name} ({wicketkeeperRating})
-                                  </option>
-                                );
-                              })}
+                              {naturalKeepers.length > 0 && (
+                                <optgroup label="Wicket-keepers">
+                                  {naturalKeepers.map(player => (
+                                    <option key={player.id} value={player.id}>
+                                      {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                    {others.length > 0 && (
+                      <optgroup label="Other Players (Part-time)">
+                        {others.map(player => (
+                          <option key={player.id} value={player.id}>
+                            {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                             </select>
                           ) : (
                             <select

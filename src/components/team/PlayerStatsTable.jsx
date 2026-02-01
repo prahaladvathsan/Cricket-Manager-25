@@ -3,9 +3,9 @@
  * @description Reusable statistics table component for batting and bowling stats
  */
 
-import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useMemo } from 'react';
 import PlayerName from '../shared/PlayerName';
+import SortableTable from '../shared/SortableTable';
 
 /**
  * PlayerStatsTable Component
@@ -16,29 +16,8 @@ import PlayerName from '../shared/PlayerName';
  * @param {number} props.minQualifying - Minimum qualifying criteria
  */
 const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
-  const [sortBy, setSortBy] = useState(type === 'batting' ? 'runs' : 'wickets');
-  const [sortDirection, setSortDirection] = useState('desc');
-
-  // Handle column sorting
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortDirection('desc'); // Default to descending for most stats
-    }
-  };
-
-  // Sort indicator component
-  const SortIndicator = ({ column }) => {
-    if (sortBy !== column) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-    }
-    return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
-  };
-
-  // Filter and sort players
-  const filteredSortedPlayers = useMemo(() => {
+  // Filter players
+  const filteredPlayers = useMemo(() => {
     let result = [...players];
 
     // Apply role filter
@@ -63,24 +42,8 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
       result = result.filter(p => (p.ballsBowled || 0) >= (minQualifying * 6)); // Convert overs to balls
     }
 
-    // Apply sorting
-    result.sort((a, b) => {
-      let aVal = a[sortBy] ?? 0;
-      let bVal = b[sortBy] ?? 0;
-
-      // Handle string columns
-      if (sortBy === 'playerName' || sortBy === 'role') {
-        aVal = String(aVal).toLowerCase();
-        bVal = String(bVal).toLowerCase();
-        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-
-      // Numeric columns
-      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-
     return result;
-  }, [players, roleFilter, minQualifying, sortBy, sortDirection, type]);
+  }, [players, roleFilter, minQualifying, type]);
 
   // Format helpers
   const formatAverage = (avg) => {
@@ -110,316 +73,246 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
     return `${best.wickets}/${best.runs}`;
   };
 
-  // Render batting statistics table
-  const renderBattingTable = () => (
-    <div className="card overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border-primary bg-bg-secondary">
-            <th
-              onClick={() => handleSort('playerName')}
-              className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors sticky left-0 bg-bg-secondary z-10"
-            >
-              <div className="flex items-center gap-1">
-                Player <SortIndicator column="playerName" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('role')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Role <SortIndicator column="role" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('matches')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                M <SortIndicator column="matches" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('innings')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                I <SortIndicator column="innings" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('runs')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Runs <SortIndicator column="runs" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('ballsFaced')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Balls <SortIndicator column="ballsFaced" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('battingAvg')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Avg <SortIndicator column="battingAvg" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('strikeRate')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                SR <SortIndicator column="strikeRate" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('fifties')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                50s <SortIndicator column="fifties" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('centuries')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                100s <SortIndicator column="centuries" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('highestScore')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                HS <SortIndicator column="highestScore" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('totalImpact')}
-              className="px-3 py-2 text-center font-semibold text-trophy-gold cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Impact <SortIndicator column="totalImpact" />
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredSortedPlayers.length === 0 ? (
-            <tr>
-              <td colSpan="12" className="px-3 py-8 text-center text-text-secondary">
-                No batting statistics available with current filters
-              </td>
-            </tr>
-          ) : (
-            filteredSortedPlayers.map((player, idx) => (
-              <tr
-                key={player.playerId}
-                className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
-                  idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                }`}
-              >
-                <td className="px-3 py-2 font-medium sticky left-0 bg-inherit">
-                  <PlayerName playerId={player.playerId} className="font-medium" />
-                </td>
-                <td className="px-3 py-2 text-center text-text-secondary text-xs uppercase">
-                  {player.role === 'batsman' ? 'BAT' : player.role === 'all-rounder' ? 'ALL' : player.role === 'wicket-keeper' ? 'WK' : 'BOWL'}
-                </td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{player.matches || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{player.innings || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-cricket-accent font-semibold">{player.runs || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.ballsFaced || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{formatAverage(player.battingAvg)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{formatStrikeRate(player.strikeRate)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.fifties || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.centuries || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-trophy-gold font-semibold">
-                  {player.highestScore || 0}{player.highestScoreNotOut ? '*' : ''}
-                </td>
-                <td className={`px-3 py-2 text-center font-mono font-semibold ${
-                  (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  // Batting Columns Definition
+  const battingColumns = [
+    {
+      key: 'player',
+      label: 'Player',
+      sortKey: 'playerName',
+      sticky: true,
+      render: (player) => (
+        <PlayerName playerId={player.playerId} className="font-medium" />
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortKey: 'role',
+      align: 'center',
+      render: (player) => (
+        <span className="text-text-secondary text-xs uppercase">
+          {player.role === 'batsman' ? 'BAT' : player.role === 'all-rounder' ? 'ALL' : player.role === 'wicket-keeper' ? 'WK' : 'BOWL'}
+        </span>
+      ),
+    },
+    {
+      key: 'matches',
+      label: 'M',
+      sortKey: 'matches',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{player.matches || 0}</span>,
+    },
+    {
+      key: 'innings',
+      label: 'I',
+      sortKey: 'innings',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{player.innings || 0}</span>,
+    },
+    {
+      key: 'runs',
+      label: 'Runs',
+      sortKey: 'runs',
+      align: 'center',
+      render: (player) => <span className="font-mono text-cricket-accent font-semibold">{player.runs || 0}</span>,
+    },
+    {
+      key: 'balls',
+      label: 'Balls',
+      sortKey: 'ballsFaced',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.ballsFaced || 0}</span>,
+    },
+    {
+      key: 'avg',
+      label: 'Avg',
+      sortKey: 'battingAvg',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{formatAverage(player.battingAvg)}</span>,
+    },
+    {
+      key: 'sr',
+      label: 'SR',
+      sortKey: 'strikeRate',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{formatStrikeRate(player.strikeRate)}</span>,
+    },
+    {
+      key: 'fifties',
+      label: '50s',
+      sortKey: 'fifties',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.fifties || 0}</span>,
+    },
+    {
+      key: 'centuries',
+      label: '100s',
+      sortKey: 'centuries',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.centuries || 0}</span>,
+    },
+    {
+      key: 'hs',
+      label: 'HS',
+      sortKey: 'highestScore',
+      align: 'center',
+      render: (player) => (
+        <span className="font-mono text-trophy-gold font-semibold">
+          {player.highestScore || 0}{player.highestScoreNotOut ? '*' : ''}
+        </span>
+      ),
+    },
+    {
+      key: 'impact',
+      label: 'Impact',
+      sortKey: 'totalImpact',
+      align: 'center',
+      headerClassName: 'text-trophy-gold',
+      render: (player) => (
+        <span className={`font-mono font-semibold ${
+          (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+        }`}>
+          {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
+        </span>
+      ),
+    },
+  ];
 
-  // Render bowling statistics table
-  const renderBowlingTable = () => (
-    <div className="card overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border-primary bg-bg-secondary">
-            <th
-              onClick={() => handleSort('playerName')}
-              className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors sticky left-0 bg-bg-secondary z-10"
-            >
-              <div className="flex items-center gap-1">
-                Player <SortIndicator column="playerName" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('role')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Role <SortIndicator column="role" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('matches')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                M <SortIndicator column="matches" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('innings')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                I <SortIndicator column="innings" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('ballsBowled')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Overs <SortIndicator column="ballsBowled" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('runsConceded')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Runs <SortIndicator column="runsConceded" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('wickets')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Wkts <SortIndicator column="wickets" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('bowlingAvg')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Avg <SortIndicator column="bowlingAvg" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('economy')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Econ <SortIndicator column="economy" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('bowlingStrikeRate')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                SR <SortIndicator column="bowlingStrikeRate" />
-              </div>
-            </th>
-            <th className="px-3 py-2 text-center font-semibold text-text-primary">
-              Best
-            </th>
-            <th
-              onClick={() => handleSort('fourWickets')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                4W <SortIndicator column="fourWickets" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('fiveWickets')}
-              className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                5W <SortIndicator column="fiveWickets" />
-              </div>
-            </th>
-            <th
-              onClick={() => handleSort('totalImpact')}
-              className="px-3 py-2 text-center font-semibold text-trophy-gold cursor-pointer hover:bg-bg-tertiary transition-colors"
-            >
-              <div className="flex items-center justify-center gap-1">
-                Impact <SortIndicator column="totalImpact" />
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredSortedPlayers.length === 0 ? (
-            <tr>
-              <td colSpan="14" className="px-3 py-8 text-center text-text-secondary">
-                No bowling statistics available with current filters
-              </td>
-            </tr>
-          ) : (
-            filteredSortedPlayers.map((player, idx) => (
-              <tr
-                key={player.playerId}
-                className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
-                  idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                }`}
-              >
-                <td className="px-3 py-2 font-medium sticky left-0 bg-inherit">
-                  <PlayerName playerId={player.playerId} className="font-medium" />
-                </td>
-                <td className="px-3 py-2 text-center text-text-secondary text-xs uppercase">
-                  {player.role === 'bowler' ? 'BOWL' : player.role === 'all-rounder' ? 'ALL' : 'BAT'}
-                </td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{player.matches || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{player.innings || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{formatOvers(player.ballsBowled)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.runsConceded || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-cricket-accent font-semibold">{player.wickets || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{formatAverage(player.bowlingAvg)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{formatEconomy(player.economy)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-primary">{formatStrikeRate(player.bowlingStrikeRate)}</td>
-                <td className="px-3 py-2 text-center font-mono text-trophy-gold font-semibold">{formatBestBowling(player.bestBowling)}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.fourWickets || 0}</td>
-                <td className="px-3 py-2 text-center font-mono text-text-secondary">{player.fiveWickets || 0}</td>
-                <td className={`px-3 py-2 text-center font-mono font-semibold ${
-                  (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  // Bowling Columns Definition
+  const bowlingColumns = [
+    {
+      key: 'player',
+      label: 'Player',
+      sortKey: 'playerName',
+      sticky: true,
+      render: (player) => (
+        <PlayerName playerId={player.playerId} className="font-medium" />
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortKey: 'role',
+      align: 'center',
+      render: (player) => (
+        <span className="text-text-secondary text-xs uppercase">
+          {player.role === 'bowler' ? 'BOWL' : player.role === 'all-rounder' ? 'ALL' : 'BAT'}
+        </span>
+      ),
+    },
+    {
+      key: 'matches',
+      label: 'M',
+      sortKey: 'matches',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{player.matches || 0}</span>,
+    },
+    {
+      key: 'innings',
+      label: 'I',
+      sortKey: 'innings',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{player.innings || 0}</span>,
+    },
+    {
+      key: 'overs',
+      label: 'Overs',
+      sortKey: 'ballsBowled',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{formatOvers(player.ballsBowled)}</span>,
+    },
+    {
+      key: 'runs',
+      label: 'Runs',
+      sortKey: 'runsConceded',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.runsConceded || 0}</span>,
+    },
+    {
+      key: 'wickets',
+      label: 'Wkts',
+      sortKey: 'wickets',
+      align: 'center',
+      render: (player) => <span className="font-mono text-cricket-accent font-semibold">{player.wickets || 0}</span>,
+    },
+    {
+      key: 'avg',
+      label: 'Avg',
+      sortKey: 'bowlingAvg',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{formatAverage(player.bowlingAvg)}</span>,
+    },
+    {
+      key: 'econ',
+      label: 'Econ',
+      sortKey: 'economy',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{formatEconomy(player.economy)}</span>,
+    },
+    {
+      key: 'sr',
+      label: 'SR',
+      sortKey: 'bowlingStrikeRate',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-primary">{formatStrikeRate(player.bowlingStrikeRate)}</span>,
+    },
+    {
+      key: 'best',
+      label: 'Best',
+      sortable: false, // Cannot easily sort by this string representation
+      align: 'center',
+      render: (player) => <span className="font-mono text-trophy-gold font-semibold">{formatBestBowling(player.bestBowling)}</span>,
+    },
+    {
+      key: '4w',
+      label: '4W',
+      sortKey: 'fourWickets',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.fourWickets || 0}</span>,
+    },
+    {
+      key: '5w',
+      label: '5W',
+      sortKey: 'fiveWickets',
+      align: 'center',
+      render: (player) => <span className="font-mono text-text-secondary">{player.fiveWickets || 0}</span>,
+    },
+    {
+      key: 'impact',
+      label: 'Impact',
+      sortKey: 'totalImpact',
+      align: 'center',
+      headerClassName: 'text-trophy-gold',
+      render: (player) => (
+        <span className={`font-mono font-semibold ${
+          (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+        }`}>
+          {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
+        </span>
+      ),
+    },
+  ];
 
-  return type === 'batting' ? renderBattingTable() : renderBowlingTable();
+  return (
+    <SortableTable
+      data={filteredPlayers}
+      columns={type === 'batting' ? battingColumns : bowlingColumns}
+      defaultSort={
+        type === 'batting'
+          ? { column: 'runs', direction: 'desc' }
+          : { column: 'wickets', direction: 'desc' }
+      }
+      emptyState={
+        <tr>
+          <td colSpan={type === 'batting' ? battingColumns.length : bowlingColumns.length} className="px-3 py-8 text-center text-text-secondary">
+            No {type} statistics available with current filters
+          </td>
+        </tr>
+      }
+      stripedRows={true}
+      hoverRows={true}
+    />
+  );
 };
 
 export default PlayerStatsTable;

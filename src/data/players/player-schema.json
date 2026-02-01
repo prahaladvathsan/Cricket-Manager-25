@@ -6,6 +6,7 @@
       "name": "string - Display name",
       "fullName": "string - Full legal name (for name tweaking failsafe)",
       "age": "number - Current age in years",
+      "DOB": "string - Date of Birth (DD-MM-YYYY)",
       "nationality": "string - ISO country code (e.g., IND, AUS, ENG)",
       "role": "string - batsman | bowler | all-rounder | wicket-keeper",
       "battingHand": "string - right | left | null",

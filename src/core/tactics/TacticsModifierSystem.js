@@ -28,7 +28,7 @@ import contextualModifierManager from './ContextualModifierManager.js';
  */
 class TacticsModifierSystem {
   constructor() {
-    console.log('✅ TacticsModifierSystem initialized - orchestrating 7 modifier stages');
+    // Orchestrates 7 modifier stages
   }
 
   /**

@@ -40,11 +40,12 @@ import useTransferStore from '../../stores/transferStore';
 const TacticsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [validationErrors, setValidationErrors] = useState([]);
+  const [validationWarnings, setValidationWarnings] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
-  const { getUserTeam, getTeamTactics, hasTactics, initializeDefaultTactics, resetTacticsToDefaults } = useTeamStore();
+  const { getUserTeam, getTeamTactics, hasTactics } = useTeamStore();
   const { players } = usePlayerStore();
   const { auctionState } = useAuctionStore();
   const { setHasInvalidTactics } = useUIStore();
@@ -70,10 +71,11 @@ const TacticsPage = () => {
   // Define validation function before hooks that use it
   const validateTactics = () => {
     const errors = [];
+    const warnings = [];
 
     if (!teamTactics) {
       errors.push('Tactics not initialized');
-      return errors;
+      return { errors, warnings };
     }
 
     // Validate squad selection
@@ -81,24 +83,34 @@ const TacticsPage = () => {
       errors.push('Must select exactly 11 players');
     }
 
-    // Validate minimum bowlers
-    const bowlers = teamTactics.squadSelection.filter(playerId => {
+    // Count bowling options
+    const primaryBowlers = teamTactics.squadSelection?.filter(playerId => {
       const player = players[playerId];
       return player && (player.role === 'bowler' || player.role === 'all-rounder');
-    });
+    }) || [];
 
-    if (bowlers.length < 5) {
-      errors.push('Must have at least 5 bowling options');
+    const partTimers = teamTactics.partTimers || [];
+    const totalBowlingOptions = primaryBowlers.length + partTimers.length;
+
+    if (totalBowlingOptions < 5) {
+      warnings.push(`Low bowling options: only ${totalBowlingOptions} available (min 5)`);
+    } else if (partTimers.length > 0) {
+      warnings.push(`Using ${partTimers.length} part-timer(s)`);
     }
 
     // Validate wicket-keeper
-    const hasWicketKeeper = teamTactics.squadSelection.some(playerId => {
+    const hasNaturalKeeper = teamTactics.squadSelection?.some(playerId => {
       const player = players[playerId];
       return player && player.role === 'wicket-keeper';
     });
 
-    if (!hasWicketKeeper) {
-      errors.push('Must have at least 1 wicket-keeper');
+    if (!teamTactics.wicketKeeper) {
+      errors.push('Must select a wicket-keeper');
+    } else if (!hasNaturalKeeper) {
+      const keeper = players[teamTactics.wicketKeeper];
+      if (keeper && keeper.role !== 'wicket-keeper') {
+        warnings.push('Emergency keeper selected');
+      }
     }
 
     // Validate batting order
@@ -107,10 +119,10 @@ const TacticsPage = () => {
     }
 
     // Validate no injured players in playing XI
-    const injuredPlayers = teamTactics.squadSelection.filter(playerId => {
+    const injuredPlayers = teamTactics.squadSelection?.filter(playerId => {
       const player = players[playerId];
       return player && player.condition?.injury;
-    });
+    }) || [];
 
     if (injuredPlayers.length > 0) {
       const injuredPlayerNames = injuredPlayers.map(id => {
@@ -120,7 +132,7 @@ const TacticsPage = () => {
       errors.push(`Injured players in XI: ${injuredPlayerNames}. Remove them from playing XI.`);
     }
 
-    return errors;
+    return { errors, warnings };
   };
 
   // Scroll to top when page loads
@@ -129,15 +141,13 @@ const TacticsPage = () => {
   }, []);
 
   // Silently check validation in background to enable/disable navigation blocking
-  // But DON'T show errors to user unless they click Validate or try to leave
   useEffect(() => {
     if (!teamTactics) {
       setHasInvalidTactics(false);
       return;
     }
 
-    const errors = validateTactics();
-    // Update the flag silently - this doesn't show errors to user
+    const { errors } = validateTactics();
     setHasInvalidTactics(errors.length > 0);
   }, [teamTactics, players, setHasInvalidTactics]);
 
@@ -151,15 +161,15 @@ const TacticsPage = () => {
   // Initialize tactics if they don't exist
   useEffect(() => {
     if (teamId && !hasTactics(teamId) && teamPlayers.length > 0) {
-      initializeDefaultTactics(teamId, teamPlayers);
+      aiTacticsManager.generateTactics(teamId, teamPlayers, useTeamStore);
     }
-  }, [teamId, hasTactics, initializeDefaultTactics, teamPlayers]);
+  }, [teamId, hasTactics, teamPlayers]);
 
   // Warn user if they try to close browser/tab with invalid tactics
   // Autosave when leaving with valid tactics
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      const errors = validateTactics();
+      const { errors } = validateTactics();
       if (errors.length > 0) {
         e.preventDefault();
         e.returnValue = 'You have invalid tactics. Please fix errors before leaving.';
@@ -173,7 +183,7 @@ const TacticsPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
       // On unmount: autosave if tactics are valid
-      const errors = validateTactics();
+      const { errors } = validateTactics();
       if (errors.length === 0) {
         // Valid tactics - autosave
         SaveGameManager.createAutosave(
@@ -198,8 +208,7 @@ const TacticsPage = () => {
         console.warn('⚠️ Tactics validation errors on page leave:', errors);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only run on mount/unmount, not on every tactics change
+  }, []);
 
   // Block access until auction is complete
   if (auctionState !== 'completed') {
@@ -276,20 +285,18 @@ const TacticsPage = () => {
     }
   };
 
-  // Also create handleGenerateDefaultTactics that points to the same function
-  const handleGenerateDefaultTactics = handleResetToDefaults;
+
 
   const handleValidate = () => {
-    // Validate tactics
-    const errors = validateTactics();
+    const { errors, warnings } = validateTactics();
+    setValidationErrors(errors);
+    setValidationWarnings(warnings);
+
     if (errors.length > 0) {
-      setValidationErrors(errors);
       setHasInvalidTactics(true);
       return;
     }
 
-    // Tactics are already saved to store via individual tab updates
-    setValidationErrors([]);
     setHasInvalidTactics(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -315,6 +322,18 @@ const TacticsPage = () => {
           <ul className="text-red-400 text-sm space-y-0.5">
             {validationErrors.map((error, idx) => (
               <li key={idx}>• {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Validation Warnings (non-blocking) */}
+      {validationWarnings.length > 0 && validationErrors.length === 0 && (
+        <div className="mx-4 mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+          <p className="text-yellow-400 text-sm font-semibold mb-1">Warnings:</p>
+          <ul className="text-yellow-400 text-sm space-y-0.5">
+            {validationWarnings.map((warning, idx) => (
+              <li key={idx}>• {warning}</li>
             ))}
           </ul>
         </div>

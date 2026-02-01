@@ -358,17 +358,37 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
             >
               <option value="">Select keeper...</option>
-              {orderedBatsmen
-                .filter(p => p.role === 'wicket-keeper')
-                .map(player => {
-                  const keeperRating = player.playstyleRatings?.fielding?.Wicketkeeper || 0;
-                  return (
-                    <option key={player.id} value={player.id}>
-                      {player.name} ({Math.round(keeperRating)})
-                    </option>
-                  );
-                })}
+              {(() => {
+                const keepers = orderedBatsmen.filter(p => p.role === 'wicket-keeper');
+                const others = orderedBatsmen.filter(p => p.role !== 'wicket-keeper')
+                  .sort((a, b) => (b.playstyleRatings?.fielding?.Wicketkeeper || 0) - (a.playstyleRatings?.fielding?.Wicketkeeper || 0));
+                return (
+                  <>
+                    {keepers.length > 0 && (
+                      <optgroup label="Wicket-keepers">
+                        {keepers.map(player => (
+                          <option key={player.id} value={player.id}>
+                            {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {others.length > 0 && (
+                      <optgroup label="Other Players (Part-time)">
+                        {others.map(player => (
+                          <option key={player.id} value={player.id}>
+                            {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </>
+                );
+              })()}
             </select>
+            {teamTactics?.wicketKeeper && orderedBatsmen.find(p => p.id === teamTactics.wicketKeeper)?.role !== 'wicket-keeper' && (
+              <p className="text-xs text-orange-400 mt-1">⚠ Emergency keeper selected</p>
+            )}
           </div>
 
           {/* Captain */}

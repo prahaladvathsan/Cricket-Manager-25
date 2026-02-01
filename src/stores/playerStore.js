@@ -125,13 +125,7 @@ const usePlayerStore = create(
       }
     });
 
-    console.log(`✅ Initialized ${playersData.length} players with pre-calculated playstyle data`);
-    if (bowlingTypeAssigned > 0) {
-      console.log(`✅ Assigned random bowlingType to ${bowlingTypeAssigned} players`);
-    }
-    if (primaryPlaystylesFilled > 0) {
-      console.log(`✅ Filled ${primaryPlaystylesFilled} missing primary playstyles`);
-    }
+    console.log(`✅ Initialized ${playersData.length} players`);
 
     return {
       players: playersMap,
@@ -884,6 +878,24 @@ const usePlayerStore = create(
     careerStats: {},
     currentSeasonId: null
   })),
+
+  /**
+   * Reset all player team assignments (for new game)
+   */
+  resetPlayerTeams: () => set((state) => {
+    const newPlayers = { ...state.players };
+    const newAvailable = [];
+
+    Object.keys(newPlayers).forEach(id => {
+      newPlayers[id] = { ...newPlayers[id], currentTeam: null };
+      newAvailable.push(id);
+    });
+
+    return {
+      players: newPlayers,
+      availablePlayers: newAvailable
+    };
+  }),
 
   /**
    * Calculate and update playstyles for all players

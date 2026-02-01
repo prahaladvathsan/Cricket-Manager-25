@@ -11,6 +11,58 @@ import { get, set, del, keys } from 'idb-keyval';
  * All methods return Promises (async storage is supported by Zustand persist)
  */
 export const indexedDBStorage = {
+  // Batching state
+  isBatching: false,
+  pendingWrites: new Map(),
+
+  /**
+   * Start batching mode
+   * Writes will be buffered in memory until flushBuffer() is called
+   * This is critical for preventing memory leaks during rapid simulation
+   */
+  startBatching: () => {
+    indexedDBStorage.isBatching = true;
+    console.log('📦 Persistence batching started');
+  },
+
+  /**
+   * Stop batching mode and flush any pending writes
+   */
+  stopBatching: async () => {
+    if (indexedDBStorage.isBatching) {
+      await indexedDBStorage.flushBuffer();
+      indexedDBStorage.isBatching = false;
+      console.log('📦 Persistence batching stopped');
+    }
+  },
+
+  /**
+   * Flush pending writes to IndexedDB
+   * Returns a promise that resolves when all writes are complete
+   */
+  flushBuffer: async () => {
+    if (indexedDBStorage.pendingWrites.size === 0) return;
+
+    const count = indexedDBStorage.pendingWrites.size;
+    const writePromises = [];
+
+    console.log(`💾 Flushing ${count} buffered writes to IndexedDB...`);
+
+    for (const [key, value] of indexedDBStorage.pendingWrites.entries()) {
+      // Create promise for each write
+      writePromises.push(set(key, value).catch(err =>
+        console.error(`Failed to write batched item ${key}:`, err)
+      ));
+    }
+
+    // Clear buffer explicitly BEFORE awaiting to free memory immediately
+    indexedDBStorage.pendingWrites.clear();
+
+    // Wait for all writes to complete
+    await Promise.all(writePromises);
+    console.log(`✅ Flushed ${count} items`);
+  },
+
   /**
    * Get item from IndexedDB
    * @param {string} name - Storage key
@@ -18,6 +70,10 @@ export const indexedDBStorage = {
    */
   getItem: async (name) => {
     try {
+      // creating a priority check: check pending writes first
+      if (indexedDBStorage.pendingWrites.has(name)) {
+        return indexedDBStorage.pendingWrites.get(name);
+      }
       const value = await get(name);
       return value ?? null;
     } catch (error) {
@@ -27,14 +83,21 @@ export const indexedDBStorage = {
   },
 
   /**
-   * Set item in IndexedDB
+   * Set item in IndexedDB (or buffer if batching)
    * @param {string} name - Storage key
    * @param {string} value - Value to store
    * @returns {Promise<void>}
    */
   setItem: async (name, value) => {
     try {
-      await set(name, value);
+      if (indexedDBStorage.isBatching) {
+        // Buffer the write - this is synchronous and fast
+        // It overwrites any previous pending write for this key
+        indexedDBStorage.pendingWrites.set(name, value);
+      } else {
+        // Direct write
+        await set(name, value);
+      }
     } catch (error) {
       console.error(`IndexedDB setItem error for ${name}:`, error);
       throw error;
@@ -48,6 +111,9 @@ export const indexedDBStorage = {
    */
   removeItem: async (name) => {
     try {
+      if (indexedDBStorage.isBatching) {
+        indexedDBStorage.pendingWrites.delete(name);
+      }
       await del(name);
     } catch (error) {
       console.error(`IndexedDB removeItem error for ${name}:`, error);

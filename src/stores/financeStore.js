@@ -44,23 +44,9 @@ const useFinanceStore = create(
    * @returns {Object} Financial summary
    */
   initializeSeason: (teams, seasonId, previousSeasonStandings = null) => {
-    console.log('💰 financeStore.initializeSeason called with:', { teams, seasonId, previousSeasonStandings });
     const state = get();
-
-    console.log('💰 financeStore - Current engine:', state.engine);
-    console.log('💰 financeStore - Engine teamFinances before init:', state.engine.teamFinances);
-
     const summary = state.engine.initializeSeasonFinances(teams, seasonId, previousSeasonStandings);
-
-    console.log('💰 financeStore - After engine initialization:');
-    console.log('  - engine.teamFinances:', state.engine.teamFinances);
-    console.log('  - engine.teamFinances.size:', state.engine.teamFinances.size);
-    console.log('  - engine.teamFinances keys:', Array.from(state.engine.teamFinances.keys()));
-
     const newTeamFinances = new Map(state.engine.teamFinances);
-    console.log('💰 financeStore - Created new Map:', newTeamFinances);
-    console.log('  - new Map size:', newTeamFinances.size);
-    console.log('  - new Map keys:', Array.from(newTeamFinances.keys()));
 
     set({
       seasonId,
@@ -69,15 +55,6 @@ const useFinanceStore = create(
       transactionHistory: [...state.engine.transactionHistory],
       lastUpdate: Date.now()
     });
-
-    const newState = get();
-    console.log('💰 financeStore - After set, state:');
-    console.log('  - seasonId:', newState.seasonId);
-    console.log('  - initialized:', newState.initialized);
-    console.log('  - teamFinances:', newState.teamFinances);
-    console.log('  - teamFinances type:', newState.teamFinances?.constructor?.name);
-    console.log('  - teamFinances.size:', newState.teamFinances?.size);
-    console.log('  - teamFinances keys:', newState.teamFinances instanceof Map ? Array.from(newState.teamFinances.keys()) : 'NOT A MAP');
 
     return summary;
   },
@@ -109,25 +86,15 @@ const useFinanceStore = create(
    */
   processAuctionSpending: (teamId, amount, playersPurchased = []) => {
     const state = get();
-    console.log(`💰 financeStore.processAuctionSpending for team ${teamId}, amount: ${amount}`);
-
     const success = state.engine.processAuctionSpending(teamId, amount, playersPurchased);
-    console.log(`💰 Engine processAuctionSpending returned: ${success}`);
 
     if (success) {
-      console.log(`💰 Updating financeStore state...`);
       const newTeamFinances = new Map(state.engine.teamFinances);
-      const teamFinance = newTeamFinances.get(teamId);
-      console.log(`💰 Team ${teamId} finances after spending:`, teamFinance);
-
       set({
         teamFinances: newTeamFinances,
         transactionHistory: [...state.engine.transactionHistory],
         lastUpdate: Date.now()
       });
-      console.log(`💰 financeStore state updated successfully`);
-    } else {
-      console.error(`💰 Failed to process auction spending for team ${teamId}`);
     }
 
     return success;
@@ -573,10 +540,8 @@ const useFinanceStore = create(
       }),
       // Ensure engine is always properly initialized after rehydration
       onRehydrateStorage: () => (state) => {
-        console.log('💰 onRehydrateStorage - state:', state);
-
         if (!state) {
-          console.log('💰 onRehydrateStorage - No state to rehydrate');
+          markHydrated('finance');
           return;
         }
 
@@ -586,24 +551,16 @@ const useFinanceStore = create(
           || (!(state.teamFinances instanceof Map) && Object.keys(state.teamFinances).length === 0);
 
         if (state.initialized && state.seasonId && hasNoFinances) {
-          console.log('🔄 MIGRATION: Old save detected without finances');
-          console.log('💰 MIGRATION: teamFinances type:', state.teamFinances?.constructor?.name);
-          console.log('💰 MIGRATION: teamFinances value:', state.teamFinances);
-          console.log('💰 MIGRATION: Resetting finance state - finances will be initialized when needed');
-
           // Reset the finance state - finances will be initialized next time the game starts
           state.initialized = false;
           state.seasonId = null;
           state.teamFinances = new Map();
           state.transactionHistory = [];
           state.engine = new FinanceEngine();
-
-          console.log('✅ MIGRATION: Finance state reset');
         }
 
         // Normal rehydration - ensure engine exists
         if (!state.engine || typeof state.engine.getTeamFinances !== 'function') {
-          console.log('Reinitializing FinanceEngine after rehydration');
           const newEngine = new FinanceEngine();
           if (state.teamFinances && state.teamFinances.size > 0) {
             newEngine.teamFinances = state.teamFinances;

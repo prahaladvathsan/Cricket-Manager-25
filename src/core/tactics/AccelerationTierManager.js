@@ -16,7 +16,6 @@ class AccelerationTierManager {
     this.tiers = tacticsConfig.accelerationTiers;
     this.playstyleBoostAmount = tacticsConfig.playstyleBoostAmount;
     this.autoTierRules = tacticsConfig.autoTierSelection;
-    console.log('✅ AccelerationTierManager initialized with 6 tiers');
   }
 
   /**

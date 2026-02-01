@@ -5,19 +5,18 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, TrendingUp, Check, Ban, Clock } from 'lucide-react';
+import { Search, X, TrendingUp, Check, Ban } from 'lucide-react';
 import useTransferStore from '../../stores/transferStore';
 import useFinanceStore from '../../stores/financeStore';
 import PlayerName from '../shared/PlayerName';
 import TeamName from '../shared/TeamName';
 import BidModal from './BidModal';
+import SortableTable from '../shared/SortableTable';
 
 const MarketplaceView = ({ userTeamId, transferHandler }) => {
   const [selectedListing, setSelectedListing] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [sortField, setSortField] = useState('timeRemaining');
-  const [sortDirection, setSortDirection] = useState('asc');
 
   // Store state
   const { activeListings } = useTransferStore();
@@ -27,8 +26,8 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
   const userFinances = getTeamFinances(userTeamId);
   const userBudget = userFinances?.currentBudget || 0;
 
-  // Filter and sort listings
-  const displayedListings = useMemo(() => {
+  // Filter listings
+  const filteredListings = useMemo(() => {
     let filtered = [...activeListings];
 
     // Search filter
@@ -47,36 +46,8 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
       );
     }
 
-    // Sort
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-
-      switch (sortField) {
-        case 'price':
-          aVal = a.listingPrice;
-          bVal = b.listingPrice;
-          break;
-        case 'bid':
-          aVal = a.currentBid || 0;
-          bVal = b.currentBid || 0;
-          break;
-        case 'rating':
-          aVal = a.player.rating || 0;
-          bVal = b.player.rating || 0;
-          break;
-        case 'timeRemaining':
-          aVal = new Date(a.expiresAt).getTime();
-          bVal = new Date(b.expiresAt).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-
     return filtered;
-  }, [activeListings, searchQuery, roleFilter, sortField, sortDirection]);
+  }, [activeListings, searchQuery, roleFilter]);
 
   // Calculate time remaining
   const getTimeRemaining = (expiresAt) => {
@@ -91,16 +62,6 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
 
     if (days > 0) return `${days}d ${hours}h`;
     return `${hours}h`;
-  };
-
-  // Handle sort
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
   };
 
   // Handle bid
@@ -158,12 +119,147 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
     }
   };
 
-  // Separate user's listings
-  const userListingsCount = displayedListings.filter(l => l.teamId === userTeamId).length;
+  // Separate user's listings for stats
+  const userListingsCount = filteredListings.filter(l => l.teamId === userTeamId).length;
 
-  return (
+  // Column definitions
+  const columns = [
+    {
+      key: 'player',
+      label: 'Player',
+      sortKey: 'player.name',
+      render: (listing) => (
+        <PlayerName playerId={listing.player.id} className="text-text-primary font-medium" />
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortKey: 'player.primaryRole', // primaryRole might be undefined, fallback handled in component logic usually, but here we sort by it.
+      render: (listing) => (
+        <span className="text-text-secondary">
+          {listing.player.primaryRole || listing.player.role}
+        </span>
+      ),
+    },
+    {
+      key: 'rating',
+      label: 'Rating',
+      sortKey: 'player.rating',
+      align: 'center',
+      render: (listing) => (
+        <span className="text-text-primary font-medium">
+          {listing.player.rating?.toFixed(1) || 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'seller',
+      label: 'Seller',
+      sortKey: 'teamId',
+      render: (listing) => listing.teamId === userTeamId ? (
+        <span className="text-cricket-accent font-semibold">You</span>
+      ) : (
+        <TeamName teamId={listing.teamId} className="text-text-secondary" />
+      ),
+    },
+    {
+      key: 'price',
+      label: 'Asking',
+      sortKey: 'listingPrice',
+      align: 'right',
+      render: (listing) => (
+        <span className="text-text-primary font-medium">
+          ${(listing.listingPrice / 1000).toFixed(0)}K
+        </span>
+      ),
+    },
+    {
+      key: 'bid',
+      label: 'Current Bid',
+      sortKey: 'currentBid',
+      align: 'right',
+      render: (listing) => listing.bids.length > 0 ? (
+        <span className="text-trophy-gold font-semibold">
+          ${(listing.currentBid / 1000).toFixed(0)}K
+        </span>
+      ) : (
+        <span className="text-text-tertiary">-</span>
+      ),
+    },
+    {
+      key: 'bids',
+      label: 'Bids',
+      sortKey: 'bids.length',
+      align: 'center',
+      render: (listing) => listing.bids.length > 0 ? (
+        <span className="inline-flex items-center gap-1 text-xs bg-cricket-accent/20 text-cricket-accent px-2 py-0.5 rounded">
+          <TrendingUp className="w-3 h-3" />
+          <span>{listing.bids.length}</span>
+        </span>
+      ) : (
+        <span className="text-text-tertiary text-xs">0</span>
+      ),
+    },
+    {
+      key: 'time',
+      label: 'Time',
+      sortKey: 'expiresAt',
+      align: 'center',
+      render: (listing) => (
+        <span className="text-text-secondary text-xs">
+          {getTimeRemaining(listing.expiresAt)}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      align: 'center',
+      render: (listing) => {
+        const isOwnListing = listing.teamId === userTeamId;
+        const hasBids = listing.bids.length > 0;
+
+        if (isOwnListing) {
+          return (
+            <div className="flex items-center justify-center gap-1">
+              {hasBids ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAcceptBid(listing); }}
+                  className="flex items-center gap-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                >
+                  <Check className="w-3 h-3" />
+                  <span>Accept</span>
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCancelListing(listing); }}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                >
+                  <Ban className="w-3 h-3" />
+                  <span>Cancel</span>
+                </button>
+              )}
+            </div>
+          );
+        } else {
+          return (
+            <button
+              onClick={(e) => { e.stopPropagation(); handlePlaceBid(listing); }}
+              className="bg-cricket-accent hover:bg-cricket-accent-dark text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              Bid
+            </button>
+          );
+        }
+      },
+    },
+  ];
+
+  // Filter component to pass to SortableTable
+  const FilterComponent = (
     <div className="space-y-3">
-      {/* Header with Filters */}
       <div className="flex items-center gap-2">
         {/* Search */}
         <div className="flex-1 relative">
@@ -204,9 +300,9 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-3 text-xs text-text-secondary">
-        <span>{displayedListings.length} listing{displayedListings.length !== 1 ? 's' : ''}</span>
+       {/* Stats */}
+       <div className="flex items-center gap-3 text-xs text-text-secondary">
+        <span>{filteredListings.length} listing{filteredListings.length !== 1 ? 's' : ''}</span>
         {userListingsCount > 0 && (
           <>
             <span>•</span>
@@ -214,160 +310,37 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
           </>
         )}
       </div>
+    </div>
+  );
 
-      {/* Table */}
-      {displayedListings.length > 0 ? (
-        <div className="card border border-border-primary overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-primary bg-bg-secondary">
-                <th className="px-3 py-2 text-left font-semibold text-text-primary">Player</th>
-                <th className="px-3 py-2 text-left font-semibold text-text-primary">Role</th>
-                <th className="px-3 py-2 text-center font-semibold text-text-primary">
-                  <button
-                    onClick={() => handleSort('rating')}
-                    className="hover:text-cricket-accent transition-colors"
-                  >
-                    Rating {sortField === 'rating' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </button>
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-text-primary">Seller</th>
-                <th className="px-3 py-2 text-right font-semibold text-text-primary">
-                  <button
-                    onClick={() => handleSort('price')}
-                    className="hover:text-cricket-accent transition-colors"
-                  >
-                    Asking {sortField === 'price' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </button>
-                </th>
-                <th className="px-3 py-2 text-right font-semibold text-text-primary">
-                  <button
-                    onClick={() => handleSort('bid')}
-                    className="hover:text-cricket-accent transition-colors"
-                  >
-                    Current Bid {sortField === 'bid' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </button>
-                </th>
-                <th className="px-3 py-2 text-center font-semibold text-text-primary">Bids</th>
-                <th className="px-3 py-2 text-center font-semibold text-text-primary">
-                  <button
-                    onClick={() => handleSort('timeRemaining')}
-                    className="hover:text-cricket-accent transition-colors flex items-center gap-1 mx-auto"
-                  >
-                    <Clock className="w-3 h-3" />
-                    <span>Time {sortField === 'timeRemaining' && (sortDirection === 'asc' ? '↑' : '↓')}</span>
-                  </button>
-                </th>
-                <th className="px-3 py-2 text-center font-semibold text-text-primary">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayedListings.map((listing, idx) => {
-                const isOwnListing = listing.teamId === userTeamId;
-                const hasBids = listing.bids.length > 0;
-                const timeRemaining = getTimeRemaining(listing.expiresAt);
-
-                return (
-                  <tr
-                    key={listing.id}
-                    className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${
-                      isOwnListing ? 'bg-cricket-primary/5' : ''
-                    }`}
-                  >
-                    <td className="px-3 py-2">
-                      <PlayerName playerId={listing.player.id} className="text-text-primary font-medium" />
-                    </td>
-                    <td className="px-3 py-2 text-text-secondary">
-                      {listing.player.primaryRole || listing.player.role}
-                    </td>
-                    <td className="px-3 py-2 text-center text-text-primary font-medium">
-                      {listing.player.rating?.toFixed(1) || 'N/A'}
-                    </td>
-                    <td className="px-3 py-2">
-                      {isOwnListing ? (
-                        <span className="text-cricket-accent font-semibold">You</span>
-                      ) : (
-                        <TeamName teamId={listing.teamId} className="text-text-secondary" />
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right text-text-primary font-medium">
-                      ${(listing.listingPrice / 1000).toFixed(0)}K
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {hasBids ? (
-                        <span className="text-trophy-gold font-semibold">
-                          ${(listing.currentBid / 1000).toFixed(0)}K
-                        </span>
-                      ) : (
-                        <span className="text-text-tertiary">-</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {hasBids ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-cricket-accent/20 text-cricket-accent px-2 py-0.5 rounded">
-                          <TrendingUp className="w-3 h-3" />
-                          <span>{listing.bids.length}</span>
-                        </span>
-                      ) : (
-                        <span className="text-text-tertiary text-xs">0</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center text-text-secondary text-xs">
-                      {timeRemaining}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {isOwnListing ? (
-                        <div className="flex items-center justify-center gap-1">
-                          {hasBids ? (
-                            <button
-                              onClick={() => handleAcceptBid(listing)}
-                              className="flex items-center gap-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                            >
-                              <Check className="w-3 h-3" />
-                              <span>Accept</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleCancelListing(listing)}
-                              className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                            >
-                              <Ban className="w-3 h-3" />
-                              <span>Cancel</span>
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handlePlaceBid(listing)}
-                          className="bg-cricket-accent hover:bg-cricket-accent-dark text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                        >
-                          Bid
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-center py-8 card border border-border-primary">
-          <p className="text-text-secondary text-sm">
-            {activeListings.length === 0
-              ? 'No active listings'
-              : 'No players match your filters'}
-          </p>
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="mt-2 text-cricket-accent hover:text-cricket-accent-dark text-xs"
-            >
-              Clear Search
-            </button>
-          )}
-        </div>
-      )}
+  return (
+    <>
+      <SortableTable
+        data={filteredListings}
+        columns={columns}
+        defaultSort={{ column: 'expiresAt', direction: 'asc' }}
+        filterComponent={FilterComponent}
+        emptyState={
+          <tr>
+            <td colSpan={columns.length} className="px-3 py-12 text-center">
+              <p className="text-text-secondary text-sm">
+                {activeListings.length === 0
+                  ? 'No active listings'
+                  : 'No players match your filters'}
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="mt-2 text-cricket-accent hover:text-cricket-accent-dark text-xs"
+                >
+                  Clear Search
+                </button>
+              )}
+            </td>
+          </tr>
+        }
+        getRowClassName={(item) => item.teamId === userTeamId ? 'bg-cricket-primary/5' : ''}
+      />
 
       {/* Bid Modal */}
       {selectedListing && (
@@ -378,7 +351,7 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
           userBudget={userBudget}
         />
       )}
-    </div>
+    </>
   );
 };
 

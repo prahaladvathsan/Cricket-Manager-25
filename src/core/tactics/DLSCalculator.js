@@ -13,7 +13,6 @@ import dlsResourcesConfig from '../../data/config/dls-resources-config.json';
 class DLSCalculator {
   constructor() {
     this.resourceTable = dlsResourcesConfig.resourceTable;
-    console.log('✅ DLSCalculator initialized with resource table');
   }
 
   /**

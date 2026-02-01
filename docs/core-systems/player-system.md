@@ -315,6 +315,7 @@ const playerSchema = {
   id: "string",
   name: "string",
   age: "number",
+  DOB: "string (DD-MM-YYYY)",
   role: "string",
   nationality: "string",
 

@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, Plus, X, UserPlus } from 'lucide-react';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import HelpIcon from '../../shared/HelpIcon';
@@ -14,11 +14,16 @@ import PlayerName from '../../shared/PlayerName';
 import aiTacticsManager from '../../../core/ai/AITacticsManager';
 
 const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
-  const { updateBowlingPlans, updateOverAssignments, updatePlaystyleOverride } = useTeamStore();
+  const { updateBowlingPlans, updateOverAssignments, updatePlaystyleOverride, addPartTimer, removePartTimer } = useTeamStore();
   const { players } = usePlayerStore();
+  const [showAddBowlerModal, setShowAddBowlerModal] = useState(false);
 
   // Subscribe to team tactics changes to ensure UI updates when playing XI changes
   const teamTactics = useTeamStore((state) => state.teamTactics[teamId]);
+
+  // Get part-timers and wicket-keeper from team tactics
+  const partTimers = teamTactics?.partTimers || [];
+  const wicketKeeper = teamTactics?.wicketKeeper;
 
   // Over assignments: array of 20 player IDs (or null for unassigned)
   // Convert overAssignments object { 1: 'id', 2: 'id', ... } to array
@@ -27,37 +32,61 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     return Array.from({ length: 20 }, (_, i) => assignmentsObj[i + 1] || null);
   }, [teamTactics?.overAssignments]);
 
-  // Categorize bowlers: Primary vs Part-timers
-  const { primaryBowlers, partTimers } = useMemo(() => {
+  // Categorize bowlers: Primary vs Part-timers (excluding wicket-keeper)
+  const { primaryBowlers, partTimerPlayers } = useMemo(() => {
     const selectedIds = teamTactics?.squadSelection || [];
-    const allPlayers = selectedIds.map(id => players[id]).filter(Boolean);
+    const allPlayers = selectedIds
+      .map(id => players[id])
+      .filter(p => p && p.id !== wicketKeeper);
 
     const primary = [];
-    const partTime = [];
-
+    
     allPlayers.forEach(player => {
       const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
-      const bowlingRating = getPrimaryBowlingRating(player);
-
+      
       if (isPrimary) {
         primary.push(player);
-      } else if (bowlingRating > 40) {
-        partTime.push(player);
       }
     });
 
-    // Sort by bowling rating
     primary.sort((a, b) => getPrimaryBowlingRating(b) - getPrimaryBowlingRating(a));
-    partTime.sort((a, b) => getPrimaryBowlingRating(b) - getPrimaryBowlingRating(a));
 
-    return { primaryBowlers: primary, partTimers: partTime };
-  }, [teamTactics?.squadSelection, players]);
+    const partTime = partTimers
+      .map(id => players[id])
+      .filter(p => p && p.id !== wicketKeeper);
 
-  // Get all bowlers from playing XI (for bowling plans section)
+    return { primaryBowlers: primary, partTimerPlayers: partTime };
+  }, [teamTactics?.squadSelection, players, wicketKeeper, partTimers]);
+
+  // All bowling options combined
   const allBowlers = useMemo(() => {
-    // Combine primary bowlers and part-timers
-    return [...primaryBowlers, ...partTimers];
-  }, [primaryBowlers, partTimers]);
+    const combined = [...primaryBowlers];
+    partTimerPlayers.forEach(p => {
+      if (!combined.find(b => b.id === p.id)) {
+        combined.push(p);
+      }
+    });
+    return combined;
+  }, [primaryBowlers, partTimerPlayers]);
+
+  // Detect bowler shortage
+  const hasBowlerShortage = allBowlers.length < 5;
+
+  // Get players eligible to be added as part-timers
+  const eligibleForPartTimer = useMemo(() => {
+    const selectedIds = teamTactics?.squadSelection || [];
+    return selectedIds
+      .map(id => players[id])
+      .filter(p => {
+        if (!p) return false;
+        if (p.id === wicketKeeper) return false;
+        if (p.role === 'bowler' || p.role === 'all-rounder') return false;
+        if (partTimers.includes(p.id)) return false;
+        // Manual control: allow adding any non-primary bowler
+        return true;
+      })
+      .sort((a, b) => getPrimaryBowlingRating(b) - getPrimaryBowlingRating(a));
+  }, [teamTactics?.squadSelection, players, wicketKeeper, partTimers]);
 
   // Handle over assignment change
   const handleOverAssignment = (overIndex, playerId) => {
@@ -78,7 +107,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
   // Auto-assign bowling rotation using AI manager
   const handleAutoAssign = () => {
-    if (primaryBowlers.length === 0 && partTimers.length === 0) {
+    if (primaryBowlers.length === 0 && partTimerPlayers.length === 0) {
       alert('No bowlers available for auto-assignment');
       return;
     }
@@ -186,15 +215,14 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
   const warnings = getWarnings();
 
-  if (primaryBowlers.length === 0 && partTimers.length === 0) {
-    return (
-      <div className="card p-6 text-center">
-        <p className="text-text-secondary">
-          No bowlers in playing XI. Please select players in the Squad tab.
-        </p>
-      </div>
-    );
-  }
+  const handleAddPartTimer = (playerId) => {
+    addPartTimer(teamId, playerId);
+    setShowAddBowlerModal(false);
+  };
+
+  const handleRemovePartTimer = (playerId) => {
+    removePartTimer(teamId, playerId);
+  };
 
   // Group overs by phase
   const phases = [
@@ -208,7 +236,52 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-2">
       {/* Main Section: Over Assignments */}
       <div className="lg:col-span-3 space-y-2">
-        {/* Warnings */}
+        {/* Bowler Shortage Warning */}
+        {hasBowlerShortage && (
+          <div className="card p-2 bg-orange-500/10 border border-orange-500/30 rounded">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                <span className="text-xs text-orange-400">
+                  Low bowling options ({allBowlers.length}/5 required)
+                </span>
+              </div>
+              {eligibleForPartTimer.length > 0 && (
+                <button
+                  onClick={() => setShowAddBowlerModal(true)}
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-500/20 text-orange-400 rounded hover:bg-orange-500/30 transition-colors"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  Add Bowler
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Part-timers Display */}
+        {partTimerPlayers.length > 0 && (
+          <div className="card p-2 bg-purple-500/10 border border-purple-500/30 rounded">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-purple-400">Part-timers:</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {partTimerPlayers.map(player => (
+                <div key={player.id} className="flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 rounded text-xs text-purple-300">
+                  <span>{player.name}</span>
+                  <button
+                    onClick={() => handleRemovePartTimer(player.id)}
+                    className="hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Over Assignment Warnings */}
         {warnings.length > 0 && (
           <div className="card p-2 bg-yellow-500/10 border-yellow-500/30">
             <div className="flex items-start gap-2">
@@ -290,22 +363,22 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       <select
                         value={playerId || ''}
                         onChange={(e) => handleOverAssignment(overIndex, e.target.value)}
-                        className={`${isFirstOver ? 'bowling-over-select-first ' : ''}w-full px-1.5 py-0.5 bg-transparent border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
+                        className={`${isFirstOver ? 'bowling-over-select-first ' : ''}w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                       >
-                        <option value="">—</option>
+                        <option value="" className="bg-bg-tertiary text-text-primary">—</option>
                         {primaryBowlers.length > 0 && (
-                          <optgroup label="Primary">
+                          <optgroup label="Primary" className="bg-bg-tertiary text-text-primary">
                             {primaryBowlers.map(bowler => (
-                              <option key={bowler.id} value={bowler.id}>
+                              <option key={bowler.id} value={bowler.id} className="bg-bg-tertiary text-text-primary">
                                 {bowler.name}
                               </option>
                             ))}
                           </optgroup>
                         )}
-                        {partTimers.length > 0 && (
-                          <optgroup label="Part-time">
-                            {partTimers.map(bowler => (
-                              <option key={bowler.id} value={bowler.id}>
+                        {partTimerPlayers.length > 0 && (
+                          <optgroup label="Part-timers" className="bg-bg-tertiary text-text-primary">
+                            {partTimerPlayers.map(bowler => (
+                              <option key={bowler.id} value={bowler.id} className="bg-bg-tertiary text-text-primary">
                                 {bowler.name}
                               </option>
                             ))}
@@ -339,12 +412,10 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             {allBowlers.map((player, bowlerIndex) => {
               const bowlingType = player.bowlingType || 'pace';
               const plans = getBowlingPlans(bowlingType);
-              const currentPlans = teamTactics?.bowlingPlans[player.id];
-
-              // If no plans set yet, skip this player
-              if (!currentPlans) {
-                return null; // Skip rendering this player's plans until they're initialized
-              }
+              const currentPlans = teamTactics?.bowlingPlans[player.id] || { 
+                lineLength: plans.lineLengthPlans[0]?.name, 
+                variation: plans.variationPlans[0]?.name 
+              };
 
               const lineLengthPlan = plans.lineLengthPlans.find(p => p.name === currentPlans.lineLength);
               const variationPlan = plans.variationPlans.find(p => p.name === currentPlans.variation);
@@ -373,10 +444,10 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     <select
                       value={playstyle}
                       onChange={(e) => handleBowlingPlaystyleChange(player.id, e.target.value)}
-                      className="px-1.5 py-0.5 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                      className="px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
                     >
                       {availableBowlingPlaystyles.map(({ name, rating }) => (
-                        <option key={name} value={name}>
+                        <option key={name} value={name} className="bg-bg-tertiary text-text-primary">
                           {name} ({rating.toFixed(0)})
                           {name === player.primaryPlaystyle?.bowling && ' ⭐'}
                         </option>
@@ -389,10 +460,10 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     <select
                       value={currentPlans.lineLength}
                       onChange={(e) => handlePlanChange(player.id, 'lineLength', e.target.value)}
-                      className={`${isFirstBowler ? 'bowling-line-length-select ' : ''}px-1.5 py-0.5 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
+                      className={`${isFirstBowler ? 'bowling-line-length-select ' : ''}px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent`}
                     >
                       {plans.lineLengthPlans.map((plan) => (
-                        <option key={plan.name} value={plan.name}>
+                        <option key={plan.name} value={plan.name} className="bg-bg-tertiary text-text-primary">
                           {plan.name}{planBoostsPlaystyle(player, plan) && ' ⭐'}
                         </option>
                       ))}
@@ -401,10 +472,10 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                     <select
                       value={currentPlans.variation}
                       onChange={(e) => handlePlanChange(player.id, 'variation', e.target.value)}
-                      className="px-1.5 py-0.5 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+                      className="px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
                     >
                       {plans.variationPlans.map((plan) => (
-                        <option key={plan.name} value={plan.name}>
+                        <option key={plan.name} value={plan.name} className="bg-bg-tertiary text-text-primary">
                           {plan.name}{planBoostsPlaystyle(player, plan) && ' ⭐'}
                         </option>
                       ))}
@@ -416,6 +487,38 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
           </div>
         )}
       </div>
+
+      {/* Add Part-timer Modal */}
+      {showAddBowlerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-bg-secondary border border-border-primary rounded-lg p-4 w-80 max-h-96">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-text-primary">Add Part-timer</h3>
+              <button onClick={() => setShowAddBowlerModal(false)} className="text-text-secondary hover:text-text-primary">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-text-secondary mb-3">
+              Select a player to add as a part-time bowling option:
+            </p>
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {eligibleForPartTimer.map(player => (
+                <button
+                  key={player.id}
+                  onClick={() => handleAddPartTimer(player.id)}
+                  className="w-full flex items-center justify-between p-2 text-xs text-left bg-bg-tertiary hover:bg-bg-hover rounded transition-colors"
+                >
+                  <span className="text-text-primary">{player.name}</span>
+                  <span className="text-text-secondary">({Math.round(getPrimaryBowlingRating(player))})</span>
+                </button>
+              ))}
+              {eligibleForPartTimer.length === 0 && (
+                <p className="text-xs text-text-tertiary text-center py-4">No eligible players available</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

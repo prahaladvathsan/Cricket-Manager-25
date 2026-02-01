@@ -16,7 +16,6 @@ class EnergyManager {
     this.depletionRates = energyConfig.depletionRates;
     this.limits = energyConfig.limits;
     this.fatigueInjuryRules = energyConfig.fatigueAndInjury;
-    console.log('✅ EnergyManager initialized with 5 energy levels and stamina scaling');
   }
 
   /**

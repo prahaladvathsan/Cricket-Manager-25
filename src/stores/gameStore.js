@@ -190,6 +190,17 @@ const useGameStore = create(
                             if (newFitness > currentFitness) {
                               updates.fitness = newFitness;
                             }
+
+                            // 3. FATIGUE RECOVERY (Strict conditions)
+                            // Condition 1: It has to be a matchday (for the league)
+                            // Condition 2: Player's team must be participating in the current match
+                            // Condition 3: Player is NOT in the playing XI (already inside !playerParticipatedInMatch)
+                            if (matchEvent && matchTeamIds.has(player.currentTeam)) {
+                              const currentFatigue = player.condition.fatigue ?? 0;
+                              if (currentFatigue > 0) {
+                                updates.fatigue = Math.max(0, currentFatigue - 1);
+                              }
+                            }
                           }
                         }
 

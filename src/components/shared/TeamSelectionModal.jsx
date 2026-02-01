@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useTeamStore from '../../stores/teamStore';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -27,6 +28,7 @@ const FOCUS_LABELS = {
 };
 
 const TeamSelectionModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -39,7 +41,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const auctionStore = useAuctionStore();
   const matchStore = useMatchStore();
   const financeStore = useFinanceStore();
-  const { resetAllCareerStats } = usePlayerStore();
+  const { resetAllCareerStats, resetPlayerTeams } = usePlayerStore();
 
   // Preload all team images before showing the UI
   const preloadImages = useCallback(async (teamsList) => {
@@ -109,47 +111,36 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       auctionStore.resetAuction();
     }
 
-    // Reset player career stats (IMPORTANT: clears stale stats from previous games)
+    // Reset player career stats (clears stale stats from previous games)
     resetAllCareerStats();
-    console.log('🔄 Reset all player career stats for new game');
+
+    // Reset player team assignments (clears stale team data from previous games)
+    resetPlayerTeams();
 
     // Reset match store (clear any ongoing match data)
     if (matchStore.resetMatch) {
       matchStore.resetMatch();
-      console.log('🔄 Reset match store for new game');
     }
 
     // Reset finance store (clear any old financial data)
     if (financeStore.resetFinances) {
       financeStore.resetFinances();
-      console.log('🔄 Reset finance store for new game');
     }
 
-    // CRITICAL: Re-initialize teams with fresh data from JSON
-    // This resets squadLists to empty arrays, clearing old player assignments
+    // Re-initialize teams with fresh data from JSON (resets squadLists)
     initializeTeams(wplTeamsData);
-    console.log('🔄 Re-initialized teams with fresh data (squadLists reset)');
 
-    // Initialize finances for all teams at game start (with $10M each)
+    // Initialize finances for all teams at game start
     const teamsForFinances = Object.values(teams).map(team => ({
       id: team.id,
       name: team.name
     }));
-    console.log('💰 TeamSelectionModal - Initializing finances for teams:', teamsForFinances);
     if (financeStore.initializeSeason) {
-      const result = financeStore.initializeSeason(teamsForFinances, `season_${gameState.currentSeason}`, null);
-      console.log('💰 Initialized finances for all teams, result:', result);
-
-      // Verify initialization worked
-      const testFinances = financeStore.getTeamFinances(teamId);
-      console.log('💰 Test finances for selected team:', teamId, ':', testFinances);
-    } else {
-      console.error('❌ financeStore.initializeSeason is not available!');
+      financeStore.initializeSeason(teamsForFinances, `season_${gameState.currentSeason}`, null);
     }
 
-    // Reset all team tactics (IMPORTANT: clears stale playing XI data)
+    // Reset all team tactics (clears stale playing XI data)
     resetAllTactics();
-    console.log('🔄 Reset all team tactics for new game');
 
     // Set the selected team
     setUserTeam(teamId);
@@ -171,8 +162,9 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       }
     }
 
-    // Note: Zustand persist middleware auto-saves all store changes
-    onClose();
+    // Use React Router navigation (not window.location.href) to preserve in-memory state
+    // This prevents race condition where IndexedDB persistence hasn't completed before reload
+    navigate('/game/home');
   };
 
   if (!isOpen) return null;

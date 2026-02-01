@@ -14,7 +14,6 @@ class ContextualModifierManager {
   constructor() {
     this.leftRightConfig = contextualConfig.leftRightPartnership;
     this.newBallConfig = contextualConfig.newBallBoost;
-    console.log('✅ ContextualModifierManager initialized - left-right partnership & new ball boost');
   }
 
   /**

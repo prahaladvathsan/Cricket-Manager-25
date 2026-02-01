@@ -13,7 +13,6 @@ import dlsCalculator from './DLSCalculator.js';
 class ParTargetCalculator {
   constructor() {
     this.dlsCalculator = dlsCalculator;
-    console.log('✅ ParTargetCalculator initialized');
   }
 
   /**

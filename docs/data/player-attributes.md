@@ -82,6 +82,21 @@ All attributes use a **1-20 scale** where:
 - **Non-keepers**: keeping, collecting, stumping = 1-4 (minimal)
 - **Note**: Reflexes attribute (from fielding) also contributes 15% weight to fielding rating
 
+## General Attributes
+
+| Attribute | Description | Match Engine Usage |
+| :--- | :--- | :--- |
+| **id** | Unique identifier (UUID) | Reference key |
+| **name** | Display name | UI display |
+| **fullName** | Full legal name | Detailed UI display |
+| **role** | Primary role (Batsman, Bowler, All-Rounder, Wicket-Keeper) | AI selection, Team balance |
+| **nationality** | Country of origin | Foreign player limits |
+| **age** | Current age in years | Development curve, retirement |
+| **DOB** | Date of Birth (DD-MM-YYYY) | Age calculation, Birthday events |
+| **battingHand** | Right / Left | Matchups (L/R combos) |
+| **bowlingStyle** | e.g., Right-arm Fast, Left-arm Spin | Matchups (Spin vs Pace) |
+| **rating** | Overall ability score (1-100) | AI valuation, Quick selection |
+
 ## Condition Attributes (0-100 Scale)
 
 | Attribute | Description | Effect on Performance |

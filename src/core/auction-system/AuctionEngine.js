@@ -79,10 +79,6 @@ class AuctionEngine {
       status: 'available'
     }));
 
-    console.log(`\n🏏 AUCTION INITIALIZED`);
-    console.log(`   Teams: ${this.teams.length}`);
-    console.log(`   Player Pool: ${this.playerPool.length}`);
-    console.log(`   Budget per team: ${this.core.formatPrice(this.config.budget.total)}`);
   }
 
   /**
@@ -133,13 +129,6 @@ class AuctionEngine {
     categories.allRounders.sort(sortByBasePrice);
     categories.batsmen.sort(sortByBasePrice);
     categories.bowlers.sort(sortByBasePrice);
-
-    console.log(`\n📋 PLAYER CATEGORIZATION:`);
-    console.log(`   Marquee (Elite): ${categories.marquee.length}`);
-    console.log(`   Wicket-Keepers: ${categories.keepers.length}`);
-    console.log(`   All-Rounders: ${categories.allRounders.length}`);
-    console.log(`   Batsmen: ${categories.batsmen.length}`);
-    console.log(`   Bowlers: ${categories.bowlers.length}`);
 
     return categories;
   }
@@ -234,15 +223,6 @@ class AuctionEngine {
     // Convert to simple array of player arrays for backwards compatibility
     const rounds = orderedRounds.map(round => round.players);
 
-    console.log(`\n📅 AUCTION STRUCTURE:`);
-    console.log(`   Total Rounds: ${orderedRounds.length}`);
-    console.log(`   Marquee Rounds: ${marqueeRounds.length}`);
-    console.log(`   Wicket-Keeper Rounds: ${keeperRounds.length}`);
-    console.log(`   All-Rounder Rounds: ${allRounderRounds.length}`);
-    console.log(`   Batsmen Rounds: ${batsmenRounds.length}`);
-    console.log(`   Bowler Rounds: ${bowlerRounds.length}`);
-    console.log(`   Order: Marquee first, then WK→AR→Bat→Bowl interleaved`);
-
     return rounds;
   }
 
@@ -311,10 +291,6 @@ class AuctionEngine {
     // Add to round metadata
     this.roundMetadata.push(metadata);
 
-    console.log(`\n🔄 UNSOLD ROUND CREATED:`);
-    console.log(`   Players: ${unsoldPlayers.length}`);
-    console.log(`   Base prices reduced by 50%`);
-
     return { players: unsoldPlayers, metadata };
   }
 
@@ -354,16 +330,6 @@ class AuctionEngine {
     let lastBidder = null;
     let secondsSinceLastBid = 0;
 
-    console.log(`\n${'='.repeat(80)}`);
-    console.log(`🎯 NOW AUCTIONING: ${player.name}`);
-    console.log(`${'='.repeat(80)}`);
-    console.log(`   Role: ${player.role}`);
-    console.log(`   Primary Rating: ${this.core.getPrimaryPlaystyleRatingScore(player).toFixed(1)}`);
-    console.log(`   Base Price: ${this.core.formatPrice(player.basePrice)}`);
-    if (player.isMarquee) {
-      console.log(`   ⭐ MARQUEE PLAYER`);
-    }
-    console.log(`${'─'.repeat(80)}`);
 
     // FAST MODE: Find highest bid and randomly award to one of the highest bidders
     if (this.fastMode) {
@@ -402,15 +368,7 @@ class AuctionEngine {
         if (result) {
           lastBidder = result.team;
           currentPrice = result.paidPrice;
-
-          // Find how many teams were at max for logging
-          const highestAmount = Math.max(...bids.map(b => b.amount));
-          const highestBidders = bids.filter(b => b.amount === highestAmount);
-
-          console.log(`   💰 ${result.team.name} wins at ${this.core.formatPrice(result.paidPrice)} (2nd-price auction, ${highestBidders.length} at max, ${willingBidders.length} interested)`);
         }
-      } else {
-        console.log(`   ❌ No bidders`);
       }
     }
     // NORMAL MODE: Bidding loop
@@ -486,8 +444,6 @@ class AuctionEngine {
           amount: winningBid.amount,
           reason: winningBid.reason || ''
         });
-
-        console.log(`   💰 ${winningBid.team.name} bids ${this.core.formatPrice(winningBid.amount)}`);
       } else {
         // No bids - increment timer
         secondsSinceLastBid += 1;
@@ -533,10 +489,6 @@ class AuctionEngine {
       player.soldPrice = currentPrice;
 
       this.auctionedPlayers.push(result);
-
-      console.log(`\n   🏆 SOLD to ${lastBidder.name} for ${this.core.formatPrice(currentPrice)}!`);
-      console.log(`   💰 ${lastBidder.name} Budget Remaining: ${this.core.formatPrice(lastBidder.budgetRemaining)}`);
-      console.log(`   📊 Squad Size: ${lastBidder.squad.length}/${this.config.squadSize.max}`);
     } else {
       // Player unsold
       player.status = 'unsold';
@@ -546,11 +498,9 @@ class AuctionEngine {
         // Second time unsold - permanently done
         player.status = 'permanently_unsold';
         this.permanentlyUnsold.push(player);
-        console.log(`\n   ❌ UNSOLD (2nd time) - Player will not return`);
       } else {
         // First time unsold - can go to unsold round
         this.unsoldPlayers.push(player);
-        console.log(`\n   ❌ UNSOLD - Will return in unsold round`);
       }
     }
 
@@ -564,15 +514,8 @@ class AuctionEngine {
    */
   async runUnsoldRound(userBidCallback = null) {
     if (this.unsoldPlayers.length === 0) {
-      console.log(`\n✅ No unsold players - auction complete!`);
       return [];
     }
-
-    console.log(`\n${'='.repeat(80)}`);
-    console.log(`🔄 UNSOLD PLAYERS ROUND`);
-    console.log(`${'='.repeat(80)}`);
-    console.log(`   ${this.unsoldPlayers.length} players available`);
-    console.log(`   Base prices reduced by 50%\n`);
 
     // Create a snapshot of unsold players (to avoid issues with array modification during iteration)
     const playersForUnsoldRound = [...this.unsoldPlayers];

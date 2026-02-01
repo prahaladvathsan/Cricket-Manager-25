@@ -96,7 +96,8 @@ class AITacticsManager {
 
     // Stage 4: Bowling Over Assignment + Plans
     const isUserTeam = teamStore ? teamId === teamStore.getState().userTeamId : false;
-    const { bowlingRotation, overAssignments, bowlingPlans } = this.assignBowlingTactics(playingXI, playstyleOverrides, isUserTeam);
+    const partTimerIds = tactics?.partTimers || [];
+    const { bowlingRotation, overAssignments, bowlingPlans } = this.assignBowlingTactics(playingXI, playstyleOverrides, isUserTeam, partTimerIds);
 
     // Stage 5: Field Setup
     const fieldFormation = this.selectFieldFormation(playingXI);
@@ -174,7 +175,6 @@ class AITacticsManager {
     // Refinement phase: compare selected vs unselected and swap if beneficial
     this._refineSelection(selected, remaining, weights, config, refinementIterations);
 
-    console.log(`[AITacticsManager] Selected XI composition: ${this._formatComposition(this._getComposition(selected))}`);
     return selected;
   }
 
@@ -850,9 +850,22 @@ class AITacticsManager {
    * @param {boolean} isUserTeam - Whether this is the user's team (for logging)
    * @returns {Object} Bowling rotation, over assignments, and plans
    */
-  assignBowlingTactics(playingXI, playstyleOverrides, isUserTeam = false) {
+  assignBowlingTactics(playingXI, playstyleOverrides, isUserTeam = false, partTimerIds = []) {
     const rotationConfig = this.config.tactics.bowlingRotation;
-    let bowlers = playingXI.filter(p => aiCore.canBowl(p));
+    
+    let bowlers;
+    
+    if (isUserTeam) {
+      // User Team: Strict manual control. Only Primary Bowlers OR Manually Added "Part-timers"
+      // effectively disabling "auto-detection" of high-rated batsmen
+      bowlers = playingXI.filter(p => 
+        (p.role === 'bowler' || p.role === 'all-rounder') || 
+        partTimerIds.includes(p.id)
+      );
+    } else {
+      // AI Team: Smart auto-detection. Include anyone who can bowl reasonably well
+      bowlers = playingXI.filter(p => aiCore.canBowl(p) || partTimerIds.includes(p.id));
+    }
 
     // Sort bowlers by primary bowling playstyle rating
     bowlers.sort((a, b) => {
@@ -941,16 +954,6 @@ class AITacticsManager {
     //   remainingBowlers.splice(remainingBowlers.indexOf(best.bowler), 1);
     // }
 
-    // Log bowling rotation for user team
-    if (isUserTeam) {
-      console.log('\n📋 [Over Assignment] Bowling Rotation Order:');
-      bowlingRotation.forEach((id, idx) => {
-        const bowler = selectedBowlers.find(b => b.id === id);
-        const playstyle = playstyleOverrides[id]?.bowling || bowler?.primaryPlaystyle?.bowling || 'Unknown';
-        console.log(`  ${idx + 1}. ${bowler?.name || id} (${playstyle})`);
-      });
-    }
-
     // Generate over assignments using hybrid approach
     const overAssignments = this._assignOvers(bowlingRotation, selectedBowlers, playstyleOverrides, rotationConfig, isUserTeam);
 
@@ -1008,9 +1011,6 @@ class AITacticsManager {
     const assignOver = (overNum, bowlerId, phase = 'Phase 1') => {
       overAssignments[overNum] = bowlerId;
       bowlerOvers[bowlerId].push(overNum);
-      if (isUserTeam) {
-        console.log(`  [${phase}] Over ${overNum} → ${getBowlerName(bowlerId)}`);
-      }
     };
 
     // Helper: Get unassigned overs in a spell that bowler can bowl
@@ -1045,9 +1045,6 @@ class AITacticsManager {
     };
 
     // PHASE 1: Preference-based assignment with loop until no progress
-    if (isUserTeam) {
-      console.log('\n🎯 [Over Assignment] Phase 1: Preference-based assignment');
-    }
     let madeAssignment = true;
     while (madeAssignment) {
       madeAssignment = false;
@@ -1101,10 +1098,6 @@ class AITacticsManager {
     }
 
     // PHASE 2: Fill remaining overs by rotation order
-    if (isUserTeam) {
-      const unassignedCount = 20 - Object.keys(overAssignments).length;
-      console.log(`\n🔄 [Over Assignment] Phase 2: Fill remaining ${unassignedCount} overs by rotation`);
-    }
     for (let overNum = 1; overNum <= 20; overNum++) {
       if (overAssignments[overNum]) continue;
 
@@ -1117,10 +1110,6 @@ class AITacticsManager {
     }
 
     // Fallback: If any overs still unassigned, ignore consecutive rule
-    const stillUnassigned = 20 - Object.keys(overAssignments).length;
-    if (stillUnassigned > 0 && isUserTeam) {
-      console.log(`\n⚠️ [Over Assignment] Fallback: ${stillUnassigned} overs need assignment (ignoring consecutive rule)`);
-    }
     for (let overNum = 1; overNum <= 20; overNum++) {
       if (!overAssignments[overNum]) {
         for (const bowlerId of bowlingRotation) {
@@ -1130,16 +1119,6 @@ class AITacticsManager {
           }
         }
       }
-    }
-
-    // Final summary for user team
-    if (isUserTeam) {
-      console.log('\n✅ [Over Assignment] Complete! Final assignment:');
-      for (let i = 1; i <= 20; i++) {
-        const bowlerId = overAssignments[i];
-        console.log(`  Over ${i.toString().padStart(2)}: ${getBowlerName(bowlerId)}`);
-      }
-      console.log('');
     }
 
     return overAssignments;
@@ -1266,8 +1245,9 @@ class AITacticsManager {
 
       // Regenerate bowling tactics
       const isUserTeam = teamId === teamStore.getState().userTeamId;
+      const partTimerIds = tactics.partTimers || [];
       const { bowlingRotation, overAssignments: newOverAssignments, bowlingPlans } =
-        this.assignBowlingTactics(playingXIPlayers, playstyleOverrides, isUserTeam);
+        this.assignBowlingTactics(playingXIPlayers, playstyleOverrides, isUserTeam, partTimerIds);
 
       // Update team tactics with regenerated bowling data
       teamStore.getState().setTeamTactics(teamId, {
@@ -1313,8 +1293,9 @@ class AITacticsManager {
 
     // Generate new bowling tactics
     const isUserTeam = teamId === teamStore.getState().userTeamId;
+    const partTimerIds = tactics.partTimers || [];
     const { bowlingRotation, overAssignments, bowlingPlans } =
-      this.assignBowlingTactics(playingXIPlayers, playstyleOverrides, isUserTeam);
+      this.assignBowlingTactics(playingXIPlayers, playstyleOverrides, isUserTeam, partTimerIds);
 
     // Update team store
     teamStore.getState().setTeamTactics(teamId, {

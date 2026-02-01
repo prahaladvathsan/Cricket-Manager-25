@@ -104,7 +104,6 @@ const Home = () => {
   // Migration: Initialize finances if not already initialized
   useEffect(() => {
     if (userTeam && !financeStoreState.initialized) {
-      console.log('💰 Home - Initializing finances for existing save...');
       const allTeams = Object.values(useTeamStore.getState().teams).map(team => ({
         id: team.id,
         name: team.name
@@ -112,7 +111,6 @@ const Home = () => {
 
       if (allTeams.length > 0) {
         financeStoreState.initializeSeason(allTeams, `season_${currentSeason}`, null);
-        console.log('✅ Home - Finances initialized for', allTeams.length, 'teams');
       }
     }
   }, [userTeam, financeStoreState.initialized]);

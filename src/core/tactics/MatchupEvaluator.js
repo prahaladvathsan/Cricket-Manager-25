@@ -14,7 +14,6 @@ class MatchupEvaluator {
   constructor() {
     this.bowlingStyles = matchupConfig.bowlingStyles;
     this.matchupEffects = matchupConfig.matchupEffects;
-    console.log('✅ MatchupEvaluator initialized with 8 bowling styles');
   }
 
   /**

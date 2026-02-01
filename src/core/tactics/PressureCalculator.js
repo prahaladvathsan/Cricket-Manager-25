@@ -21,7 +21,6 @@ import dlsCalculator from './DLSCalculator.js';
 class PressureCalculator {
   constructor() {
     this.steepness = 1.5; // Sigmoid steepness factor (k)
-    console.log('✅ PressureCalculator initialized with sigmoid curve (k=1.5)');
   }
 
   /**

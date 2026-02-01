@@ -54,7 +54,7 @@ const PlanSelector = ({ label, currentPlan, plans, onChange, icon: Icon }) => {
         className="w-full px-2 py-1 text-xs bg-bg-tertiary text-text-primary border border-border-primary rounded hover:border-cricket-accent transition-colors cursor-pointer"
       >
         {plans.map(plan => (
-          <option key={plan.id} value={plan.id}>
+          <option key={plan.id} value={plan.id} className="bg-bg-tertiary text-text-primary">
             {plan.label} - {plan.description}
           </option>
         ))}
@@ -245,13 +245,13 @@ const OverAssignmentsTab = ({ bowlers, currentBall, currentBowler, overAssignmen
                     value={assignedBowlerId}
                     onChange={(e) => handleAssignmentChange(overNumber, e.target.value)}
                     disabled={isFrozen}
-                    className={`w-full px-2 py-1 text-xs bg-bg-primary text-text-primary border border-border-primary rounded transition-colors ${
+                    className={`w-full px-2 py-1 text-xs bg-bg-tertiary text-text-primary border border-border-primary rounded transition-colors ${
                       isFrozen
                         ? 'cursor-not-allowed opacity-60'
                         : 'hover:border-cricket-accent cursor-pointer'
                     }`}
                   >
-                    <option value="">Select...</option>
+                    <option value="" className="bg-bg-tertiary text-text-primary">Select...</option>
                     {bowlers.map(bowler => {
                       const bowled = oversBowled[bowler.id] || 0;
                       const maxOvers = 4; // T20 limit per bowler
@@ -262,6 +262,7 @@ const OverAssignmentsTab = ({ bowlers, currentBall, currentBowler, overAssignmen
                           key={bowler.id}
                           value={bowler.id}
                           disabled={!canBowl && !isFrozen}
+                          className="bg-bg-tertiary text-text-primary"
                         >
                           {bowler.name} ({bowled}/{maxOvers})
                         </option>
@@ -349,26 +350,19 @@ export default function BowlingPlansPanel() {
   const bowlingTeamTactics = teamTactics[bowlingTeam.id];
   const playingXI = bowlingTeamTactics?.squadSelection || bowlingTeam.squad;
 
-  // Get all bowlers from playing XI (primary bowlers + part-timers with bowling rating > 40)
+  // Get all bowlers from playing XI (primary bowlers + part-timers)
   const getPlayer = usePlayerStore(state => state.getPlayer);
-
-  // Helper to calculate primary bowling rating
-  const getPrimaryBowlingRating = (player) => {
-    if (!player?.attributes?.bowling) return 0;
-    const bowlingAttrs = player.attributes.bowling;
-    return Object.values(bowlingAttrs).reduce((a, b) => a + b, 0) / Object.keys(bowlingAttrs).length;
-  };
+  const partTimers = bowlingTeamTactics?.partTimers || [];
 
   const bowlers = playingXI
     .map(playerId => getPlayer(playerId))
     .filter(player => {
       if (!player) return false;
       const isPrimary = player.role === 'bowler' || player.role === 'all-rounder';
-      const bowlingRating = getPrimaryBowlingRating(player);
-      return isPrimary || bowlingRating > 40;
+      const isPartTimer = partTimers.includes(player.id);
+      return isPrimary || isPartTimer;
     })
     .sort((a, b) => {
-      // Sort: current bowler first, then by role (bowlers before all-rounders)
       if (a.id === currentBowler) return -1;
       if (b.id === currentBowler) return 1;
       if (a.role === 'bowler' && b.role !== 'bowler') return -1;

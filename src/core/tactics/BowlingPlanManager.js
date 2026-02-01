@@ -17,7 +17,6 @@ class BowlingPlanManager {
     this.spinLineLengthPlans = bowlingPlansConfig.spinBowling.lineLengthPlans;
     this.spinVariationPlans = bowlingPlansConfig.spinBowling.variationPlans;
     this.playstyleBoostAmount = bowlingPlansConfig.playstyleBoostAmount;
-    console.log('✅ BowlingPlanManager initialized with pace/spin plans');
   }
 
   /**

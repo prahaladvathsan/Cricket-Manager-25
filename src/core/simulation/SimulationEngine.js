@@ -197,8 +197,6 @@ class SimulationEngine {
     const allPlayers = Object.values(this.playerStore.getState().players);
     const userTeamId = this.teamStore.getState().userTeamId;
 
-    console.log(`User team ID: ${userTeamId}`);
-
     // Initialize auction engine
     const auctionEngine = new AuctionEngine({ fastMode: true });
     auctionEngine.initializeAuction(teams, allPlayers);
@@ -446,27 +444,32 @@ class SimulationEngine {
       // Check if all group stage matches are complete and populate playoffs
       await this.checkAndPopulatePlayoffs();
     } else if (event && event.type === 'auction') {
-      // ODD SEASON START (after EVEN season ends) - for Season 3, 5, 7, etc.
-      console.log('🔄 Auction event - Starting new ODD season...');
+      // Check if this is a preseason auction (Season 1 initial) or a new season auction
+      const isPreseasonAuction = event.data?.phase === 'preseason';
 
-      // Reset season state and generate objectives
-      this.gameStore.getState().resetForNewSeason();
+      if (!isPreseasonAuction) {
+        // NEW SEASON AUCTION (after previous season ends) - for Season 2, 3, etc.
+        console.log('🔄 Auction event - Starting new season...');
 
-      // Invalidate AI tactics cache (auction will change squads)
-      aiTacticsManager.invalidateCache();
-      const teams = Object.values(this.teamStore.getState().teams);
-      const userTeamId = this.teamStore.getState().userTeamId;
-      const rivalTeam = teams.find(t => t.id !== userTeamId);
-      this.gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
-      console.log(`✅ Season transition complete - Now in Season ${this.gameStore.getState().currentSeason}`);
+        // Reset season state and generate objectives
+        this.gameStore.getState().resetForNewSeason();
+
+        // Invalidate AI tactics cache (auction will change squads)
+        aiTacticsManager.invalidateCache();
+        const teams = Object.values(this.teamStore.getState().teams);
+        const userTeamId = this.teamStore.getState().userTeamId;
+        const rivalTeam = teams.find(t => t.id !== userTeamId);
+        this.gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
+        console.log(`✅ Season transition complete - Now in Season ${this.gameStore.getState().currentSeason}`);
+      } else {
+        console.log('📋 Preseason auction - no season transition needed');
+      }
 
       // Run auction
-      console.log('📋 Running auction...');
       await this.runAuction();
       summary.eventsProcessed++;
 
       // Initialize league
-      console.log('🏏 Initializing league after auction...');
       await this.initializeLeague();
       summary.eventsProcessed++;
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {

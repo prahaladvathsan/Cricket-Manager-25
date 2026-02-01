@@ -29,10 +29,10 @@ const listeners = new Set();
  */
 export function markHydrated(storeName) {
   hydrationStatus[storeName] = true;
-  console.log(`💾 Store hydrated: ${storeName}`);
 
   if (isAllHydrated()) {
-    console.log('✅ All stores hydrated');
+    const storeCount = Object.keys(hydrationStatus).length;
+    console.log(`✅ All ${storeCount} stores hydrated`);
     listeners.forEach(callback => callback());
     listeners.clear();
   }

@@ -1,11 +1,11 @@
 /**
  * @file SortableTable.jsx
- * @description Reusable sortable table component with filtering
+ * @description Reusable sortable table component with filtering and optional fixed-header scroll sync
  *
  * Common patterns extracted from Squad.jsx and PlayerBrowser.jsx
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 /**
@@ -46,6 +46,8 @@ const SortIndicator = ({ column, sortBy, sortDirection }) => {
  * @param {boolean} props.hoverRows - Whether to highlight rows on hover (default: true)
  * @param {Function} props.onRowClick - Optional row click handler (item, index) => void
  * @param {Function} props.getRowClassName - Function to generate custom row classes (item, index) => string
+ * @param {boolean} props.enableScrollSync - Enable fixed header and dual scrollbar sync for wide tables (default: false)
+ * @param {number} props.maxHeight - Optional max height for the table container (enables scroll sync automatically)
  */
 const SortableTable = ({
   data = [],
@@ -60,10 +62,106 @@ const SortableTable = ({
   hoverRows = true,
   onRowClick = null,
   getRowClassName = null,
+  enableScrollSync = false,
+  maxHeight = null,
 }) => {
   // Sort state
   const [sortBy, setSortBy] = useState(defaultSort.column);
   const [sortDirection, setSortDirection] = useState(defaultSort.direction);
+
+  // Scroll sync refs and state (only used when enableScrollSync is true)
+  const topScrollRef = useRef(null);
+  const tableScrollRef = useRef(null);
+  const tableContainerRef = useRef(null);
+  const fixedHeaderRef = useRef(null);
+
+  const [isScrollbarFixed, setIsScrollbarFixed] = useState(false);
+  const [tablePosition, setTablePosition] = useState({ left: 0, width: 0 });
+
+  // Handle scroll for fixed header positioning
+  useEffect(() => {
+    if (!enableScrollSync) return;
+
+    const handleScroll = () => {
+      if (tableContainerRef.current && tableScrollRef.current) {
+        const containerRect = tableContainerRef.current.getBoundingClientRect();
+        const tableRect = tableScrollRef.current.getBoundingClientRect();
+        const shouldBeFixed = containerRect.top <= 0;
+
+        setIsScrollbarFixed(shouldBeFixed);
+
+        if (shouldBeFixed) {
+          setTablePosition({
+            left: tableRect.left,
+            width: tableRect.width
+          });
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [enableScrollSync]);
+
+  // Sync scroll between top scrollbar, table, and fixed header
+  useEffect(() => {
+    if (!enableScrollSync) return;
+
+    const topScroll = topScrollRef.current;
+    const tableScroll = tableScrollRef.current;
+
+    if (!topScroll || !tableScroll) return;
+
+    // Set the scroll width of top scroller to match table
+    const updateScrollWidth = () => {
+      const scrollWidth = tableScroll.scrollWidth;
+      if (topScroll.firstChild) {
+        topScroll.firstChild.style.width = `${scrollWidth}px`;
+      }
+    };
+
+    updateScrollWidth();
+
+    // Sync scroll positions
+    const handleTopScroll = () => {
+      if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+        tableScroll.scrollLeft = topScroll.scrollLeft;
+      }
+      // Also sync fixed header
+      if (isScrollbarFixed && fixedHeaderRef.current && fixedHeaderRef.current.scrollLeft !== topScroll.scrollLeft) {
+        fixedHeaderRef.current.scrollLeft = topScroll.scrollLeft;
+      }
+    };
+
+    const handleTableScroll = () => {
+      if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+        topScroll.scrollLeft = tableScroll.scrollLeft;
+      }
+      // Sync fixed header scroll
+      if (isScrollbarFixed && fixedHeaderRef.current) {
+        fixedHeaderRef.current.scrollLeft = tableScroll.scrollLeft;
+      }
+    };
+
+    topScroll.addEventListener('scroll', handleTopScroll);
+    tableScroll.addEventListener('scroll', handleTableScroll);
+
+    // Update scroll width when data or columns change
+    const resizeObserver = new ResizeObserver(updateScrollWidth);
+    if (tableScroll.firstChild) {
+      resizeObserver.observe(tableScroll.firstChild);
+    }
+
+    return () => {
+      topScroll.removeEventListener('scroll', handleTopScroll);
+      tableScroll.removeEventListener('scroll', handleTableScroll);
+      resizeObserver.disconnect();
+    };
+  }, [data, columns, enableScrollSync, isScrollbarFixed]);
 
   // Handle sort column click
   const handleSort = (column) => {
@@ -166,6 +264,40 @@ const SortableTable = ({
     </tr>
   );
 
+  // Render header row (shared between normal and fixed header)
+  const renderHeaderRow = () => (
+    <tr className="border-b border-border-primary bg-bg-secondary">
+      {columns.map((column) => (
+        <th
+          key={column.key}
+          onClick={() => column.sortable !== false ? handleSort(column.sortKey) : null}
+          className={getHeaderClassName(column)}
+        >
+          <div className={`flex items-center gap-1 ${
+            column.align === 'center' ? 'justify-center' :
+            column.align === 'right' ? 'justify-end' : ''
+          }`}>
+            {column.label}
+            {column.sortable !== false && (
+              <SortIndicator
+                column={column.sortKey}
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+              />
+            )}
+          </div>
+        </th>
+      ))}
+    </tr>
+  );
+
+  // CSS for hiding scrollbar on fixed header
+  const hideScrollbarStyle = `
+    .sortable-table-hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  `;
+
   return (
     <div className="space-y-2">
       {/* Filter component */}
@@ -175,60 +307,125 @@ const SortableTable = ({
         </div>
       )}
 
-      {/* Table container */}
-      <div className={`relative overflow-x-auto rounded-lg border border-border-primary ${containerClassName}`}>
-        <table className={`relative w-full text-sm bg-bg-primary ${tableClassName}`}>
-          {/* Table header */}
-          <thead>
-            <tr className="border-b border-border-primary bg-bg-secondary">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  onClick={() => column.sortable !== false ? handleSort(column.sortKey) : null}
-                  className={getHeaderClassName(column)}
-                >
-                  <div className={`flex items-center gap-1 ${
-                    column.align === 'center' ? 'justify-center' :
-                    column.align === 'right' ? 'justify-end' : ''
-                  }`}>
-                    {column.label}
-                    {column.sortable !== false && (
-                      <SortIndicator
-                        column={column.sortKey}
-                        sortBy={sortBy}
-                        sortDirection={sortDirection}
-                      />
-                    )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
+      {/* Top Scrollbar (when scroll sync is enabled) */}
+      {enableScrollSync && (
+        <>
+          <div
+            ref={topScrollRef}
+            className="overflow-x-auto overflow-y-hidden"
+            style={{
+              height: '12px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#4B5563 #1F2937',
+              ...(isScrollbarFixed && {
+                position: 'fixed',
+                top: '0',
+                left: `${tablePosition.left}px`,
+                width: `${tablePosition.width}px`,
+                zIndex: 100,
+                backgroundColor: '#1a1f2e',
+                borderBottom: '1px solid #2a3142',
+              })
+            }}
+          >
+            <div style={{ height: '1px' }}></div>
+          </div>
 
-          {/* Table body */}
-          <tbody>
-            {sortedData.length === 0 ? (
-              emptyState || defaultEmptyState
-            ) : (
-              sortedData.map((item, index) => (
-                <tr
-                  key={item.id || index}
-                  className={getRowClasses(item, index)}
-                  onClick={() => onRowClick?.(item, index)}
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className={getCellClassName(column, item, index)}
-                    >
-                      {column.render(item, index)}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+          {/* Spacer when scrollbar is fixed */}
+          {isScrollbarFixed && <div style={{ height: '12px' }}></div>}
+        </>
+      )}
+
+      {/* Fixed Header (when scroll sync is enabled and scrolled) */}
+      {enableScrollSync && isScrollbarFixed && (
+        <div
+          ref={fixedHeaderRef}
+          style={{
+            position: 'fixed',
+            top: '12px',
+            left: `${tablePosition.left}px`,
+            width: `${tablePosition.width}px`,
+            zIndex: 85,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            backgroundColor: '#1a1f2e',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+          className="sortable-table-hide-scrollbar"
+        >
+          <style>{hideScrollbarStyle}</style>
+          <table className={`text-sm ${tableClassName}`} style={{ minWidth: 'max-content', width: '100%' }}>
+            <thead style={{ backgroundColor: '#1a1f2e' }}>
+              {renderHeaderRow()}
+            </thead>
+          </table>
+        </div>
+      )}
+
+      {/* Table container */}
+      <div
+        ref={tableContainerRef}
+        className={enableScrollSync ? 'card' : ''}
+        style={enableScrollSync ? { overflow: 'visible' } : undefined}
+      >
+        <div
+          ref={enableScrollSync ? tableScrollRef : undefined}
+          className={`relative ${enableScrollSync ? '' : 'overflow-x-auto rounded-lg border border-border-primary'} ${containerClassName}`}
+          style={enableScrollSync ? {
+            overflowX: 'auto',
+            overflowY: 'visible',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#4B5563 #1F2937',
+            ...(maxHeight ? { maxHeight, overflowY: 'auto' } : {})
+          } : (maxHeight ? { maxHeight, overflowY: 'auto' } : {})}
+        >
+          {/* Spacer for fixed header height when scrolled */}
+          {enableScrollSync && isScrollbarFixed && <div style={{ height: '41px' }}></div>}
+
+          <table
+            className={`relative w-full text-sm bg-bg-primary ${tableClassName}`}
+            style={enableScrollSync ? { minWidth: 'max-content', width: '100%' } : undefined}
+          >
+            {/* Table header */}
+            <thead
+              style={enableScrollSync ? {
+                position: 'sticky',
+                top: '0',
+                zIndex: 90,
+                backgroundColor: '#1a1f2e',
+                ...(isScrollbarFixed && { visibility: 'hidden' })
+              } : undefined}
+            >
+              {renderHeaderRow()}
+            </thead>
+
+            {/* Table body */}
+            <tbody>
+              {sortedData.length === 0 ? (
+                emptyState || defaultEmptyState
+              ) : (
+                sortedData.map((item, index) => (
+                  <tr
+                    key={item.id || index}
+                    className={getRowClasses(item, index)}
+                    onClick={() => onRowClick?.(item, index)}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={getCellClassName(column, item, index)}
+                      >
+                        {column.render(item, index)}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

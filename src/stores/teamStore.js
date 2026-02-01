@@ -27,6 +27,7 @@ import aiCore from '../core/ai/AICore.js';
  * @property {Object.<string, BowlingPlans>} bowlingPlans - Player ID → bowling plans
  * @property {number[]} bowlingRotation - Array of player IDs in preferred bowling order
  * @property {string} fieldFormation - Field formation ID (e.g., 'attacking_pace_cordon', 'neutral_orthodox', 'defensive_ring_fence')
+ * @property {string[]} partTimers - Array of manually added part-timer player IDs
  */
 
 /**
@@ -824,6 +825,7 @@ const useTeamStore = create(
       /**
        * Update team wicket-keeper
        * Also updates fielding assignments to put the keeper at position 1 (wicket-keeper position)
+       * Also removes keeper from partTimers and overAssignments if present
        * @param {string} teamId - Team ID
        * @param {string|null} playerId - Player ID or null to unset
        */
@@ -883,13 +885,110 @@ const useTeamStore = create(
             };
           }
 
+          // Remove new keeper from partTimers if present
+          const currentPartTimers = currentTactics.partTimers || [];
+          const updatedPartTimers = playerId
+            ? currentPartTimers.filter(id => id !== playerId)
+            : currentPartTimers;
+
+          // Remove new keeper from overAssignments if assigned to any overs
+          const currentOverAssignments = currentTactics.overAssignments || {};
+          const updatedOverAssignments = { ...currentOverAssignments };
+          if (playerId) {
+            Object.keys(updatedOverAssignments).forEach(overNum => {
+              if (updatedOverAssignments[overNum] === playerId) {
+                delete updatedOverAssignments[overNum];
+              }
+            });
+          }
+
           return {
             teamTactics: {
               ...state.teamTactics,
               [teamId]: {
                 ...currentTactics,
                 wicketKeeper: playerId,
-                fielding: updatedFielding
+                fielding: updatedFielding,
+                partTimers: updatedPartTimers,
+                overAssignments: updatedOverAssignments
+              }
+            }
+          };
+        });
+      },
+
+      /**
+       * Add a part-timer (non-bowler/all-rounder used as bowling option)
+       * @param {string} teamId - Team ID
+       * @param {string} playerId - Player ID to add as part-timer
+       */
+      addPartTimer: (teamId, playerId) => {
+        // Get player and default plans outside of set() to avoid side effects in state update
+        const player = usePlayerStore.getState().players[playerId];
+        const defaultPlans = player ? get().getDefaultBowlingPlansForPlaystyle(player) : { 
+          lineLength: 'Wide Line', 
+          variation: 'Consistent Accuracy' 
+        };
+
+        set((state) => {
+          const currentTactics = state.teamTactics[teamId] || {};
+          const currentPartTimers = currentTactics.partTimers || [];
+          const currentBowlingPlans = currentTactics.bowlingPlans || {};
+
+          // Don't add if already a part-timer
+          if (currentPartTimers.includes(playerId)) {
+            return state;
+          }
+
+          // Don't add if player is the wicketkeeper
+          if (currentTactics.wicketKeeper === playerId) {
+            console.warn('Cannot add wicketkeeper as part-timer');
+            return state;
+          }
+
+          return {
+            teamTactics: {
+              ...state.teamTactics,
+              [teamId]: {
+                ...currentTactics,
+                partTimers: [...currentPartTimers, playerId],
+                // Initialize bowling plans for the new part-timer if they don't exist
+                bowlingPlans: {
+                  ...currentBowlingPlans,
+                  [playerId]: currentBowlingPlans[playerId] || defaultPlans
+                }
+              }
+            }
+          };
+        });
+      },
+
+      /**
+       * Remove a part-timer
+       * @param {string} teamId - Team ID
+       * @param {string} playerId - Player ID to remove from part-timers
+       */
+      removePartTimer: (teamId, playerId) => {
+        set((state) => {
+          const currentTactics = state.teamTactics[teamId] || {};
+          const currentPartTimers = currentTactics.partTimers || [];
+
+          // Also remove from overAssignments if assigned to any overs
+          const currentOverAssignments = currentTactics.overAssignments || {};
+          const updatedOverAssignments = { ...currentOverAssignments };
+          Object.keys(updatedOverAssignments).forEach(overNum => {
+            if (updatedOverAssignments[overNum] === playerId) {
+              delete updatedOverAssignments[overNum];
+            }
+          });
+
+          return {
+            teamTactics: {
+              ...state.teamTactics,
+              [teamId]: {
+                ...currentTactics,
+                partTimers: currentPartTimers.filter(id => id !== playerId),
+                overAssignments: updatedOverAssignments
               }
             }
           };

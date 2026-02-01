@@ -25,7 +25,7 @@ import aiTacticsManager from '../core/ai/AITacticsManager';
  * @returns {Object} Summary of initialization
  */
 export function initializeLeague({ stores, isFirstSeasonInit = false }) {
-  console.log('🏏 Initializing league (shared function)...');
+  console.log('🏏 Initializing league...');
 
   const {
     gameStore,
@@ -46,7 +46,6 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
 
   // Clear old season events
   gameStore.getState().clearEvents();
-  console.log('🗑️ Cleared old season events');
 
   // Generate season objectives for Season 1 if needed
   if (isFirstSeasonInit) {
@@ -55,7 +54,7 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
       const teams = Object.values(teamStore.getState().teams);
       const rivalTeam = teams.find(t => t.id !== userTeamId);
       gameStore.getState().generateSeasonObjectives(rivalTeam?.name || 'Sydney Sharks');
-      console.log(`📋 Season 1 objectives generated`);
+      console.log('📋 Season objectives generated');
     }
   }
 
@@ -63,7 +62,6 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   const currentGameDate = new Date(currentDate);
   const gameStartDate = new Date(currentGameDate);
   gameStartDate.setDate(gameStartDate.getDate() - (gameDay - 1));
-  console.log(`📅 Game start date calculated: ${gameStartDate.toISOString().split('T')[0]} (current gameDay: ${gameDay})`);
 
   // Create clubs array
   const teams = Object.values(teamStore.getState().teams);
@@ -145,6 +143,7 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   });
 
   // Initialize tactics for all teams using AITacticsManager
+  let tacticsInitialized = 0;
   Object.keys(teamStore.getState().teams).forEach(teamId => {
     const squadIds = teamStore.getState().squadLists[teamId] || [];
     const squad = squadIds
@@ -153,9 +152,12 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
 
     if (squad.length >= 11) {
       aiTacticsManager.generateTactics(teamId, squad, teamStore);
+      tacticsInitialized++;
     }
   });
-  console.log(`✅ Initialized AI tactics for ${Object.keys(teamStore.getState().teams).length} teams`);
+  if (tacticsInitialized > 0) {
+    console.log(`✅ Initialized AI tactics for ${tacticsInitialized} teams`);
+  }
 
   // Convert ALL fixtures (league + playoffs) to match events with dynamic game day calculation
   const matchEvents = allFixtures.map(fixture => {

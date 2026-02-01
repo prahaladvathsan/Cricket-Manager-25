@@ -12,6 +12,17 @@ import tacticsConfig from '../../../data/config/tactics-config.json';
 import { getPrimaryBattingRating, formatRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
 
+const BatHandIcon = ({ hand }) => {
+  const isLeft = hand === 'left';
+  return (
+    <div className="flex items-center text-xs font-mono" title={isLeft ? 'Left-handed' : 'Right-handed'}>
+      <span className={isLeft ? 'text-green-400 font-bold' : 'text-text-tertiary opacity-40'}>L</span>
+      <span className="text-text-tertiary opacity-40 mx-0.5">|</span>
+      <span className={!isLeft ? 'text-green-400 font-bold' : 'text-text-tertiary opacity-40'}>R</span>
+    </div>
+  );
+};
+
 const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const { updateBattingOrder, updateAccelerationTier, updatePlaystyleOverride } = useTeamStore();
   const { players } = usePlayerStore();
@@ -225,9 +236,10 @@ const BattingOrderTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   </span>
                 </div>
 
-                {/* Player Name */}
-                <div className="flex-1 min-w-0">
+                {/* Player Name + Bat Hand */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <PlayerName playerId={player.id} player={player} className="text-sm font-medium" />
+                  <BatHandIcon hand={player.battingHand || 'right'} />
                 </div>
 
                 {/* Batting Playstyle */}

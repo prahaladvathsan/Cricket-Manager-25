@@ -36,7 +36,6 @@ const useAuthStore = create(
       initAuth: async () => {
         // Prevent multiple initializations
         if (get()._initialized) {
-          console.log('🔐 Auth already initialized');
           return;
         }
 
@@ -46,7 +45,6 @@ const useAuthStore = create(
           const { supabase, isSupabaseConfigured } = await import('../utils/supabaseClient.js');
 
           if (!isSupabaseConfigured()) {
-            console.log('⚠️ Supabase not configured - running in offline mode');
             set({ isLoading: false, isAnonymous: true, _initialized: true });
             return;
           }
@@ -56,7 +54,6 @@ const useAuthStore = create(
           // Set up auth state change listener FIRST
           // This ensures we catch the OAuth callback event
           const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('🔐 Auth state changed:', event, session?.user?.email);
             set({
               user: session?.user ?? null,
               session: session,
@@ -77,7 +74,6 @@ const useAuthStore = create(
 
           // Set initial state if we have a session
           if (session) {
-            console.log('🔐 Found existing session:', session.user?.email);
             set({
               user: session.user,
               session: session,
@@ -85,7 +81,6 @@ const useAuthStore = create(
               isLoading: false
             });
           } else {
-            console.log('🔐 No existing session found');
             set({ isLoading: false });
           }
         } catch (error) {

@@ -20,6 +20,7 @@ import useTeamStore from '../../stores/teamStore';
 import SeasonProgress from '../league/SeasonProgress';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import TeamName from '../shared/TeamName';
+import SortableTable from '../shared/SortableTable';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PlayoffView from '../Playoffs/PlayoffView';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
@@ -671,6 +672,168 @@ const League = () => {
   const LeaderboardsView = () => {
     const currentLeaders = leaderboards[leaderboardCategory] || [];
 
+    // Helper to format impact values with color
+    const formatImpact = (value) => {
+      const v = value || 0;
+      const colorClass = v >= 0 ? 'text-green-400' : 'text-red-400';
+      return <span className={`font-mono text-xs ${colorClass}`}>{v >= 0 ? '+' : ''}{v.toFixed(1)}</span>;
+    };
+
+    // Base columns for all categories (rank, player, team)
+    const baseColumns = [
+      {
+        key: 'rank',
+        label: '#',
+        sortKey: 'rank',
+        sortable: false,
+        render: (player, idx) => <span className="font-mono text-xs text-text-secondary">{idx + 1}</span>,
+      },
+      {
+        key: 'player',
+        label: 'Player',
+        sortKey: 'name',
+        sortable: false,
+        render: (player) => (
+          <span
+            className="text-cricket-accent hover:underline cursor-pointer font-medium"
+            onClick={() => {
+              setSelectedPlayerId(player.id);
+              setShowPlayerModal(true);
+            }}
+          >
+            {player.name}
+          </span>
+        ),
+      },
+      {
+        key: 'team',
+        label: 'Team',
+        sortKey: 'currentTeam',
+        sortable: false,
+        render: (player) => <TeamName teamId={player.currentTeam} variant="short" inline={true} className="text-xs" />,
+        cellClassName: 'text-text-secondary text-xs',
+      },
+    ];
+
+    // Category-specific columns
+    const categoryColumns = {
+      mvp: [
+        { key: 'bat', label: 'Bat', sortKey: 'battingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.battingImpact) },
+        { key: 'bowl', label: 'Bowl', sortKey: 'bowlingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.bowlingImpact) },
+        { key: 'field', label: 'Field', sortKey: 'fieldingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.fieldingImpact) },
+        { key: 'total', label: 'Total', sortKey: 'totalImpact', sortable: false, align: 'center',
+          render: (p) => (
+            <span className={`font-bold font-mono ${p.totalImpact >= 0 ? 'text-trophy-gold' : 'text-red-400'}`}>
+              {p.totalImpact >= 0 ? '+' : ''}{p.totalImpact.toFixed(1)}
+            </span>
+          ) },
+      ],
+      batting: [
+        { key: 'matches', label: 'M', sortKey: 'matches', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.matches || 0}</span> },
+        { key: 'runs', label: 'Runs', sortKey: 'runs', sortable: false, align: 'center',
+          render: (p) => <span className="font-bold font-mono text-cricket-accent">{p.seasonStats.runs}</span> },
+        { key: 'bf', label: 'BF', sortKey: 'ballsFaced', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.ballsFaced || 0}</span> },
+        { key: 'avg', label: 'Avg', sortKey: 'battingAvg', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.battingAvg?.toFixed(2) || '0.00'}</span> },
+        { key: 'sr', label: 'SR', sortKey: 'strikeRate', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.strikeRate?.toFixed(2) || '0.00'}</span> },
+        { key: 'fifties', label: '50s', sortKey: 'fifties', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.fifties || 0}</span> },
+        { key: 'centuries', label: '100s', sortKey: 'centuries', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.centuries || 0}</span> },
+        { key: 'hs', label: 'HS', sortKey: 'highestScore', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.highestScore || 0}{p.seasonStats.highestScoreNotOut ? '*' : ''}</span> },
+      ],
+      bowling: [
+        { key: 'matches', label: 'M', sortKey: 'matches', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.matches || 0}</span> },
+        { key: 'wickets', label: 'Wkts', sortKey: 'wickets', sortable: false, align: 'center',
+          render: (p) => <span className="font-bold font-mono text-cricket-accent">{p.seasonStats.wickets}</span> },
+        { key: 'overs', label: 'Ovrs', sortKey: 'ballsBowled', sortable: false, align: 'center',
+          render: (p) => {
+            const balls = p.seasonStats.ballsBowled || 0;
+            const overs = Math.floor(balls / 6) + (balls % 6) / 10;
+            return <span className="font-mono text-xs text-text-secondary">{overs.toFixed(1)}</span>;
+          } },
+        { key: 'runsConceded', label: 'Runs', sortKey: 'runsConceded', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.runsConceded || 0}</span> },
+        { key: 'avg', label: 'Avg', sortKey: 'bowlingAvg', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.bowlingAvg?.toFixed(2) || '—'}</span> },
+        { key: 'econ', label: 'Econ', sortKey: 'economy', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.economy?.toFixed(2) || '0.00'}</span> },
+        { key: 'sr', label: 'SR', sortKey: 'bowlingSR', sortable: false, align: 'center',
+          render: (p) => {
+            const balls = p.seasonStats.ballsBowled || 0;
+            const sr = p.seasonStats.wickets > 0 ? (balls / p.seasonStats.wickets).toFixed(1) : '—';
+            return <span className="font-mono text-xs text-text-secondary">{sr}</span>;
+          } },
+        { key: 'best', label: 'Best', sortKey: 'bestBowling', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">
+            {p.seasonStats.bestBowling ? `${p.seasonStats.bestBowling.wickets}/${p.seasonStats.bestBowling.runs}` : '—'}
+          </span> },
+        { key: 'fourW', label: '4W', sortKey: 'fourWickets', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.fourWickets || 0}</span> },
+        { key: 'fiveW', label: '5W', sortKey: 'fiveWickets', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.fiveWickets || 0}</span> },
+      ],
+      fielding: [
+        { key: 'matches', label: 'M', sortKey: 'matches', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats?.matches || 0}</span> },
+        { key: 'catches', label: 'Ct', sortKey: 'catches', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.catches || 0}</span> },
+        { key: 'runOuts', label: 'RO', sortKey: 'runOuts', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-primary">{p.runOuts || 0}</span> },
+        { key: 'ctPerMatch', label: 'Ct/M', sortKey: 'catchesPerMatch', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.catchesPerMatch?.toFixed(2) || '0.00'}</span> },
+        { key: 'roPerMatch', label: 'RO/M', sortKey: 'runOutsPerMatch', sortable: false, align: 'center',
+          render: (p) => <span className="font-mono text-xs text-text-secondary">{p.runOutsPerMatch?.toFixed(2) || '0.00'}</span> },
+        { key: 'total', label: 'Total', sortKey: 'total', sortable: false, align: 'center',
+          render: (p) => <span className="font-bold font-mono text-cricket-accent">{p.total || 0}</span> },
+      ],
+    };
+
+    const columns = [...baseColumns, ...(categoryColumns[leaderboardCategory] || [])];
+
+    // Empty state messages
+    const emptyMessages = {
+      mvp: 'No impact statistics yet - play matches to see MVP rankings',
+      batting: 'No batting statistics yet - play matches to see run scorers',
+      bowling: 'No bowling statistics yet - play matches to see wicket takers',
+      fielding: 'No fielding statistics yet - play matches to see catches and run outs',
+    };
+
+    // Category tabs filter component
+    const CategoryTabs = (
+      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-lg">
+        {['mvp', 'batting', 'bowling', 'fielding'].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setLeaderboardCategory(cat)}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === cat
+              ? 'bg-cricket-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+              }`}
+          >
+            {cat === 'mvp' ? 'MVP' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+          </button>
+        ))}
+      </div>
+    );
+
+    // Custom empty state
+    const customEmptyState = (
+      <tr>
+        <td colSpan={columns.length} className="px-3 py-8 text-center">
+          <p className="text-text-secondary text-sm">{emptyMessages[leaderboardCategory]}</p>
+        </td>
+      </tr>
+    );
+
     return (
       <div className="card p-2">
         <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
@@ -680,250 +843,14 @@ const League = () => {
           </h3>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex gap-1 p-1 bg-bg-tertiary rounded-lg mb-4">
-          <button
-            onClick={() => setLeaderboardCategory('mvp')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'mvp'
-              ? 'bg-cricket-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-              }`}
-          >
-            MVP
-          </button>
-          <button
-            onClick={() => setLeaderboardCategory('batting')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'batting'
-              ? 'bg-cricket-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-              }`}
-          >
-            Batting
-          </button>
-          <button
-            onClick={() => setLeaderboardCategory('bowling')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'bowling'
-              ? 'bg-cricket-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-              }`}
-          >
-            Bowling
-          </button>
-          <button
-            onClick={() => setLeaderboardCategory('fielding')}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === 'fielding'
-              ? 'bg-cricket-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
-              }`}
-          >
-            Fielding
-          </button>
-        </div>
-
-        {/* Leaderboard Table */}
-        {currentLeaders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-primary text-text-secondary text-xs">
-                  <th className="text-left py-2 px-2 font-medium">#</th>
-                  <th className="text-left py-2 px-3 font-medium">Player</th>
-                  <th className="text-left py-2 px-2 font-medium">Team</th>
-                  {leaderboardCategory === 'mvp' && (
-                    <>
-                      <th className="text-center py-2 px-2 font-medium">Bat</th>
-                      <th className="text-center py-2 px-2 font-medium">Bowl</th>
-                      <th className="text-center py-2 px-2 font-medium">Field</th>
-                      <th className="text-center py-2 px-2 font-medium">Total</th>
-                    </>
-                  )}
-                  {leaderboardCategory === 'batting' && (
-                    <>
-                      <th className="text-center py-2 px-2 font-medium">M</th>
-                      <th className="text-center py-2 px-2 font-medium">Runs</th>
-                      <th className="text-center py-2 px-2 font-medium">BF</th>
-                      <th className="text-center py-2 px-2 font-medium">Avg</th>
-                      <th className="text-center py-2 px-2 font-medium">SR</th>
-                      <th className="text-center py-2 px-2 font-medium">50s</th>
-                      <th className="text-center py-2 px-2 font-medium">100s</th>
-                      <th className="text-center py-2 px-2 font-medium">HS</th>
-                    </>
-                  )}
-                  {leaderboardCategory === 'bowling' && (
-                    <>
-                      <th className="text-center py-2 px-2 font-medium">M</th>
-                      <th className="text-center py-2 px-2 font-medium">Wkts</th>
-                      <th className="text-center py-2 px-2 font-medium">Ovrs</th>
-                      <th className="text-center py-2 px-2 font-medium">Runs</th>
-                      <th className="text-center py-2 px-2 font-medium">Avg</th>
-                      <th className="text-center py-2 px-2 font-medium">Econ</th>
-                      <th className="text-center py-2 px-2 font-medium">SR</th>
-                      <th className="text-center py-2 px-2 font-medium">Best</th>
-                      <th className="text-center py-2 px-2 font-medium">4W</th>
-                      <th className="text-center py-2 px-2 font-medium">5W</th>
-                    </>
-                  )}
-                  {leaderboardCategory === 'fielding' && (
-                    <>
-                      <th className="text-center py-2 px-2 font-medium">M</th>
-                      <th className="text-center py-2 px-2 font-medium">Ct</th>
-                      <th className="text-center py-2 px-2 font-medium">RO</th>
-                      <th className="text-center py-2 px-2 font-medium">Ct/M</th>
-                      <th className="text-center py-2 px-2 font-medium">RO/M</th>
-                      <th className="text-center py-2 px-2 font-medium">Total</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {currentLeaders.map((player, idx) => (
-                  <tr
-                    key={player.id}
-                    className="border-b border-border-secondary hover:bg-bg-secondary transition-colors"
-                  >
-                    <td className="py-2 px-2 text-text-secondary font-mono text-xs">
-                      {idx + 1}
-                    </td>
-                    <td className="py-2 px-3">
-                      <span
-                        className="text-cricket-accent hover:underline cursor-pointer font-medium"
-                        onClick={() => {
-                          setSelectedPlayerId(player.id);
-                          setShowPlayerModal(true);
-                        }}
-                      >
-                        {player.name}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 text-text-secondary text-xs">
-                      <TeamName teamId={player.currentTeam} variant="short" inline={true} className="text-xs" />
-                    </td>
-                    {leaderboardCategory === 'mvp' && (
-                      <>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.battingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                          {(player.seasonStats?.battingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.battingImpact || 0).toFixed(1)}
-                        </td>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.bowlingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                          {(player.seasonStats?.bowlingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.bowlingImpact || 0).toFixed(1)}
-                        </td>
-                        <td className={`py-2 px-2 text-center font-mono text-xs ${(player.seasonStats?.fieldingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                          {(player.seasonStats?.fieldingImpact || 0) >= 0 ? '+' : ''}{(player.seasonStats?.fieldingImpact || 0).toFixed(1)}
-                        </td>
-                        <td className={`py-2 px-2 text-center font-bold font-mono ${player.totalImpact >= 0 ? 'text-trophy-gold' : 'text-red-400'
-                          }`}>
-                          {player.totalImpact >= 0 ? '+' : ''}{player.totalImpact.toFixed(1)}
-                        </td>
-                      </>
-                    )}
-                    {leaderboardCategory === 'batting' && (
-                      <>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.seasonStats.matches || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
-                          {player.seasonStats.runs}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.seasonStats.ballsFaced || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                          {player.seasonStats.battingAvg?.toFixed(2) || '0.00'}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                          {player.seasonStats.strikeRate?.toFixed(2) || '0.00'}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.seasonStats.fifties || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.seasonStats.centuries || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                          {player.seasonStats.highestScore || 0}{player.seasonStats.highestScoreNotOut ? '*' : ''}
-                        </td>
-                      </>
-                    )}
-                    {leaderboardCategory === 'bowling' && (() => {
-                      const ballsBowled = player.seasonStats.ballsBowled || 0;
-                      const overs = Math.floor(ballsBowled / 6) + (ballsBowled % 6) / 10;
-                      const bowlingSR = player.seasonStats.wickets > 0
-                        ? (ballsBowled / player.seasonStats.wickets).toFixed(1)
-                        : '—';
-                      return (
-                        <>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {player.seasonStats.matches || 0}
-                          </td>
-                          <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
-                            {player.seasonStats.wickets}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {overs.toFixed(1)}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {player.seasonStats.runsConceded || 0}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                            {player.seasonStats.bowlingAvg?.toFixed(2) || '—'}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                            {player.seasonStats.economy?.toFixed(2) || '0.00'}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {bowlingSR}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                            {player.seasonStats.bestBowling
-                              ? `${player.seasonStats.bestBowling.wickets}/${player.seasonStats.bestBowling.runs}`
-                              : '—'}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {player.seasonStats.fourWickets || 0}
-                          </td>
-                          <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                            {player.seasonStats.fiveWickets || 0}
-                          </td>
-                        </>
-                      );
-                    })()}
-                    {leaderboardCategory === 'fielding' && (
-                      <>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.seasonStats?.matches || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                          {player.catches || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-primary font-mono text-xs">
-                          {player.runOuts || 0}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.catchesPerMatch?.toFixed(2) || '0.00'}
-                        </td>
-                        <td className="py-2 px-2 text-center text-text-secondary font-mono text-xs">
-                          {player.runOutsPerMatch?.toFixed(2) || '0.00'}
-                        </td>
-                        <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
-                          {player.total || 0}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-text-secondary text-center py-8 text-sm">
-            {leaderboardCategory === 'mvp' && 'No impact statistics yet - play matches to see MVP rankings'}
-            {leaderboardCategory === 'batting' && 'No batting statistics yet - play matches to see run scorers'}
-            {leaderboardCategory === 'bowling' && 'No bowling statistics yet - play matches to see wicket takers'}
-            {leaderboardCategory === 'fielding' && 'No fielding statistics yet - play matches to see catches and run outs'}
-          </p>
-        )}
+        <SortableTable
+          data={currentLeaders}
+          columns={columns}
+          filterComponent={CategoryTabs}
+          emptyState={customEmptyState}
+          stripedRows={false}
+          containerClassName="border-0"
+        />
       </div>
     );
   };

@@ -16,7 +16,6 @@ class ConfidenceManager {
     this.battingTriggers = confidenceConfig.battingTriggers;
     this.bowlingTriggers = confidenceConfig.bowlingTriggers;
     this.limits = confidenceConfig.limits;
-    console.log('✅ ConfidenceManager initialized with 5 confidence levels');
   }
 
   /**
