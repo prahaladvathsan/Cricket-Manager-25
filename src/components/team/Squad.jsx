@@ -17,6 +17,7 @@ import PlayerCard from '../shared/PlayerCard';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
+import SortableTable from '../shared/SortableTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
@@ -784,289 +785,211 @@ const Squad = () => {
     return { text: injury, isInjured: true };
   };
 
-  // Condition tab sorting - default to injured players first, then by duration
-  const [conditionSortBy, setConditionSortBy] = useState('injury');
-  const [conditionSortDirection, setConditionSortDirection] = useState('desc');
-
-  const handleConditionSort = (column) => {
-    if (conditionSortBy === column) {
-      setConditionSortDirection(conditionSortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setConditionSortBy(column);
-      setConditionSortDirection(column === 'name' ? 'asc' : 'desc'); // Default desc for numeric columns
-    }
-  };
-
-  // Filtered and sorted players for condition tab
-  const conditionSortedPlayers = useMemo(() => {
-    let result = [...squadPlayers];
-
-    result.sort((a, b) => {
-      let aVal, bVal;
-      const aCondition = a.condition || {};
-      const bCondition = b.condition || {};
-
-      switch (conditionSortBy) {
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          return conditionSortDirection === 'asc'
-            ? aVal.localeCompare(bVal)
-            : bVal.localeCompare(aVal);
-        case 'fitness':
-          aVal = aCondition.fitness ?? 0;
-          bVal = bCondition.fitness ?? 0;
-          break;
-        case 'form':
-          aVal = aCondition.form ?? 0;
-          bVal = bCondition.form ?? 0;
-          break;
-        case 'fatigue':
-          aVal = aCondition.fatigue ?? 0;
-          bVal = bCondition.fatigue ?? 0;
-          break;
-        case 'morale':
-          aVal = aCondition.morale ?? 0;
-          bVal = bCondition.morale ?? 0;
-          break;
-        case 'confidence':
-          aVal = aCondition.confidence ?? 0;
-          bVal = bCondition.confidence ?? 0;
-          break;
-        case 'energy':
-          aVal = aCondition.energy ?? 0;
-          bVal = bCondition.energy ?? 0;
-          break;
-        case 'injury':
-          // Injured players first when descending, then by duration
-          aVal = aCondition.injury ? 1 : 0;
-          bVal = bCondition.injury ? 1 : 0;
-          if (aVal !== bVal) {
-            break; // Different injury status, use normal sort
-          }
-          if (aVal === 1) {
-            // Both injured - secondary sort by duration
-            const aDur = aCondition.injuryDuration ?? 0;
-            const bDur = bCondition.injuryDuration ?? 0;
-            return conditionSortDirection === 'asc' ? aDur - bDur : bDur - aDur;
-          }
-          // Both not injured - sort by fatigue desc, then fitness asc (lower fitness = higher priority)
-          const aFatigue = aCondition.fatigue ?? 0;
-          const bFatigue = bCondition.fatigue ?? 0;
-          if (aFatigue !== bFatigue) {
-            return conditionSortDirection === 'asc' ? aFatigue - bFatigue : bFatigue - aFatigue;
-          }
-          // Tiebreak by fitness (lower fitness first when desc)
-          const aFitness = aCondition.fitness ?? 85;
-          const bFitness = bCondition.fitness ?? 85;
-          return conditionSortDirection === 'asc' ? bFitness - aFitness : aFitness - bFitness;
-          break;
-        case 'injuryDuration':
-          aVal = aCondition.injuryDuration ?? 0;
-          bVal = bCondition.injuryDuration ?? 0;
-          break;
-        default:
-          return 0;
-      }
-
-      return conditionSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-
-    return result;
-  }, [squadPlayers, conditionSortBy, conditionSortDirection]);
-
   // Count injured players
   const injuredCount = useMemo(() => {
     return squadPlayers.filter(p => p.condition?.injury).length;
   }, [squadPlayers]);
 
-  const ConditionSortIndicator = ({ column }) => {
-    if (conditionSortBy !== column) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+  // Custom sort function for condition table
+  const conditionCustomSort = (a, b, column, direction) => {
+    const aCondition = a.condition || {};
+    const bCondition = b.condition || {};
+
+    if (column === 'name') {
+      const aVal = a.name.toLowerCase();
+      const bVal = b.name.toLowerCase();
+      return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-    return conditionSortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+
+    if (column === 'injury') {
+      // Injured players first when descending
+      const aVal = aCondition.injury ? 1 : 0;
+      const bVal = bCondition.injury ? 1 : 0;
+      if (aVal !== bVal) {
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (aVal === 1) {
+        // Both injured - sort by duration
+        const aDur = aCondition.injuryDuration ?? 0;
+        const bDur = bCondition.injuryDuration ?? 0;
+        return direction === 'asc' ? aDur - bDur : bDur - aDur;
+      }
+      // Both not injured - sort by fatigue, then fitness
+      const aFatigue = aCondition.fatigue ?? 0;
+      const bFatigue = bCondition.fatigue ?? 0;
+      if (aFatigue !== bFatigue) {
+        return direction === 'asc' ? aFatigue - bFatigue : bFatigue - aFatigue;
+      }
+      const aFitness = aCondition.fitness ?? 85;
+      const bFitness = bCondition.fitness ?? 85;
+      return direction === 'asc' ? bFitness - aFitness : aFitness - bFitness;
+    }
+
+    // Default numeric sorting for other columns
+    const aVal = aCondition[column] ?? (column === 'fitness' ? 85 : 50);
+    const bVal = bCondition[column] ?? (column === 'fitness' ? 85 : 50);
+    return direction === 'asc' ? aVal - bVal : bVal - aVal;
   };
 
-  const renderCondition = () => (
-    <div className="space-y-2">
-      {/* Condition Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-status-win">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 70).length}</div>
-          <div className="text-text-secondary text-xs">Match Fit</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-yellow-500">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 40 && (p.condition?.fitness ?? 85) < 70).length}</div>
-          <div className="text-text-secondary text-xs">Moderate Fitness</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-status-loss">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) < 40).length}</div>
-          <div className="text-text-secondary text-xs">Low Fitness</div>
-        </div>
-        <div className="card p-2 text-center border-2 border-status-loss">
-          <div className="text-2xl font-bold text-status-loss">{injuredCount}</div>
-          <div className="text-text-secondary text-xs">Injured</div>
+  // Row class generator for injured players
+  const getConditionRowClassName = (player) => {
+    const injuryInfo = formatInjury(player.condition?.injury);
+    return injuryInfo.isInjured ? 'bg-status-loss/10' : '';
+  };
+
+  const renderCondition = () => {
+    // Condition bar render helper
+    const renderConditionBar = (value, type = 'default') => (
+      <div className="flex flex-col items-center">
+        <span className="text-xs font-mono mb-1">{Math.round(value)}</span>
+        <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+          <div
+            className={`h-full rounded-full ${getConditionBarColor(value, type)}`}
+            style={{ width: `${value}%` }}
+          />
         </div>
       </div>
+    );
 
-      {/* Condition Table */}
-      <div className="relative overflow-x-auto rounded-lg border border-border-primary">
-        <table className="w-full text-sm bg-bg-primary">
-          <thead>
-            <tr className="border-b border-border-primary bg-bg-secondary">
-              <th
-                onClick={() => handleConditionSort('name')}
-                className="px-4 py-2.5 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  Player <ConditionSortIndicator column="name" />
-                </div>
-              </th>
-              <th className="px-4 py-2.5 text-left font-semibold text-text-primary">Role</th>
-              <th
-                onClick={() => handleConditionSort('fitness')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Fitness <ConditionSortIndicator column="fitness" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('form')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Form <ConditionSortIndicator column="form" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('fatigue')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Fatigue <ConditionSortIndicator column="fatigue" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('morale')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Morale <ConditionSortIndicator column="morale" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('injury')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Injury Status <ConditionSortIndicator column="injury" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('injuryDuration')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Injury Duration <ConditionSortIndicator column="injuryDuration" />
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {conditionSortedPlayers.map((player, idx) => {
-              const condition = player.condition || {};
-              const injuryInfo = formatInjury(condition.injury);
+    // Columns definition for condition table
+    const conditionColumns = [
+      {
+        key: 'name',
+        label: 'Player',
+        sortKey: 'name',
+        render: (player) => {
+          const injuryInfo = formatInjury(player.condition?.injury);
+          return (
+            <PlayerName
+              playerId={player.id}
+              player={player}
+              className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`}
+            />
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5 font-medium'
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        sortKey: 'role',
+        sortable: false,
+        render: (player) => <span className="capitalize text-xs">{player.role || '-'}</span>,
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5 text-text-secondary'
+      },
+      {
+        key: 'fitness',
+        label: 'Fitness',
+        sortKey: 'fitness',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.fitness ?? 85),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'form',
+        label: 'Form',
+        sortKey: 'form',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.form ?? 50),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'fatigue',
+        label: 'Fatigue',
+        sortKey: 'fatigue',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.fatigue ?? 0, 'fatigue'),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'morale',
+        label: 'Morale',
+        sortKey: 'morale',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.morale ?? 50),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'injury',
+        label: 'Injury Status',
+        sortKey: 'injury',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => {
+          const injuryInfo = formatInjury(player.condition?.injury);
+          return (
+            <span className={`text-xs font-medium ${injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'}`}>
+              {injuryInfo.text}
+            </span>
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'injuryDuration',
+        label: 'Injury Duration',
+        sortKey: 'injuryDuration',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => {
+          const duration = player.condition?.injuryDuration;
+          return duration ? (
+            <span className="text-xs font-medium text-status-loss">
+              {duration} day{duration > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span className="text-xs text-text-tertiary">-</span>
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      }
+    ];
 
-              return (
-                <tr
-                  key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${injuryInfo.isInjured ? 'bg-status-loss/10' : idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                    }`}
-                >
-                  <td className="px-4 py-2.5 font-medium">
-                    <PlayerName playerId={player.id} player={player} className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`} />
-                  </td>
-                  <td className="px-4 py-2.5 text-text-secondary capitalize text-xs">{player.role || '-'}</td>
+    return (
+      <div className="space-y-2">
+        {/* Condition Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-status-win">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 70).length}</div>
+            <div className="text-text-secondary text-xs">Match Fit</div>
+          </div>
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-yellow-500">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 40 && (p.condition?.fitness ?? 85) < 70).length}</div>
+            <div className="text-text-secondary text-xs">Moderate Fitness</div>
+          </div>
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-status-loss">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) < 40).length}</div>
+            <div className="text-text-secondary text-xs">Low Fitness</div>
+          </div>
+          <div className="card p-2 text-center border-2 border-status-loss">
+            <div className="text-2xl font-bold text-status-loss">{injuredCount}</div>
+            <div className="text-text-secondary text-xs">Injured</div>
+          </div>
+        </div>
 
-                  {/* Fitness */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.fitness ?? 85)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.fitness ?? 85)}`}
-                          style={{ width: `${condition.fitness ?? 85}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Form */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.form ?? 50)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.form ?? 50)}`}
-                          style={{ width: `${condition.form ?? 50}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Fatigue */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.fatigue ?? 0)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.fatigue ?? 0, 'fatigue')}`}
-                          style={{ width: `${condition.fatigue ?? 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Morale */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.morale ?? 50)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.morale ?? 50)}`}
-                          style={{ width: `${condition.morale ?? 50}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Injury Status */}
-                  <td className="px-4 py-2.5 text-center">
-                    <span className={`text-xs font-medium ${injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'
-                      }`}>
-                      {injuryInfo.text}
-                    </span>
-                  </td>
-
-                  {/* Injury Duration */}
-                  <td className="px-4 py-2.5 text-center">
-                    {condition.injuryDuration ? (
-                      <span className="text-xs font-medium text-status-loss">
-                        {condition.injuryDuration} day{condition.injuryDuration > 1 ? 's' : ''}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-text-tertiary">-</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {/* Condition Table */}
+        <SortableTable
+          data={squadPlayers}
+          columns={conditionColumns}
+          defaultSort={{ column: 'injury', direction: 'desc' }}
+          customSort={conditionCustomSort}
+          getRowClassName={getConditionRowClassName}
+        />
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-4">
