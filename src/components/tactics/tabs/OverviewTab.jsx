@@ -355,9 +355,9 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             <select
               value={teamTactics?.wicketKeeper || ''}
               onChange={(e) => updateWicketKeeper(teamId, e.target.value || null)}
-              className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+              className="w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
             >
-              <option value="">Select keeper...</option>
+              <option value="" className="bg-bg-tertiary text-text-primary">Select keeper...</option>
               {(() => {
                 const keepers = orderedBatsmen.filter(p => p.role === 'wicket-keeper');
                 const others = orderedBatsmen.filter(p => p.role !== 'wicket-keeper')
@@ -365,18 +365,18 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                 return (
                   <>
                     {keepers.length > 0 && (
-                      <optgroup label="Wicket-keepers">
+                      <optgroup label="Wicket-keepers" className="bg-bg-tertiary text-text-primary">
                         {keepers.map(player => (
-                          <option key={player.id} value={player.id}>
+                          <option key={player.id} value={player.id} className="bg-bg-tertiary text-text-primary">
                             {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
                           </option>
                         ))}
                       </optgroup>
                     )}
                     {others.length > 0 && (
-                      <optgroup label="Other Players (Part-time)">
+                      <optgroup label="Other Players (Part-time)" className="bg-bg-tertiary text-text-primary">
                         {others.map(player => (
-                          <option key={player.id} value={player.id}>
+                          <option key={player.id} value={player.id} className="bg-bg-tertiary text-text-primary">
                             {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
                           </option>
                         ))}
@@ -397,13 +397,13 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             <select
               value={teamTactics?.captain || ''}
               onChange={(e) => updateCaptain(teamId, e.target.value || null)}
-              className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+              className="w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
             >
-              <option value="">Select captain...</option>
+              <option value="" className="bg-bg-tertiary text-text-primary">Select captain...</option>
               {orderedBatsmen.map(player => {
                 const leadership = player.attributes?.mental?.leadership || 0;
                 return (
-                  <option key={player.id} value={player.id}>
+                  <option key={player.id} value={player.id} className="bg-bg-tertiary text-text-primary">
                     {player.name} ({leadership})
                   </option>
                 );
@@ -417,16 +417,16 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
             <select
               value={teamTactics?.viceCaptain || ''}
               onChange={(e) => updateViceCaptain(teamId, e.target.value || null)}
-              className="w-full px-2 py-1 bg-bg-secondary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
+              className="w-full px-1.5 py-0.5 bg-bg-tertiary border border-border-primary rounded text-xs text-text-primary focus:outline-none focus:border-cricket-accent"
               disabled={!teamTactics?.captain}
             >
-              <option value="">Select vice-captain...</option>
+              <option value="" className="bg-bg-tertiary text-text-primary">Select vice-captain...</option>
               {orderedBatsmen
                 .filter(p => p.id !== teamTactics?.captain)
                 .map(player => {
                   const leadership = player.attributes?.mental?.leadership || 0;
                   return (
-                    <option key={player.id} value={player.id}>
+                    <option key={player.id} value={player.id} className="bg-bg-tertiary text-text-primary">
                       {player.name} ({leadership})
                     </option>
                   );
