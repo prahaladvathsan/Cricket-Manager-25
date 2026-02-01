@@ -17,6 +17,7 @@ import PlayerCard from '../shared/PlayerCard';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
+import SortableTable from '../shared/SortableTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
@@ -38,12 +39,10 @@ const Squad = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
-  // Table state
+  // Filter state (sorting now handled by SortableTable)
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [nationalityFilter, setNationalityFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortDirection, setSortDirection] = useState('asc');
 
   // Statistics tab state
   const [statsSubTab, setStatsSubTab] = useState('batting');
@@ -118,23 +117,13 @@ const Squad = () => {
     }));
   };
 
-  // Handle table sorting
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortDirection('asc');
-    }
-  };
-
   // Get unique nationalities for filter
   const availableNationalities = useMemo(() => {
     const nationalities = [...new Set(squadPlayers.map(p => p.nationality))].sort();
     return nationalities;
   }, [squadPlayers]);
 
-  // Filtered and sorted players
+  // Filtered players (sorting handled by SortableTable)
   const filteredSortedPlayers = useMemo(() => {
     let result = [...squadPlayers];
 
@@ -153,66 +142,8 @@ const Squad = () => {
       result = result.filter(p => p.nationality === nationalityFilter);
     }
 
-    // Apply sorting
-    result.sort((a, b) => {
-      let aVal, bVal;
-
-      switch (sortBy) {
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          break;
-        case 'age':
-          aVal = a.age || 0;
-          bVal = b.age || 0;
-          break;
-        case 'nationality':
-          aVal = a.nationality || '';
-          bVal = b.nationality || '';
-          break;
-        case 'role':
-          aVal = a.role || '';
-          bVal = b.role || '';
-          break;
-        case 'battingHand':
-          aVal = a.battingHand || '';
-          bVal = b.battingHand || '';
-          break;
-        case 'bowlingStyle':
-          aVal = a.bowlingStyle || '';
-          bVal = b.bowlingStyle || '';
-          break;
-        case 'battingPlaystyle':
-          aVal = getPrimaryBattingRating(a);
-          bVal = getPrimaryBattingRating(b);
-          break;
-        case 'bowlingPlaystyle':
-          aVal = getPrimaryBowlingRating(a);
-          bVal = getPrimaryBowlingRating(b);
-          break;
-        case 'fieldingPlaystyle':
-          aVal = getPrimaryFieldingRating(a);
-          bVal = getPrimaryFieldingRating(b);
-          break;
-        case 'value':
-          aVal = a.soldPrice || 0;
-          bVal = b.soldPrice || 0;
-          break;
-        default:
-          return 0;
-      }
-
-      if (typeof aVal === 'string') {
-        return sortDirection === 'asc'
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
-      } else {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-    });
-
     return result;
-  }, [squadPlayers, searchTerm, roleFilter, nationalityFilter, sortBy, sortDirection]);
+  }, [squadPlayers, searchTerm, roleFilter, nationalityFilter]);
 
   // Calculate squad statistics
   const squadStats = {
@@ -330,233 +261,264 @@ const Squad = () => {
     );
   }
 
-  // Sort indicator component
-  const SortIndicator = ({ column }) => {
-    if (sortBy !== column) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-    }
-    return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
-  };
+  const renderSquadOverview = () => {
+    // Custom sort for squad overview
+    const squadCustomSort = (a, b, column, direction) => {
+      let aVal, bVal;
 
-  const renderSquadOverview = () => (
-    <div className="space-y-2">
-      {/* Filters */}
-      <div className="card p-2">
-        <div className="flex flex-wrap gap-2">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input
-              type="text"
-              placeholder="Search players..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
-            />
+      switch (column) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'battingPlaystyle':
+          aVal = getPrimaryBattingRating(a);
+          bVal = getPrimaryBattingRating(b);
+          break;
+        case 'bowlingPlaystyle':
+          aVal = getPrimaryBowlingRating(a);
+          bVal = getPrimaryBowlingRating(b);
+          break;
+        case 'fieldingPlaystyle':
+          aVal = getPrimaryFieldingRating(a);
+          bVal = getPrimaryFieldingRating(b);
+          break;
+        case 'value':
+          aVal = a.soldPrice || 0;
+          bVal = b.soldPrice || 0;
+          break;
+        case 'age':
+          aVal = a.age || 0;
+          bVal = b.age || 0;
+          break;
+        default:
+          aVal = a[column] || '';
+          bVal = b[column] || '';
+      }
+
+      if (typeof aVal === 'string') {
+        return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return direction === 'asc' ? aVal - bVal : bVal - aVal;
+    };
+
+    // Squad overview columns
+    const squadColumns = [
+      {
+        key: 'name',
+        label: 'Player',
+        sortKey: 'name',
+        render: (player) => <PlayerName playerId={player.id} player={player} className="font-medium" />,
+        cellClassName: 'px-3 py-2 font-medium'
+      },
+      {
+        key: 'age',
+        label: 'Age',
+        sortKey: 'age',
+        align: 'center',
+        render: (player) => <span className="text-text-secondary">{player.age || '-'}</span>,
+        cellClassName: 'px-3 py-2'
+      },
+      {
+        key: 'nationality',
+        label: 'Nation',
+        sortKey: 'nationality',
+        render: (player) => <span className="text-xs">{player.nationality || '-'}</span>,
+        headerClassName: 'px-2 py-2 w-16',
+        cellClassName: 'px-2 py-2 text-text-secondary'
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        sortKey: 'role',
+        render: (player) => <span className="capitalize">{player.role || '-'}</span>,
+        cellClassName: 'px-3 py-2 text-text-secondary'
+      },
+      {
+        key: 'battingHand',
+        label: 'Bat Hand',
+        sortKey: 'battingHand',
+        align: 'center',
+        render: (player) => <span className="uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</span>,
+        cellClassName: 'px-3 py-2 text-text-secondary'
+      },
+      {
+        key: 'bowlingStyle',
+        label: 'Bowling Style',
+        sortKey: 'bowlingStyle',
+        align: 'center',
+        render: (player) => <span className="text-xs">{player.bowlingStyleAbbrev || '-'}</span>,
+        cellClassName: 'px-3 py-2 text-text-secondary'
+      },
+      {
+        key: 'battingPlaystyle',
+        label: 'Batting Playstyle',
+        sortKey: 'battingPlaystyle',
+        render: (player) => (
+          <div className="flex flex-col">
+            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.batting || '-'}</span>
+            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBattingRating(player))}</span>
           </div>
+        ),
+        cellClassName: 'px-3 py-2'
+      },
+      {
+        key: 'bowlingPlaystyle',
+        label: 'Bowling Playstyle',
+        sortKey: 'bowlingPlaystyle',
+        render: (player) => (
+          <div className="flex flex-col">
+            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.bowling || '-'}</span>
+            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBowlingRating(player))}</span>
+          </div>
+        ),
+        cellClassName: 'px-3 py-2'
+      },
+      {
+        key: 'fieldingPlaystyle',
+        label: 'Fielding Playstyle',
+        sortKey: 'fieldingPlaystyle',
+        render: (player) => (
+          <div className="flex flex-col">
+            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.fielding || '-'}</span>
+            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryFieldingRating(player))}</span>
+          </div>
+        ),
+        cellClassName: 'px-3 py-2'
+      },
+      {
+        key: 'value',
+        label: 'Value',
+        sortKey: 'value',
+        align: 'right',
+        render: (player) => (
+          <span className="font-mono text-trophy-gold">
+            {player.soldPrice ? (
+              player.soldPrice >= 1000000
+                ? `$${(player.soldPrice / 1000000).toFixed(1)}M`
+                : `$${(player.soldPrice / 1000).toFixed(0)}K`
+            ) : '$0K'}
+          </span>
+        ),
+        cellClassName: 'px-3 py-2'
+      }
+    ];
 
-          {/* Role Filter */}
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+    // Add actions column if transfer window is open
+    if (isTransferWindowOpen) {
+      squadColumns.push({
+        key: 'actions',
+        label: 'Actions',
+        sortKey: 'id',
+        sortable: false,
+        align: 'center',
+        render: (player) => (
+          <button
+            onClick={() => handleListPlayer(player)}
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors mx-auto"
           >
-            <option value="all">All Roles</option>
-            <option value="batsman">Batsman</option>
-            <option value="bowler">Bowler</option>
-            <option value="all-rounder">All-Rounder</option>
-            <option value="wicket-keeper">Wicket-Keeper</option>
-          </select>
+            <Tag className="w-3 h-3" />
+            <span>List</span>
+          </button>
+        ),
+        cellClassName: 'px-3 py-2'
+      });
+    }
 
-          {/* Nationality Filter */}
-          <select
-            value={nationalityFilter}
-            onChange={(e) => setNationalityFilter(e.target.value)}
-            className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
-          >
-            <option value="all">All Nationalities</option>
-            {availableNationalities.map(nat => (
-              <option key={nat} value={nat}>{nat}</option>
-            ))}
-          </select>
+    // Filter component
+    const filterComponent = (
+      <div className="flex flex-wrap gap-2">
+        {/* Search */}
+        <div className="flex-1 min-w-[200px] relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+          <input
+            type="text"
+            placeholder="Search players..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+          />
+        </div>
 
-          {/* Results count */}
-          <div className="flex items-center px-3 text-xs text-text-secondary">
-            Showing {filteredSortedPlayers.length} of {squadPlayers.length} players
+        {/* Role Filter */}
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+        >
+          <option value="all">All Roles</option>
+          <option value="batsman">Batsman</option>
+          <option value="bowler">Bowler</option>
+          <option value="all-rounder">All-Rounder</option>
+          <option value="wicket-keeper">Wicket-Keeper</option>
+        </select>
+
+        {/* Nationality Filter */}
+        <select
+          value={nationalityFilter}
+          onChange={(e) => setNationalityFilter(e.target.value)}
+          className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:border-cricket-accent"
+        >
+          <option value="all">All Nationalities</option>
+          {availableNationalities.map(nat => (
+            <option key={nat} value={nat}>{nat}</option>
+          ))}
+        </select>
+
+        {/* Results count */}
+        <div className="flex items-center px-3 text-xs text-text-secondary">
+          Showing {filteredSortedPlayers.length} of {squadPlayers.length} players
+        </div>
+      </div>
+    );
+
+    // Empty state
+    const emptyState = (
+      <tr>
+        <td colSpan={squadColumns.length} className="px-3 py-12">
+          <div className="text-center">
+            <Users className="w-16 h-16 mx-auto mb-4 text-text-tertiary" />
+            <h3 className="text-xl font-semibold text-text-primary mb-2">No Players in Squad</h3>
+            <p className="text-text-secondary mb-4 text-sm">
+              Your squad is empty. Visit the Transfers section to build your team through the auction.
+            </p>
+            <button className="btn-primary">Go to Transfers</button>
+          </div>
+        </td>
+      </tr>
+    );
+
+    return (
+      <div className="space-y-2">
+        {/* Wrapped SortableTable with banner background */}
+        <div className="relative">
+          {/* Banner Background */}
+          {squadPlayers.length > 0 && (
+            <div
+              className="absolute inset-0 opacity-70 rounded-lg pointer-events-none"
+              style={{
+                backgroundImage: `url(${getTeamBanner(userTeam.id)})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+          )}
+
+          <div className="relative">
+            <SortableTable
+              data={filteredSortedPlayers}
+              columns={squadColumns}
+              defaultSort={{ column: 'name', direction: 'asc' }}
+              customSort={squadCustomSort}
+              filterComponent={filterComponent}
+              emptyState={emptyState}
+              tableClassName="bg-bg-primary/95"
+            />
           </div>
         </div>
       </div>
-
-      {/* Squad Table */}
-      {squadPlayers.length === 0 ? (
-        <div className="card p-8 text-center">
-          <Users className="w-16 h-16 mx-auto mb-4 text-text-tertiary" />
-          <h3 className="text-xl font-semibold text-text-primary mb-2">No Players in Squad</h3>
-          <p className="text-text-secondary mb-4 text-sm">
-            Your squad is empty. Visit the Transfers section to build your team through the auction.
-          </p>
-          <button className="btn-primary">Go to Transfers</button>
-        </div>
-      ) : (
-        <div className="relative overflow-x-auto rounded-lg border border-border-primary">
-          {/* Banner Background */}
-          <div
-            className="absolute inset-0 opacity-70"
-            style={{
-              backgroundImage: `url(${getTeamBanner(userTeam.id)})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          />
-          <table className="relative w-full text-sm bg-bg-primary/95">
-            <thead>
-              <tr className="border-b border-border-primary">
-                <th
-                  onClick={() => handleSort('name')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    Player <SortIndicator column="name" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('age')}
-                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    Age <SortIndicator column="age" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('nationality')}
-                  className="px-2 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors w-16"
-                >
-                  <div className="flex items-center gap-1">
-                    Nation <SortIndicator column="nationality" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('role')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    Role <SortIndicator column="role" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('battingHand')}
-                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    Bat Hand <SortIndicator column="battingHand" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('bowlingStyle')}
-                  className="px-3 py-2 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    Bowling Style <SortIndicator column="bowlingStyle" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('battingPlaystyle')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    Batting Playstyle <SortIndicator column="battingPlaystyle" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('bowlingPlaystyle')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    Bowling Playstyle <SortIndicator column="bowlingPlaystyle" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('fieldingPlaystyle')}
-                  className="px-3 py-2 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    Fielding Playstyle <SortIndicator column="fieldingPlaystyle" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('value')}
-                  className="px-3 py-2 text-right font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    Value <SortIndicator column="value" />
-                  </div>
-                </th>
-                {isTransferWindowOpen && (
-                  <th className="px-3 py-2 text-center font-semibold text-text-primary">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSortedPlayers.map((player, idx) => (
-                <tr
-                  key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                    }`}
-                >
-                  <td className="px-3 py-2 font-medium">
-                    <PlayerName playerId={player.id} player={player} className="font-medium" />
-                  </td>
-                  <td className="px-3 py-2 text-center text-text-secondary">{player.age || '-'}</td>
-                  <td className="px-2 py-2 text-text-secondary text-xs">{player.nationality || '-'}</td>
-                  <td className="px-3 py-2 text-text-secondary capitalize">{player.role || '-'}</td>
-                  <td className="px-3 py-2 text-center text-text-secondary uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</td>
-                  <td className="px-3 py-2 text-center text-text-secondary text-xs">{player.bowlingStyleAbbrev || '-'}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-col">
-                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.batting || '-'}</span>
-                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBattingRating(player))}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-col">
-                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.bowling || '-'}</span>
-                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBowlingRating(player))}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-col">
-                      <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.fielding || '-'}</span>
-                      <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryFieldingRating(player))}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-trophy-gold">
-                    {player.soldPrice ? (
-                      player.soldPrice >= 1000000
-                        ? `$${(player.soldPrice / 1000000).toFixed(1)}M`
-                        : `$${(player.soldPrice / 1000).toFixed(0)}K`
-                    ) : '$0K'}
-                  </td>
-                  {isTransferWindowOpen && (
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        onClick={() => handleListPlayer(player)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors mx-auto"
-                      >
-                        <Tag className="w-3 h-3" />
-                        <span>List</span>
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   const renderTeamInfo = () => (
     <div className="space-y-2">
@@ -784,289 +746,211 @@ const Squad = () => {
     return { text: injury, isInjured: true };
   };
 
-  // Condition tab sorting - default to injured players first, then by duration
-  const [conditionSortBy, setConditionSortBy] = useState('injury');
-  const [conditionSortDirection, setConditionSortDirection] = useState('desc');
-
-  const handleConditionSort = (column) => {
-    if (conditionSortBy === column) {
-      setConditionSortDirection(conditionSortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setConditionSortBy(column);
-      setConditionSortDirection(column === 'name' ? 'asc' : 'desc'); // Default desc for numeric columns
-    }
-  };
-
-  // Filtered and sorted players for condition tab
-  const conditionSortedPlayers = useMemo(() => {
-    let result = [...squadPlayers];
-
-    result.sort((a, b) => {
-      let aVal, bVal;
-      const aCondition = a.condition || {};
-      const bCondition = b.condition || {};
-
-      switch (conditionSortBy) {
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          return conditionSortDirection === 'asc'
-            ? aVal.localeCompare(bVal)
-            : bVal.localeCompare(aVal);
-        case 'fitness':
-          aVal = aCondition.fitness ?? 0;
-          bVal = bCondition.fitness ?? 0;
-          break;
-        case 'form':
-          aVal = aCondition.form ?? 0;
-          bVal = bCondition.form ?? 0;
-          break;
-        case 'fatigue':
-          aVal = aCondition.fatigue ?? 0;
-          bVal = bCondition.fatigue ?? 0;
-          break;
-        case 'morale':
-          aVal = aCondition.morale ?? 0;
-          bVal = bCondition.morale ?? 0;
-          break;
-        case 'confidence':
-          aVal = aCondition.confidence ?? 0;
-          bVal = bCondition.confidence ?? 0;
-          break;
-        case 'energy':
-          aVal = aCondition.energy ?? 0;
-          bVal = bCondition.energy ?? 0;
-          break;
-        case 'injury':
-          // Injured players first when descending, then by duration
-          aVal = aCondition.injury ? 1 : 0;
-          bVal = bCondition.injury ? 1 : 0;
-          if (aVal !== bVal) {
-            break; // Different injury status, use normal sort
-          }
-          if (aVal === 1) {
-            // Both injured - secondary sort by duration
-            const aDur = aCondition.injuryDuration ?? 0;
-            const bDur = bCondition.injuryDuration ?? 0;
-            return conditionSortDirection === 'asc' ? aDur - bDur : bDur - aDur;
-          }
-          // Both not injured - sort by fatigue desc, then fitness asc (lower fitness = higher priority)
-          const aFatigue = aCondition.fatigue ?? 0;
-          const bFatigue = bCondition.fatigue ?? 0;
-          if (aFatigue !== bFatigue) {
-            return conditionSortDirection === 'asc' ? aFatigue - bFatigue : bFatigue - aFatigue;
-          }
-          // Tiebreak by fitness (lower fitness first when desc)
-          const aFitness = aCondition.fitness ?? 85;
-          const bFitness = bCondition.fitness ?? 85;
-          return conditionSortDirection === 'asc' ? bFitness - aFitness : aFitness - bFitness;
-          break;
-        case 'injuryDuration':
-          aVal = aCondition.injuryDuration ?? 0;
-          bVal = bCondition.injuryDuration ?? 0;
-          break;
-        default:
-          return 0;
-      }
-
-      return conditionSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-
-    return result;
-  }, [squadPlayers, conditionSortBy, conditionSortDirection]);
-
   // Count injured players
   const injuredCount = useMemo(() => {
     return squadPlayers.filter(p => p.condition?.injury).length;
   }, [squadPlayers]);
 
-  const ConditionSortIndicator = ({ column }) => {
-    if (conditionSortBy !== column) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+  // Custom sort function for condition table
+  const conditionCustomSort = (a, b, column, direction) => {
+    const aCondition = a.condition || {};
+    const bCondition = b.condition || {};
+
+    if (column === 'name') {
+      const aVal = a.name.toLowerCase();
+      const bVal = b.name.toLowerCase();
+      return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-    return conditionSortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+
+    if (column === 'injury') {
+      // Injured players first when descending
+      const aVal = aCondition.injury ? 1 : 0;
+      const bVal = bCondition.injury ? 1 : 0;
+      if (aVal !== bVal) {
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (aVal === 1) {
+        // Both injured - sort by duration
+        const aDur = aCondition.injuryDuration ?? 0;
+        const bDur = bCondition.injuryDuration ?? 0;
+        return direction === 'asc' ? aDur - bDur : bDur - aDur;
+      }
+      // Both not injured - sort by fatigue, then fitness
+      const aFatigue = aCondition.fatigue ?? 0;
+      const bFatigue = bCondition.fatigue ?? 0;
+      if (aFatigue !== bFatigue) {
+        return direction === 'asc' ? aFatigue - bFatigue : bFatigue - aFatigue;
+      }
+      const aFitness = aCondition.fitness ?? 85;
+      const bFitness = bCondition.fitness ?? 85;
+      return direction === 'asc' ? bFitness - aFitness : aFitness - bFitness;
+    }
+
+    // Default numeric sorting for other columns
+    const aVal = aCondition[column] ?? (column === 'fitness' ? 85 : 50);
+    const bVal = bCondition[column] ?? (column === 'fitness' ? 85 : 50);
+    return direction === 'asc' ? aVal - bVal : bVal - aVal;
   };
 
-  const renderCondition = () => (
-    <div className="space-y-2">
-      {/* Condition Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-status-win">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 70).length}</div>
-          <div className="text-text-secondary text-xs">Match Fit</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-yellow-500">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 40 && (p.condition?.fitness ?? 85) < 70).length}</div>
-          <div className="text-text-secondary text-xs">Moderate Fitness</div>
-        </div>
-        <div className="card p-2 text-center">
-          <div className="text-2xl font-bold text-status-loss">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) < 40).length}</div>
-          <div className="text-text-secondary text-xs">Low Fitness</div>
-        </div>
-        <div className="card p-2 text-center border-2 border-status-loss">
-          <div className="text-2xl font-bold text-status-loss">{injuredCount}</div>
-          <div className="text-text-secondary text-xs">Injured</div>
+  // Row class generator for injured players
+  const getConditionRowClassName = (player) => {
+    const injuryInfo = formatInjury(player.condition?.injury);
+    return injuryInfo.isInjured ? 'bg-status-loss/10' : '';
+  };
+
+  const renderCondition = () => {
+    // Condition bar render helper
+    const renderConditionBar = (value, type = 'default') => (
+      <div className="flex flex-col items-center">
+        <span className="text-xs font-mono mb-1">{Math.round(value)}</span>
+        <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
+          <div
+            className={`h-full rounded-full ${getConditionBarColor(value, type)}`}
+            style={{ width: `${value}%` }}
+          />
         </div>
       </div>
+    );
 
-      {/* Condition Table */}
-      <div className="relative overflow-x-auto rounded-lg border border-border-primary">
-        <table className="w-full text-sm bg-bg-primary">
-          <thead>
-            <tr className="border-b border-border-primary bg-bg-secondary">
-              <th
-                onClick={() => handleConditionSort('name')}
-                className="px-4 py-2.5 text-left font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  Player <ConditionSortIndicator column="name" />
-                </div>
-              </th>
-              <th className="px-4 py-2.5 text-left font-semibold text-text-primary">Role</th>
-              <th
-                onClick={() => handleConditionSort('fitness')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Fitness <ConditionSortIndicator column="fitness" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('form')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Form <ConditionSortIndicator column="form" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('fatigue')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Fatigue <ConditionSortIndicator column="fatigue" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('morale')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Morale <ConditionSortIndicator column="morale" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('injury')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Injury Status <ConditionSortIndicator column="injury" />
-                </div>
-              </th>
-              <th
-                onClick={() => handleConditionSort('injuryDuration')}
-                className="px-4 py-2.5 text-center font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  Injury Duration <ConditionSortIndicator column="injuryDuration" />
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {conditionSortedPlayers.map((player, idx) => {
-              const condition = player.condition || {};
-              const injuryInfo = formatInjury(condition.injury);
+    // Columns definition for condition table
+    const conditionColumns = [
+      {
+        key: 'name',
+        label: 'Player',
+        sortKey: 'name',
+        render: (player) => {
+          const injuryInfo = formatInjury(player.condition?.injury);
+          return (
+            <PlayerName
+              playerId={player.id}
+              player={player}
+              className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`}
+            />
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5 font-medium'
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        sortKey: 'role',
+        sortable: false,
+        render: (player) => <span className="capitalize text-xs">{player.role || '-'}</span>,
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5 text-text-secondary'
+      },
+      {
+        key: 'fitness',
+        label: 'Fitness',
+        sortKey: 'fitness',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.fitness ?? 85),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'form',
+        label: 'Form',
+        sortKey: 'form',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.form ?? 50),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'fatigue',
+        label: 'Fatigue',
+        sortKey: 'fatigue',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.fatigue ?? 0, 'fatigue'),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'morale',
+        label: 'Morale',
+        sortKey: 'morale',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => renderConditionBar(player.condition?.morale ?? 50),
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'injury',
+        label: 'Injury Status',
+        sortKey: 'injury',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => {
+          const injuryInfo = formatInjury(player.condition?.injury);
+          return (
+            <span className={`text-xs font-medium ${injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'}`}>
+              {injuryInfo.text}
+            </span>
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      },
+      {
+        key: 'injuryDuration',
+        label: 'Injury Duration',
+        sortKey: 'injuryDuration',
+        defaultDirection: 'desc',
+        align: 'center',
+        render: (player) => {
+          const duration = player.condition?.injuryDuration;
+          return duration ? (
+            <span className="text-xs font-medium text-status-loss">
+              {duration} day{duration > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span className="text-xs text-text-tertiary">-</span>
+          );
+        },
+        headerClassName: 'px-4 py-2.5',
+        cellClassName: 'px-4 py-2.5'
+      }
+    ];
 
-              return (
-                <tr
-                  key={player.id}
-                  className={`border-b border-border-primary hover:bg-bg-tertiary transition-colors ${injuryInfo.isInjured ? 'bg-status-loss/10' : idx % 2 === 0 ? 'bg-bg-primary' : 'bg-bg-secondary'
-                    }`}
-                >
-                  <td className="px-4 py-2.5 font-medium">
-                    <PlayerName playerId={player.id} player={player} className={`font-medium ${injuryInfo.isInjured ? 'text-status-loss' : ''}`} />
-                  </td>
-                  <td className="px-4 py-2.5 text-text-secondary capitalize text-xs">{player.role || '-'}</td>
+    return (
+      <div className="space-y-2">
+        {/* Condition Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-status-win">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 70).length}</div>
+            <div className="text-text-secondary text-xs">Match Fit</div>
+          </div>
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-yellow-500">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) >= 40 && (p.condition?.fitness ?? 85) < 70).length}</div>
+            <div className="text-text-secondary text-xs">Moderate Fitness</div>
+          </div>
+          <div className="card p-2 text-center">
+            <div className="text-2xl font-bold text-status-loss">{squadPlayers.filter(p => (p.condition?.fitness ?? 85) < 40).length}</div>
+            <div className="text-text-secondary text-xs">Low Fitness</div>
+          </div>
+          <div className="card p-2 text-center border-2 border-status-loss">
+            <div className="text-2xl font-bold text-status-loss">{injuredCount}</div>
+            <div className="text-text-secondary text-xs">Injured</div>
+          </div>
+        </div>
 
-                  {/* Fitness */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.fitness ?? 85)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.fitness ?? 85)}`}
-                          style={{ width: `${condition.fitness ?? 85}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Form */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.form ?? 50)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.form ?? 50)}`}
-                          style={{ width: `${condition.form ?? 50}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Fatigue */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.fatigue ?? 0)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.fatigue ?? 0, 'fatigue')}`}
-                          style={{ width: `${condition.fatigue ?? 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Morale */}
-                  <td className="px-4 py-2.5 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-mono mb-1">{Math.round(condition.morale ?? 50)}</span>
-                      <div className="w-14 h-1.5 bg-bg-tertiary rounded-full">
-                        <div
-                          className={`h-full rounded-full ${getConditionBarColor(condition.morale ?? 50)}`}
-                          style={{ width: `${condition.morale ?? 50}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Injury Status */}
-                  <td className="px-4 py-2.5 text-center">
-                    <span className={`text-xs font-medium ${injuryInfo.isInjured ? 'text-status-loss bg-status-loss/20 px-2 py-1 rounded' : 'text-status-win'
-                      }`}>
-                      {injuryInfo.text}
-                    </span>
-                  </td>
-
-                  {/* Injury Duration */}
-                  <td className="px-4 py-2.5 text-center">
-                    {condition.injuryDuration ? (
-                      <span className="text-xs font-medium text-status-loss">
-                        {condition.injuryDuration} day{condition.injuryDuration > 1 ? 's' : ''}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-text-tertiary">-</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {/* Condition Table */}
+        <SortableTable
+          data={squadPlayers}
+          columns={conditionColumns}
+          defaultSort={{ column: 'injury', direction: 'desc' }}
+          customSort={conditionCustomSort}
+          getRowClassName={getConditionRowClassName}
+        />
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-4">
