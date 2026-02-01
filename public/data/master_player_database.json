@@ -56,7 +56,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -254,7 +254,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 7
         },
         "fielding": {
@@ -452,7 +452,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 15
         },
         "fielding": {
@@ -650,7 +650,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -848,7 +848,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 9
         },
         "fielding": {
@@ -1051,7 +1051,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 8
         },
         "fielding": {
@@ -1249,7 +1249,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 16
         },
         "fielding": {
@@ -1447,7 +1447,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 6
         },
         "fielding": {
@@ -1645,7 +1645,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 13
         },
         "fielding": {
@@ -1843,7 +1843,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 9
         },
         "fielding": {
@@ -2041,7 +2041,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 7
         },
         "fielding": {
@@ -2239,7 +2239,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 18
         },
         "fielding": {
@@ -2437,7 +2437,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 18
         },
         "fielding": {
@@ -2635,7 +2635,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 9
         },
         "fielding": {
@@ -2833,7 +2833,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 15
         },
         "fielding": {
@@ -3031,7 +3031,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 18
         },
         "fielding": {
@@ -3229,7 +3229,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 13
         },
         "fielding": {
@@ -3427,7 +3427,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 17
         },
         "fielding": {
@@ -3625,7 +3625,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 16
         },
         "fielding": {
@@ -3823,7 +3823,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 16
         },
         "fielding": {
@@ -4021,7 +4021,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 13
         },
         "fielding": {
@@ -4219,7 +4219,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 15
         },
         "fielding": {
@@ -4417,7 +4417,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 8
         },
         "fielding": {
@@ -4615,7 +4615,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 19
         },
         "fielding": {
@@ -5016,7 +5016,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 9
         },
         "fielding": {
@@ -5214,7 +5214,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 9
         },
         "fielding": {
@@ -5412,7 +5412,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 19
         },
         "fielding": {
@@ -5615,7 +5615,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 14
         },
         "fielding": {
@@ -5813,7 +5813,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -6011,7 +6011,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 13
         },
         "fielding": {
@@ -6209,7 +6209,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 17
         },
         "fielding": {
@@ -6407,7 +6407,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 17
         },
         "fielding": {
@@ -6605,7 +6605,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 16
         },
         "fielding": {
@@ -6803,7 +6803,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 13
         },
         "fielding": {
@@ -7001,7 +7001,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 11
         },
         "fielding": {
@@ -7199,7 +7199,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 18
         },
         "fielding": {
@@ -7397,7 +7397,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 9
         },
         "fielding": {
@@ -7595,7 +7595,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 10
         },
         "fielding": {
@@ -7793,7 +7793,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 11
         },
         "fielding": {
@@ -7991,7 +7991,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 10
         },
         "fielding": {
@@ -8189,7 +8189,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 10
         },
         "fielding": {
@@ -8387,7 +8387,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 16
         },
         "fielding": {
@@ -8585,7 +8585,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 12
         },
         "fielding": {
@@ -8783,7 +8783,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 9
         },
         "fielding": {
@@ -8981,7 +8981,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 5
         },
         "fielding": {
@@ -9179,7 +9179,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 12
         },
         "fielding": {
@@ -9377,7 +9377,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 14
         },
         "fielding": {
@@ -9580,7 +9580,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -9783,7 +9783,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 15
         },
         "fielding": {
@@ -9981,7 +9981,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 13
         },
         "fielding": {
@@ -10179,7 +10179,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -10377,7 +10377,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 15
         },
         "fielding": {
@@ -10575,7 +10575,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 10
         },
         "fielding": {
@@ -10773,7 +10773,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 17
         },
         "fielding": {
@@ -10971,7 +10971,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 14
         },
         "fielding": {
@@ -11169,7 +11169,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 5
         },
         "fielding": {
@@ -11367,7 +11367,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 10
         },
         "fielding": {
@@ -11565,7 +11565,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 5
         },
         "fielding": {
@@ -11763,7 +11763,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 15
         },
         "fielding": {
@@ -11961,7 +11961,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 8
         },
         "fielding": {
@@ -12164,7 +12164,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 8
         },
         "fielding": {
@@ -12362,7 +12362,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 8
         },
         "fielding": {
@@ -12565,7 +12565,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 16
         },
         "fielding": {
@@ -12768,7 +12768,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 17
         },
         "fielding": {
@@ -12971,7 +12971,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 16
         },
         "fielding": {
@@ -13367,7 +13367,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 15
         },
         "fielding": {
@@ -13570,7 +13570,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -13768,7 +13768,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -13966,7 +13966,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -14164,7 +14164,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 19
         },
         "fielding": {
@@ -14362,7 +14362,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 9
         },
         "fielding": {
@@ -14560,7 +14560,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -14758,7 +14758,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -14955,7 +14955,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 10
         },
         "fielding": {
@@ -15153,7 +15153,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 6
         },
         "fielding": {
@@ -15350,7 +15350,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 16
         },
         "fielding": {
@@ -15548,7 +15548,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 13
         },
         "fielding": {
@@ -15944,7 +15944,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 15
         },
         "fielding": {
@@ -16142,7 +16142,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -16340,7 +16340,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 17
         },
         "fielding": {
@@ -16538,7 +16538,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 12
         },
         "fielding": {
@@ -16736,7 +16736,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 12
         },
         "fielding": {
@@ -16934,7 +16934,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 8
         },
         "fielding": {
@@ -17132,7 +17132,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 16
         },
         "fielding": {
@@ -17330,7 +17330,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 11
         },
         "fielding": {
@@ -17528,7 +17528,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 9
         },
         "fielding": {
@@ -17726,7 +17726,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 14
         },
         "fielding": {
@@ -17924,7 +17924,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 15
         },
         "fielding": {
@@ -18122,7 +18122,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 8
         },
         "fielding": {
@@ -18320,7 +18320,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 9
         },
         "fielding": {
@@ -18518,7 +18518,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 15
         },
         "fielding": {
@@ -18716,7 +18716,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 15
         },
         "fielding": {
@@ -18914,7 +18914,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 5
         },
         "fielding": {
@@ -19112,7 +19112,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 15
         },
         "fielding": {
@@ -19315,7 +19315,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 12
         },
         "fielding": {
@@ -19513,7 +19513,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 14
         },
         "fielding": {
@@ -19711,7 +19711,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 7
         },
         "fielding": {
@@ -19909,7 +19909,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 11
         },
         "fielding": {
@@ -20107,7 +20107,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 12
         },
         "fielding": {
@@ -20305,7 +20305,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 15
         },
         "fielding": {
@@ -20503,7 +20503,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 14
         },
         "fielding": {
@@ -20701,7 +20701,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 10
         },
         "fielding": {
@@ -20899,7 +20899,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 19
         },
         "fielding": {
@@ -21097,7 +21097,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 13
         },
         "fielding": {
@@ -21295,7 +21295,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 17
         },
         "fielding": {
@@ -21493,7 +21493,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 11
         },
         "fielding": {
@@ -21691,7 +21691,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 6
         },
         "fielding": {
@@ -21889,7 +21889,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 8
         },
         "fielding": {
@@ -22087,7 +22087,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -22290,7 +22290,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -22488,7 +22488,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 7
         },
         "fielding": {
@@ -22686,7 +22686,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 15
         },
         "fielding": {
@@ -22889,7 +22889,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 11
         },
         "fielding": {
@@ -23087,7 +23087,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 3
         },
         "fielding": {
@@ -23285,7 +23285,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 5
         },
         "fielding": {
@@ -23483,7 +23483,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 8
         },
         "fielding": {
@@ -23681,7 +23681,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 7
         },
         "fielding": {
@@ -23884,7 +23884,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 16
         },
         "fielding": {
@@ -24082,7 +24082,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 16
         },
         "fielding": {
@@ -24285,7 +24285,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 12
         },
         "fielding": {
@@ -24483,7 +24483,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 5
         },
         "fielding": {
@@ -24681,7 +24681,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 13
         },
         "fielding": {
@@ -24884,7 +24884,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 8
         },
         "fielding": {
@@ -25082,7 +25082,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 14
         },
         "fielding": {
@@ -25280,7 +25280,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 20,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 20
         },
         "fielding": {
@@ -25478,7 +25478,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 17
         },
         "fielding": {
@@ -25676,7 +25676,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 11
         },
         "fielding": {
@@ -25874,7 +25874,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -26077,7 +26077,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 11
         },
         "fielding": {
@@ -26275,7 +26275,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 14
         },
         "fielding": {
@@ -26478,7 +26478,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 9
         },
         "fielding": {
@@ -26676,7 +26676,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 3
         },
         "fielding": {
@@ -26874,7 +26874,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 16
         },
         "fielding": {
@@ -27072,7 +27072,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 8
         },
         "fielding": {
@@ -27270,7 +27270,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 11
         },
         "fielding": {
@@ -27468,7 +27468,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 12
         },
         "fielding": {
@@ -27666,7 +27666,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 10
         },
         "fielding": {
@@ -27864,7 +27864,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 12
         },
         "fielding": {
@@ -28067,7 +28067,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 18
         },
         "fielding": {
@@ -28265,7 +28265,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 17
         },
         "fielding": {
@@ -28468,7 +28468,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 16
         },
         "fielding": {
@@ -28666,7 +28666,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 13
         },
         "fielding": {
@@ -28864,7 +28864,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -29062,7 +29062,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 11
         },
         "fielding": {
@@ -29260,7 +29260,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 13
         },
         "fielding": {
@@ -29458,7 +29458,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 10
         },
         "fielding": {
@@ -29656,7 +29656,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 17
         },
         "fielding": {
@@ -29854,7 +29854,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 9
         },
         "fielding": {
@@ -30052,7 +30052,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 14
         },
         "fielding": {
@@ -30250,7 +30250,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -30645,7 +30645,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 16
         },
         "fielding": {
@@ -30843,7 +30843,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 7
         },
         "fielding": {
@@ -31041,7 +31041,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 15
         },
         "fielding": {
@@ -31239,7 +31239,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 12
         },
         "fielding": {
@@ -31437,7 +31437,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 10
         },
         "fielding": {
@@ -31635,7 +31635,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 16
         },
         "fielding": {
@@ -31833,7 +31833,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 9
         },
         "fielding": {
@@ -32031,7 +32031,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 10
         },
         "fielding": {
@@ -32229,7 +32229,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 14
         },
         "fielding": {
@@ -32432,7 +32432,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 4
         },
         "fielding": {
@@ -32630,7 +32630,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 11
         },
         "fielding": {
@@ -32833,7 +32833,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 13
         },
         "fielding": {
@@ -33031,7 +33031,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 12
         },
         "fielding": {
@@ -33229,7 +33229,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 8
         },
         "fielding": {
@@ -33427,7 +33427,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 5
         },
         "fielding": {
@@ -33625,7 +33625,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 11
         },
         "fielding": {
@@ -33823,7 +33823,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 5
         },
         "fielding": {
@@ -34021,7 +34021,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 12
         },
         "fielding": {
@@ -34219,7 +34219,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 17
         },
         "fielding": {
@@ -34417,7 +34417,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 19
         },
         "fielding": {
@@ -34813,7 +34813,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -35011,7 +35011,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 10
         },
         "fielding": {
@@ -35209,7 +35209,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 14
         },
         "fielding": {
@@ -35407,7 +35407,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 6
         },
         "fielding": {
@@ -35605,7 +35605,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 19,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 18
         },
         "fielding": {
@@ -35803,7 +35803,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 5
         },
         "fielding": {
@@ -36001,7 +36001,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 13
         },
         "fielding": {
@@ -36199,7 +36199,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 2
         },
         "fielding": {
@@ -36397,7 +36397,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 4
         },
         "fielding": {
@@ -36595,7 +36595,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 8
         },
         "fielding": {
@@ -36793,7 +36793,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 10
         },
         "fielding": {
@@ -36991,7 +36991,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 13
         },
         "fielding": {
@@ -37189,7 +37189,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 12
         },
         "fielding": {
@@ -37387,7 +37387,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 12
         },
         "fielding": {
@@ -37590,7 +37590,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 12
         },
         "fielding": {
@@ -37788,7 +37788,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 13
         },
         "fielding": {
@@ -37986,7 +37986,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 13
         },
         "fielding": {
@@ -38184,7 +38184,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 11
         },
         "fielding": {
@@ -38382,7 +38382,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 6
         },
         "fielding": {
@@ -38580,7 +38580,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 14
         },
         "fielding": {
@@ -38778,7 +38778,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -38976,7 +38976,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 10
         },
         "fielding": {
@@ -39174,7 +39174,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 7
         },
         "fielding": {
@@ -39372,7 +39372,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 10
         },
         "fielding": {
@@ -39570,7 +39570,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 12
         },
         "fielding": {
@@ -39768,7 +39768,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 15
         },
         "fielding": {
@@ -39966,7 +39966,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 14
         },
         "fielding": {
@@ -40164,7 +40164,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 11
         },
         "fielding": {
@@ -40362,7 +40362,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 8
         },
         "fielding": {
@@ -40560,7 +40560,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 14
         },
         "fielding": {
@@ -40758,7 +40758,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 9
         },
         "fielding": {
@@ -40961,7 +40961,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 9
         },
         "fielding": {
@@ -41357,7 +41357,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 15
         },
         "fielding": {
@@ -41758,7 +41758,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 17
         },
         "fielding": {
@@ -41956,7 +41956,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 8
         },
         "fielding": {
@@ -42154,7 +42154,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 15
         },
         "fielding": {
@@ -42550,7 +42550,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 11
         },
         "fielding": {
@@ -42748,7 +42748,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 3
         },
         "fielding": {
@@ -42946,7 +42946,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 11
         },
         "fielding": {
@@ -43144,7 +43144,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 13
         },
         "fielding": {
@@ -43342,7 +43342,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -43539,7 +43539,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 9
         },
         "fielding": {
@@ -43737,7 +43737,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 12
         },
         "fielding": {
@@ -43935,7 +43935,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 7
         },
         "fielding": {
@@ -44133,7 +44133,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 10
         },
         "fielding": {
@@ -44331,7 +44331,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 12
         },
         "fielding": {
@@ -44529,7 +44529,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 2
         },
         "fielding": {
@@ -44727,7 +44727,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 7
         },
         "fielding": {
@@ -44925,7 +44925,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 15
         },
         "fielding": {
@@ -45123,7 +45123,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 10
         },
         "fielding": {
@@ -45321,7 +45321,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 14
         },
         "fielding": {
@@ -45519,7 +45519,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 14
         },
         "fielding": {
@@ -45915,7 +45915,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 13
         },
         "fielding": {
@@ -46113,7 +46113,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 8
         },
         "fielding": {
@@ -46311,7 +46311,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 15
         },
         "fielding": {
@@ -46509,7 +46509,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 7
         },
         "fielding": {
@@ -46707,7 +46707,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 7
         },
         "fielding": {
@@ -46905,7 +46905,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 11
         },
         "fielding": {
@@ -47103,7 +47103,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 8
         },
         "fielding": {
@@ -47301,7 +47301,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 4
         },
         "fielding": {
@@ -47498,7 +47498,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 11
         },
         "fielding": {
@@ -47701,7 +47701,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -48097,7 +48097,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 18
         },
         "fielding": {
@@ -48295,7 +48295,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 17
         },
         "fielding": {
@@ -48493,7 +48493,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 12
         },
         "fielding": {
@@ -48691,7 +48691,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 5
         },
         "fielding": {
@@ -48889,7 +48889,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 8
         },
         "fielding": {
@@ -49087,7 +49087,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 13
         },
         "fielding": {
@@ -49285,7 +49285,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 12
         },
         "fielding": {
@@ -49483,7 +49483,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 17
         },
         "fielding": {
@@ -49681,7 +49681,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 12
         },
         "fielding": {
@@ -49879,7 +49879,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 3
         },
         "fielding": {
@@ -50077,7 +50077,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 5
         },
         "fielding": {
@@ -50275,7 +50275,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 12
         },
         "fielding": {
@@ -50473,7 +50473,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 16
         },
         "fielding": {
@@ -50671,7 +50671,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 4
         },
         "fielding": {
@@ -50869,7 +50869,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 18
         },
         "fielding": {
@@ -51067,7 +51067,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 10
         },
         "fielding": {
@@ -51265,7 +51265,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 7
         },
         "fielding": {
@@ -51463,7 +51463,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 7
         },
         "fielding": {
@@ -51661,7 +51661,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 19
         },
         "fielding": {
@@ -51859,7 +51859,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 9
         },
         "fielding": {
@@ -52062,7 +52062,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 6
         },
         "fielding": {
@@ -52260,7 +52260,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 7
         },
         "fielding": {
@@ -52458,7 +52458,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 18
         },
         "fielding": {
@@ -52656,7 +52656,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 11
         },
         "fielding": {
@@ -52854,7 +52854,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 15
         },
         "fielding": {
@@ -53052,7 +53052,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 16
         },
         "fielding": {
@@ -53250,7 +53250,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 8
         },
         "fielding": {
@@ -53448,7 +53448,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 12
         },
         "fielding": {
@@ -53646,7 +53646,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 11
         },
         "fielding": {
@@ -53844,7 +53844,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 16
         },
         "fielding": {
@@ -54042,7 +54042,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 16
         },
         "fielding": {
@@ -54240,7 +54240,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 7
         },
         "fielding": {
@@ -54438,7 +54438,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 11
         },
         "fielding": {
@@ -54636,7 +54636,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 9
         },
         "fielding": {
@@ -54838,7 +54838,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -55036,7 +55036,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 6
         },
         "fielding": {
@@ -55234,7 +55234,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -55432,7 +55432,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 14
         },
         "fielding": {
@@ -55635,7 +55635,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 18,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 17
         },
         "fielding": {
@@ -55833,7 +55833,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 12
         },
         "fielding": {
@@ -56031,7 +56031,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 12
         },
         "fielding": {
@@ -56229,7 +56229,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 9
         },
         "fielding": {
@@ -56625,7 +56625,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 7
         },
         "fielding": {
@@ -56823,7 +56823,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 11
         },
         "fielding": {
@@ -57021,7 +57021,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 17,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 18
         },
         "fielding": {
@@ -57219,7 +57219,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 7
         },
         "fielding": {
@@ -57417,7 +57417,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 16,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 18
         },
         "fielding": {
@@ -57615,7 +57615,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 10
         },
         "fielding": {
@@ -57812,7 +57812,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 17,
+          "endurance": 19,
           "stamina": 5
         },
         "fielding": {
@@ -58010,7 +58010,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 8
         },
         "fielding": {
@@ -58208,7 +58208,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 11
         },
         "fielding": {
@@ -58411,7 +58411,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 4
         },
         "fielding": {
@@ -58609,7 +58609,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 13,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 12
         },
         "fielding": {
@@ -58807,7 +58807,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 7
         },
         "fielding": {
@@ -59005,7 +59005,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 17
         },
         "fielding": {
@@ -59203,7 +59203,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 5
         },
         "fielding": {
@@ -59401,7 +59401,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 6
         },
         "fielding": {
@@ -59598,7 +59598,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 4
         },
         "fielding": {
@@ -59992,7 +59992,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 16
         },
         "fielding": {
@@ -60190,7 +60190,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 10
         },
         "fielding": {
@@ -60388,7 +60388,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 8
         },
         "fielding": {
@@ -60585,7 +60585,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 12
         },
         "fielding": {
@@ -60783,7 +60783,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 4
         },
         "fielding": {
@@ -60980,7 +60980,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 4
         },
         "fielding": {
@@ -61178,7 +61178,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 9
         },
         "fielding": {
@@ -61376,7 +61376,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 13
         },
         "fielding": {
@@ -61574,7 +61574,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 14,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 11
         },
         "fielding": {
@@ -61777,7 +61777,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 8
         },
         "fielding": {
@@ -61975,7 +61975,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 4
         },
         "fielding": {
@@ -62173,7 +62173,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 7
         },
         "fielding": {
@@ -62376,7 +62376,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 6
         },
         "fielding": {
@@ -62574,7 +62574,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 11,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 12
         },
         "fielding": {
@@ -62728,8 +62728,8 @@
     },
     {
       "id": "1211825",
-      "name": "Will O\u2019Rourke",
-      "fullName": "Will O\u2019Rourke",
+      "name": "Will O’Rourke",
+      "fullName": "Will O’Rourke",
       "age": 24,
       "nationality": "New Zealand",
       "role": "bowler",
@@ -62772,7 +62772,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 14,
+          "endurance": 17,
           "stamina": 8
         },
         "fielding": {
@@ -62970,7 +62970,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 4
         },
         "fielding": {
@@ -63168,7 +63168,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 3
         },
         "fielding": {
@@ -63366,7 +63366,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 4
         },
         "fielding": {
@@ -63564,7 +63564,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 15
         },
         "fielding": {
@@ -63762,7 +63762,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 8
         },
         "fielding": {
@@ -63960,7 +63960,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 6
         },
         "fielding": {
@@ -64158,7 +64158,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 4
         },
         "fielding": {
@@ -64356,7 +64356,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 7
         },
         "fielding": {
@@ -64554,7 +64554,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 6
         },
         "fielding": {
@@ -64752,7 +64752,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 4
         },
         "fielding": {
@@ -64950,7 +64950,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 5
         },
         "fielding": {
@@ -65148,7 +65148,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 3
         },
         "fielding": {
@@ -65543,7 +65543,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 2
         },
         "fielding": {
@@ -65740,7 +65740,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 4
         },
         "fielding": {
@@ -65938,7 +65938,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 5
         },
         "fielding": {
@@ -66135,7 +66135,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 7
         },
         "fielding": {
@@ -66332,7 +66332,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 9
         },
         "fielding": {
@@ -66530,7 +66530,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 10
         },
         "fielding": {
@@ -66728,7 +66728,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 16,
+          "endurance": 18,
           "stamina": 3
         },
         "fielding": {
@@ -66926,7 +66926,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 11
         },
         "fielding": {
@@ -67124,7 +67124,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 10
         },
         "fielding": {
@@ -67322,7 +67322,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 5
         },
         "fielding": {
@@ -67718,7 +67718,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 7
         },
         "fielding": {
@@ -67916,7 +67916,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 15,
+          "endurance": 18,
           "stamina": 6
         },
         "fielding": {
@@ -68114,7 +68114,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 15,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 14
         },
         "fielding": {
@@ -68312,7 +68312,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 3
         },
         "fielding": {
@@ -68510,7 +68510,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 9
         },
         "fielding": {
@@ -68708,7 +68708,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 2
         },
         "fielding": {
@@ -68906,7 +68906,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 19,
+          "endurance": 20,
           "stamina": 6
         },
         "fielding": {
@@ -69103,7 +69103,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 18,
+          "endurance": 19,
           "stamina": 13
         },
         "fielding": {
@@ -69301,7 +69301,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 9
         },
         "fielding": {
@@ -69499,7 +69499,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 7
         },
         "fielding": {
@@ -69697,7 +69697,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 7
         },
         "fielding": {
@@ -69895,7 +69895,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 7,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 6
         },
         "fielding": {
@@ -70093,7 +70093,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 10,
-          "endurance": 12,
+          "endurance": 16,
           "stamina": 8
         },
         "fielding": {
@@ -70291,7 +70291,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 4
         },
         "fielding": {
@@ -70489,7 +70489,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 10
         },
         "fielding": {
@@ -70687,7 +70687,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 6,
+          "endurance": 13,
           "stamina": 6
         },
         "fielding": {
@@ -71083,7 +71083,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 6
         },
         "fielding": {
@@ -71281,7 +71281,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 6
         },
         "fielding": {
@@ -71478,7 +71478,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 2
         },
         "fielding": {
@@ -71676,7 +71676,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 5,
+          "endurance": 13,
           "stamina": 4
         },
         "fielding": {
@@ -71874,7 +71874,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 6
         },
         "fielding": {
@@ -72071,7 +72071,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 12,
-          "endurance": 9,
+          "endurance": 15,
           "stamina": 11
         },
         "fielding": {
@@ -72269,7 +72269,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 5,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 6
         },
         "fielding": {
@@ -72467,7 +72467,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 6
         },
         "fielding": {
@@ -72669,7 +72669,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 7,
+          "endurance": 14,
           "stamina": 3
         },
         "fielding": {
@@ -72866,7 +72866,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 1,
+          "endurance": 11,
           "stamina": 7
         },
         "fielding": {
@@ -73064,7 +73064,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 8,
+          "endurance": 14,
           "stamina": 4
         },
         "fielding": {
@@ -73262,7 +73262,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 13,
+          "endurance": 17,
           "stamina": 4
         },
         "fielding": {
@@ -73460,7 +73460,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 3,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 3
         },
         "fielding": {
@@ -73657,7 +73657,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 3,
+          "endurance": 12,
           "stamina": 11
         },
         "fielding": {
@@ -73855,7 +73855,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 4,
+          "endurance": 12,
           "stamina": 5
         },
         "fielding": {
@@ -74052,7 +74052,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 6,
-          "endurance": 2,
+          "endurance": 11,
           "stamina": 6
         },
         "fielding": {
@@ -74249,7 +74249,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 4,
-          "endurance": 10,
+          "endurance": 15,
           "stamina": 5
         },
         "fielding": {
@@ -74446,7 +74446,7 @@
           "speed": 10,
           "agility": 10,
           "maxFitness": 9,
-          "endurance": 11,
+          "endurance": 16,
           "stamina": 6
         },
         "fielding": {

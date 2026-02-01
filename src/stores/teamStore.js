@@ -1006,6 +1006,7 @@ const useTeamStore = create(
         const state = get();
         const playerStore = usePlayerStore.getState();
         const tactics = state.teamTactics[teamId];
+        const isUserTeam = teamId === state.userTeamId;
 
         if (!tactics || !tactics.squadSelection) {
           console.warn(`Cannot auto-assign bowling rotation for team ${teamId}: no tactics or squad`);
@@ -1018,8 +1019,20 @@ const useTeamStore = create(
           .filter(Boolean);
 
         // Filter primary eligible bowlers using aiCore.canBowl()
-        // This includes: role='bowler'/'all-rounder' OR bowling rating >= 30
-        let eligibleBowlers = playingXI.filter(player => aiCore.canBowl(player));
+        // OR players explicitly marked as part-timers in tactics
+        const partTimerIds = tactics.partTimers || [];
+        let eligibleBowlers = playingXI.filter(player => 
+          aiCore.canBowl(player) || partTimerIds.includes(player.id)
+        );
+
+        // For user team, we want to BE STRICT: Only primary bowlers OR manually added part-timers
+        // (aiCore.canBowl auto-detects based on rating >= 30, so we filter further for user)
+        if (isUserTeam) {
+          eligibleBowlers = playingXI.filter(player => 
+            (player.role === 'bowler' || player.role === 'all-rounder') || 
+            partTimerIds.includes(player.id)
+          );
+        }
 
         // Sort by bowling rating (highest first)
         eligibleBowlers.sort((a, b) => {
@@ -1029,13 +1042,13 @@ const useTeamStore = create(
         });
 
         // FALLBACK: If fewer than 5 eligible bowlers, add part-timers from playing XI
-        // Cricket requires at least 5 bowlers to avoid consecutive overs (4 overs × 5 bowlers = 20)
+        // (Only for non-user teams, or as an absolute necessity for user team to avoid crash)
         if (eligibleBowlers.length < 5) {
           console.warn(`Team ${teamId} has only ${eligibleBowlers.length} eligible bowlers - adding part-timers`);
 
           // Get non-bowlers from playing XI, sorted by bowling playstyle rating
-          const partTimers = playingXI
-            .filter(player => !aiCore.canBowl(player))
+          const potentialPartTimers = playingXI
+            .filter(player => !eligibleBowlers.find(b => b.id === player.id))
             .map(player => {
               // Get best bowling playstyle rating for this player
               const bowlingRatings = player.playstyleRatings?.bowling || {};
@@ -1046,7 +1059,7 @@ const useTeamStore = create(
 
           // Add part-timers until we have at least 5 bowlers
           const needed = 5 - eligibleBowlers.length;
-          const addedPartTimers = partTimers.slice(0, needed).map(pt => pt.player);
+          const addedPartTimers = potentialPartTimers.slice(0, needed).map(pt => pt.player);
 
           if (addedPartTimers.length > 0) {
             console.log(`Added ${addedPartTimers.length} part-timer(s) to bowling rotation: ${addedPartTimers.map(p => p.name).join(', ')}`);

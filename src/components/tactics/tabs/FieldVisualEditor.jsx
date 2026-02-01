@@ -443,15 +443,15 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
                                   ))}
                                 </optgroup>
                               )}
-                    {others.length > 0 && (
-                      <optgroup label="Other Players (Part-time)">
-                        {others.map(player => (
-                          <option key={player.id} value={player.id}>
-                            {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
+                              {otherPlayers.length > 0 && (
+                                <optgroup label="Other Players (Part-time)">
+                                  {otherPlayers.map(player => (
+                                    <option key={player.id} value={player.id}>
+                                      {player.name} ({Math.round(player.playstyleRatings?.fielding?.Wicketkeeper || 0)})
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
                             </select>
                           ) : (
                             <select
