@@ -322,7 +322,7 @@ const SortableTable = ({
                 top: '0',
                 left: `${tablePosition.left}px`,
                 width: `${tablePosition.width}px`,
-                zIndex: 100,
+                zIndex: 40,
                 backgroundColor: '#1a1f2e',
                 borderBottom: '1px solid #2a3142',
               })
@@ -345,7 +345,7 @@ const SortableTable = ({
             top: '12px',
             left: `${tablePosition.left}px`,
             width: `${tablePosition.width}px`,
-            zIndex: 85,
+            zIndex: 40,
             overflowX: 'auto',
             overflowY: 'hidden',
             backgroundColor: '#1a1f2e',
@@ -393,7 +393,7 @@ const SortableTable = ({
               style={enableScrollSync ? {
                 position: 'sticky',
                 top: '0',
-                zIndex: 90,
+                zIndex: 30,
                 backgroundColor: '#1a1f2e',
                 ...(isScrollbarFixed && { visibility: 'hidden' })
               } : undefined}

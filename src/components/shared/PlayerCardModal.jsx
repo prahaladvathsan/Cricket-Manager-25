@@ -1,43 +1,49 @@
 /**
  * @file PlayerCardModal.jsx
  * @description Modal wrapper for displaying detailed player information
+ * Includes "Edit Player" button to open the PlayerEditorModal
+ * Uses React Portal to render at document body level for proper stacking
  */
 
-import React from 'react';
-import { X, BarChart3, Activity } from 'lucide-react';
-import PlayerCard from './PlayerCard';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, BarChart3, Activity, Edit3, Sparkles } from 'lucide-react';
 import usePlayerStore from '../../stores/playerStore';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
+import PlayerEditorModal from '../modals/PlayerEditorModal';
 
 const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
-  const { players, careerStats, currentSeasonId } = usePlayerStore();
+  const { players, careerStats, currentSeasonId, isPlayerCustomized } = usePlayerStore();
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   if (!isOpen || !playerId) return null;
 
   const player = players[playerId];
   const seasonStats = careerStats[playerId]?.seasons[currentSeasonId] || null;
+  const customizationStatus = isPlayerCustomized ? isPlayerCustomized(playerId) : { isModified: false, isCustom: false };
 
   if (!player) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
         <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-3xl w-full">
           <div className="p-6 text-center">
             <p className="text-text-secondary">Player not found</p>
             <button
               onClick={onClose}
-              className="btn-secondary mt-4 px-4 py-2"
+              className="btn-secondary mt-4 py-2"
             >
               Close
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">
@@ -46,6 +52,18 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
             <h2 className="text-lg font-semibold text-text-primary">
               Player Profile
             </h2>
+            {customizationStatus.isCustom && (
+              <span className="px-2 py-0.5 bg-purple-900/30 text-purple-400 text-xs rounded flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Custom
+              </span>
+            )}
+            {customizationStatus.isModified && !customizationStatus.isCustom && (
+              <span className="px-2 py-0.5 bg-yellow-900/30 text-yellow-400 text-xs rounded flex items-center gap-1">
+                <Edit3 className="w-3 h-3" />
+                Modified
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -347,7 +365,14 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border-primary">
+        <div className="flex justify-between gap-2 px-4 py-3 border-t border-border-primary">
+          <button
+            onClick={() => setIsEditorOpen(true)}
+            className="btn-secondary px-4 py-2 text-sm flex items-center gap-2"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit Player
+          </button>
           <button
             onClick={onClose}
             className="btn-primary px-4 py-2 text-sm"
@@ -356,7 +381,15 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Player Editor Modal */}
+      <PlayerEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        playerId={playerId}
+      />
+    </div>,
+    document.body
   );
 };
 
