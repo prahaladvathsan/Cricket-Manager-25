@@ -19,11 +19,16 @@ import {
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
 import PatchNotesModal from './PatchNotesModal';
+import usePlayerStore from '../../stores/playerStore';
 
 const StartMenu = () => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState(null);
   const [showPatchNotes, setShowPatchNotes] = useState(false);
+
+  // Get dynamic player count
+  const { players } = usePlayerStore();
+  const playerCount = players ? (Array.isArray(players) ? players.length : Object.keys(players).length) : 0;
 
   const menuOptions = [
     {
@@ -58,9 +63,9 @@ const StartMenu = () => {
     },
     {
       id: 'player-browser',
-      label: 'Player Database',
+      label: 'Player Database Editor',
       icon: Users,
-      description: 'Browse all 545 players and their stats',
+      description: `Browse and edit all ${playerCount} players and their stats`,
       action: () => navigate('/player-browser')
     },
     {

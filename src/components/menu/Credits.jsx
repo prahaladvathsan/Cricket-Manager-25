@@ -6,10 +6,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Code, Database, Zap, Heart } from 'lucide-react';
+import usePlayerStore from '../../stores/playerStore';
 import '../../styles/wallpaper.css';
 
 const Credits = () => {
   const navigate = useNavigate();
+
+  // Get dynamic player count
+  const { players } = usePlayerStore();
+  const playerCount = players ? (Array.isArray(players) ? players.length : Object.keys(players).length) : 0;
 
   return (
     <div className="min-h-screen app-wallpaper p-6">
@@ -42,7 +47,7 @@ const Credits = () => {
           <div className="mb-8 p-6 bg-cricket-secondary rounded-lg">
             <p className="text-cricket-text-primary text-center leading-relaxed">
               A comprehensive cricket management simulation featuring ball-by-ball physics,
-              545 real players with playstyle-based attributes, and deep tactical gameplay.
+              {playerCount} real players with playstyle-based attributes, and deep tactical gameplay.
               Manage your team through the World Premier League, conduct auctions, and
               simulate matches at 50,000+ balls per second.
             </p>
@@ -56,7 +61,7 @@ const Credits = () => {
                 <h3 className="font-semibold text-cricket-text-primary">Database</h3>
               </div>
               <ul className="text-sm text-cricket-text-secondary space-y-1 ml-8">
-                <li>545 real players with attributes</li>
+                <li>{playerCount} real players with attributes</li>
                 <li>24 unique playstyles</li>
                 <li>10 WPL teams</li>
                 <li>Real-world stats conversion</li>

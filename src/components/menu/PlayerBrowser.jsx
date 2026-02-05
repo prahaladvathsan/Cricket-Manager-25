@@ -1,6 +1,6 @@
 /**
  * @file PlayerBrowser.jsx
- * @description Data-dense spreadsheet browser for all 376 players with advanced filtering, sorting, and toggleable columns
+ * @description Player Database Editor - Interactive spreadsheet for browsing and editing all players
  * 10 default columns + 65 toggleable columns (16 batting + 8 bowling + 1 fielding playstyles + 40 attributes) = 75 total
  *
  * Refactored to use SortableTable with enableScrollSync for fixed-header scroll synchronization
@@ -935,56 +935,84 @@ const PlayerBrowser = () => {
     <div className="min-h-screen app-wallpaper p-6">
       <div className="max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => navigate('/')}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Menu
-          </button>
-          <h1 className="text-3xl font-bold text-cricket-text-primary">
-            Player Database
-          </h1>
-          <div className="flex items-center gap-3">
+        <div className="mb-6">
+          {/* Top Row - Back button and Title */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/')}
+              className="btn-secondary flex items-center gap-2 px-4 py-2.5"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-semibold">Back to Menu</span>
+            </button>
+
+            <h1 className="text-4xl font-bold text-cricket-text-primary">
+              Player Database Editor
+            </h1>
+
+            <div className="text-base text-cricket-text-secondary font-semibold bg-cricket-secondary px-4 py-2.5 rounded-lg">
+              {filteredPlayers.length} / {players.length} players
+            </div>
+          </div>
+
+          {/* Instructions Section */}
+          <div className="card p-4 bg-gradient-to-r from-cricket-accent/10 to-cricket-primary/10 border-l-4 border-cricket-accent mb-4">
+            <div className="flex items-start gap-3">
+              <Edit3 className="w-5 h-5 text-cricket-accent mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-cricket-text-primary mb-1">
+                  How to Edit Players
+                </h3>
+                <p className="text-sm text-cricket-text-secondary leading-relaxed">
+                  Click on any player name in the table to open their detailed player card.
+                  Once the card opens, click the <span className="text-cricket-accent font-semibold">"Edit Player"</span> button
+                  to modify their attributes, playstyles, and other properties.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="flex items-center gap-3 justify-end">
             {/* Create Player Button */}
             <button
               onClick={() => setIsCreatePlayerModalOpen(true)}
-              className="btn-primary flex items-center gap-2 text-sm"
+              className="btn-primary flex items-center gap-2 px-5 py-3 text-base font-semibold"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-5 h-5" />
               Create Player
             </button>
 
             {/* Export Button */}
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="btn-secondary flex items-center gap-2 text-sm"
+              className="btn-secondary flex items-center gap-2 px-5 py-3 text-base font-semibold"
             >
-              <Download className="w-4 h-4" />
-              Export
+              <Download className="w-5 h-5" />
+              Export Database
             </button>
 
             {/* Import Button */}
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="btn-secondary flex items-center gap-2 text-sm"
+              className="btn-secondary flex items-center gap-2 px-5 py-3 text-base font-semibold"
             >
-              <Upload className="w-4 h-4" />
-              Import
+              <Upload className="w-5 h-5" />
+              Import Database
             </button>
 
             {/* Actions Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-                className="btn-secondary p-2"
+                className="btn-secondary px-4 py-3"
+                title="More Actions"
               >
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="w-5 h-5" />
               </button>
 
               {showActionsDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-bg-secondary border border-border-primary rounded shadow-lg z-20">
+                <div className="absolute right-0 mt-2 w-64 bg-bg-secondary border border-border-primary rounded-lg shadow-xl z-20">
                   <button
                     onClick={async () => {
                       if (confirm('Reset all customizations? This will remove all player modifications and custom players.')) {
@@ -994,17 +1022,13 @@ const PlayerBrowser = () => {
                         window.location.reload();
                       }
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-bg-tertiary flex items-center gap-2"
+                    className="w-full px-4 py-3 text-left text-base text-red-400 hover:bg-bg-tertiary flex items-center gap-3 rounded-lg transition-colors"
                   >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset All Customizations
+                    <RotateCcw className="w-5 h-5" />
+                    <span className="font-semibold">Reset All Customizations</span>
                   </button>
                 </div>
               )}
-            </div>
-
-            <div className="text-sm text-cricket-text-secondary">
-              {filteredPlayers.length} / {players.length} players
             </div>
           </div>
         </div>
