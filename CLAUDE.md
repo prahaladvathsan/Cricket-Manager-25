@@ -254,6 +254,16 @@ node src/test/demoAuction.js                     # Test auction logic
 
 See `docs/dev/testing.md` for testing guidelines.
 
+## Version Updates & Patch Notes
+
+**Current Version**: 1.1.0 (February 2026)
+
+**When releasing a new version**, update these files:
+1. `src/components/menu/PatchNotesModal.jsx` - Update `CURRENT_VERSION`, `RELEASE_DATE`, `RELEASE_TAGLINE`, and `PATCH_NOTES` array
+2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.1.0`)
+
+The version indicator on the start menu is an animated, clickable badge that opens a patch notes modal with feature highlights, improvements, and release notes.
+
 ## Important Notes
 
 - **Client-side only** - No backend, uses LocalStorage

@@ -13,14 +13,17 @@ import {
   Settings,
   BookOpen,
   Info,
-  Globe
+  Globe,
+  Sparkles
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
+import PatchNotesModal from './PatchNotesModal';
 
 const StartMenu = () => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState(null);
+  const [showPatchNotes, setShowPatchNotes] = useState(false);
 
   const menuOptions = [
     {
@@ -147,7 +150,24 @@ const StartMenu = () => {
 
         {/* Footer */}
         <div className="mt-4 text-center text-xs text-cricket-text-secondary flex justify-center gap-4 items-center">
-          <span>Version 1.0.0</span>
+          {/* Animated Version Badge */}
+          <button
+            onClick={() => setShowPatchNotes(true)}
+            className="group relative px-3 py-1.5 bg-gradient-to-r from-cricket-accent/20 to-cricket-accent/10 border border-cricket-accent/30 rounded-full hover:from-cricket-accent/30 hover:to-cricket-accent/20 hover:border-cricket-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+          >
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-cricket-accent animate-pulse" />
+              <span className="text-cricket-accent font-semibold">v1.1.0</span>
+              <span className="text-cricket-text-tertiary text-[10px]">NEW!</span>
+            </div>
+            {/* Tooltip */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-cricket-accent text-black text-[10px] font-semibold px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              What's New? Click to see! ✨
+            </div>
+            {/* Pulsing glow effect */}
+            <div className="absolute inset-0 bg-cricket-accent/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
+          </button>
+
           <span className="text-cricket-text-secondary/50">•</span>
           <a
             href="/privacy.html"
@@ -168,6 +188,12 @@ const StartMenu = () => {
           </a>
         </div>
       </div>
+
+      {/* Patch Notes Modal */}
+      <PatchNotesModal
+        isOpen={showPatchNotes}
+        onClose={() => setShowPatchNotes(false)}
+      />
     </div>
   );
 };
