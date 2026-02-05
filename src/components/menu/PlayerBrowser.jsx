@@ -955,80 +955,83 @@ const PlayerBrowser = () => {
             </div>
           </div>
 
-          {/* Instructions Section */}
-          <div className="card p-4 bg-gradient-to-r from-cricket-accent/10 to-cricket-primary/10 border-l-4 border-cricket-accent mb-4">
-            <div className="flex items-start gap-3">
-              <Edit3 className="w-5 h-5 text-cricket-accent mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-semibold text-cricket-text-primary mb-1">
+          {/* Instructions and Action Buttons - Single Row */}
+          <div className="card p-4 mb-4 flex items-center justify-between gap-6">
+            {/* Instructions Section - Left Side */}
+            <div className="flex items-start gap-3 flex-1">
+              <div className="p-2 bg-cricket-accent/20 rounded-lg">
+                <Edit3 className="w-5 h-5 text-cricket-accent flex-shrink-0" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-cricket-text-primary mb-1">
                   How to Edit Players
                 </h3>
-                <p className="text-sm text-cricket-text-secondary leading-relaxed">
-                  Click on any player name in the table to open their detailed player card.
-                  Once the card opens, click the <span className="text-cricket-accent font-semibold">"Edit Player"</span> button
-                  to modify their attributes, playstyles, and other properties.
+                <p className="text-sm text-cricket-text-secondary leading-snug">
+                  Click on any player name to open their card, then click
+                  <span className="text-cricket-accent font-semibold"> "Edit Player" </span>
+                  to modify attributes and properties.
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-3 justify-end">
-            {/* Create Player Button */}
-            <button
-              onClick={() => setIsCreatePlayerModalOpen(true)}
-              className="btn-primary flex items-center gap-2 px-5 py-3 text-base font-semibold"
-            >
-              <UserPlus className="w-5 h-5" />
-              Create Player
-            </button>
-
-            {/* Export Button */}
-            <button
-              onClick={() => setIsExportModalOpen(true)}
-              className="btn-secondary flex items-center gap-2 px-5 py-3 text-base font-semibold"
-            >
-              <Download className="w-5 h-5" />
-              Export Database
-            </button>
-
-            {/* Import Button */}
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="btn-secondary flex items-center gap-2 px-5 py-3 text-base font-semibold"
-            >
-              <Upload className="w-5 h-5" />
-              Import Database
-            </button>
-
-            {/* Actions Dropdown */}
-            <div className="relative">
+            {/* Action Buttons - Right Side */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Create Player Button */}
               <button
-                onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-                className="btn-secondary px-4 py-3"
-                title="More Actions"
+                onClick={() => setIsCreatePlayerModalOpen(true)}
+                className="group relative px-4 py-2.5 bg-gradient-to-br from-cricket-accent to-cricket-accent/80 hover:from-cricket-accent/90 hover:to-cricket-accent/70 text-black font-bold rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-cricket-accent/50 hover:scale-105"
               >
-                <MoreVertical className="w-5 h-5" />
+                <UserPlus className="w-4 h-4" />
+                <span>Create</span>
               </button>
 
-              {showActionsDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-bg-secondary border border-border-primary rounded-lg shadow-xl z-20">
-                  <button
-                    onClick={async () => {
-                      if (confirm('Reset all customizations? This will remove all player modifications and custom players.')) {
-                        await resetAllCustomizations();
-                        setShowActionsDropdown(false);
-                        // Trigger page reload to refresh from master DB
-                        window.location.reload();
-                      }
-                    }}
-                    className="w-full px-4 py-3 text-left text-base text-red-400 hover:bg-bg-tertiary flex items-center gap-3 rounded-lg transition-colors"
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                    <span className="font-semibold">Reset All Customizations</span>
-                  </button>
-                </div>
-              )}
+              {/* Export Button */}
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="group relative px-4 py-2.5 bg-cricket-secondary hover:bg-cricket-secondary/80 text-cricket-text-primary font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 border border-border-primary hover:border-cricket-accent hover:scale-105"
+              >
+                <Download className="w-4 h-4 group-hover:text-cricket-accent transition-colors" />
+                <span>Export</span>
+              </button>
+
+              {/* Import Button */}
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="group relative px-4 py-2.5 bg-cricket-secondary hover:bg-cricket-secondary/80 text-cricket-text-primary font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 border border-border-primary hover:border-cricket-accent hover:scale-105"
+              >
+                <Upload className="w-4 h-4 group-hover:text-cricket-accent transition-colors" />
+                <span>Import</span>
+              </button>
+
+              {/* Actions Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+                  className="group relative px-3 py-2.5 bg-cricket-secondary hover:bg-cricket-secondary/80 text-cricket-text-primary rounded-lg transition-all duration-200 border border-border-primary hover:border-cricket-accent hover:scale-105"
+                  title="More Actions"
+                >
+                  <MoreVertical className="w-4 h-4 group-hover:text-cricket-accent transition-colors" />
+                </button>
+
+                {showActionsDropdown && (
+                  <div className="absolute right-0 mt-2 w-64 bg-bg-secondary border border-border-primary rounded-lg shadow-xl z-20 overflow-hidden">
+                    <button
+                      onClick={async () => {
+                        if (confirm('Reset all customizations? This will remove all player modifications and custom players.')) {
+                          await resetAllCustomizations();
+                          setShowActionsDropdown(false);
+                          // Trigger page reload to refresh from master DB
+                          window.location.reload();
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-colors border-l-4 border-transparent hover:border-red-400"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span className="font-semibold">Reset All Customizations</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
