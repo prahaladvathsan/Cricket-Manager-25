@@ -186,9 +186,6 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
     };
   });
 
-  // Calculate season parity for event scheduling
-  const isOddSeason = currentSeason % 2 === 1;
-
   // Get final match date (last playoff)
   const finalMatchDate = new Date(Math.max(...playoffFixtures.map(f => new Date(f.dateObj))));
 
