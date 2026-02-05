@@ -531,8 +531,23 @@
       "Top Order - Balanced",
       "Middle Order - Balanced"
     ],
-    "wicket-keeper": [
-      "Wicketkeeper"
-    ]
+    "wicket-keeper": {
+      "batting": [
+        "Opener - Slogger",
+        "Opener - Balanced",
+        "Opener - Anchor",
+        "Top Order - Slogger",
+        "Top Order - Balanced",
+        "Top Order - Anchor",
+        "Middle Order - Slogger",
+        "Middle Order - Balanced",
+        "Middle Order - Anchor",
+        "Finisher",
+        "Runner",
+        "Pinch-Hitter",
+        "Wall"
+      ],
+      "fielding": ["Wicketkeeper"]
+    }
   }
 }

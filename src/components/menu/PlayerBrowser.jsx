@@ -14,13 +14,22 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
-  Columns
+  Upload,
+  Columns,
+  UserPlus,
+  RotateCcw,
+  MoreVertical,
+  Edit3,
+  Sparkles
 } from 'lucide-react';
 import PlayerName from '../shared/PlayerName';
 import CricketBallSpinner from '../shared/CricketBallSpinner';
 import SortableTable from '../shared/SortableTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating } from '../../utils/ratingHelper';
 import usePlayerStore from '../../stores/playerStore';
+import DatabaseExportModal from '../modals/DatabaseExportModal';
+import DatabaseImportModal from '../modals/DatabaseImportModal';
+import CreatePlayerModal from '../modals/CreatePlayerModal';
 import '../../styles/wallpaper.css';
 
 // Column group definitions
@@ -112,6 +121,12 @@ const PlayerBrowser = () => {
   // UI state
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+
+  // Modal state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isCreatePlayerModalOpen, setIsCreatePlayerModalOpen] = useState(false);
 
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
@@ -127,7 +142,7 @@ const PlayerBrowser = () => {
   });
 
   // Get players from store (already loaded by App.jsx via web worker)
-  const { players: playersFromStore } = usePlayerStore();
+  const { players: playersFromStore, resetAllCustomizations, isPlayerCustomized } = usePlayerStore();
 
   // Debug logging
   console.log('[PlayerBrowser] playersFromStore:', {
@@ -358,7 +373,17 @@ const PlayerBrowser = () => {
         sortKey: 'name',
         sticky: true,
         width: '200px',
-        render: (player) => <PlayerName playerId={player.id} className="font-medium" />,
+        render: (player) => (
+          <div className="flex items-center gap-1.5">
+            <PlayerName playerId={player.id} className="font-medium" />
+            {player.isCustomPlayer && (
+              <Sparkles className="w-3 h-3 text-purple-400 flex-shrink-0" title="Custom Player" />
+            )}
+            {player.isModified && !player.isCustomPlayer && (
+              <Edit3 className="w-3 h-3 text-yellow-400 flex-shrink-0" title="Modified" />
+            )}
+          </div>
+        ),
       });
 
       cols.push({
@@ -921,14 +946,63 @@ const PlayerBrowser = () => {
           <h1 className="text-3xl font-bold text-cricket-text-primary">
             Player Database
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Create Player Button */}
             <button
-              onClick={() => alert('Database download feature coming soon!')}
+              onClick={() => setIsCreatePlayerModalOpen(true)}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <UserPlus className="w-4 h-4" />
+              Create Player
+            </button>
+
+            {/* Export Button */}
+            <button
+              onClick={() => setIsExportModalOpen(true)}
               className="btn-secondary flex items-center gap-2 text-sm"
             >
               <Download className="w-4 h-4" />
-              Update Database
+              Export
             </button>
+
+            {/* Import Button */}
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn-secondary flex items-center gap-2 text-sm"
+            >
+              <Upload className="w-4 h-4" />
+              Import
+            </button>
+
+            {/* Actions Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+                className="btn-secondary p-2"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showActionsDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-bg-secondary border border-border-primary rounded shadow-lg z-20">
+                  <button
+                    onClick={async () => {
+                      if (confirm('Reset all customizations? This will remove all player modifications and custom players.')) {
+                        await resetAllCustomizations();
+                        setShowActionsDropdown(false);
+                        // Trigger page reload to refresh from master DB
+                        window.location.reload();
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-bg-tertiary flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset All Customizations
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="text-sm text-cricket-text-secondary">
               {filteredPlayers.length} / {players.length} players
             </div>
@@ -946,6 +1020,34 @@ const PlayerBrowser = () => {
           enableScrollSync={true}
         />
       </div>
+
+      {/* Modals */}
+      <DatabaseExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
+
+      <DatabaseImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportComplete={() => {
+          // Reload page to apply imported changes
+          window.location.reload();
+        }}
+      />
+
+      <CreatePlayerModal
+        isOpen={isCreatePlayerModalOpen}
+        onClose={() => setIsCreatePlayerModalOpen(false)}
+      />
+
+      {/* Click outside handler for actions dropdown */}
+      {showActionsDropdown && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setShowActionsDropdown(false)}
+        />
+      )}
     </div>
   );
 };

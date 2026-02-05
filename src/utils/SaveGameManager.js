@@ -11,6 +11,7 @@
 
 import { compressData, decompressData, getCompressionStats } from './compression';
 import { get, set, del, keys } from 'idb-keyval';
+import customDatabaseManager from './CustomDatabaseManager';
 
 const SAVE_PREFIX = 'cm25_save_';
 const SAVE_INDEX_KEY = 'cm25_save_index';
@@ -119,7 +120,7 @@ class SaveGameManager {
       const storageKey = SAVE_PREFIX + saveId;
 
       // Build save data
-      const saveData = this._buildSaveData(stores, { label, type, saveId });
+      const saveData = await this._buildSaveData(stores, { label, type, saveId });
 
       // Store the save
       await set(storageKey, JSON.stringify(saveData));
@@ -221,7 +222,7 @@ class SaveGameManager {
    * Load a save by ID
    * @param {string} saveId - Save ID to load
    * @param {Object} stores - All Zustand stores
-   * @returns {Promise<{success: boolean, error?: string}>}
+   * @returns {Promise<{success: boolean, error?: string, warnings?: string[]}>}
    */
   async loadSave(saveId, stores) {
     try {
@@ -237,11 +238,29 @@ class SaveGameManager {
       // Migrate if needed
       saveData = this._migrateSaveData(saveData);
 
+      // Check custom database compatibility
+      const warnings = [];
+      if (saveData.metadata?.customDatabaseHash) {
+        try {
+          const currentHash = await customDatabaseManager.calculatePatchHash();
+          if (currentHash !== saveData.metadata.customDatabaseHash) {
+            warnings.push('Custom player database has changed since this save was created. Some player data may differ.');
+          }
+        } catch (error) {
+          console.warn('Could not check custom database compatibility:', error);
+        }
+      }
+
       // Restore states
       this._restoreStoreStates(saveData, stores);
 
       console.log(`Game loaded: ${saveData.label}`);
-      return { success: true };
+
+      if (warnings.length > 0) {
+        console.info('Save load warnings:', warnings);
+      }
+
+      return { success: true, warnings };
     } catch (error) {
       console.error('Error loading save:', error);
       return { success: false, error: error.message };
@@ -835,7 +854,7 @@ class SaveGameManager {
   // Private Methods
   // ============================================
 
-  _buildSaveData(stores, options = {}) {
+  async _buildSaveData(stores, options = {}) {
     const { label, type = 'manual', saveId } = options;
 
     const gameState = stores.gameStore.getState();
@@ -853,6 +872,14 @@ class SaveGameManager {
 
     // Get user team stats from standings
     const userStanding = leagueState.standings?.find(s => s.clubId === teamState.userTeamId);
+
+    // Get custom database hash for compatibility tracking
+    let customDatabaseHash = null;
+    try {
+      customDatabaseHash = await customDatabaseManager.calculatePatchHash();
+    } catch (error) {
+      console.warn('Could not calculate custom database hash:', error);
+    }
 
     const metadata = {
       // Team info
@@ -878,6 +905,9 @@ class SaveGameManager {
       budget: financeState.teamFinances instanceof Map
         ? financeState.teamFinances.get(teamState.userTeamId)?.currentBudget || 0
         : 0,
+
+      // Custom database compatibility
+      customDatabaseHash: customDatabaseHash,
 
       // Real-world timestamp (for "9 hours ago" display)
       savedAt: new Date().toISOString()

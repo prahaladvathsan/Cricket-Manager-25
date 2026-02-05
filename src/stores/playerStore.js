@@ -964,6 +964,259 @@ const usePlayerStore = create(
     }
 
     return player.primaryPlaystyle;
+  },
+
+  // ============================================
+  // Custom Database Actions
+  // ============================================
+
+  /**
+   * Update player with customization and save patch
+   * @param {string} playerId - Player ID
+   * @param {Object} changes - Partial player object with changes
+   * @returns {Promise<void>}
+   */
+  updatePlayerCustomization: async (playerId, changes) => {
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+
+    // Apply patch to custom database
+    await customDatabaseManager.applyPlayerPatch(playerId, changes);
+
+    // Update player in store immediately
+    const state = get();
+    const player = state.players[playerId];
+
+    if (player) {
+      let updatedPlayer = { ...player };
+
+      // Deep merge changes
+      for (const key of Object.keys(changes)) {
+        if (changes[key] && typeof changes[key] === 'object' && !Array.isArray(changes[key])) {
+          updatedPlayer[key] = { ...player[key], ...changes[key] };
+        } else {
+          updatedPlayer[key] = changes[key];
+        }
+      }
+
+      // If attributes changed, recalculate playstyles
+      if (changes.attributes) {
+        // Update overall ratings
+        updatedPlayer.attributes = {
+          ...updatedPlayer.attributes,
+          overall: {
+            batting_overall: Math.round(
+              Object.values(updatedPlayer.attributes.batting || {}).reduce((sum, v) => sum + v, 0) /
+              Object.keys(updatedPlayer.attributes.batting || {}).length
+            ) || 10,
+            bowling_overall: Math.round(
+              Object.values(updatedPlayer.attributes.bowling || {}).reduce((sum, v) => sum + v, 0) /
+              Object.keys(updatedPlayer.attributes.bowling || {}).length
+            ) || 10
+          }
+        };
+
+        // Recalculate playstyles
+        const ratings = playstyleCalculator.calculateAllPlaystyleRatings(updatedPlayer);
+        const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
+          updatedPlayer,
+          updatedPlayer.role,
+          3
+        );
+
+        updatedPlayer.playstyleRatings = ratings;
+        updatedPlayer.topPlaystyles = {
+          batting: primaryPlaystyles.batting,
+          bowling: primaryPlaystyles.bowling,
+          fielding: primaryPlaystyles.fielding || []
+        };
+        updatedPlayer.primaryPlaystyle = {
+          batting: primaryPlaystyles.batting[0]?.name || null,
+          bowling: primaryPlaystyles.bowling[0]?.name || null,
+          fielding: primaryPlaystyles.fielding?.[0]?.name || null
+        };
+      }
+
+      // Mark as modified
+      updatedPlayer.isModified = true;
+
+      set({
+        players: {
+          ...state.players,
+          [playerId]: updatedPlayer
+        }
+      });
+
+      console.log(`✏️ Player customization saved: ${playerId}`);
+    }
+  },
+
+  /**
+   * Reset a player to their default (master database) values
+   * @param {string} playerId - Player ID
+   * @returns {Promise<boolean>} True if reset, false if player is custom
+   */
+  resetPlayerToDefault: async (playerId) => {
+    if (playerId.startsWith('custom_')) {
+      console.warn('Cannot reset custom player. Use deleteCustomPlayer instead.');
+      return false;
+    }
+
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+
+    // Reset in custom database
+    await customDatabaseManager.resetPlayer(playerId);
+
+    // Reload the player from master database
+    // This requires a full reload - for now, just remove the isModified flag
+    // A full implementation would fetch the original from master DB
+    const state = get();
+    const player = state.players[playerId];
+
+    if (player && player.isModified) {
+      const updatedPlayer = { ...player };
+      delete updatedPlayer.isModified;
+
+      set({
+        players: {
+          ...state.players,
+          [playerId]: updatedPlayer
+        }
+      });
+
+      console.log(`🔄 Player reset to default: ${playerId}`);
+      return true;
+    }
+
+    return false;
+  },
+
+  /**
+   * Add a new custom player to the database
+   * @param {Object} playerData - Player data (partial, defaults will be applied)
+   * @returns {Promise<Object>} Created player object
+   */
+  addCustomPlayer: async (playerData) => {
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+
+    // Create player in custom database
+    const newPlayer = await customDatabaseManager.createCustomPlayer(playerData);
+
+    // Add to store
+    const state = get();
+    set({
+      players: {
+        ...state.players,
+        [newPlayer.id]: newPlayer
+      },
+      availablePlayers: [...state.availablePlayers, newPlayer.id]
+    });
+
+    console.log(`✨ Custom player added: ${newPlayer.name} (${newPlayer.id})`);
+    return newPlayer;
+  },
+
+  /**
+   * Delete a custom player from the database
+   * @param {string} playerId - Custom player ID to delete
+   * @returns {Promise<boolean>} True if deleted
+   */
+  deleteCustomPlayer: async (playerId) => {
+    if (!playerId.startsWith('custom_')) {
+      console.warn('Can only delete custom players');
+      return false;
+    }
+
+    const state = get();
+    const player = state.players[playerId];
+
+    if (player?.currentTeam) {
+      throw new Error('Cannot delete player assigned to a team. Unassign first.');
+    }
+
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+
+    // Delete from custom database
+    const deleted = await customDatabaseManager.deleteCustomPlayer(playerId);
+
+    if (deleted) {
+      // Remove from store
+      const newPlayers = { ...state.players };
+      delete newPlayers[playerId];
+
+      set({
+        players: newPlayers,
+        availablePlayers: state.availablePlayers.filter(id => id !== playerId)
+      });
+
+      console.log(`🗑️ Custom player deleted: ${playerId}`);
+      return true;
+    }
+
+    return false;
+  },
+
+  /**
+   * Get customization status summary
+   * @returns {Promise<Object>} Status object with counts and IDs
+   */
+  getCustomizationStatus: async () => {
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+    return customDatabaseManager.getCustomizationStatus();
+  },
+
+  /**
+   * Check if a specific player has customizations
+   * @param {string} playerId - Player ID
+   * @returns {Object} { isModified, isCustom }
+   */
+  isPlayerCustomized: (playerId) => {
+    const state = get();
+    const player = state.players[playerId];
+
+    return {
+      isModified: !!player?.isModified,
+      isCustom: playerId.startsWith('custom_') || !!player?.isCustomPlayer
+    };
+  },
+
+  /**
+   * Reset all customizations (patches and custom players)
+   * Note: This requires a reload of the player database
+   * @returns {Promise<void>}
+   */
+  resetAllCustomizations: async () => {
+    const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
+
+    // Reset in custom database
+    await customDatabaseManager.resetAllCustomizations();
+
+    // Remove all custom players and modifications from store
+    const state = get();
+    const newPlayers = {};
+    const newAvailable = [];
+
+    for (const [playerId, player] of Object.entries(state.players)) {
+      // Skip custom players
+      if (playerId.startsWith('custom_') || player.isCustomPlayer) {
+        continue;
+      }
+
+      // Remove modification flag
+      const cleanPlayer = { ...player };
+      delete cleanPlayer.isModified;
+      newPlayers[playerId] = cleanPlayer;
+
+      if (!player.currentTeam) {
+        newAvailable.push(playerId);
+      }
+    }
+
+    set({
+      players: newPlayers,
+      availablePlayers: newAvailable
+    });
+
+    console.log('🧹 All customizations reset');
   }
     }),
     {
