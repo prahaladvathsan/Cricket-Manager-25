@@ -473,12 +473,20 @@ class SimulationEngine {
       await this.initializeLeague();
       summary.eventsProcessed++;
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
+      // CRITICAL: Check if playoffs are actually complete before processing season end
+      const leagueStage = this.leagueStore.getState().stage;
+      const champion = this.leagueStore.getState().champion;
+
+      if (leagueStage === 'playoffs' && !champion) {
+        console.warn('⚠️ Season end event triggered but playoffs not complete - skipping to allow playoffs to finish');
+        return; // Don't process season end yet
+      }
+
       // SEASON END EVENT - Distribute prizes and send inbox message
       console.log('🏆 Season End Event - Processing prize distribution...');
 
       try {
         const standings = this.leagueStore.getState().standings || [];
-        const champion = this.leagueStore.getState().champion;
 
         // 1. Distribute prize money to all teams
         const prizeDistributor = new PrizeDistributor(this.financeStore);
@@ -885,20 +893,13 @@ class SimulationEngine {
 
   /**
    * Update playoff fixtures after a playoff match completes
+   * Uses unified leagueStore method for consistency with Normal UI mode
    * @param {Object} result - Match result
    */
   async updatePlayoffFixturesAfterMatch(result) {
-    const leagueState = this.leagueStore.getState();
-    const fixtures = leagueState.fixtures || [];
-    const clubs = leagueState.clubs || {};
-
-    const playoffGenerator = new PlayoffGenerator();
-    const updatedFixtures = playoffGenerator.updatePlayoffFixtures(fixtures, result, clubs);
-
-    // Update fixtures in league store
-    this.leagueStore.setState({ fixtures: updatedFixtures });
-
-    console.log(`✅ Playoff fixtures updated after ${result.matchId}`);
+    // Use unified method from leagueStore (same logic as Normal UI mode)
+    this.leagueStore.getState().updatePlayoffFixturesAfterResult(result);
+    console.log(`✅ Playoff fixtures updated after ${result.matchId} (SimulationEngine)`);
   }
 
   /**

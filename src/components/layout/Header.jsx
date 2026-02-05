@@ -336,6 +336,12 @@ const Header = () => {
       // Use incremental standings update (O(1)) instead of full recalculation (O(n))
       updateStandingsForMatch(result);
 
+      // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
+      // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
+      if (result.type === 'playoff' || result.matchId?.startsWith('playoff_')) {
+        useLeagueStore.getState().updatePlayoffFixturesAfterResult(result);
+      }
+
       // Update objectives tracking after user match
       updateObjectivesAfterMatch(result, fixture, userTeam.id, useGameStore, useLeagueStore, useTeamStore);
 
@@ -535,6 +541,13 @@ const Header = () => {
           recordResult(result, fullScorecard);
           // Use incremental standings update (O(1)) instead of full recalculation (O(n))
           updateStandingsForMatch(result);
+
+          // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
+          // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
+          if (result.type === 'playoff' || result.matchId?.startsWith('playoff_')) {
+            useLeagueStore.getState().updatePlayoffFixturesAfterResult(result);
+          }
+
           advanceToNextMatch();
 
           // Show result modal using hook
@@ -592,6 +605,16 @@ const Header = () => {
         navigate('/game/transfers');
       }
     } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
+      // CRITICAL: Check if playoffs are actually complete before processing season end
+      const leagueStage = useLeagueStore.getState().stage;
+      const currentChampion = useLeagueStore.getState().champion;
+
+      if (leagueStage === 'playoffs' && !currentChampion) {
+        console.warn('⚠️ Season end event triggered but playoffs not complete - allowing playoffs to continue');
+        advanceDay(); // Skip this event, continue to next playoff match
+        return;
+      }
+
       // SEASON END EVENT - Distribute prizes, show summary, send inbox message
       console.log('🏆 Season End Event Triggered!');
 

@@ -56,9 +56,18 @@ const useLeagueStore = create(
   },
 
   // Playoffs
-  playoffFixtures: [],
   playoffResults: [],
   champion: null,
+
+  // Computed Properties (Getters)
+  /**
+   * Get playoff fixtures (computed from fixtures array)
+   * This is a computed property to ensure single source of truth
+   * @returns {Array} Playoff fixtures
+   */
+  get playoffFixtures() {
+    return get().fixtures.filter(f => f.type === 'playoff');
+  },
 
   // Actions
   /**
@@ -163,8 +172,7 @@ const useLeagueStore = create(
 
     newStats.completedMatches = newResults.length;
 
-    // Update playoff fixtures and results if in playoff stage
-    let updatedPlayoffFixtures = state.playoffFixtures;
+    // Update playoff results if in playoff stage
     let updatedPlayoffResults = state.playoffResults;
 
     // Check if this is a playoff match (either by result.type or by matchId prefix)
@@ -176,21 +184,6 @@ const useLeagueStore = create(
 
       // Add to playoff results array
       updatedPlayoffResults = [...state.playoffResults, result];
-
-      // Update playoff fixtures with winner/loser info
-      const playoffGenerator = new PlayoffGenerator();
-      updatedPlayoffFixtures = playoffGenerator.updatePlayoffFixtures(
-        state.playoffFixtures,
-        result,
-        state.clubs // Pass clubs for team name lookup
-      );
-      console.log(`✅ Updated playoff fixtures after ${result.matchId}`);
-
-      // Log the updated Q2 and Final fixtures for debugging
-      const q2 = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_q2');
-      const final = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_final');
-      console.log('Q2:', q2?.homeTeamName, 'vs', q2?.awayTeamName, '- Status:', q2?.status);
-      console.log('Final:', final?.homeTeamName, 'vs', final?.awayTeamName, '- Status:', final?.status);
 
       // CRITICAL: If this is the Final match, set champion and trigger season-end flow
       if (result.matchId === 'playoff_final') {
@@ -245,8 +238,73 @@ const useLeagueStore = create(
     return {
       results: newResults,
       stats: newStats,
-      playoffFixtures: updatedPlayoffFixtures,
       playoffResults: updatedPlayoffResults
+    };
+  }),
+
+  /**
+   * CRITICAL: Unified method to update playoff fixtures after a result
+   * Called by both Normal UI mode and Sim-to-Date mode for consistency
+   * Updates both fixtures array and calendar events
+   * @param {Object} result - Playoff match result
+   */
+  updatePlayoffFixturesAfterResult: (result) => set((state) => {
+    if (!result || !result.matchId?.startsWith('playoff_')) {
+      console.warn('updatePlayoffFixturesAfterResult called with non-playoff match');
+      return state;
+    }
+
+    console.log(`🔄 Unified playoff update for ${result.matchId}`);
+
+    const playoffGenerator = new PlayoffGenerator();
+    const playoffFixtures = state.fixtures.filter(f => f.type === 'playoff');
+
+    // Update playoff fixtures with winner/loser info
+    const updatedPlayoffFixtures = playoffGenerator.updatePlayoffFixtures(
+      playoffFixtures,
+      result,
+      state.clubs
+    );
+
+    // Merge updated playoff fixtures back into main fixtures array
+    const updatedFixtures = state.fixtures.map(fixture => {
+      if (fixture.type === 'playoff') {
+        const updated = updatedPlayoffFixtures.find(pf => pf.matchId === fixture.matchId);
+        return updated || fixture;
+      }
+      return fixture;
+    });
+
+    // Update calendar events with new team info
+    const gameStore = useGameStore.getState();
+    const updatedEvents = gameStore.calendarEvents.map(event => {
+      if (event.type === 'match' && event.data && event.data.type === 'playoff') {
+        const updatedFixture = updatedPlayoffFixtures.find(f => f.matchId === event.data.matchId);
+        if (updatedFixture) {
+          return {
+            ...event,
+            data: {
+              ...event.data,
+              ...updatedFixture
+            }
+          };
+        }
+      }
+      return event;
+    });
+
+    // Update calendar events in gameStore
+    gameStore.clearEvents();
+    gameStore.scheduleEvents(updatedEvents);
+
+    // Log updated fixtures for debugging
+    const q2 = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_q2');
+    const final = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_final');
+    console.log('   Q2:', q2?.homeTeamName, 'vs', q2?.awayTeamName, '- Status:', q2?.status);
+    console.log('   Final:', final?.homeTeamName, 'vs', final?.awayTeamName, '- Status:', final?.status);
+
+    return {
+      fixtures: updatedFixtures
     };
   }),
 
@@ -580,14 +638,6 @@ const useLeagueStore = create(
   })),
 
   /**
-   * Set playoff fixtures
-   * @param {Array} fixtures - Playoff fixtures
-   */
-  setPlayoffFixtures: (fixtures) => set(() => ({
-    playoffFixtures: fixtures
-  })),
-
-  /**
    * Add playoff result
    * @param {Object} result - Playoff match result
    */
@@ -671,13 +721,9 @@ const useLeagueStore = create(
    */
   getFixtureById: (fixtureId) => {
     const state = get();
-    // Search in league fixtures by matchId field
-    const leagueFixture = state.fixtures.find(f => f.matchId === fixtureId || f.id === fixtureId);
-    if (leagueFixture) return leagueFixture;
-
-    // Search in playoff fixtures if not found
-    const playoffFixture = state.playoffFixtures.find(f => f.matchId === fixtureId || f.id === fixtureId);
-    return playoffFixture || null;
+    // Search in all fixtures (including playoffs)
+    const fixture = state.fixtures.find(f => f.matchId === fixtureId || f.id === fixtureId);
+    return fixture || null;
   },
 
   /**
@@ -687,15 +733,20 @@ const useLeagueStore = create(
   getNextFixture: () => {
     const state = get();
 
-    // If in playoffs stage, return playoff fixtures
+    // If in playoffs stage, find next unplayed playoff fixture
     if (state.stage === 'playoffs') {
-      if (state.currentFixtureIndex < state.playoffFixtures.length) {
-        return state.playoffFixtures[state.currentFixtureIndex];
-      }
-      return null; // Playoffs complete
+      const playoffFixtures = state.fixtures.filter(f => f.type === 'playoff');
+      const playedMatchIds = new Set(state.results.map(r => r.matchId));
+
+      // Return first playoff fixture that hasn't been played yet
+      const nextPlayoffFixture = playoffFixtures.find(f =>
+        !playedMatchIds.has(f.matchId) && f.status === 'scheduled'
+      );
+
+      return nextPlayoffFixture || null;
     }
 
-    // Otherwise return league fixtures
+    // Otherwise return league fixtures based on currentFixtureIndex
     if (state.currentFixtureIndex >= state.fixtures.length) {
       return null; // League complete
     }
@@ -890,10 +941,10 @@ const useLeagueStore = create(
     console.log(`   Eliminator: ${top4Teams[2].clubName} vs ${top4Teams[3].clubName}`);
 
     // Update state with populated fixtures
+    // Note: playoffFixtures is now a computed getter from fixtures
     set({
       stage: 'playoffs',
-      fixtures: updatedFixtures,
-      playoffFixtures: updatedFixtures.filter(f => f.type === 'playoff')
+      fixtures: updatedFixtures
     });
 
     console.log('🏁 League stage complete - Playoffs ready!');
@@ -921,7 +972,6 @@ const useLeagueStore = create(
       highestScore: null,
       lowestScore: null
     },
-    playoffFixtures: [],
     playoffResults: [],
     champion: null
   })

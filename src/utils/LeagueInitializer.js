@@ -74,9 +74,23 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
     colors: team.colors || { primary: '#2D5F3F', secondary: '#D4AF37' }
   }));
 
-  // Generate league fixtures (starts 7 days from now)
-  const leagueStartDate = new Date(currentDate);
-  leagueStartDate.setDate(leagueStartDate.getDate() + 7);
+  // Generate league fixtures with FIXED season start dates
+  // Odd seasons start January 13, Even seasons start July 6
+  const currentYear = new Date(currentDate).getFullYear();
+  const isOddSeason = currentSeason % 2 === 1;
+
+  const leagueStartDate = new Date(
+    currentYear,
+    isOddSeason ? 0 : 6, // January = 0, July = 6
+    isOddSeason ? 13 : 6
+  );
+
+  // If calculated date is in the past, move to next year
+  if (leagueStartDate < new Date(currentDate)) {
+    leagueStartDate.setFullYear(leagueStartDate.getFullYear() + 1);
+  }
+
+  console.log(`📅 Season ${currentSeason} (${isOddSeason ? 'Odd' : 'Even'}) league start: ${leagueStartDate.toDateString()}`);
 
   const scheduleGenerator = new MatchWeekScheduleGenerator();
   const { fixtures } = scheduleGenerator.generateMatchWeekSchedule(clubs, leagueStartDate);
@@ -178,36 +192,44 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   // Get final match date (last playoff)
   const finalMatchDate = new Date(Math.max(...playoffFixtures.map(f => new Date(f.dateObj))));
 
-  // Off-season starts the day after final
-  const offseasonStartDate = new Date(finalMatchDate);
+  // DYNAMIC SEASON END CALCULATION (based on actual final match date, not hardcoded dates)
+  // Add 3-day buffer after final for celebration/processing
+  const seasonEndDate = new Date(finalMatchDate);
+  seasonEndDate.setDate(seasonEndDate.getDate() + 3);
+  const seasonEndDay = Math.ceil((seasonEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Off-season starts the day after season end
+  const offseasonStartDate = new Date(seasonEndDate);
   offseasonStartDate.setDate(offseasonStartDate.getDate() + 1);
   const offseasonStartDay = Math.ceil((offseasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Transfer window: June 1-30 for odd seasons, Dec 1-31 for even seasons
-  const transferWindowStartDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, 1);
-  const transferWindowEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31);
+  // Transfer window: 30 days starting from offseason start
+  const transferWindowStartDate = new Date(offseasonStartDate);
+  const transferWindowStartDay = offseasonStartDay;
 
-  const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+  const transferWindowEndDate = new Date(transferWindowStartDate);
+  transferWindowEndDate.setDate(transferWindowEndDate.getDate() + 30);
   const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Season end date
-  const seasonEndDate = new Date(leagueStartDate.getFullYear(), isOddSeason ? 5 : 11, isOddSeason ? 30 : 31);
-  const seasonEndDay = Math.ceil((seasonEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-  // Next season start
+  // Next season start (day after transfer window closes)
   const nextSeasonStartDate = new Date(transferWindowEndDate);
   nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
   const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
+  console.log(`📅 Dynamic season schedule:`);
+  console.log(`   Final match: ${finalMatchDate.toDateString()}`);
+  console.log(`   Season end: ${seasonEndDate.toDateString()} (Day ${seasonEndDay})`);
+  console.log(`   Offseason start: ${offseasonStartDate.toDateString()} (Day ${offseasonStartDay})`);
+  console.log(`   Transfer window: ${transferWindowStartDate.toDateString()} - ${transferWindowEndDate.toDateString()}`);
+  console.log(`   Next season start: ${nextSeasonStartDate.toDateString()} (Day ${nextSeasonStartDay})`);
+
   const additionalEvents = [
+    { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } },
     { day: offseasonStartDay, type: 'offseason_start' },
     { day: transferWindowStartDay, type: 'transfer_window_open' },
     { day: transferWindowEndDay, type: 'transfer_window_close' },
-    { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } }
+    { day: nextSeasonStartDay, type: 'new_season_start', data: { season: currentSeason + 1 } }
   ];
-
-  // Schedule next season start event
-  additionalEvents.push({ day: nextSeasonStartDay, type: 'new_season_start', data: { season: currentSeason + 1 } });
 
   // Schedule all events
   gameStore.getState().scheduleEvents([...matchEvents, ...additionalEvents]);
