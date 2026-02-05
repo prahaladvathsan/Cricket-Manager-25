@@ -898,6 +898,35 @@ const usePlayerStore = create(
   }),
 
   /**
+   * Initialize condition attributes for all players (for new game)
+   * Sets fitness to max, fatigue to 0, and clears any injuries
+   */
+  initializeAllPlayerConditions: () => set((state) => {
+    const newPlayers = { ...state.players };
+
+    Object.keys(newPlayers).forEach(id => {
+      const player = newPlayers[id];
+      const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
+
+      newPlayers[id] = {
+        ...player,
+        condition: {
+          fitness: Math.min(maxFitness * 5, 100), // Full fitness (maxFitness × 5, capped at 100)
+          fatigue: 0,
+          injury: null,
+          injuryDuration: null
+        }
+      };
+    });
+
+    console.log(`✅ Initialized condition attributes for ${Object.keys(newPlayers).length} players`);
+
+    return {
+      players: newPlayers
+    };
+  }),
+
+  /**
    * Calculate and update playstyles for all players
    */
   updateAllPlayerPlaystyles: () => {

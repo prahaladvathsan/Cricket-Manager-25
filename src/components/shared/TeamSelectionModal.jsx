@@ -41,7 +41,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const auctionStore = useAuctionStore();
   const matchStore = useMatchStore();
   const financeStore = useFinanceStore();
-  const { resetAllCareerStats, resetPlayerTeams } = usePlayerStore();
+  const { resetAllCareerStats, resetPlayerTeams, initializeAllPlayerConditions } = usePlayerStore();
 
   // Preload all team images before showing the UI
   const preloadImages = useCallback(async (teamsList) => {
@@ -116,6 +116,9 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
 
     // Reset player team assignments (clears stale team data from previous games)
     resetPlayerTeams();
+
+    // Initialize player conditions (fitness, fatigue, injuries) for new game
+    initializeAllPlayerConditions();
 
     // Reset match store (clear any ongoing match data)
     if (matchStore.resetMatch) {
