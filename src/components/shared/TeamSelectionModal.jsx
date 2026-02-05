@@ -14,6 +14,8 @@ import useFinanceStore from '../../stores/financeStore';
 import useNavigationStore from '../../stores/navigationStore';
 import useAuctionStore from '../../stores/auctionStore';
 import useInboxStore from '../../stores/inboxStore';
+import useTransferStore from '../../stores/transferStore';
+import useUIStore from '../../stores/uiStore';
 import MessageGenerator from '../../utils/MessageGenerator';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
@@ -41,7 +43,9 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const auctionStore = useAuctionStore();
   const matchStore = useMatchStore();
   const financeStore = useFinanceStore();
-  const { resetAllCareerStats, resetPlayerTeams } = usePlayerStore();
+  const transferStore = useTransferStore();
+  const uiStore = useUIStore();
+  const { resetAllCareerStats, resetPlayerTeams, initializeAllPlayerConditions } = usePlayerStore();
 
   // Preload all team images before showing the UI
   const preloadImages = useCallback(async (teamsList) => {
@@ -117,6 +121,9 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     // Reset player team assignments (clears stale team data from previous games)
     resetPlayerTeams();
 
+    // Initialize player conditions (fitness, fatigue, injuries) for new game
+    initializeAllPlayerConditions();
+
     // Reset match store (clear any ongoing match data)
     if (matchStore.resetMatch) {
       matchStore.resetMatch();
@@ -125,6 +132,16 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     // Reset finance store (clear any old financial data)
     if (financeStore.resetFinances) {
       financeStore.resetFinances();
+    }
+
+    // Reset transfer store (clear any transfer market data)
+    if (transferStore.reset) {
+      transferStore.reset();
+    }
+
+    // Reset UI state (clear any invalid tactics flags)
+    if (uiStore.setHasInvalidTactics) {
+      uiStore.setHasInvalidTactics(false);
     }
 
     // Re-initialize teams with fresh data from JSON (resets squadLists)

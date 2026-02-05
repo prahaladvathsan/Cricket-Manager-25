@@ -122,24 +122,23 @@ const PreMatchFlow = () => {
       errors.push('Must select exactly 11 players');
     }
 
-    // Validate minimum bowlers
-    const bowlers = tactics.squadSelection?.filter(playerId => {
+    // Count bowling options (primary + part-timers)
+    const primaryBowlers = tactics.squadSelection?.filter(playerId => {
       const player = players[playerId];
       return player && (player.role === 'bowler' || player.role === 'all-rounder');
     }) || [];
 
-    if (bowlers.length < 5) {
-      errors.push('Must have at least 5 bowling options');
+    const partTimers = tactics.partTimers || [];
+    const totalBowlingOptions = primaryBowlers.length + partTimers.length;
+
+    // Only error if total bowling options < 5
+    if (totalBowlingOptions < 5) {
+      errors.push(`Must have at least 5 bowling options (currently ${totalBowlingOptions})`);
     }
 
-    // Validate wicket-keeper
-    const hasWicketKeeper = tactics.squadSelection?.some(playerId => {
-      const player = players[playerId];
-      return player && player.role === 'wicket-keeper';
-    });
-
-    if (!hasWicketKeeper) {
-      errors.push('Must have at least 1 wicket-keeper');
+    // Validate wicket-keeper (allow emergency keepers)
+    if (!tactics.wicketKeeper) {
+      errors.push('Must select a wicket-keeper');
     }
 
     // Validate batting order
