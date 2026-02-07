@@ -131,21 +131,28 @@ function App() {
                 initializeTeams(teamsModule.default);
                 console.log('✅ Teams loaded');
 
+                // Load custom database patches before loading players
+                const { default: customDatabaseManager } = await import('./utils/CustomDatabaseManager.js');
+                await customDatabaseManager.initialize();
+                const customPatches = await customDatabaseManager.loadPatches();
+
                 // Load master player database using web worker (off main thread)
                 const playerWorker = new Worker(
                     new URL('./workers/playerDatabaseWorker.js', import.meta.url),
                     { type: 'module' }
                 );
 
-                // Request player data
-                playerWorker.postMessage({ type: 'LOAD_PLAYERS' });
+                // Request player data WITH custom patches
+                playerWorker.postMessage({
+                    type: 'LOAD_PLAYERS',
+                    patches: customPatches.patches,
+                    newPlayers: customPatches.newPlayers,
+                    deletedPlayers: customPatches.deletedPlayers
+                });
 
                 // Handle response
                 playerWorker.addEventListener('message', async (e) => {
                     if (e.data.type === 'PLAYERS_LOADED') {
-                        initializePlayers(e.data.players);
-                        console.log('✅ Players loaded:', e.data.players.length);
-
                         // Initialize auth BEFORE waiting for hydration
                         // This ensures OAuth redirects are processed immediately
                         const initAuth = useAuthStore.getState().initAuth;
@@ -153,8 +160,14 @@ function App() {
                             initAuth();
                         }
 
-                        // Wait for all Zustand stores to rehydrate from IndexedDB
+                        // Wait for all Zustand stores to rehydrate from IndexedDB FIRST
+                        // This ensures initializePlayers runs AFTER hydration,
+                        // so fresh worker data (with custom patches) always wins
+                        // while game state (currentTeam, soldPrice) is preserved
                         await waitForHydration();
+
+                        initializePlayers(e.data.players);
+                        console.log('✅ Players loaded:', e.data.players.length);
 
                         setDataLoaded(true);
                         playerWorker.terminate(); // Clean up worker

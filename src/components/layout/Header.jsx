@@ -32,6 +32,7 @@ import ContributeDropdown from './ContributeDropdown';
 import JoinCommunityDropdown from './JoinCommunityDropdown';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useTransferStore from '../../stores/transferStore';
+import { getTransferManager } from '../../core/finance/transferManagerSingleton';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -668,6 +669,42 @@ const Header = () => {
         advanceDay();
       }
     } else {
+      // Process off-season transfers during weeks 22-26
+      if (currentPhase === 'offseason' && currentWeek >= 22 && currentWeek <= 26) {
+        try {
+          const transferManager = getTransferManager();
+
+          // Open transfer window at week 22 (if not already open)
+          if (currentWeek === 22 && !transferManager.transferMarket.windowOpen) {
+            console.log('🔓 Opening off-season transfer window...');
+            transferManager.setCurrentWeek(currentWeek);
+            transferManager.openWindow('offSeason', 14);
+          }
+
+          // Process weekly transfer cycle if window is open
+          if (transferManager.transferMarket.windowOpen) {
+            transferManager.setCurrentWeek(currentWeek);
+            const teams = Object.values(useLeagueStore.getState().clubs || {}).map(club => {
+              const squadIds = useTeamStore.getState().squadLists[club.id] || [];
+              const players = usePlayerStore.getState().players;
+              return {
+                ...club,
+                squad: squadIds.map(id => players[id]).filter(Boolean)
+              };
+            });
+            await transferManager.processWeeklyTransferCycle(teams, currentWeek);
+          }
+
+          // Close transfer window at week 26
+          if (currentWeek === 26 && transferManager.transferMarket.windowOpen) {
+            console.log('🔒 Closing off-season transfer window...');
+            transferManager.closeWindow();
+          }
+        } catch (error) {
+          console.error('Error processing off-season transfers:', error);
+        }
+      }
+
       // Advance day (no event or rest day)
       const dayInfo = advanceDay();
 

@@ -8,11 +8,12 @@ import TransferMarket from './TransferMarket.js';
 import TransferAI from './TransferAI.js';
 
 export default class TransferManager {
-  constructor(financeStore, teamStore = null) {
+  constructor(financeStore, teamStore = null, playerStore = null) {
     this.financeStore = financeStore;
     this.teamStore = teamStore;
-    this.transferMarket = new TransferMarket(financeStore, teamStore);
-    this.transferAI = new TransferAI(this.transferMarket, financeStore, teamStore);
+    this.playerStore = playerStore;
+    this.transferMarket = new TransferMarket(financeStore, teamStore, playerStore);
+    this.transferAI = new TransferAI(this.transferMarket, financeStore, teamStore, playerStore);
 
     this.currentWeek = 0;
     this.transferWindowHistory = [];

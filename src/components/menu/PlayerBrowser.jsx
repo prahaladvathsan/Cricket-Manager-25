@@ -25,7 +25,7 @@ import {
 import PlayerName from '../shared/PlayerName';
 import CricketBallSpinner from '../shared/CricketBallSpinner';
 import SortableTable from '../shared/SortableTable';
-import { getPrimaryBattingRating, getPrimaryBowlingRating } from '../../utils/ratingHelper';
+import { getPrimaryBattingRating, getPrimaryBowlingRating, computePlayerRatings } from '../../utils/ratingHelper';
 import usePlayerStore from '../../stores/playerStore';
 import DatabaseExportModal from '../modals/DatabaseExportModal';
 import DatabaseImportModal from '../modals/DatabaseImportModal';
@@ -297,28 +297,30 @@ const PlayerBrowser = () => {
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
 
       case 'primaryBattingPlaystyle':
-        aVal = a.topPlaystyles?.batting?.[0]?.rating || 0;
-        bVal = b.topPlaystyles?.batting?.[0]?.rating || 0;
+        aVal = computePlayerRatings(a)?.topPlaystyles?.batting?.[0]?.rating || a.topPlaystyles?.batting?.[0]?.rating || 0;
+        bVal = computePlayerRatings(b)?.topPlaystyles?.batting?.[0]?.rating || b.topPlaystyles?.batting?.[0]?.rating || 0;
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
 
       case 'primaryBowlingPlaystyle':
-        aVal = a.topPlaystyles?.bowling?.[0]?.rating || 0;
-        bVal = b.topPlaystyles?.bowling?.[0]?.rating || 0;
+        aVal = computePlayerRatings(a)?.topPlaystyles?.bowling?.[0]?.rating || a.topPlaystyles?.bowling?.[0]?.rating || 0;
+        bVal = computePlayerRatings(b)?.topPlaystyles?.bowling?.[0]?.rating || b.topPlaystyles?.bowling?.[0]?.rating || 0;
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
 
       case 'primaryFieldingPlaystyle':
-        aVal = a.topPlaystyles?.fielding?.[0]?.rating || 0;
-        bVal = b.topPlaystyles?.fielding?.[0]?.rating || 0;
+        aVal = computePlayerRatings(a)?.topPlaystyles?.fielding?.[0]?.rating || a.topPlaystyles?.fielding?.[0]?.rating || 0;
+        bVal = computePlayerRatings(b)?.topPlaystyles?.fielding?.[0]?.rating || b.topPlaystyles?.fielding?.[0]?.rating || 0;
         return direction === 'asc' ? aVal - bVal : bVal - aVal;
 
       default:
         // Handle playstyle ratings
         if (column.startsWith('playstyle:')) {
           const playstyleName = column.replace('playstyle:', '');
-          aVal = a.playstyleRatings?.batting?.[playstyleName] ||
-                 a.playstyleRatings?.bowling?.[playstyleName] || 0;
-          bVal = b.playstyleRatings?.batting?.[playstyleName] ||
-                 b.playstyleRatings?.bowling?.[playstyleName] || 0;
+          const cA = computePlayerRatings(a);
+          const cB = computePlayerRatings(b);
+          aVal = cA?.playstyleRatings?.batting?.[playstyleName] || cA?.playstyleRatings?.bowling?.[playstyleName] ||
+                 a.playstyleRatings?.batting?.[playstyleName] || a.playstyleRatings?.bowling?.[playstyleName] || 0;
+          bVal = cB?.playstyleRatings?.batting?.[playstyleName] || cB?.playstyleRatings?.bowling?.[playstyleName] ||
+                 b.playstyleRatings?.batting?.[playstyleName] || b.playstyleRatings?.bowling?.[playstyleName] || 0;
           return direction === 'asc' ? aVal - bVal : bVal - aVal;
         }
 
@@ -452,14 +454,19 @@ const PlayerBrowser = () => {
         sortKey: 'primaryBattingPlaystyle',
         width: '180px',
         defaultDirection: 'desc',
-        render: (player) => player.primaryPlaystyle?.batting ? (
-          <div className="text-xs">
-            <div className="text-blue-400 font-medium">{player.primaryPlaystyle.batting}</div>
-            <div className={`font-mono ${getRatingColor(Math.round(player.topPlaystyles?.batting?.[0]?.rating || 0))}`}>
-              {Math.round(player.topPlaystyles?.batting?.[0]?.rating || 0)}
+        render: (player) => {
+          const c = computePlayerRatings(player);
+          const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
+          const ts = c?.topPlaystyles || player.topPlaystyles;
+          return ps?.batting ? (
+            <div className="text-xs">
+              <div className="text-blue-400 font-medium">{ps.batting}</div>
+              <div className={`font-mono ${getRatingColor(Math.round(ts?.batting?.[0]?.rating || 0))}`}>
+                {Math.round(ts?.batting?.[0]?.rating || 0)}
+              </div>
             </div>
-          </div>
-        ) : '-',
+          ) : '-';
+        },
       });
 
       cols.push({
@@ -468,14 +475,19 @@ const PlayerBrowser = () => {
         sortKey: 'primaryBowlingPlaystyle',
         width: '180px',
         defaultDirection: 'desc',
-        render: (player) => player.primaryPlaystyle?.bowling ? (
-          <div className="text-xs">
-            <div className="text-red-400 font-medium">{player.primaryPlaystyle.bowling}</div>
-            <div className={`font-mono ${getRatingColor(Math.round(player.topPlaystyles?.bowling?.[0]?.rating || 0))}`}>
-              {Math.round(player.topPlaystyles?.bowling?.[0]?.rating || 0)}
+        render: (player) => {
+          const c = computePlayerRatings(player);
+          const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
+          const ts = c?.topPlaystyles || player.topPlaystyles;
+          return ps?.bowling ? (
+            <div className="text-xs">
+              <div className="text-red-400 font-medium">{ps.bowling}</div>
+              <div className={`font-mono ${getRatingColor(Math.round(ts?.bowling?.[0]?.rating || 0))}`}>
+                {Math.round(ts?.bowling?.[0]?.rating || 0)}
+              </div>
             </div>
-          </div>
-        ) : '-',
+          ) : '-';
+        },
       });
 
       cols.push({
@@ -484,14 +496,19 @@ const PlayerBrowser = () => {
         sortKey: 'primaryFieldingPlaystyle',
         width: '180px',
         defaultDirection: 'desc',
-        render: (player) => player.primaryPlaystyle?.fielding ? (
-          <div className="text-xs">
-            <div className="text-yellow-400 font-medium">{player.primaryPlaystyle.fielding}</div>
-            <div className={`font-mono ${getRatingColor(Math.round(player.topPlaystyles?.fielding?.[0]?.rating || 0))}`}>
-              {Math.round(player.topPlaystyles?.fielding?.[0]?.rating || 0)}
+        render: (player) => {
+          const c = computePlayerRatings(player);
+          const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
+          const ts = c?.topPlaystyles || player.topPlaystyles;
+          return ps?.fielding ? (
+            <div className="text-xs">
+              <div className="text-yellow-400 font-medium">{ps.fielding}</div>
+              <div className={`font-mono ${getRatingColor(Math.round(ts?.fielding?.[0]?.rating || 0))}`}>
+                {Math.round(ts?.fielding?.[0]?.rating || 0)}
+              </div>
             </div>
-          </div>
-        ) : '-',
+          ) : '-';
+        },
       });
     }
 
@@ -506,7 +523,8 @@ const PlayerBrowser = () => {
           width: '70px',
           defaultDirection: 'desc',
           render: (player) => {
-            const rating = Math.round(player.playstyleRatings?.batting?.[playstyle] || 0);
+            const c = computePlayerRatings(player);
+            const rating = Math.round(c?.playstyleRatings?.batting?.[playstyle] || player.playstyleRatings?.batting?.[playstyle] || 0);
             return <span className={`font-mono text-xs ${getRatingColor(rating)}`}>{rating}</span>;
           },
         });
@@ -524,7 +542,8 @@ const PlayerBrowser = () => {
           width: '70px',
           defaultDirection: 'desc',
           render: (player) => {
-            const rating = Math.round(player.playstyleRatings?.bowling?.[playstyle] || 0);
+            const c = computePlayerRatings(player);
+            const rating = Math.round(c?.playstyleRatings?.bowling?.[playstyle] || player.playstyleRatings?.bowling?.[playstyle] || 0);
             return <span className={`font-mono text-xs ${getRatingColor(rating)}`}>{rating}</span>;
           },
         });
@@ -542,7 +561,8 @@ const PlayerBrowser = () => {
           width: '70px',
           defaultDirection: 'desc',
           render: (player) => {
-            const rating = Math.round(player.playstyleRatings?.fielding?.[playstyle] || 0);
+            const c = computePlayerRatings(player);
+            const rating = Math.round(c?.playstyleRatings?.fielding?.[playstyle] || player.playstyleRatings?.fielding?.[playstyle] || 0);
             return <span className={`font-mono text-xs ${getRatingColor(rating)}`}>{rating}</span>;
           },
         });

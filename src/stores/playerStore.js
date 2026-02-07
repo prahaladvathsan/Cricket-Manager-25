@@ -43,7 +43,12 @@ const usePlayerStore = create(
    * Initialize players from master database
    * @param {Player[]} playersData - Array of player objects (from master_player_database.json)
    */
-  initializePlayers: (playersData) => set(() => {
+  initializePlayers: (playersData) => set((state) => {
+    // Preserve game state from hydrated players (currentTeam, soldPrice, condition)
+    // Worker data has fresh attributes + custom patches; hydrated data has game state
+    const existingPlayers = state.players || {};
+    const hasExisting = Object.keys(existingPlayers).length > 0;
+
     const playersMap = {};
     const available = [];
     let bowlingTypeAssigned = 0;
@@ -119,13 +124,21 @@ const usePlayerStore = create(
         }
       }
 
+      // Preserve game state from hydrated data for existing players
+      if (hasExisting && existingPlayers[player.id]) {
+        const existing = existingPlayers[player.id];
+        if (existing.currentTeam) player.currentTeam = existing.currentTeam;
+        if (existing.soldPrice) player.soldPrice = existing.soldPrice;
+        if (existing.condition) player.condition = existing.condition;
+      }
+
       playersMap[player.id] = player;
       if (!player.currentTeam) {
         available.push(player.id);
       }
     });
 
-    console.log(`✅ Initialized ${playersData.length} players`);
+    console.log(`✅ Initialized ${playersData.length} players (preserved game state for ${hasExisting ? 'existing session' : 'new game'})`);
 
     return {
       players: playersMap,
@@ -1008,39 +1021,63 @@ const usePlayerStore = create(
   updatePlayerCustomization: async (playerId, changes) => {
     const { default: customDatabaseManager } = await import('../utils/CustomDatabaseManager.js');
 
-    // Apply patch to custom database
+    // Apply patch to custom database (CustomDatabaseManager does proper deep merge)
     await customDatabaseManager.applyPlayerPatch(playerId, changes);
 
-    // Update player in store immediately
+    // Update player in store immediately using recursive deep merge
     const state = get();
     const player = state.players[playerId];
 
     if (player) {
-      let updatedPlayer = { ...player };
-
-      // Deep merge changes
-      for (const key of Object.keys(changes)) {
-        if (changes[key] && typeof changes[key] === 'object' && !Array.isArray(changes[key])) {
-          updatedPlayer[key] = { ...player[key], ...changes[key] };
-        } else {
-          updatedPlayer[key] = changes[key];
+      // Recursive deep merge to preserve all existing nested attributes
+      const deepMerge = (target, source) => {
+        const output = { ...target };
+        for (const key of Object.keys(source)) {
+          if (
+            source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+            target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])
+          ) {
+            output[key] = deepMerge(target[key], source[key]);
+          } else {
+            output[key] = source[key];
+          }
         }
-      }
+        return output;
+      };
 
-      // If attributes changed, recalculate playstyles
+      let updatedPlayer = deepMerge(player, changes);
+
+      // If attributes changed, recalculate overall ratings and playstyles
       if (changes.attributes) {
-        // Update overall ratings
+        const battingAttrs = updatedPlayer.attributes.batting || {};
+        const bowlingAttrs = updatedPlayer.attributes.bowling || {};
+
+        // Weighted overall rating (matches CustomDatabaseManager.calculateOverallRatings)
+        const battingWeights = {
+          technique: 1.5, timing: 1.5, footwork: 1, placement: 1,
+          range360: 0.8, defensiveShots: 1, neutralShots: 1, attackingShots: 1.2,
+          vsPace: 1, vsSpin: 1, creativity: 0.5
+        };
+        const bowlingWeights = {
+          accuracy: 1.5, bowlingSpeed: 1.2, swing: 1, turn: 1,
+          flight: 0.8, variations: 1, intelligence: 1,
+          defensiveBowling: 0.8, neutralBowling: 0.8, attackingBowling: 1
+        };
+
+        let batSum = 0, batW = 0;
+        for (const [k, w] of Object.entries(battingWeights)) {
+          if (battingAttrs[k] !== undefined) { batSum += battingAttrs[k] * w; batW += w; }
+        }
+        let bowlSum = 0, bowlW = 0;
+        for (const [k, w] of Object.entries(bowlingWeights)) {
+          if (bowlingAttrs[k] !== undefined) { bowlSum += bowlingAttrs[k] * w; bowlW += w; }
+        }
+
         updatedPlayer.attributes = {
           ...updatedPlayer.attributes,
           overall: {
-            batting_overall: Math.round(
-              Object.values(updatedPlayer.attributes.batting || {}).reduce((sum, v) => sum + v, 0) /
-              Object.keys(updatedPlayer.attributes.batting || {}).length
-            ) || 10,
-            bowling_overall: Math.round(
-              Object.values(updatedPlayer.attributes.bowling || {}).reduce((sum, v) => sum + v, 0) /
-              Object.keys(updatedPlayer.attributes.bowling || {}).length
-            ) || 10
+            batting_overall: batW > 0 ? Math.round(batSum / batW) : 10,
+            bowling_overall: bowlW > 0 ? Math.round(bowlSum / bowlW) : 10
           }
         };
 

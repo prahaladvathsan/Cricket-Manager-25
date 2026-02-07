@@ -2,6 +2,8 @@
  * @file useTransferSystem.js
  * @description Hook to access and initialize the transfer system
  * Provides UserTransferHandler instance with proper backend integration
+ * Uses the shared TransferManager singleton so UI, Header, and SimulationEngine
+ * all operate on the same transfer state.
  */
 
 import { useMemo, useEffect } from 'react';
@@ -9,16 +11,15 @@ import useFinanceStore from '../stores/financeStore';
 import useTeamStore from '../stores/teamStore';
 import useTransferStore from '../stores/transferStore';
 import usePlayerStore from '../stores/playerStore';
-import TransferMarket from '../core/finance/TransferMarket';
+import { getTransferManager } from '../core/finance/transferManagerSingleton';
 import UserTransferHandler from '../core/transfers/UserTransferHandler';
 
-// Singleton instances shared across all components
-let globalTransferMarket = null;
+// Singleton handler shared across all components
 let globalTransferHandler = null;
 
 /**
  * Hook to provide transfer system access
- * @returns {Object} { transferHandler, transferMarket, isReady }
+ * @returns {Object} { transferHandler, transferMarket, transferManager, isReady }
  */
 export const useTransferSystem = () => {
   const financeStore = useFinanceStore;
@@ -26,16 +27,15 @@ export const useTransferSystem = () => {
   const transferStore = useTransferStore;
   const playerStore = usePlayerStore;
 
-  // Create singleton instances (only once for the entire app)
-  const { transferMarket, transferHandler } = useMemo(() => {
-    if (!globalTransferMarket) {
-      console.log('🔧 Creating singleton TransferMarket instance');
-      globalTransferMarket = new TransferMarket(financeStore, teamStore);
-    }
+  // Get the shared TransferManager singleton and its inner TransferMarket
+  const { transferMarket, transferHandler, transferManager } = useMemo(() => {
+    const manager = getTransferManager();
+    const market = manager.transferMarket;
+
     if (!globalTransferHandler) {
       console.log('🔧 Creating singleton UserTransferHandler instance');
       globalTransferHandler = new UserTransferHandler(
-        globalTransferMarket,
+        market,
         financeStore,
         teamStore,
         transferStore,
@@ -44,8 +44,9 @@ export const useTransferSystem = () => {
     }
 
     return {
-      transferMarket: globalTransferMarket,
-      transferHandler: globalTransferHandler
+      transferMarket: market,
+      transferHandler: globalTransferHandler,
+      transferManager: manager
     };
   }, [financeStore, teamStore, transferStore, playerStore]);
 
@@ -66,6 +67,7 @@ export const useTransferSystem = () => {
   return {
     transferHandler,
     transferMarket, // Expose for window management
+    transferManager, // Expose full manager for transfer cycle processing
     isReady
   };
 };

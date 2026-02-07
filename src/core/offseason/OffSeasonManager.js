@@ -13,11 +13,13 @@
 import PrizeDistributor from './PrizeDistributor.js';
 
 class OffSeasonManager {
-  constructor(gameStore, leagueStore, financeStore, transferManager = null) {
+  constructor(gameStore, leagueStore, financeStore, transferManager = null, teamStore = null, playerStore = null) {
     this.gameStore = gameStore;
     this.leagueStore = leagueStore;
     this.financeStore = financeStore;
     this.transferManager = transferManager;
+    this.teamStore = teamStore;
+    this.playerStore = playerStore;
     this.prizeDistributor = new PrizeDistributor(financeStore);
 
     this.offSeasonStartWeek = 21; // Week 21 = First off-season week
@@ -91,7 +93,7 @@ class OffSeasonManager {
     // Week 22: Open transfer window
     if (weekNumber === this.transferStartWeek && this.transferManager) {
       console.log('🔓 Opening transfer window...');
-      this.transferManager.openWindow('offseason');
+      this.transferManager.openWindow('offSeason', 14);
       result.events.push({
         type: 'transfer_window_open',
         description: 'Transfer window is now open (5 weeks)'
@@ -101,8 +103,12 @@ class OffSeasonManager {
     // Week 22-26: Process transfers
     if (weekNumber >= this.transferStartWeek && weekNumber <= this.transferEndWeek && this.transferManager) {
       console.log('💼 Processing transfer activity...');
+
+      // Build team objects with squad arrays for AI evaluation
+      const teams = this.buildTeamsWithSquads();
+
       const transferActivity = await this.transferManager.processWeeklyTransferCycle(
-        this.leagueStore.getState().clubs,
+        teams,
         weekNumber
       );
       result.transferActivity = transferActivity;
@@ -131,6 +137,28 @@ class OffSeasonManager {
     }
 
     return result;
+  }
+
+  /**
+   * Build team objects with populated squad arrays for transfer AI evaluation
+   * @returns {Array} Teams with squad player objects
+   */
+  buildTeamsWithSquads() {
+    const clubs = this.leagueStore.getState().clubs || {};
+    const squadLists = this.teamStore ? this.teamStore.getState().squadLists : {};
+    const players = this.playerStore ? this.playerStore.getState().players : {};
+
+    return Object.values(clubs).map(club => {
+      const squadIds = squadLists[club.id] || [];
+      const squad = squadIds
+        .map(id => players[id])
+        .filter(Boolean);
+
+      return {
+        ...club,
+        squad
+      };
+    });
   }
 
   /**

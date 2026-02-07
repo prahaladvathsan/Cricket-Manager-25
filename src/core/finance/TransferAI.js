@@ -9,14 +9,15 @@ import transferConfig from '../../data/config/transferConfig.json';
 import PerformanceValuation from './PerformanceValuation.js';
 
 export default class TransferAI {
-  constructor(transferMarket, financeStore, teamStore = null) {
+  constructor(transferMarket, financeStore, teamStore = null, playerStore = null) {
     this.config = transferConfig;
     this.transferMarket = transferMarket;
     this.financeStore = financeStore;
     this.teamStore = teamStore;
+    this.playerStore = playerStore;
     this.valuation = new PerformanceValuation();
 
-    // Track purchase prices for sell decisions
+    // Track purchase prices for sell decisions (fallback for in-session recordings)
     this.purchasePrices = new Map(); // playerId -> price
   }
 
@@ -31,11 +32,22 @@ export default class TransferAI {
 
   /**
    * Get player's purchase price
+   * Falls back to player.soldPrice from playerStore (persisted across sessions)
    * @param {string} playerId - Player ID
    * @returns {number} Purchase price or 0
    */
   getPurchasePrice(playerId) {
-    return this.purchasePrices.get(playerId) || 0;
+    // Check in-memory cache first
+    const cached = this.purchasePrices.get(playerId);
+    if (cached) return cached;
+
+    // Fall back to persisted soldPrice from playerStore
+    if (this.playerStore) {
+      const player = this.playerStore.getState().players[playerId];
+      if (player?.soldPrice) return player.soldPrice;
+    }
+
+    return 0;
   }
 
   /**

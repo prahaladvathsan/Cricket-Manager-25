@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, BarChart3, Activity, Edit3, Sparkles } from 'lucide-react';
 import usePlayerStore from '../../stores/playerStore';
+import { computePlayerRatings } from '../../utils/ratingHelper';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
 import PlayerEditorModal from '../modals/PlayerEditorModal';
@@ -20,6 +21,9 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
   if (!isOpen || !playerId) return null;
 
   const player = players[playerId];
+  const computed = player ? computePlayerRatings(player) : null;
+  const topPlaystyles = computed?.topPlaystyles || player?.topPlaystyles;
+  const primaryPlaystyle = computed?.primaryPlaystyle || player?.primaryPlaystyle;
   const seasonStats = careerStats[playerId]?.seasons[currentSeasonId] || null;
   const customizationStatus = isPlayerCustomized ? isPlayerCustomized(playerId) : { isModified: false, isCustom: false };
 
@@ -119,15 +123,15 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
             </div>
 
             {/* Top 3 Playstyles */}
-            {player.topPlaystyles && (
+            {topPlaystyles && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Batting Top 3 - show for all players */}
-                {player.topPlaystyles.batting && player.topPlaystyles.batting.length > 0 && (
+                {topPlaystyles.batting && topPlaystyles.batting.length > 0 && (
                   <div className="p-2 bg-bg-tertiary rounded">
                     <div className="text-xs font-semibold text-blue-400 mb-2">Top Batting Playstyles</div>
                     <div className="space-y-1">
-                      {player.topPlaystyles.batting.slice(0, 3).map((style, idx) => {
-                        const isPrimary = player.primaryPlaystyle?.batting === style.name;
+                      {topPlaystyles.batting.slice(0, 3).map((style, idx) => {
+                        const isPrimary = primaryPlaystyle?.batting === style.name;
                         return (
                           <div key={idx} className="flex items-center justify-between">
                             <span className={`text-xs truncate mr-1 ${
@@ -149,12 +153,12 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
 
                 {/* Fielding Top 3 - for wicket-keepers instead of bowling */}
                 {player.role === 'wicket-keeper' ? (
-                  player.topPlaystyles.fielding && player.topPlaystyles.fielding.length > 0 && (
+                  topPlaystyles.fielding && topPlaystyles.fielding.length > 0 && (
                     <div className="p-2 bg-bg-tertiary rounded">
                       <div className="text-xs font-semibold text-cyan-400 mb-2">Top Fielding Playstyles</div>
                       <div className="space-y-1">
-                        {player.topPlaystyles.fielding.slice(0, 3).map((style, idx) => {
-                          const isPrimary = player.primaryPlaystyle?.fielding === style.name;
+                        {topPlaystyles.fielding.slice(0, 3).map((style, idx) => {
+                          const isPrimary = primaryPlaystyle?.fielding === style.name;
                           return (
                             <div key={idx} className="flex items-center justify-between">
                               <span className={`text-xs truncate mr-1 ${
@@ -175,12 +179,12 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                   )
                 ) : (
                   /* Bowling Top 3 - for non-wicket-keepers */
-                  player.topPlaystyles.bowling && player.topPlaystyles.bowling.length > 0 && (
+                  topPlaystyles.bowling && topPlaystyles.bowling.length > 0 && (
                     <div className="p-2 bg-bg-tertiary rounded">
                       <div className="text-xs font-semibold text-red-400 mb-2">Top Bowling Playstyles</div>
                       <div className="space-y-1">
-                        {player.topPlaystyles.bowling.slice(0, 3).map((style, idx) => {
-                          const isPrimary = player.primaryPlaystyle?.bowling === style.name;
+                        {topPlaystyles.bowling.slice(0, 3).map((style, idx) => {
+                          const isPrimary = primaryPlaystyle?.bowling === style.name;
                           return (
                             <div key={idx} className="flex items-center justify-between">
                               <span className={`text-xs truncate mr-1 ${

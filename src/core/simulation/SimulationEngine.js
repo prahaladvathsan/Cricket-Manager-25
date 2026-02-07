@@ -14,6 +14,7 @@ import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueIn
 import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
+import { getTransferManager } from '../finance/transferManagerSingleton';
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -560,6 +561,43 @@ class SimulationEngine {
       console.log('🏏 Initializing league with existing squads...');
       await this.initializeLeague();
       summary.eventsProcessed++;
+    }
+
+    // Process off-season transfers during weeks 22-26
+    const currentPhase = this.gameStore.getState().currentPhase;
+    const currentWeek = this.gameStore.getState().currentWeek;
+
+    if (currentPhase === 'offseason' && currentWeek >= 22 && currentWeek <= 26) {
+      try {
+        const transferManager = getTransferManager();
+
+        // Open transfer window at week 22
+        if (currentWeek === 22 && !transferManager.transferMarket.windowOpen) {
+          transferManager.setCurrentWeek(currentWeek);
+          transferManager.openWindow('offSeason', 14);
+        }
+
+        // Process weekly transfer cycle
+        if (transferManager.transferMarket.windowOpen) {
+          transferManager.setCurrentWeek(currentWeek);
+          const teams = Object.values(this.teamStore.getState().teams || {}).map(team => {
+            const squadIds = this.teamStore.getState().squadLists[team.id] || [];
+            return {
+              ...team,
+              squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean)
+            };
+          });
+          const transferResult = await transferManager.processWeeklyTransferCycle(teams, currentWeek);
+          summary.transfersCompleted += (transferResult.transfers?.completed || 0);
+        }
+
+        // Close transfer window at week 26
+        if (currentWeek === 26 && transferManager.transferMarket.windowOpen) {
+          transferManager.closeWindow();
+        }
+      } catch (error) {
+        console.error('Error processing off-season transfers:', error);
+      }
     }
 
     // Advance to next day

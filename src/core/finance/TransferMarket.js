@@ -8,10 +8,11 @@ import transferConfig from '../../data/config/transferConfig.json';
 import { getPlayerRating } from '../../utils/ratingHelper.js';
 
 export default class TransferMarket {
-  constructor(financeStore = null, teamStore = null) {
+  constructor(financeStore = null, teamStore = null, playerStore = null) {
     this.config = transferConfig;
     this.financeStore = financeStore;
     this.teamStore = teamStore;
+    this.playerStore = playerStore;
 
     // Market state
     this.listings = new Map(); // listingId -> listing object
@@ -332,9 +333,16 @@ export default class TransferMarket {
       }
     }
 
-    // Reset player stats for old team (if teamStore available)
+    // Move player between teams
+    if (this.playerStore) {
+      this.playerStore.getState().assignPlayerToTeam(listing.playerId, buyerTeamId);
+      // Update sold price for future transfer valuation
+      this.playerStore.getState().setPlayerSoldPrice(listing.playerId, winningBid);
+    }
     if (this.teamStore) {
-      this.teamStore.getState().resetPlayerStats(listing.playerId, listing.teamId);
+      this.teamStore.getState().removePlayerFromSquad(listing.teamId, listing.playerId);
+      this.teamStore.getState().addPlayerToSquad(buyerTeamId, listing.playerId);
+      // Recalculate team aggregate stats (preserves player stats for historical viewing)
       this.teamStore.getState().recalculateTeamStats(listing.teamId);
       this.teamStore.getState().recalculateTeamStats(buyerTeamId);
     }
