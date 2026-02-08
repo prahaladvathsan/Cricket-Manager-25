@@ -1,7 +1,7 @@
 {
   "name": "cricket-manager",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Cricket management simulation game inspired by Football Manager, focusing on IPL format",
   "keywords": [
