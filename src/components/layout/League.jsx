@@ -206,9 +206,7 @@ const League = () => {
     const mvpLeaders = playersWithStats
       .map(p => ({
         ...p,
-        totalImpact: (p.seasonStats.battingImpact || 0) +
-          (p.seasonStats.bowlingImpact || 0) +
-          (p.seasonStats.fieldingImpact || 0)
+        totalImpact: p.seasonStats.totalImpact || 0
       }))
       .filter(p => p.totalImpact !== 0 || p.seasonStats.matches > 0)
       .sort((a, b) => b.totalImpact - a.totalImpact)
@@ -748,6 +746,8 @@ const League = () => {
           render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.centuries || 0}</span> },
         { key: 'hs', label: 'HS', sortKey: 'highestScore', sortable: false, align: 'center',
           render: (p) => <span className="font-mono text-xs text-text-primary">{p.seasonStats.highestScore || 0}{p.seasonStats.highestScoreNotOut ? '*' : ''}</span> },
+        { key: 'impact', label: 'Bat Imp', sortKey: 'battingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.battingImpact) },
       ],
       bowling: [
         { key: 'matches', label: 'M', sortKey: 'matches', sortable: false, align: 'center',
@@ -780,6 +780,8 @@ const League = () => {
           render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.fourWickets || 0}</span> },
         { key: 'fiveW', label: '5W', sortKey: 'fiveWickets', sortable: false, align: 'center',
           render: (p) => <span className="font-mono text-xs text-text-secondary">{p.seasonStats.fiveWickets || 0}</span> },
+        { key: 'impact', label: 'Bowl Imp', sortKey: 'bowlingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.bowlingImpact) },
       ],
       fielding: [
         { key: 'matches', label: 'M', sortKey: 'matches', sortable: false, align: 'center',
@@ -794,6 +796,8 @@ const League = () => {
           render: (p) => <span className="font-mono text-xs text-text-secondary">{p.runOutsPerMatch?.toFixed(2) || '0.00'}</span> },
         { key: 'total', label: 'Total', sortKey: 'total', sortable: false, align: 'center',
           render: (p) => <span className="font-bold font-mono text-cricket-accent">{p.total || 0}</span> },
+        { key: 'impact', label: 'Fld Imp', sortKey: 'fieldingImpact', sortable: false, align: 'center',
+          render: (p) => formatImpact(p.seasonStats?.fieldingImpact) },
       ],
     };
 

@@ -163,16 +163,28 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
       ),
     },
     {
-      key: 'impact',
-      label: 'Impact',
-      sortKey: 'totalImpact',
+      key: 'batImpact',
+      label: 'Bat Imp',
+      sortKey: 'battingImpact',
       align: 'center',
-      headerClassName: 'text-trophy-gold',
       render: (player) => (
         <span className={`font-mono font-semibold ${
-          (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+          (player.battingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
         }`}>
-          {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
+          {(player.battingImpact || 0) >= 0 ? '+' : ''}{(player.battingImpact || 0).toFixed(1)}
+        </span>
+      ),
+    },
+    {
+      key: 'fieldImpact',
+      label: 'Fld Imp',
+      sortKey: 'fieldingImpact',
+      align: 'center',
+      render: (player) => (
+        <span className={`font-mono font-semibold ${
+          (player.fieldingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+        }`}>
+          {(player.fieldingImpact || 0) >= 0 ? '+' : ''}{(player.fieldingImpact || 0).toFixed(1)}
         </span>
       ),
     },
@@ -278,16 +290,28 @@ const PlayerStatsTable = ({ players, type, roleFilter, minQualifying }) => {
       render: (player) => <span className="font-mono text-text-secondary">{player.fiveWickets || 0}</span>,
     },
     {
-      key: 'impact',
-      label: 'Impact',
-      sortKey: 'totalImpact',
+      key: 'bowlImpact',
+      label: 'Bowl Imp',
+      sortKey: 'bowlingImpact',
       align: 'center',
-      headerClassName: 'text-trophy-gold',
       render: (player) => (
         <span className={`font-mono font-semibold ${
-          (player.totalImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+          (player.bowlingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
         }`}>
-          {(player.totalImpact || 0) >= 0 ? '+' : ''}{(player.totalImpact || 0).toFixed(1)}
+          {(player.bowlingImpact || 0) >= 0 ? '+' : ''}{(player.bowlingImpact || 0).toFixed(1)}
+        </span>
+      ),
+    },
+    {
+      key: 'fieldImpact',
+      label: 'Fld Imp',
+      sortKey: 'fieldingImpact',
+      align: 'center',
+      render: (player) => (
+        <span className={`font-mono font-semibold ${
+          (player.fieldingImpact || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+        }`}>
+          {(player.fieldingImpact || 0) >= 0 ? '+' : ''}{(player.fieldingImpact || 0).toFixed(1)}
         </span>
       ),
     },

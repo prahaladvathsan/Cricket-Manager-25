@@ -171,40 +171,141 @@ const useGameStore = create(
                           }
                         }
 
-                        // 2. FITNESS RECOVERY
-                        // Condition: Player didn't participate in a match today (wasn't in playing XI)
-                        if (player.condition && !player.condition.injury) {
-                          const playerParticipatedInMatch = playingXIPlayerIds.has(playerId);
+                                                                                                            // 2. FITNESS RECOVERY & FATIGUE MANAGEMENT
 
-                          if (!playerParticipatedInMatch) {
-                            // Player didn't play - apply recovery
-                            const currentFitness = player.condition.fitness ?? 100;
-                            const endurance = player.attributes?.physical?.endurance ?? 10;
-                            const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
+                                                                                                            // Condition: Check participation
 
-                            // Recovery formula: fitness += endurance/2 (capped at maxFitness × 5)
-                            const recoveryAmount = endurance / 2;
-                            const maxFitnessCap = maxFitness * 5;
-                            const newFitness = Math.min(currentFitness + recoveryAmount, maxFitnessCap, 100);
+                                                                                                            const playerParticipatedInMatch = playingXIPlayerIds.has(playerId);
 
-                            if (newFitness > currentFitness) {
-                              updates.fitness = newFitness;
-                            }
+                                                                                                            
 
-                            // 3. FATIGUE RECOVERY (Strict conditions)
-                            // Condition 1: It has to be a matchday (for the league)
-                            // Condition 2: Player's team must be participating in the current match
-                            // Condition 3: Player is NOT in the playing XI (already inside !playerParticipatedInMatch)
-                            if (matchEvent && matchTeamIds.has(player.currentTeam)) {
-                              const currentFatigue = player.condition.fatigue ?? 0;
-                              if (currentFatigue > 0) {
-                                updates.fatigue = Math.max(0, currentFatigue - 1);
-                              }
-                            }
-                          }
-                        }
+                                                                                                            if (playerParticipatedInMatch) {
 
-                        // Apply all updates if any exist
+                                                                                                              // Player played: Reset consecutive rest days
+
+                                                                                                              updates.consecutiveRestDays = 0;
+
+                                                                                                            } else {
+
+                                                                                                              // Player rested: Increment consecutive rest days
+
+                                                                                                              const currentRestDays = player.condition.consecutiveRestDays || 0;
+
+                                                                                                              updates.consecutiveRestDays = currentRestDays + 1;
+
+                                                                                
+
+                                                                                                              // --- FITNESS RECOVERY ---
+
+                                                                                                              const currentFitness = player.condition.fitness ?? 100;
+
+                                                                                                              const endurance = player.attributes?.physical?.endurance ?? 10;
+
+                                                                                                              const maxFitness = player.attributes?.physical?.maxFitness ?? 10; // Default to 10 if missing
+
+                                                                                
+
+                                                                                                              // New Cap Formula: 50 + 2.5 * maxFitness
+
+                                                                                                              // e.g., 10 -> 75, 20 -> 100
+
+                                                                                                              const fitnessCap = Math.min(100, 50 + (maxFitness * 2.5));
+
+                                                                                
+
+                                                                                                              // Recovery formula: fitness += endurance/2
+
+                                                                                                              const recoveryAmount = endurance / 2;
+
+                                                                                                              const newFitness = Math.min(currentFitness + recoveryAmount, fitnessCap);
+
+                                                                                
+
+                                                                                                              if (newFitness > currentFitness) {
+
+                                                                                                                updates.fitness = newFitness;
+
+                                                                                                              }
+
+                                                                                
+
+                                                                                                                                            // --- FATIGUE RECOVERY ---
+
+                                                                                
+
+                                                                                                                                            // Happens on ANY rest day (global recovery)
+
+                                                                                
+
+                                                                                                                                            const currentFatigue = player.condition.fatigue ?? 0;
+
+                                                                                
+
+                                                                                                                                            
+
+                                                                                
+
+                                                                                                                                            if (currentFatigue > 0) {
+
+                                                                                
+
+                                                                                                                                              const restDays = updates.consecutiveRestDays;
+
+                                                                                
+
+                                                                                                                                              
+
+                                                                                
+
+                                                                                                                                              // Rule 1 & 2: Base rate is 0 for first 5 days, 0.2 thereafter
+
+                                                                                
+
+                                                                                                                                              const baseRecovery = restDays <= 5 ? 0 : 0.2;
+
+                                                                                
+
+                                                                                                                                              
+
+                                                                                
+
+                                                                                                                                              // Rule 3: Bonus reduction of 1 every 5 days
+
+                                                                                
+
+                                                                                                                                              const bonusRecovery = (restDays % 5 === 0) ? 1 : 0;
+
+                                                                                
+
+                                                                                                                                              
+
+                                                                                
+
+                                                                                                                                              const totalRecovery = baseRecovery + bonusRecovery;
+
+                                                                                
+
+                                                                                                                                              
+
+                                                                                
+
+                                                                                                                                              if (totalRecovery > 0) {
+
+                                                                                
+
+                                                                                                                                                updates.fatigue = Math.max(0, currentFatigue - totalRecovery);
+
+                                                                                
+
+                                                                                                                                              }
+
+                                                                                
+
+                                                                                                                                            }
+
+                                                                                
+
+                                                                                                                                          }                        // Apply all updates if any exist
                         if (Object.keys(updates).length > 0) {
                           playerStore.getState().updatePlayerCondition(playerId, updates);
                         }

@@ -78,6 +78,18 @@ class MatchEngine {
       this.teamStore.getState().ensureCompleteBowlingRotation(homeTeamId);
       this.teamStore.getState().ensureCompleteBowlingRotation(awayTeamId);
 
+      // Force refresh playstyles for all players in both squads to ensure fresh data
+      // This is critical if players were edited but not reloaded from DB
+      const homePlayers = matchConfig.homeTeam.playingXI || [];
+      const awayPlayers = matchConfig.awayTeam.playingXI || [];
+      const allPlayers = [...new Set([...homePlayers, ...awayPlayers])];
+
+      allPlayers.forEach(playerId => {
+        if (playerId) {
+          this.playerStore.getState().updatePlayerPlaystyles(playerId);
+        }
+      });
+
       // Apply playstyle overrides for both teams BEFORE match starts
       const homeTactics = this.teamStore.getState().getTacticsForMatch(homeTeamId);
       const awayTactics = this.teamStore.getState().getTacticsForMatch(awayTeamId);

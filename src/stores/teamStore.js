@@ -236,9 +236,17 @@ const useTeamStore = create(
         const newRunOuts = (currentStats.runOuts || 0) + (matchStats.runOuts || 0);
 
         // Accumulate impact stats
-        const newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
+        let newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
         const newBowlingImpact = (currentStats.bowlingImpact || 0) + (matchStats.bowlingImpact || 0);
         const newFieldingImpact = (currentStats.fieldingImpact || 0) + (matchStats.fieldingImpact || 0);
+        
+        // For bowlers, floor batting impact at 0
+        const player = usePlayerStore.getState().players[playerId];
+        const isBowler = player?.role === 'bowler';
+        if (isBowler && newBattingImpact < 0) {
+          newBattingImpact = 0;
+        }
+          
         const newTotalImpact = newBattingImpact + newBowlingImpact + newFieldingImpact;
 
         // Calculate derived stats
@@ -316,9 +324,17 @@ const useTeamStore = create(
           const newRunsConceded = currentStats.runsConceded + (matchStats.runsConceded || 0);
           const newCatches = (currentStats.catches || 0) + (matchStats.catches || 0);
           const newRunOuts = (currentStats.runOuts || 0) + (matchStats.runOuts || 0);
-          const newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
+          let newBattingImpact = (currentStats.battingImpact || 0) + (matchStats.battingImpact || 0);
           const newBowlingImpact = (currentStats.bowlingImpact || 0) + (matchStats.bowlingImpact || 0);
           const newFieldingImpact = (currentStats.fieldingImpact || 0) + (matchStats.fieldingImpact || 0);
+          
+          // For bowlers, floor batting impact at 0
+          const player = usePlayerStore.getState().players[playerId];
+          const isBowler = player?.role === 'bowler';
+          if (isBowler && newBattingImpact < 0) {
+            newBattingImpact = 0;
+          }
+
           const newTotalImpact = newBattingImpact + newBowlingImpact + newFieldingImpact;
 
           // Calculate derived stats

@@ -221,7 +221,7 @@ class LeaderboardsCalculator {
     return allStats
       .map(p => ({
         ...p,
-        totalImpact: (p.battingImpact || 0) + (p.bowlingImpact || 0) + (p.fieldingImpact || 0)
+        totalImpact: p.totalImpact || 0
       }))
       .filter(p => p.totalImpact !== 0 || p.matches > 0)
       .sort((a, b) => b.totalImpact - a.totalImpact)

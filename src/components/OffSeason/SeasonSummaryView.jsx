@@ -40,13 +40,11 @@ const SeasonSummaryView = ({ onContinue }) => {
         const seasonStats = stats.seasons[seasonId];
         const player = players[playerId];
         if (player) {
-          const totalImpact = (seasonStats.battingImpact || 0) +
-                              (seasonStats.bowlingImpact || 0) +
-                              (seasonStats.fieldingImpact || 0);
+          const totalImpact = seasonStats.totalImpact || 0;
           playersWithStats.push({
             playerId,
             name: player.name,
-            teamId: player.teamId,
+            teamId: player.currentTeam,
             runs: seasonStats.runs || 0,
             wickets: seasonStats.wickets || 0,
             matches: seasonStats.matches || 0,

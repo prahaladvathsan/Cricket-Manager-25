@@ -938,7 +938,7 @@ const Home = () => {
                             </td>
                             <td className="py-1 text-right font-mono whitespace-nowrap">
                               <span className={`text-xxs ${isInjured ? 'text-status-loss' : 'text-text-tertiary'}`}>
-                                {condition.injuryDuration ? `${condition.injuryDuration}m` : '-'}
+                                {condition.injuryDuration ? `${condition.injuryDuration}d` : '-'}
                               </span>
                             </td>
                           </tr>

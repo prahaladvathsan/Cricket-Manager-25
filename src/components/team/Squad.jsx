@@ -165,9 +165,7 @@ const Squad = () => {
         if (!seasonStats) return null;
 
         // Calculate total impact
-        const totalImpact = (seasonStats.battingImpact || 0) +
-          (seasonStats.bowlingImpact || 0) +
-          (seasonStats.fieldingImpact || 0);
+        const totalImpact = seasonStats.totalImpact || 0;
 
         return {
           playerId: player.id,
@@ -215,9 +213,7 @@ const Squad = () => {
         const fourWickets = seasonStats.fourWickets || 0;
 
         // Calculate total impact
-        const totalImpact = (seasonStats.battingImpact || 0) +
-          (seasonStats.bowlingImpact || 0) +
-          (seasonStats.fieldingImpact || 0);
+        const totalImpact = seasonStats.totalImpact || 0;
 
         return {
           playerId: player.id,

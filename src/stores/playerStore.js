@@ -61,68 +61,22 @@ const usePlayerStore = create(
         bowlingTypeAssigned++;
       }
 
-      // Ensure all players have primary playstyles in all disciplines
-      // Primary playstyle = highest rated playstyle in each discipline
-      if (!player.primaryPlaystyle) {
-        player.primaryPlaystyle = { batting: null, bowling: null, fielding: null };
-      }
+      // Compute playstyles for ALL players
+      // This ensures we rely on the browser's calculator rather than stored/json data
+      const ratings = playstyleCalculator.calculateAllPlaystyleRatings(player);
+      const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(player, player.role, 3);
 
-      // Fill missing batting primary playstyle
-      if (!player.primaryPlaystyle.batting && player.playstyleRatings?.batting) {
-        const battingRatings = player.playstyleRatings.batting;
-        let highestRating = 0;
-        let highestPlaystyle = null;
-
-        for (const [playstyleName, rating] of Object.entries(battingRatings)) {
-          if (rating > highestRating) {
-            highestRating = rating;
-            highestPlaystyle = playstyleName;
-          }
-        }
-
-        if (highestPlaystyle) {
-          player.primaryPlaystyle.batting = highestPlaystyle;
-          primaryPlaystylesFilled++;
-        }
-      }
-
-      // Fill missing bowling primary playstyle
-      if (!player.primaryPlaystyle.bowling && player.playstyleRatings?.bowling) {
-        const bowlingRatings = player.playstyleRatings.bowling;
-        let highestRating = 0;
-        let highestPlaystyle = null;
-
-        for (const [playstyleName, rating] of Object.entries(bowlingRatings)) {
-          if (rating > highestRating) {
-            highestRating = rating;
-            highestPlaystyle = playstyleName;
-          }
-        }
-
-        if (highestPlaystyle) {
-          player.primaryPlaystyle.bowling = highestPlaystyle;
-          primaryPlaystylesFilled++;
-        }
-      }
-
-      // Fill missing fielding primary playstyle (mainly for wicket-keepers)
-      if (!player.primaryPlaystyle.fielding && player.playstyleRatings?.fielding) {
-        const fieldingRatings = player.playstyleRatings.fielding;
-        let highestRating = 0;
-        let highestPlaystyle = null;
-
-        for (const [playstyleName, rating] of Object.entries(fieldingRatings)) {
-          if (rating > highestRating) {
-            highestRating = rating;
-            highestPlaystyle = playstyleName;
-          }
-        }
-
-        if (highestPlaystyle) {
-          player.primaryPlaystyle.fielding = highestPlaystyle;
-          primaryPlaystylesFilled++;
-        }
-      }
+      player.playstyleRatings = ratings;
+      player.topPlaystyles = {
+        batting: primaryPlaystyles.batting,
+        bowling: primaryPlaystyles.bowling,
+        fielding: primaryPlaystyles.fielding || []
+      };
+      player.primaryPlaystyle = {
+        batting: primaryPlaystyles.batting[0]?.name || null,
+        bowling: primaryPlaystyles.bowling[0]?.name || null,
+        fielding: primaryPlaystyles.fielding?.[0]?.name || null
+      };
 
       // Preserve game state from hydrated data for existing players
       if (hasExisting && existingPlayers[player.id]) {
@@ -445,8 +399,16 @@ const usePlayerStore = create(
     }
 
     // Update impact stats (DLS-based metrics)
+    // For bowlers, floor batting impact at 0 to avoid excessive penalty
+    const player = get().players[playerId];
+    const isBowler = player?.role === 'bowler';
+
     if (matchStats.battingImpact !== undefined) {
-      seasonStats.battingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+      let newBattingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+      if (isBowler && newBattingImpact < 0) {
+        newBattingImpact = 0;
+      }
+      seasonStats.battingImpact = newBattingImpact;
     }
     if (matchStats.bowlingImpact !== undefined) {
       seasonStats.bowlingImpact = (seasonStats.bowlingImpact || 0) + matchStats.bowlingImpact;
@@ -454,6 +416,7 @@ const usePlayerStore = create(
     if (matchStats.fieldingImpact !== undefined) {
       seasonStats.fieldingImpact = (seasonStats.fieldingImpact || 0) + matchStats.fieldingImpact;
     }
+    
     // Calculate total impact
     seasonStats.totalImpact = (seasonStats.battingImpact || 0) +
                               (seasonStats.bowlingImpact || 0) +
@@ -666,8 +629,16 @@ const usePlayerStore = create(
       }
 
       // Update impact stats
+      // For bowlers, floor batting impact at 0 to avoid excessive penalty
+      const player = get().players[playerId];
+      const isBowler = player?.role === 'bowler';
+
       if (matchStats.battingImpact !== undefined) {
-        seasonStats.battingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+        let newBattingImpact = (seasonStats.battingImpact || 0) + matchStats.battingImpact;
+        if (isBowler && newBattingImpact < 0) {
+          newBattingImpact = 0;
+        }
+        seasonStats.battingImpact = newBattingImpact;
       }
       if (matchStats.bowlingImpact !== undefined) {
         seasonStats.bowlingImpact = (seasonStats.bowlingImpact || 0) + matchStats.bowlingImpact;
@@ -675,6 +646,8 @@ const usePlayerStore = create(
       if (matchStats.fieldingImpact !== undefined) {
         seasonStats.fieldingImpact = (seasonStats.fieldingImpact || 0) + matchStats.fieldingImpact;
       }
+      
+      // Calculate total impact
       seasonStats.totalImpact = (seasonStats.battingImpact || 0) +
                                 (seasonStats.bowlingImpact || 0) +
                                 (seasonStats.fieldingImpact || 0);
@@ -927,7 +900,8 @@ const usePlayerStore = create(
           fitness: Math.min(maxFitness * 5, 100), // Full fitness (maxFitness × 5, capped at 100)
           fatigue: 0,
           injury: null,
-          injuryDuration: null
+          injuryDuration: null,
+          consecutiveRestDays: 0
         }
       };
     });
@@ -1081,25 +1055,10 @@ const usePlayerStore = create(
           }
         };
 
-        // Recalculate playstyles
-        const ratings = playstyleCalculator.calculateAllPlaystyleRatings(updatedPlayer);
-        const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
-          updatedPlayer,
-          updatedPlayer.role,
-          3
-        );
-
-        updatedPlayer.playstyleRatings = ratings;
-        updatedPlayer.topPlaystyles = {
-          batting: primaryPlaystyles.batting,
-          bowling: primaryPlaystyles.bowling,
-          fielding: primaryPlaystyles.fielding || []
-        };
-        updatedPlayer.primaryPlaystyle = {
-          batting: primaryPlaystyles.batting[0]?.name || null,
-          bowling: primaryPlaystyles.bowling[0]?.name || null,
-          fielding: primaryPlaystyles.fielding?.[0]?.name || null
-        };
+        // Note: We intentionally DO NOT recalculate playstyles here.
+        // Playstyle data is now computed on-the-fly by UI components via computePlayerRatings()
+        // or re-computed via initializePlayers() / updateAllPlayerPlaystyles() if needed for the store.
+        // The WeakMap cache in ratingHelper.js will automatically handle the new player object.
       }
 
       // Mark as modified
@@ -1166,6 +1125,24 @@ const usePlayerStore = create(
 
     // Create player in custom database
     const newPlayer = await customDatabaseManager.createCustomPlayer(playerData);
+
+    // Ensure playstyles are computed (in case CustomDatabaseManager didn't)
+    if (!newPlayer.playstyleRatings) {
+       const ratings = playstyleCalculator.calculateAllPlaystyleRatings(newPlayer);
+       const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(newPlayer, newPlayer.role, 3);
+
+       newPlayer.playstyleRatings = ratings;
+       newPlayer.topPlaystyles = {
+         batting: primaryPlaystyles.batting,
+         bowling: primaryPlaystyles.bowling,
+         fielding: primaryPlaystyles.fielding || []
+       };
+       newPlayer.primaryPlaystyle = {
+         batting: primaryPlaystyles.batting[0]?.name || null,
+         bowling: primaryPlaystyles.bowling[0]?.name || null,
+         fielding: primaryPlaystyles.fielding?.[0]?.name || null
+       };
+    }
 
     // Add to store
     const state = get();
