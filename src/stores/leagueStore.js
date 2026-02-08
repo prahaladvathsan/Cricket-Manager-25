@@ -59,16 +59,6 @@ const useLeagueStore = create(
   playoffResults: [],
   champion: null,
 
-  // Computed Properties (Getters)
-  /**
-   * Get playoff fixtures (computed from fixtures array)
-   * This is a computed property to ensure single source of truth
-   * @returns {Array} Playoff fixtures
-   */
-  get playoffFixtures() {
-    return get().fixtures.filter(f => f.type === 'playoff');
-  },
-
   // Actions
   /**
    * Initialize a new league season

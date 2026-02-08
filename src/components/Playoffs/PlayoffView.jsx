@@ -16,7 +16,7 @@ import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 
 const PlayoffView = () => {
   const {
-    playoffFixtures,
+    fixtures,
     playoffResults,
     champion,
     clubs
@@ -27,6 +27,8 @@ const PlayoffView = () => {
 
   // Extract playoff matches
   const playoffMatches = useMemo(() => {
+    const playoffFixtures = fixtures.filter(f => f.type === 'playoff');
+    
     const q1 = playoffFixtures.find(f => f.matchId === 'playoff_q1');
     const eliminator = playoffFixtures.find(f => f.matchId === 'playoff_eliminator');
     const q2 = playoffFixtures.find(f => f.matchId === 'playoff_q2');
@@ -43,7 +45,7 @@ const PlayoffView = () => {
       q2: { fixture: q2, result: q2Result },
       final: { fixture: final, result: finalResult }
     };
-  }, [playoffFixtures, playoffResults]);
+  }, [fixtures, playoffResults]);
 
   /**
    * Render a match card

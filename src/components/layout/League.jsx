@@ -317,7 +317,7 @@ const League = () => {
               <div className="flex items-center gap-2 text-cricket-accent">
                 <Trophy className="w-5 h-5" />
                 <span className="font-semibold text-base">
-                  Season {currentSeason} Champion: <TeamName teamId={champion.id} inline={true} showTeamAsset="badge" className="font-bold" />
+                  Season {currentSeason} Champion: <TeamName teamId={champion.championId} inline={true} showTeamAsset="badge" className="font-bold" />
                 </span>
               </div>
             </div>

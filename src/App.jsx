@@ -37,6 +37,7 @@ import './styles/wallpaper.css';
 import { getGameLogo } from './utils/assetHelpers';
 import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBStorage';
 import { waitForHydration } from './utils/storeHydration';
+import memoryDebugger from './utils/MemoryDebugger';
 
 /**
  * Validate that game state is properly populated
@@ -108,6 +109,9 @@ function App() {
     const { initializePlayers } = usePlayerStore();
 
     useEffect(() => {
+        // Initialize memory debugger
+        memoryDebugger.initialize();
+
         // Load game data on mount (needed for all routes)
         const loadGameData = async () => {
             console.log('🎮 Loading game data...');
