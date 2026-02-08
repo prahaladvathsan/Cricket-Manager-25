@@ -132,7 +132,7 @@ class MatchEngine {
       // Set up opening players
       await this.setupOpeningPlayers();
 
-      console.log(`Match started: ${matchConfig.homeTeam.name} vs ${matchConfig.awayTeam.name}`);
+      //console.log(`Match started: ${matchConfig.homeTeam.name} vs ${matchConfig.awayTeam.name}`);
 
       // Start first innings
       return this.simulateInnings();
@@ -692,6 +692,13 @@ class MatchEngine {
       isNoBall: ballResult.isNoBall || false
     });
     ballResult.impact = impactResult;
+
+    // In silent mode, strip heavyweight fields that are only needed for live UI display
+    if (this.silent) {
+      delete ballResult.fieldingAction;
+      delete ballResult.metadata;
+      delete ballResult.modifierBreakdown;
+    }
 
     // STEP 1: Store and display modifier breakdown immediately (before ball outcome)
     if (ballResult.modifierBreakdown) {
@@ -1450,9 +1457,9 @@ class MatchEngine {
     const { teams, currentBall, innings } = matchState;
 
     return innings.isComplete ||
-           teams.batting.wickets >= this.config.maxWickets ||
-           currentBall.over >= this.config.maxOvers ||
-           (innings.number === 2 && teams.batting.totalScore >= innings.target);
+      teams.batting.wickets >= this.config.maxWickets ||
+      currentBall.over >= this.config.maxOvers ||
+      (innings.number === 2 && teams.batting.totalScore >= innings.target);
   }
 
   /**
@@ -1560,7 +1567,7 @@ class MatchEngine {
     // Update match store with full result object (including winner)
     this.matchStore.getState().completeMatch(result);
 
-    console.log('Match completed:', result.description);
+    //console.log('Match completed:', result.description);
 
     return result;
   }

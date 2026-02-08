@@ -33,6 +33,7 @@ const DEBUG_BALL_SIM = false;
 class SimpleBallSimulator {
   constructor(options = {}) {
     const { silent = false } = options;
+    this.silent = silent;
 
     // Initialize all calculators internally
     this.probabilityEngine = new ProbabilityEngine();
@@ -140,11 +141,17 @@ class SimpleBallSimulator {
       // Generate commentary
       const commentary = this.generateCommentary(finalOutcome, ballContext);
 
-      return {
+      // In silent mode (quick-sim), omit heavyweight metadata and modifier breakdown
+      // These are only needed for the live match viewer UI
+      const result = {
         ...finalOutcome,
         commentary,
-        modifierBreakdown, // UI-friendly breakdown of all modifiers
-        metadata: {
+        conditionUpdates: finalOutcome.conditionUpdates || {}
+      };
+
+      if (!this.silent) {
+        result.modifierBreakdown = modifierBreakdown;
+        result.metadata = {
           decisionResult,
           contactResult,
           trajectoryResult,
@@ -155,8 +162,10 @@ class SimpleBallSimulator {
             bowling: bowlingMentality
           },
           timestamp: Date.now()
-        }
-      };
+        };
+      }
+
+      return result;
 
     } catch (error) {
       console.error('Ball simulation failed:', error);

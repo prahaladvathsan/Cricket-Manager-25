@@ -59,7 +59,7 @@ function autoFixInjuredPlayersInLineup(teamId, teamStore, playerStore) {
   });
 
   if (injuredInSquad.length === 0) {
-    console.log(`✓ No injured players in ${teamStore.getState().teams[teamId]?.name || teamId} lineup`);
+    //console.log(`✓ No injured players in ${teamStore.getState().teams[teamId]?.name || teamId} lineup`);
     return { squad: tactics.squadSelection, hadInjuries: false };
   }
 
@@ -283,10 +283,10 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
 
     const topBowler = allBowlers.length > 0
       ? allBowlers.reduce((max, b) => {
-          if (b.wickets > max.wickets) return b;
-          if (b.wickets === max.wickets && parseFloat(b.economy) < parseFloat(max.economy)) return b;
-          return max;
-        }, allBowlers[0])
+        if (b.wickets > max.wickets) return b;
+        if (b.wickets === max.wickets && parseFloat(b.economy) < parseFloat(max.economy)) return b;
+        return max;
+      }, allBowlers[0])
       : null;
 
     // Determine player of match (prefer batting if both are equal)

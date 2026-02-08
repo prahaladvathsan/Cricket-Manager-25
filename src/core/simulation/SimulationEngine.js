@@ -15,6 +15,7 @@ import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
 import { getTransferManager } from '../finance/transferManagerSingleton';
+import { indexedDBStorage } from '../../utils/indexedDBStorage';
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -112,6 +113,9 @@ class SimulationEngine {
 
       console.log(`🎮 Starting simulation: ${dayDiff} days to simulate`);
 
+      // Batch IndexedDB writes to prevent memory leak from queued IDB transactions
+      indexedDBStorage.startBatching();
+
       // Store callbacks for use in sub-operations
       this.onProgressCallback = onProgress;
       this.onEventCallback = onEvent;
@@ -151,6 +155,9 @@ class SimulationEngine {
         await this.yieldToBrowser();
       }
 
+      // Flush all buffered IndexedDB writes
+      await indexedDBStorage.stopBatching();
+
       // Simulation complete
       this.isRunning = false;
       const wasStopped = this.shouldStop;
@@ -175,6 +182,8 @@ class SimulationEngine {
 
     } catch (error) {
       console.error('❌ Simulation error:', error);
+      // Ensure batching is stopped even on error to flush pending writes
+      await indexedDBStorage.stopBatching();
       this.isRunning = false;
 
       if (onError) {
