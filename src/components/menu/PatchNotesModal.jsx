@@ -7,14 +7,28 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.1.0';
+const CURRENT_VERSION = '1.1.1';
 const RELEASE_DATE = 'February 2026';
-const RELEASE_TAGLINE = 'The Save Game & Player Editor Update';
+const RELEASE_TAGLINE = 'Balance & Impact Update';
 
 const PATCH_NOTES = [
   {
+    icon: Sparkles,
+    title: 'v1.1.1 Balance & Fixes',
+    color: 'text-yellow-400',
+    bgColor: 'bg-yellow-500/10',
+    borderColor: 'border-yellow-500/30',
+    items: [
+      '📊 **Bowler Impact Fix** - Batting failures no longer unfairly penalize bowler ratings',
+      '📈 **Detailed Impact Stats** - View separate Batting, Bowling, and Fielding impact scores',
+      '⚡ **Smarter Fatigue** - Consecutive rest days now grant bonus recovery',
+      '🏥 **Fitness Logic** - Adjusted max fitness calculations for better longevity'
+    ],
+    note: 'Small update to fix some glaring math issues. Bowlers are people too! 🎳'
+  },
+  {
     icon: Save,
-    title: 'New Save/Load System',
+    title: 'New Save/Load System (v1.1.0)',
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/30',
