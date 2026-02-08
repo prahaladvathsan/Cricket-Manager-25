@@ -12,6 +12,7 @@ import usePlayerStore from '../../stores/playerStore';
 import { computePlayerRatings } from '../../utils/ratingHelper';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
+import PlaystyleBadge from './PlaystyleBadge';
 import PlayerEditorModal from '../modals/PlayerEditorModal';
 
 const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
@@ -29,7 +30,7 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
 
   if (!player) {
     return createPortal(
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
         <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-3xl w-full">
           <div className="p-6 text-center">
             <p className="text-text-secondary">Player not found</p>
@@ -47,7 +48,7 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
   }
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">

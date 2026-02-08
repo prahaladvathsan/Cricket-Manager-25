@@ -9,6 +9,7 @@ import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import { getPrimaryBattingRating, getPrimaryBowlingRating } from '../../../utils/ratingHelper';
 import PlayerName from '../../shared/PlayerName';
+import PlaystyleBadge from '../../shared/PlaystyleBadge';
 
 const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   const { updateCaptain, updateViceCaptain, updateWicketKeeper } = useTeamStore();
@@ -196,7 +197,13 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   <PlayerName playerId={player.id} player={player} />
                 </div>
                 <div className="text-text-secondary truncate">
-                  {battingPlaystyle ? `${battingPlaystyle} (${battingRating.toFixed(0)})` : 'N/A'}
+                  {battingPlaystyle ? (
+                    <PlaystyleBadge
+                      playstyle={battingPlaystyle}
+                      rating={battingRating}
+                      variant="inline"
+                    />
+                  ) : 'N/A'}
                 </div>
                 <div className={`truncate ${getTierColor(currentTier)}`}>
                   {currentTier}
@@ -246,7 +253,13 @@ const OverviewTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                       <PlayerName playerId={player.id} player={player} />
                     </div>
                     <div className="text-text-secondary truncate">
-                      {bowlingPlaystyle} ({bowlingRating.toFixed(0)})
+                      {bowlingPlaystyle ? (
+                        <PlaystyleBadge
+                          playstyle={bowlingPlaystyle}
+                          rating={bowlingRating}
+                          variant="inline"
+                        />
+                      ) : 'N/A'}
                     </div>
                     <div className={`font-mono whitespace-nowrap ${overs.length > 0 ? 'text-cricket-accent' : 'text-text-tertiary'}`}>
                       {overs.length > 0 ? `${overs.length} ov` : '—'}

@@ -7,11 +7,26 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.1.1';
+const CURRENT_VERSION = '1.1.2';
 const RELEASE_DATE = 'February 2026';
-const RELEASE_TAGLINE = 'Balance & Impact Update';
+const RELEASE_TAGLINE = 'UI Polish & Stability Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Sparkles,
+    title: 'v1.1.2 UI Polish & Bug Fixes',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+    items: [
+      '🎨 **Playstyle Abbreviations** - Compact playstyle codes with hover tooltips throughout UI',
+      '🔧 **Playoff Fixes** - Bracket population and champion display now working correctly',
+      '💾 **Memory Optimization** - Fixed memory leak during sim-to-date simulation',
+      '📊 **Database Persistence** - Player Database Editor and Transfer System now save correctly',
+      '🎯 **Compact Layout** - Player Database Editor now uses horizontal layout for better space usage'
+    ],
+    note: 'Polish and stability fixes. Hover over playstyle abbreviations (like O-SLG, P-HTD) to see full names! 🏏'
+  },
   {
     icon: Sparkles,
     title: 'v1.1.1 Balance & Fixes',

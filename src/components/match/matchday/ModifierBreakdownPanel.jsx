@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Pin, X } from 'lucide-react';
+import PlaystyleBadge from '../../shared/PlaystyleBadge';
 import tacticsConfig from '../../../data/config/tactics-config.json';
 import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 
@@ -324,7 +325,15 @@ export default function ModifierBreakdownPanel({
       {/* Striker Header */}
       <div className="bg-gray-800 border-b border-gray-700 p-3">
         <div className="text-sm font-bold text-green-400">{strikerName}</div>
-        <div className="text-xs text-gray-400">{strikerPlaystyle.name} ({strikerPlaystyle.rating})</div>
+        <div className="text-xs text-gray-400">
+          {strikerPlaystyle.name !== 'None' ? (
+            <PlaystyleBadge
+              playstyle={strikerPlaystyle.name}
+              rating={strikerPlaystyle.rating}
+              variant="inline"
+            />
+          ) : 'None'}
+        </div>
       </div>
 
       {/* Striker Content - Scrollable */}
@@ -360,7 +369,15 @@ export default function ModifierBreakdownPanel({
       <div className="bg-gray-800 border-b border-gray-700 p-3 flex justify-between items-center">
         <div>
           <div className="text-sm font-bold text-blue-400">{bowlerName}</div>
-          <div className="text-xs text-gray-400">{bowlerPlaystyle.name} ({bowlerPlaystyle.rating})</div>
+          <div className="text-xs text-gray-400">
+            {bowlerPlaystyle.name !== 'None' ? (
+              <PlaystyleBadge
+                playstyle={bowlerPlaystyle.name}
+                rating={bowlerPlaystyle.rating}
+                variant="inline"
+              />
+            ) : 'None'}
+          </div>
         </div>
         {showControls && (
           <div className="flex gap-2">

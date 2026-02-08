@@ -459,6 +459,52 @@ NOTE: Percentages show maximum effectiveness at 100 rating. Actual effect scales
 | Containment Spinner | Spin | Overs ≤12, CRR < RRR | +50% accuracy (metronomic), +40% dot pressure, +35% line/length | -30% wicket threat (always), Reduces concentration -1 |
 
 NOTE: Percentages show maximum effectiveness at 100 rating. Special effects (judgement/concentration reductions) apply regardless of rating.`
+      },
+      {
+        heading: 'Playstyle Abbreviations (UI Reference)',
+        text: `Throughout the game interface, playstyles are shown with abbreviated codes for space efficiency. Hover over any abbreviation to see the full playstyle name.
+
+**BATTING PLAYSTYLES**
+
+Positional Roles:
+• O-SLG: Opener - Slogger
+• O-BAL: Opener - Balanced
+• O-ANC: Opener - Anchor
+• T-SLG: Top Order - Slogger
+• T-BAL: Top Order - Balanced
+• T-ANC: Top Order - Anchor
+• M-SLG: Middle Order - Slogger
+• M-BAL: Middle Order - Balanced
+• M-ANC: Middle Order - Anchor
+• L-SLG: Lower Order - Slogger
+• L-BAL: Lower Order - Balanced
+• L-ANC: Lower Order - Anchor
+
+Specialist Roles:
+• S-FIN: Finisher
+• S-RUN: Runner
+• S-PNH: Pinch-Hitter
+• S-WAL: Wall
+
+**BOWLING PLAYSTYLES**
+
+Pace Bowlers:
+• P-SWG: Swing Bowler
+• P-HTD: Hit-the-Deck Seamer
+• P-SBS: Short-Ball Specialist
+• P-DTH: Death Specialist
+
+Spin Bowlers:
+• S-CLS: Classical Spinner
+• S-FLT: Flat Spinner
+• S-MYS: Mystery Spinner
+• S-CTN: Containment Spinner
+
+**FIELDING PLAYSTYLE**
+
+• WKP: Wicketkeeper
+
+**Color Coding**: Abbreviations are color-coded by prefix - batting positions use a blue/green/yellow/orange gradient, specialists use pink, pace bowling uses red, spin bowling uses purple, and wicketkeeping uses cyan.`
       }
     ]
   },

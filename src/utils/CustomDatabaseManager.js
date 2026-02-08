@@ -298,12 +298,6 @@ class CustomDatabaseManager {
     // Calculate overall ratings
     player.attributes.overall = this.calculateOverallRatings(player.attributes);
 
-    // Calculate playstyles
-    const playstyleData = this.recalculatePlaystyles(player);
-    player.playstyleRatings = playstyleData.ratings;
-    player.topPlaystyles = playstyleData.topPlaystyles;
-    player.primaryPlaystyle = playstyleData.primaryPlaystyle;
-
     // Store in newPlayers
     this.customDb.newPlayers[customId] = player;
     await this.savePatches();
@@ -368,12 +362,6 @@ class CustomDatabaseManager {
         if (patch.attributes) {
           // Update overall ratings
           patchedPlayer.attributes.overall = this.calculateOverallRatings(patchedPlayer.attributes);
-
-          // Recalculate playstyles
-          const playstyleData = this.recalculatePlaystyles(patchedPlayer);
-          patchedPlayer.playstyleRatings = playstyleData.ratings;
-          patchedPlayer.topPlaystyles = playstyleData.topPlaystyles;
-          patchedPlayer.primaryPlaystyle = playstyleData.primaryPlaystyle;
         }
 
         patchedPlayer.isModified = true;
@@ -425,36 +413,7 @@ class CustomDatabaseManager {
   // Playstyle Calculation
   // ============================================
 
-  /**
-   * Recalculate playstyle ratings for a player
-   * @param {Object} player - Player object with attributes
-   * @returns {Object} { ratings, topPlaystyles, primaryPlaystyle }
-   */
-  recalculatePlaystyles(player) {
-    // Calculate all playstyle ratings
-    const ratings = playstyleCalculator.calculateAllPlaystyleRatings(player);
 
-    // Get primary playstyles (top 3 in each category)
-    const primaryPlaystyles = playstyleCalculator.getPlayerPrimaryPlaystyles(
-      player,
-      player.role,
-      3
-    );
-
-    return {
-      ratings,
-      topPlaystyles: {
-        batting: primaryPlaystyles.batting,
-        bowling: primaryPlaystyles.bowling,
-        fielding: primaryPlaystyles.fielding || []
-      },
-      primaryPlaystyle: {
-        batting: primaryPlaystyles.batting[0]?.name || null,
-        bowling: primaryPlaystyles.bowling[0]?.name || null,
-        fielding: primaryPlaystyles.fielding?.[0]?.name || null
-      }
-    };
-  }
 
   /**
    * Calculate overall batting and bowling ratings from attributes
@@ -638,13 +597,8 @@ class CustomDatabaseManager {
 
             // Add new players
             for (const [playerId, player] of Object.entries(data.newPlayers || {})) {
-              // Recalculate playstyles for imported players
-              const playstyleData = this.recalculatePlaystyles(player);
               this.customDb.newPlayers[playerId] = {
                 ...player,
-                playstyleRatings: playstyleData.ratings,
-                topPlaystyles: playstyleData.topPlaystyles,
-                primaryPlaystyle: playstyleData.primaryPlaystyle,
                 importedAt: new Date().toISOString()
               };
             }
@@ -654,12 +608,8 @@ class CustomDatabaseManager {
             for (const player of (data.players || [])) {
               if (player.id.startsWith('custom_')) {
                 // Custom player
-                const playstyleData = this.recalculatePlaystyles(player);
                 this.customDb.newPlayers[player.id] = {
                   ...player,
-                  playstyleRatings: playstyleData.ratings,
-                  topPlaystyles: playstyleData.topPlaystyles,
-                  primaryPlaystyle: playstyleData.primaryPlaystyle,
                   importedAt: new Date().toISOString()
                 };
               } else if (player.isModified) {

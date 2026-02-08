@@ -8,7 +8,7 @@
  */
 
 // Import playstyle weightings for recalculation (loaded synchronously)
-let playstyleWeightings = null;
+// let playstyleWeightings = null;
 
 /**
  * Deep merge two objects
@@ -61,139 +61,11 @@ function getAttributeValue(player, attributeName) {
   return null;
 }
 
-/**
- * Calculate playstyle rating for a specific playstyle
- */
-function calculatePlaystyleRating(player, category, playstyleName, weightings, bowlingType = null) {
-  let playstyleConfig;
 
-  if (category === 'bowling') {
-    if (bowlingType) {
-      playstyleConfig = weightings.bowling?.[bowlingType]?.[playstyleName];
-    } else {
-      playstyleConfig = weightings.bowling?.pace?.[playstyleName] ||
-                       weightings.bowling?.spin?.[playstyleName];
-    }
-  } else {
-    playstyleConfig = weightings[category]?.[playstyleName];
-  }
 
-  if (!playstyleConfig) return 0;
 
-  const attributes = playstyleConfig.attributes;
 
-  let weightedSum = 0;
-  let maxPossible = 0;
 
-  for (const [attributeName, weight] of Object.entries(attributes)) {
-    if (weight === 0) continue;
-
-    const attributeValue = getAttributeValue(player, attributeName);
-
-    if (attributeValue !== null && attributeValue !== undefined) {
-      weightedSum += attributeValue * weight;
-      maxPossible += 20 * weight;
-    }
-  }
-
-  const attributeRating = maxPossible > 0 ? (weightedSum / maxPossible) * 100 : 0;
-
-  let finalRating = 0;
-
-  if (category === 'batting') {
-    const battingOverall = player.attributes.overall?.batting_overall || 10;
-    const primaryBatPos = player.primaryBattingPosition;
-
-    let posRating = 0;
-    if (primaryBatPos >= 1 && primaryBatPos <= 2) {
-      if (playstyleName.toLowerCase().includes('opener')) posRating = 20;
-    } else if (primaryBatPos >= 3 && primaryBatPos <= 4) {
-      if (playstyleName.toLowerCase().includes('top order')) posRating = 20;
-    } else if (primaryBatPos >= 5 && primaryBatPos <= 6) {
-      if (playstyleName.toLowerCase().includes('middle order')) posRating = 20;
-    } else if (primaryBatPos >= 7 && primaryBatPos <= 8) {
-      if (playstyleName.toLowerCase().includes('lower order')) posRating = 20;
-    } else if (primaryBatPos >= 9 && primaryBatPos <= 11) {
-      if (playstyleName.toLowerCase().includes('runner') ||
-          playstyleName.toLowerCase().includes('pinch-hitter') ||
-          playstyleName.toLowerCase().includes('wall')) posRating = 20;
-    }
-
-    finalRating = (attributeRating * 0.6) + (battingOverall) + (posRating);
-  } else if (category === 'bowling') {
-    const bowlingOverall = player.attributes.overall?.bowling_overall || 10;
-    finalRating = (attributeRating * 0.8) + (bowlingOverall);
-  } else if (category === 'fielding') {
-    finalRating = attributeRating;
-  }
-
-  return Math.max(0, Math.min(100, finalRating));
-}
-
-/**
- * Calculate all playstyle ratings for a player
- */
-function calculateAllPlaystyleRatings(player, weightings) {
-  const ratings = { batting: {}, bowling: {}, fielding: {} };
-
-  // Batting playstyles
-  for (const playstyleName in weightings.batting) {
-    ratings.batting[playstyleName] = calculatePlaystyleRating(player, 'batting', playstyleName, weightings);
-  }
-
-  // Bowling playstyles based on player's bowlingType
-  const bowlingType = player.bowlingType || 'pace';
-  if (bowlingType === 'pace' || bowlingType === 'spin') {
-    for (const playstyleName in weightings.bowling[bowlingType]) {
-      ratings.bowling[playstyleName] = calculatePlaystyleRating(player, 'bowling', playstyleName, weightings, bowlingType);
-    }
-  }
-
-  // Fielding playstyles
-  for (const playstyleName in weightings.fielding) {
-    ratings.fielding[playstyleName] = calculatePlaystyleRating(player, 'fielding', playstyleName, weightings);
-  }
-
-  return ratings;
-}
-
-/**
- * Get top playstyles for a player
- */
-function getTopPlaystyles(ratings, role, weightings) {
-  const result = { batting: [], bowling: [], fielding: [] };
-
-  // Get applicable batting playstyles based on role
-  const roleCategories = weightings.roleCategories?.[role?.toLowerCase()];
-  let applicableBattingPlaystyles = Object.keys(ratings.batting);
-
-  if (Array.isArray(roleCategories)) {
-    applicableBattingPlaystyles = roleCategories;
-  } else if (roleCategories && roleCategories.batting) {
-    applicableBattingPlaystyles = roleCategories.batting;
-  }
-
-  // Sort and get top 3 batting
-  result.batting = Object.entries(ratings.batting)
-    .filter(([name]) => applicableBattingPlaystyles.includes(name))
-    .map(([name, rating]) => ({ name, rating }))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
-
-  // Top 3 bowling
-  result.bowling = Object.entries(ratings.bowling)
-    .map(([name, rating]) => ({ name, rating }))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
-
-  // Top 3 fielding
-  result.fielding = Object.entries(ratings.fielding)
-    .map(([name, rating]) => ({ name, rating }))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
-
-  return result;
-}
 
 /**
  * Calculate overall ratings from attributes
@@ -237,7 +109,7 @@ function calculateOverallRatings(attributes) {
 /**
  * Apply patches to master database players
  */
-function applyPatches(masterPlayers, patches, newPlayers, deletedPlayers, weightings) {
+function applyPatches(masterPlayers, patches, newPlayers, deletedPlayers) {
   const merged = {};
 
   // First, copy master players
@@ -253,18 +125,8 @@ function applyPatches(masterPlayers, patches, newPlayers, deletedPlayers, weight
         const patchedPlayer = deepMerge(originalPlayer, patch);
 
         // Recalculate if attributes were changed
-        if (patch.attributes && weightings) {
+        if (patch.attributes) {
           patchedPlayer.attributes.overall = calculateOverallRatings(patchedPlayer.attributes);
-          const ratings = calculateAllPlaystyleRatings(patchedPlayer, weightings);
-          const topPlaystyles = getTopPlaystyles(ratings, patchedPlayer.role, weightings);
-
-          patchedPlayer.playstyleRatings = ratings;
-          patchedPlayer.topPlaystyles = topPlaystyles;
-          patchedPlayer.primaryPlaystyle = {
-            batting: topPlaystyles.batting[0]?.name || null,
-            bowling: topPlaystyles.bowling[0]?.name || null,
-            fielding: topPlaystyles.fielding[0]?.name || null
-          };
         }
 
         patchedPlayer.isModified = true;
@@ -312,23 +174,12 @@ self.addEventListener('message', async (e) => {
           (newPlayers && Object.keys(newPlayers).length > 0) ||
           (deletedPlayers && deletedPlayers.length > 0)) {
 
-        // Fetch playstyle weightings for recalculation
-        if (!playstyleWeightings) {
-          try {
-            const weightingsResponse = await fetch('/data/config/playstyle-weightings.json');
-            playstyleWeightings = await weightingsResponse.json();
-          } catch (weightError) {
-            console.warn('Could not load playstyle weightings:', weightError);
-          }
-        }
-
         // Apply patches
         players = applyPatches(
           data.players,
           patches || {},
           newPlayers || {},
-          deletedPlayers || [],
-          playstyleWeightings
+          deletedPlayers || []
         );
 
         console.log(`[Worker] Applied patches: ${Object.keys(patches || {}).length} modified, ${Object.keys(newPlayers || {}).length} custom`);

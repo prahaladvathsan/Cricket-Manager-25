@@ -115,6 +115,31 @@ See `docs/dev/active/README.md` for templates and `docs/dev/completed/developmen
 
 ## Repo-Specific Rules
 
+### UI Components & Patterns (CRITICAL)
+
+**MANDATORY: Read `docs/frontend/ui-components-reference.md` before ANY UI changes or new component creation.**
+
+This master reference document contains:
+- ✅ All reusable UI components (PlaystyleBadge, SortableTable, PlayerCard, etc.)
+- ✅ Clickable entity components (PlayerName, TeamName)
+- ✅ Playstyle display system (abbreviations, color coding, display rules)
+- ✅ UI quirks and special rules (spacing, scrollbars, wicket-keeper handling)
+- ✅ Integration patterns and best practices
+
+**Before UI changes:**
+1. Check if a reusable component exists
+2. Follow component usage patterns exactly
+3. Update the reference doc if creating new reusable components
+
+**Key rules (see doc for full details):**
+- **ALWAYS use `<PlayerName>` and `<TeamName>`** - never hardcode `player.name` or `team.name`
+- **Use `PlaystyleBadge`** for space-constrained playstyle displays (tables, tactics overview)
+- **Use full playstyle names** in modals and dropdowns
+- **Use `SortableTable`** for sortable data tables
+- **Use `computePlayerRatings()`** in UI for fresh playstyle data (not stored values)
+- **Wicket-keepers show fielding playstyle** (not bowling) as secondary
+- **Default to compact spacing** (`space-y-2`, `gap-2`, `p-2`)
+
 ### Configuration-Driven Development
 - **ALL probabilities** must be in `src/data/config/*.json` files
 - **NEVER hardcode probabilities** in code - import from configs
@@ -156,6 +181,8 @@ The game has **two progression modes** that must produce identical outcomes:
 
 This ensures consistent clickable behavior across all screens (Football Manager pattern).
 
+**See `docs/frontend/ui-components-reference.md` for complete PlayerName/TeamName API and usage examples.**
+
 ### Data Processing
 - Player database processing is **external** (`cricket-data-processor` module adjacent to this repo)
 - Do NOT modify player data pipeline in this repo
@@ -176,7 +203,8 @@ This ensures consistent clickable behavior across all screens (Football Manager 
 - **Color palette**: Cricket Green (#2D5F3F), Trophy Gold (#D4AF37), dark theme
 - **Icons**: Lucide React only
 - **Spacing**: Compact (p-2, p-3, gap-2) for professional look
-- See `docs/frontend/design-system.md` for complete specs
+- **Reusable components**: See `docs/frontend/ui-components-reference.md` (MUST READ before UI changes)
+- **Design system**: See `docs/frontend/design-system.md` for complete color/typography specs
 
 ### Browser Compatibility
 - **No Node.js imports in browser code** (e.g., `fs`, `path`)

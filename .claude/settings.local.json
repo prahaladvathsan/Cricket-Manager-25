@@ -57,7 +57,8 @@
       "Bash(npx vite build)",
       "Bash(npm run lint)",
       "Bash(npm cache clean:*)",
-      "Bash(npm --version:*)"
+      "Bash(npm --version:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }

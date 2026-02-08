@@ -23,9 +23,11 @@ import {
   Sparkles
 } from 'lucide-react';
 import PlayerName from '../shared/PlayerName';
+import PlaystyleBadge from '../shared/PlaystyleBadge';
 import CricketBallSpinner from '../shared/CricketBallSpinner';
 import SortableTable from '../shared/SortableTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, computePlayerRatings } from '../../utils/ratingHelper';
+import { getPlaystyleAbbr } from '../../utils/playstyleAbbreviations';
 import usePlayerStore from '../../stores/playerStore';
 import DatabaseExportModal from '../modals/DatabaseExportModal';
 import DatabaseImportModal from '../modals/DatabaseImportModal';
@@ -452,19 +454,19 @@ const PlayerBrowser = () => {
         key: 'primaryBattingPlaystyle',
         label: 'Bat Style',
         sortKey: 'primaryBattingPlaystyle',
-        width: '180px',
+        width: '100px',
         defaultDirection: 'desc',
         render: (player) => {
           const c = computePlayerRatings(player);
           const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
           const ts = c?.topPlaystyles || player.topPlaystyles;
+          const rating = Math.round(ts?.batting?.[0]?.rating || 0);
           return ps?.batting ? (
-            <div className="text-xs">
-              <div className="text-blue-400 font-medium">{ps.batting}</div>
-              <div className={`font-mono ${getRatingColor(Math.round(ts?.batting?.[0]?.rating || 0))}`}>
-                {Math.round(ts?.batting?.[0]?.rating || 0)}
-              </div>
-            </div>
+            <PlaystyleBadge
+              playstyle={ps.batting}
+              rating={rating}
+              variant="inline"
+            />
           ) : '-';
         },
       });
@@ -473,19 +475,19 @@ const PlayerBrowser = () => {
         key: 'primaryBowlingPlaystyle',
         label: 'Bowl Style',
         sortKey: 'primaryBowlingPlaystyle',
-        width: '180px',
+        width: '100px',
         defaultDirection: 'desc',
         render: (player) => {
           const c = computePlayerRatings(player);
           const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
           const ts = c?.topPlaystyles || player.topPlaystyles;
+          const rating = Math.round(ts?.bowling?.[0]?.rating || 0);
           return ps?.bowling ? (
-            <div className="text-xs">
-              <div className="text-red-400 font-medium">{ps.bowling}</div>
-              <div className={`font-mono ${getRatingColor(Math.round(ts?.bowling?.[0]?.rating || 0))}`}>
-                {Math.round(ts?.bowling?.[0]?.rating || 0)}
-              </div>
-            </div>
+            <PlaystyleBadge
+              playstyle={ps.bowling}
+              rating={rating}
+              variant="inline"
+            />
           ) : '-';
         },
       });
@@ -494,19 +496,19 @@ const PlayerBrowser = () => {
         key: 'primaryFieldingPlaystyle',
         label: 'Field Style',
         sortKey: 'primaryFieldingPlaystyle',
-        width: '180px',
+        width: '100px',
         defaultDirection: 'desc',
         render: (player) => {
           const c = computePlayerRatings(player);
           const ps = c?.primaryPlaystyle || player.primaryPlaystyle;
           const ts = c?.topPlaystyles || player.topPlaystyles;
+          const rating = Math.round(ts?.fielding?.[0]?.rating || 0);
           return ps?.fielding ? (
-            <div className="text-xs">
-              <div className="text-yellow-400 font-medium">{ps.fielding}</div>
-              <div className={`font-mono ${getRatingColor(Math.round(ts?.fielding?.[0]?.rating || 0))}`}>
-                {Math.round(ts?.fielding?.[0]?.rating || 0)}
-              </div>
-            </div>
+            <PlaystyleBadge
+              playstyle={ps.fielding}
+              rating={rating}
+              variant="inline"
+            />
           ) : '-';
         },
       });
@@ -515,9 +517,10 @@ const PlayerBrowser = () => {
     // Batting Playstyles
     if (visibleColumns.battingPlaystyles) {
       COLUMN_GROUPS.battingPlaystyles.forEach(playstyle => {
+        const abbr = getPlaystyleAbbr(playstyle);
         cols.push({
           key: `bp_${playstyle}`,
-          label: <span className="text-xs">{playstyle}</span>,
+          label: <PlaystyleBadge playstyle={playstyle} variant="inline" className="text-xs" />,
           sortKey: `playstyle:${playstyle}`,
           align: 'center',
           width: '70px',
@@ -534,9 +537,10 @@ const PlayerBrowser = () => {
     // Bowling Playstyles
     if (visibleColumns.bowlingPlaystyles) {
       COLUMN_GROUPS.bowlingPlaystyles.forEach(playstyle => {
+        const abbr = getPlaystyleAbbr(playstyle);
         cols.push({
           key: `bop_${playstyle}`,
-          label: <span className="text-xs">{playstyle}</span>,
+          label: <PlaystyleBadge playstyle={playstyle} variant="inline" className="text-xs" />,
           sortKey: `playstyle:${playstyle}`,
           align: 'center',
           width: '70px',
@@ -553,9 +557,10 @@ const PlayerBrowser = () => {
     // Fielding Playstyles
     if (visibleColumns.fieldingPlaystyles) {
       COLUMN_GROUPS.fieldingPlaystyles.forEach(playstyle => {
+        const abbr = getPlaystyleAbbr(playstyle);
         cols.push({
           key: `fp_${playstyle}`,
-          label: <span className="text-xs">{playstyle}</span>,
+          label: <PlaystyleBadge playstyle={playstyle} variant="inline" className="text-xs" />,
           sortKey: `playstyle:${playstyle}`,
           align: 'center',
           width: '70px',

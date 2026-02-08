@@ -13,7 +13,7 @@ import useFinanceStore from '../../stores/financeStore';
 import useTransferStore from '../../stores/transferStore';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
 import PlayerCard from '../shared/PlayerCard';
-
+import PlaystyleBadge from '../shared/PlaystyleBadge';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
@@ -350,36 +350,48 @@ const Squad = () => {
         key: 'battingPlaystyle',
         label: 'Batting Playstyle',
         sortKey: 'battingPlaystyle',
-        render: (player) => (
-          <div className="flex flex-col">
-            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.batting || '-'}</span>
-            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBattingRating(player))}</span>
-          </div>
-        ),
+        render: (player) => {
+          const rating = getPrimaryBattingRating(player);
+          return player.primaryPlaystyle?.batting ? (
+            <PlaystyleBadge
+              playstyle={player.primaryPlaystyle.batting}
+              rating={rating}
+              variant="inline"
+            />
+          ) : '-';
+        },
         cellClassName: 'px-3 py-2'
       },
       {
         key: 'bowlingPlaystyle',
         label: 'Bowling Playstyle',
         sortKey: 'bowlingPlaystyle',
-        render: (player) => (
-          <div className="flex flex-col">
-            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.bowling || '-'}</span>
-            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryBowlingRating(player))}</span>
-          </div>
-        ),
+        render: (player) => {
+          const rating = getPrimaryBowlingRating(player);
+          return player.primaryPlaystyle?.bowling ? (
+            <PlaystyleBadge
+              playstyle={player.primaryPlaystyle.bowling}
+              rating={rating}
+              variant="inline"
+            />
+          ) : '-';
+        },
         cellClassName: 'px-3 py-2'
       },
       {
         key: 'fieldingPlaystyle',
         label: 'Fielding Playstyle',
         sortKey: 'fieldingPlaystyle',
-        render: (player) => (
-          <div className="flex flex-col">
-            <span className="text-text-secondary text-xs truncate">{player.primaryPlaystyle?.fielding || '-'}</span>
-            <span className="text-cricket-accent text-xs font-mono">{formatRating(getPrimaryFieldingRating(player))}</span>
-          </div>
-        ),
+        render: (player) => {
+          const rating = getPrimaryFieldingRating(player);
+          return player.primaryPlaystyle?.fielding ? (
+            <PlaystyleBadge
+              playstyle={player.primaryPlaystyle.fielding}
+              rating={rating}
+              variant="inline"
+            />
+          ) : '-';
+        },
         cellClassName: 'px-3 py-2'
       },
       {

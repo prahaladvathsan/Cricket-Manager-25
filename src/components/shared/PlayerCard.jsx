@@ -10,6 +10,7 @@ import aiCore from '../../core/ai/AICore';
 import { computePlayerRatings } from '../../utils/ratingHelper';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
+import PlaystyleBadge from './PlaystyleBadge';
 
 /**
  * PlayerCard Component
@@ -118,7 +119,10 @@ const PlayerCard = ({
   // Auction variant - optimized for bidding screen
   if (variant === 'auction') {
     return (
-      <div className={`card p-3 ${className}`}>
+      <div 
+        className={`card p-3 ${onClick ? 'cursor-pointer hover:border-cricket-accent' : ''} ${className}`}
+        onClick={onClick}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">

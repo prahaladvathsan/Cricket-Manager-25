@@ -15,6 +15,7 @@ import useFinanceStore from '../../stores/financeStore';
 import useNavigationStore from '../../stores/navigationStore';
 import useInboxStore from '../../stores/inboxStore';
 import useAuctionStore from '../../stores/auctionStore';
+import useUIStore from '../../stores/uiStore';
 import SaveGameModal from '../shared/SaveGameModal';
 import CricketBallSpinner from '../shared/CricketBallSpinner';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
@@ -74,6 +75,7 @@ const Header = () => {
   const { goBack, canGoBack } = useNavigationStore();
   const { addMessage } = useInboxStore();
   const { auctionState } = useAuctionStore();
+  const { preferences: { sidebarCollapsed } } = useUIStore();
 
   const userTeam = getUserTeam();
   const formattedDate = new Date(currentDate).toLocaleDateString('en-US', {
@@ -911,7 +913,7 @@ const Header = () => {
 
       {/* Season Summary Modal */}
       {showSeasonSummary && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className={`fixed inset-y-0 right-0 ${sidebarCollapsed ? 'left-16' : 'left-48'} bg-black/80 flex items-center justify-center z-[60] p-4 transition-all duration-300`}>
           <div className="bg-bg-primary rounded-lg border border-border-primary max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <SeasonSummaryView
