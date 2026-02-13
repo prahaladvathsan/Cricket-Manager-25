@@ -47,6 +47,7 @@ const useGameStore = create(
       gameDay: 1,
       calendarEvents: [],
       isSimulating: false,
+      isProcessingTurn: false,
 
       // Board Objectives
       seasonObjectives: [], // Array of 5 objectives for current season
@@ -103,229 +104,146 @@ const useGameStore = create(
           currentWeek: shouldAdvanceWeek ? state.currentWeek + 1 : state.currentWeek
         });
 
-        // Process daily injury countdown (must be done after state update)
-        // This needs to run after the day advances to properly track recovery
+        // Process daily condition updates (injury countdown, fitness/fatigue recovery)
+        // Runs after state update to properly track recovery
         if (typeof window !== 'undefined') {
-          // Only run in browser environment
-          setTimeout(() => {
+          // Show processing overlay only in Normal UI mode (not during Sim-to-Date)
+          const isInSimToDate = state.isSimulating;
+          if (!isInSimToDate) {
+            set({ isProcessingTurn: true });
+          }
+
+          // Use async IIFE to collect-then-batch all player condition updates
+          (async () => {
             try {
-              // Import stores dynamically to avoid circular dependencies
-              import('./playerStore').then(playerStoreModule => {
-                import('./inboxStore').then(inboxStoreModule => {
-                  import('./teamStore').then(teamStoreModule => {
-                    import('../utils/MessageGenerator').then(MessageGeneratorModule => {
-                      const playerStore = playerStoreModule.default;
-                      const inboxStore = inboxStoreModule.default;
-                      const teamStore = teamStoreModule.default;
-                      const MessageGenerator = MessageGeneratorModule.default;
+              const [playerStoreModule, inboxStoreModule, teamStoreModule, MessageGeneratorModule, indexedDBModule] = await Promise.all([
+                import('./playerStore'),
+                import('./inboxStore'),
+                import('./teamStore'),
+                import('../utils/MessageGenerator'),
+                import('../utils/indexedDBStorage')
+              ]);
 
-                      const userTeamId = teamStore.getState().userTeamId;
-                      const players = playerStore.getState().players;
+              const playerStore = playerStoreModule.default;
+              const inboxStore = inboxStoreModule.default;
+              const teamStore = teamStoreModule.default;
+              const MessageGenerator = MessageGeneratorModule.default;
+              const { indexedDBStorage } = indexedDBModule;
 
-                      // Get match info for today (if any)
-                      const matchEvent = dayEvent && dayEvent.type === 'match' ? dayEvent : null;
-                      const matchTeamIds = new Set();
-                      const playingXIPlayerIds = new Set();
+              // Start IndexedDB batching if not already batching (SimulationEngine batches externally)
+              const wasBatching = indexedDBStorage.isBatching;
+              if (!wasBatching) {
+                indexedDBStorage.startBatching();
+              }
 
-                      if (matchEvent) {
-                        const fixture = matchEvent.data;
-                        // Track which teams are playing
-                        matchTeamIds.add(fixture.homeTeam);
-                        matchTeamIds.add(fixture.awayTeam);
+              try {
+                const userTeamId = teamStore.getState().userTeamId;
+                const players = playerStore.getState().players;
 
-                        // Get playing XI for both teams (players who actually played)
-                        const homeTeamTactics = teamStore.getState().teamTactics?.[fixture.homeTeam];
-                        const awayTeamTactics = teamStore.getState().teamTactics?.[fixture.awayTeam];
+                // Get match info for today (if any)
+                const matchEvent = dayEvent && dayEvent.type === 'match' ? dayEvent : null;
+                const playingXIPlayerIds = new Set();
 
-                        if (homeTeamTactics?.squadSelection) {
-                          homeTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
-                        }
-                        if (awayTeamTactics?.squadSelection) {
-                          awayTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
-                        }
+                if (matchEvent) {
+                  const fixture = matchEvent.data;
+                  const homeTeamTactics = teamStore.getState().teamTactics?.[fixture.homeTeam];
+                  const awayTeamTactics = teamStore.getState().teamTactics?.[fixture.awayTeam];
+
+                  if (homeTeamTactics?.squadSelection) {
+                    homeTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
+                  }
+                  if (awayTeamTactics?.squadSelection) {
+                    awayTeamTactics.squadSelection.forEach(id => playingXIPlayerIds.add(id));
+                  }
+                }
+
+                // Collect all condition updates into a single map (NO store writes in loop)
+                const conditionUpdatesMap = {};
+
+                Object.entries(players).forEach(([playerId, player]) => {
+                  const updates = {};
+
+                  // 1. INJURY COUNTDOWN (every day)
+                  if (player.condition && player.condition.injuryDuration > 0) {
+                    const newDuration = player.condition.injuryDuration - 1;
+
+                    if (newDuration <= 0) {
+                      updates.injury = null;
+                      updates.injuryDuration = null;
+
+                      const isUserPlayer = player.currentTeam === userTeamId;
+                      if (isUserPlayer) {
+                        inboxStore.getState().addMessage(MessageGenerator.generateRecoveryMessage(player));
+                        console.log(`✅ ${player.name} has recovered from injury`);
                       }
-
-                      Object.entries(players).forEach(([playerId, player]) => {
-                        const updates = {};
-
-                        // 1. INJURY COUNTDOWN (every day)
-                        if (player.condition && player.condition.injuryDuration > 0) {
-                          const newDuration = player.condition.injuryDuration - 1;
-
-                          if (newDuration <= 0) {
-                            // Player recovered - reset injury fields and send recovery message
-                            updates.injury = null;
-                            updates.injuryDuration = null;
-
-                            // Send recovery inbox message only for user's squad players
-                            const isUserPlayer = player.currentTeam === userTeamId;
-                            if (isUserPlayer) {
-                              inboxStore.getState().addMessage(MessageGenerator.generateRecoveryMessage(player));
-                              console.log(`✅ ${player.name} has recovered from injury`);
-                            } else {
-                              console.log(`✅ ${player.name} has recovered from injury (no inbox message - not user's player)`);
-                            }
-                          } else {
-                            // Decrement injury duration
-                            updates.injuryDuration = newDuration;
-                          }
-                        }
-
-                                                                                                            // 2. FITNESS RECOVERY & FATIGUE MANAGEMENT
-
-                                                                                                            // Condition: Check participation
-
-                                                                                                            const playerParticipatedInMatch = playingXIPlayerIds.has(playerId);
-
-                                                                                                            
-
-                                                                                                            if (playerParticipatedInMatch) {
-
-                                                                                                              // Player played: Reset consecutive rest days
-
-                                                                                                              updates.consecutiveRestDays = 0;
-
-                                                                                                            } else {
-
-                                                                                                              // Player rested: Increment consecutive rest days
-
-                                                                                                              const currentRestDays = player.condition.consecutiveRestDays || 0;
-
-                                                                                                              updates.consecutiveRestDays = currentRestDays + 1;
-
-                                                                                
-
-                                                                                                              // --- FITNESS RECOVERY ---
-
-                                                                                                              const currentFitness = player.condition.fitness ?? 100;
-
-                                                                                                              const endurance = player.attributes?.physical?.endurance ?? 10;
-
-                                                                                                              const maxFitness = player.attributes?.physical?.maxFitness ?? 10; // Default to 10 if missing
-
-                                                                                
-
-                                                                                                              // New Cap Formula: 50 + 2.5 * maxFitness
-
-                                                                                                              // e.g., 10 -> 75, 20 -> 100
-
-                                                                                                              const fitnessCap = Math.min(100, 50 + (maxFitness * 2.5));
-
-                                                                                
-
-                                                                                                              // Recovery formula: fitness += endurance/2
-
-                                                                                                              const recoveryAmount = endurance / 2;
-
-                                                                                                              const newFitness = Math.min(currentFitness + recoveryAmount, fitnessCap);
-
-                                                                                
-
-                                                                                                              if (newFitness > currentFitness) {
-
-                                                                                                                updates.fitness = newFitness;
-
-                                                                                                              }
-
-                                                                                
-
-                                                                                                                                            // --- FATIGUE RECOVERY ---
-
-                                                                                
-
-                                                                                                                                            // Happens on ANY rest day (global recovery)
-
-                                                                                
-
-                                                                                                                                            const currentFatigue = player.condition.fatigue ?? 0;
-
-                                                                                
-
-                                                                                                                                            
-
-                                                                                
-
-                                                                                                                                            if (currentFatigue > 0) {
-
-                                                                                
-
-                                                                                                                                              const restDays = updates.consecutiveRestDays;
-
-                                                                                
-
-                                                                                                                                              
-
-                                                                                
-
-                                                                                                                                              // Rule 1 & 2: Base rate is 0 for first 5 days, 0.2 thereafter
-
-                                                                                
-
-                                                                                                                                              const baseRecovery = restDays <= 5 ? 0 : 0.2;
-
-                                                                                
-
-                                                                                                                                              
-
-                                                                                
-
-                                                                                                                                              // Rule 3: Bonus reduction of 1 every 5 days
-
-                                                                                
-
-                                                                                                                                              const bonusRecovery = (restDays % 5 === 0) ? 1 : 0;
-
-                                                                                
-
-                                                                                                                                              
-
-                                                                                
-
-                                                                                                                                              const totalRecovery = baseRecovery + bonusRecovery;
-
-                                                                                
-
-                                                                                                                                              
-
-                                                                                
-
-                                                                                                                                              if (totalRecovery > 0) {
-
-                                                                                
-
-                                                                                                                                                updates.fatigue = Math.max(0, currentFatigue - totalRecovery);
-
-                                                                                
-
-                                                                                                                                              }
-
-                                                                                
-
-                                                                                                                                            }
-
-                                                                                
-
-                                                                                                                                          }                        // Apply all updates if any exist
-                        if (Object.keys(updates).length > 0) {
-                          playerStore.getState().updatePlayerCondition(playerId, updates);
-                        }
-                      });
-                    }).catch(error => {
-                      console.error('Error importing MessageGenerator:', error);
-                    });
-                  }).catch(error => {
-                    console.error('Error importing teamStore:', error);
-                  });
-                }).catch(error => {
-                  console.error('Error importing inboxStore:', error);
+                    } else {
+                      updates.injuryDuration = newDuration;
+                    }
+                  }
+
+                  // 2. FITNESS RECOVERY & FATIGUE MANAGEMENT
+                  const playerParticipatedInMatch = playingXIPlayerIds.has(playerId);
+
+                  if (playerParticipatedInMatch) {
+                    updates.consecutiveRestDays = 0;
+                  } else {
+                    const currentRestDays = player.condition?.consecutiveRestDays || 0;
+                    updates.consecutiveRestDays = currentRestDays + 1;
+
+                    // --- FITNESS RECOVERY ---
+                    const currentFitness = player.condition?.fitness ?? 100;
+                    const endurance = player.attributes?.physical?.endurance ?? 10;
+                    const maxFitness = player.attributes?.physical?.maxFitness ?? 10;
+                    const fitnessCap = Math.min(100, 50 + (maxFitness * 2.5));
+                    const recoveryAmount = endurance / 2;
+                    const newFitness = Math.min(currentFitness + recoveryAmount, fitnessCap);
+
+                    if (newFitness > currentFitness) {
+                      updates.fitness = newFitness;
+                    }
+
+                    // --- FATIGUE RECOVERY ---
+                    const currentFatigue = player.condition?.fatigue ?? 0;
+                    if (currentFatigue > 0) {
+                      const restDays = updates.consecutiveRestDays;
+                      const baseRecovery = restDays <= 5 ? 0 : 0.2;
+                      const bonusRecovery = (restDays % 5 === 0) ? 1 : 0;
+                      const totalRecovery = baseRecovery + bonusRecovery;
+
+                      if (totalRecovery > 0) {
+                        updates.fatigue = Math.max(0, currentFatigue - totalRecovery);
+                      }
+                    }
+                  }
+
+                  // Collect updates (don't write to store yet)
+                  if (Object.keys(updates).length > 0) {
+                    conditionUpdatesMap[playerId] = updates;
+                  }
                 });
-              }).catch(error => {
-                console.error('Error importing playerStore:', error);
-              });
+
+                // Apply ALL condition updates in a single set() call
+                if (Object.keys(conditionUpdatesMap).length > 0) {
+                  playerStore.getState().batchUpdatePlayerConditions(conditionUpdatesMap);
+                }
+              } finally {
+                // Stop batching and flush only if we started it
+                if (!wasBatching) {
+                  await indexedDBStorage.stopBatching();
+                }
+                // Clear processing overlay
+                if (!isInSimToDate) {
+                  set({ isProcessingTurn: false });
+                }
+              }
             } catch (error) {
-              console.error('Error processing daily injury countdown:', error);
+              console.error('Error processing daily condition updates:', error);
+              // Ensure overlay clears even on error
+              if (!state.isSimulating) {
+                set({ isProcessingTurn: false });
+              }
             }
-          }, 0);
+          })();
         }
 
         return {

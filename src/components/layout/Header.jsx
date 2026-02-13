@@ -67,7 +67,8 @@ const Header = () => {
     isWeekend,
     calendarEvents,
     resetForNewSeason,
-    isSimulating: globalIsSimulating
+    isSimulating: globalIsSimulating,
+    isProcessingTurn
   } = useGameStore();
   const { getUserTeam, teams } = useTeamStore();
   const { getClub, recordResult, updateStandingsForMatch, advanceToNextMatch, standings, champion, initializeLeague: initializeLeagueStore } = useLeagueStore();
@@ -410,7 +411,7 @@ const Header = () => {
 
   // Handle Continue button click
   const handleContinue = async () => {
-    if (isSimulating) return;
+    if (isSimulating || isProcessingTurn) return;
 
     // Check if league needs initialization (no events scheduled)
     if (currentPhase === 'preseason' && calendarEvents.length === 0) {
@@ -738,6 +739,7 @@ const Header = () => {
 
   // Get button label based on current event
   const getContinueButtonLabel = () => {
+    if (isProcessingTurn) return 'Processing...';
     if (isSimulating) return 'Simulating...';
 
     const event = getCurrentEvent();
@@ -835,7 +837,7 @@ const Header = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={handleContinue}
-                disabled={isSimulating}
+                disabled={isSimulating || isProcessingTurn}
                 className={`continue-button btn-primary text-sm flex items-center gap-1.5 px-4 py-2 disabled:opacity-50 transition-all duration-200 ${buttonSuccess ? 'bg-green-600 scale-105' : ''
                   }`}
               >

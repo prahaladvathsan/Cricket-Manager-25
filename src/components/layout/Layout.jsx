@@ -8,13 +8,16 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import AutosaveIndicator from '../shared/AutosaveIndicator';
+import ProcessingOverlay from '../shared/ProcessingOverlay';
 import useUIStore from '../../stores/uiStore';
+import useGameStore from '../../stores/gameStore';
 import useNavigationStore from '../../stores/navigationStore';
 import '../../styles/wallpaper.css';
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const { preferences } = useUIStore();
+  const isProcessingTurn = useGameStore((state) => state.isProcessingTurn);
   const { pushRoute } = useNavigationStore();
 
   // Track navigation history for in-game routes only
@@ -41,6 +44,9 @@ const Layout = ({ children }) => {
 
       {/* Global autosave indicator */}
       <AutosaveIndicator />
+
+      {/* Processing overlay during advanceDay */}
+      <ProcessingOverlay isVisible={isProcessingTurn} />
     </div>
   );
 };

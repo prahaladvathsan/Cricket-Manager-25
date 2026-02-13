@@ -266,18 +266,12 @@ git checkout testing  # Switch back to testing
 ## Testing Quick Reference
 
 ```bash
-# Match Engine
-node src/test/diagnosticBallTest.js              # Test outcome probabilities
-node src/test/detailedMatchTest.js               # Full match simulation
-node src/test/demoInteractiveMatch.js            # Automated demo match
+# Field formation validation (Node CLI)
+node src/test/validateFieldTemplates.js          # Validate field formations vs T20 rules
 
-# League System
-node src/test/leagueTest.js                      # Quick test (5 matches)
-node src/test/leagueTest.js --full               # Full season (90 matches)
-node src/test/leagueTest.js --full --playoffs    # Season + playoffs
-
-# Auction System
-node src/test/demoAuction.js                     # Test auction logic
+# Browser console test suite (run in dev tools)
+import('/src/test/advanceDayTest.js')            # Load advanceDay batching tests
+window.__CM25_TEST.runAll()                      # Run all 9 tests (set calls, conditions, memory, persistence)
 ```
 
 See `docs/dev/testing.md` for testing guidelines.

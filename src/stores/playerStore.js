@@ -169,6 +169,24 @@ const usePlayerStore = create(
   })),
 
   /**
+   * Batch update condition for multiple players in a single setState call
+   * Reduces ~545 individual set() calls to 1 during advanceDay()
+   * @param {Object} updatesMap - Map of playerId -> conditionUpdates
+   */
+  batchUpdatePlayerConditions: (updatesMap) => set((state) => {
+    const newPlayers = { ...state.players };
+    for (const [playerId, conditionUpdates] of Object.entries(updatesMap)) {
+      if (newPlayers[playerId]) {
+        newPlayers[playerId] = {
+          ...newPlayers[playerId],
+          condition: { ...newPlayers[playerId].condition, ...conditionUpdates }
+        };
+      }
+    }
+    return { players: newPlayers };
+  }),
+
+  /**
    * Assign player to team
    * @param {string} playerId - Player ID
    * @param {string} teamId - Team ID

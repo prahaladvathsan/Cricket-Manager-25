@@ -998,8 +998,9 @@ export default function MatchdayUI() {
         };
       };
 
-      const innings1 = calculateInningsScore(1);
-      const innings2 = calculateInningsScore(2);
+      const secondBattingTeamId = firstBattingTeamId === homeTeam.id ? awayTeam.id : homeTeam.id;
+      const innings1 = { ...calculateInningsScore(1), battingTeam: firstBattingTeamId };
+      const innings2 = { ...calculateInningsScore(2), battingTeam: secondBattingTeamId };
 
       // CHECK FOR TIE - Super Over Required!
       if (innings1.totalScore === innings2.totalScore) {
