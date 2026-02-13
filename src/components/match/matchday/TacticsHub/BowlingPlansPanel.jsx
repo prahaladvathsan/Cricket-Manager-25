@@ -114,12 +114,12 @@ const BowlerRow = ({ playerId, isCurrentBowler, bowlingPlans, onUpdatePlan }) =>
         <div className="flex gap-1.5">
           <ConditionBar
             type="confidence"
-            value={matchConditions[playerId]?.confidence || 50}
+            value={matchConditions[playerId]?.confidence ?? 50}
             showValue={false}
           />
           <ConditionBar
             type="energy"
-            value={matchConditions[playerId]?.energy || 100}
+            value={matchConditions[playerId]?.energy ?? 100}
             showValue={false}
           />
         </div>
@@ -255,16 +255,34 @@ const OverAssignmentsTab = ({ bowlers, currentBall, currentBowler, overAssignmen
                     {bowlers.map(bowler => {
                       const bowled = oversBowled[bowler.id] || 0;
                       const maxOvers = 4; // T20 limit per bowler
-                      const canBowl = bowled < maxOvers;
+
+                      // Check if bowler is disabled for this specific over slot
+                      let isDisabled = false;
+                      if (!isFrozen) {
+                        // Max 4 overs check: count assignments excluding this slot
+                        let assignedCount = 0;
+                        for (let o = 1; o <= 20; o++) {
+                          if (o !== overNumber && overAssignments[o] === bowler.id) assignedCount++;
+                        }
+                        if (assignedCount >= maxOvers) isDisabled = true;
+
+                        // Consecutive over restriction: can't bowl adjacent overs
+                        if (!isDisabled) {
+                          const prevBowler = overNumber > 1 ? overAssignments[overNumber - 1] : null;
+                          const nextBowler = overNumber < 20 ? overAssignments[overNumber + 1] : null;
+                          if (prevBowler === bowler.id || nextBowler === bowler.id) isDisabled = true;
+                        }
+                      }
 
                       return (
                         <option
                           key={bowler.id}
                           value={bowler.id}
-                          disabled={!canBowl && !isFrozen}
+                          disabled={isDisabled}
                           className="bg-bg-tertiary text-text-primary"
+                          style={isDisabled ? { color: '#6b7280' } : undefined}
                         >
-                          {bowler.name} ({bowled}/{maxOvers})
+                          {bowler.name} ({bowled}/{maxOvers}){isDisabled ? ' (unavailable)' : ''}
                         </option>
                       );
                     })}

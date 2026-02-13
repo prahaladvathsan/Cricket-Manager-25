@@ -292,12 +292,12 @@ export default function BattingAccelerationPanel() {
                   <div className="flex gap-1.5">
                     <ConditionBar
                       type="confidence"
-                      value={matchConditions[playerId]?.confidence || 50}
+                      value={matchConditions[playerId]?.confidence ?? 50}
                       showValue={false}
                     />
                     <ConditionBar
                       type="energy"
-                      value={matchConditions[playerId]?.energy || 100}
+                      value={matchConditions[playerId]?.energy ?? 100}
                       showValue={false}
                     />
                   </div>

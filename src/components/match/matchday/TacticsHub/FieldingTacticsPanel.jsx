@@ -13,9 +13,10 @@ import React, { useState, useEffect } from 'react';
 import useMatchStore from '../../../../stores/matchStore';
 import useTeamStore from '../../../../stores/teamStore';
 import usePlayerStore from '../../../../stores/playerStore';
-import { Shield, Users, Edit3, Lock } from 'lucide-react';
+import { Shield, Users, Edit3, Lock, AlertCircle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { formationsConfig } from '../../../../utils/fieldingFormationResolver.js';
 import { getFormationWithPositions } from '../../../../utils/fieldingFormationResolver.js';
+import { validateFieldingSetup, getViolationMessages } from '../../../../core/match-engine/validation/FieldingRulesValidator';
 
 /**
  * Formation Subtab - Data-dense formation list + customize button
@@ -26,7 +27,10 @@ const FormationSubtab = ({
   phase,
   userIsBowling,
   customizeMode,
-  onToggleCustomize
+  onToggleCustomize,
+  validationResult,
+  validationExpanded,
+  onToggleValidation
 }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
@@ -126,6 +130,53 @@ const FormationSubtab = ({
           Defend
         </button>
       </div>
+
+      {/* Fielding Validation Status */}
+      {validationResult && (
+        <div
+          className={`mx-1 px-3 py-1.5 rounded cursor-pointer transition-colors ${validationResult.isValid
+            ? 'bg-green-500/10 hover:bg-green-500/15'
+            : 'bg-yellow-500/10 hover:bg-yellow-500/15'
+            }`}
+          onClick={onToggleValidation}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {validationResult.isValid ? (
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
+              )}
+              <span className={`text-xs font-medium ${validationResult.isValid ? 'text-green-400' : 'text-yellow-400'}`}>
+                {validationResult.isValid ? 'Valid Setup' : 'Issues Found'}
+              </span>
+              <span className="text-xs text-text-secondary">
+                Outside: {validationResult.summary.fieldersOutsideCircle}/{validationResult.summary.maxOutsideCircle} •
+                Leg: {validationResult.summary.fieldersLegSide}/{validationResult.summary.maxLegSide}
+              </span>
+            </div>
+            {validationExpanded ? (
+              <ChevronUp className="w-3.5 h-3.5 text-text-secondary" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-text-secondary" />
+            )}
+          </div>
+
+          {validationExpanded && (
+            <div className="mt-2 pt-2 border-t border-border-primary text-xs text-text-secondary">
+              {validationResult.violations.length > 0 ? (
+                <div className="space-y-0.5">
+                  {getViolationMessages(validationResult.violations).map((msg, idx) => (
+                    <div key={idx}>• {msg}</div>
+                  ))}
+                </div>
+              ) : (
+                <p>Formation complies with T20 fielding regulations for {phase === 'powerplay' ? 'powerplay' : 'post-powerplay'} overs.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Formation list - data dense single lines with color coding */}
       <div className="space-y-0.5 px-1 max-h-[450px] overflow-y-auto">
@@ -278,6 +329,8 @@ const AssignmentsSubtab = ({
 export default function FieldingTacticsPanel() {
   const [activeSubTab, setActiveSubTab] = useState('formation');
   const [customizeMode, setCustomizeMode] = useState(false);
+  const [validationResult, setValidationResult] = useState(null);
+  const [validationExpanded, setValidationExpanded] = useState(false);
 
   const innings = useMatchStore(state => state.innings);
   const currentBall = useMatchStore(state => state.currentBall);
@@ -302,6 +355,16 @@ export default function FieldingTacticsPanel() {
   // Determine phase based on current over
   const currentOver = currentBall.over;
   const phase = currentOver < 6 ? 'powerplay' : 'postPowerplay';
+
+  // Validate current fielding setup
+  useEffect(() => {
+    const fieldPositions = innings.fieldPositions;
+    if (fieldPositions && fieldPositions.length > 0) {
+      const over = phase === 'powerplay' ? 1 : 10;
+      const result = validateFieldingSetup(fieldPositions, over);
+      setValidationResult(result);
+    }
+  }, [innings.fieldPositions, innings.currentFieldFormation, phase]);
 
   // Initialize fielding formation from saved teamTactics at match start
   useEffect(() => {
@@ -418,6 +481,9 @@ export default function FieldingTacticsPanel() {
           userIsBowling={userIsBowling}
           customizeMode={customizeMode}
           onToggleCustomize={handleToggleCustomize}
+          validationResult={validationResult}
+          validationExpanded={validationExpanded}
+          onToggleValidation={() => setValidationExpanded(!validationExpanded)}
         />
       ) : (
         <AssignmentsSubtab
