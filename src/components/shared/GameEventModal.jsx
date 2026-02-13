@@ -108,7 +108,7 @@ const GameEventModal = ({ isOpen, onClose, event, onProceed }) => {
   const Icon = config.icon;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-md w-full mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-primary">

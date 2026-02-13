@@ -21,7 +21,7 @@ const TeamCardModal = ({ isOpen, onClose, teamId, team }) => {
 
   if (!teamData) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
         <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-3xl w-full">
           <div className="p-6 text-center">
             <p className="text-text-secondary">Team not found</p>
@@ -39,7 +39,7 @@ const TeamCardModal = ({ isOpen, onClose, teamId, team }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         // Close if clicking the backdrop
         if (e.target === e.currentTarget) {

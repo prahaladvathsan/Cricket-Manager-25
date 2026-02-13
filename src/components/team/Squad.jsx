@@ -1010,7 +1010,7 @@ const Squad = () => {
 
       {/* List for Transfer Modal */}
       {showListingModal && selectedPlayerForListing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
           <div className="card p-4 max-w-md w-full">
             <h3 className="text-lg font-bold text-text-primary mb-3">List Player for Transfer</h3>
 

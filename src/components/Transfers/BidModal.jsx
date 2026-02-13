@@ -79,7 +79,7 @@ const BidModal = ({ listing, onClose, onConfirm, userBudget }) => {
   const remainingBudget = userBudget - (parseFloat(bidAmount) || 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-secondary border border-gray-700 rounded-lg max-w-lg w-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">

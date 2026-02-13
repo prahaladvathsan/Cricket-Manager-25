@@ -154,7 +154,7 @@ const WormModal = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] flex flex-col">

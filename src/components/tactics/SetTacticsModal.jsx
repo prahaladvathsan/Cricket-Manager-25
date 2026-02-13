@@ -116,7 +116,7 @@ const SetTacticsModal = ({ isOpen, onClose, teamId }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2">
       <div className="bg-black/60 backdrop-blur-md border border-border-primary rounded-lg shadow-xl w-[98vw] h-[98vh] flex flex-col">
         {/* Header - Compact */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border-primary">

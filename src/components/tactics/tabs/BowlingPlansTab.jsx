@@ -490,7 +490,7 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
 
       {/* Add Part-timer Modal */}
       {showAddBowlerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
           <div className="bg-bg-secondary border border-border-primary rounded-lg p-4 w-80 max-h-96">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-text-primary">Add Part-timer</h3>
