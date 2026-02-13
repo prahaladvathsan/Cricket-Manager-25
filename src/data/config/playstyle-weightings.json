@@ -527,9 +527,22 @@
       ]
     },
     "all-rounder": [
+      "Opener - Slogger",
       "Opener - Balanced",
+      "Opener - Anchor",
+      "Top Order - Slogger",
       "Top Order - Balanced",
-      "Middle Order - Balanced"
+      "Top Order - Anchor",
+      "Middle Order - Slogger",
+      "Middle Order - Balanced",
+      "Middle Order - Anchor",
+      "Lower Order - Slogger",
+      "Lower Order - Balanced",
+      "Lower Order - Anchor",
+      "Finisher",
+      "Runner",
+      "Pinch-Hitter",
+      "Wall"
     ],
     "wicket-keeper": {
       "batting": [

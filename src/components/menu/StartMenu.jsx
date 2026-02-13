@@ -162,7 +162,7 @@ const StartMenu = () => {
           >
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-cricket-accent animate-pulse" />
-              <span className="text-cricket-accent font-semibold">v1.1.3</span>
+              <span className="text-cricket-accent font-semibold">v1.1.4</span>
               <span className="text-cricket-text-tertiary text-[10px]">NEW!</span>
             </div>
             {/* Tooltip */}

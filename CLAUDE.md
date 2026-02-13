@@ -22,7 +22,7 @@ node src/test/diagnosticBallTest.js                        # Test match engine o
 Cricket Manager is a T20 cricket management simulation game (Football Manager for cricket) built with React 18. Features:
 - **World Premier League**: Fictional 10-team T20 league (Mumbai, London, Melbourne, etc.)
 - **Ball-by-ball simulation**: ~50k+ balls/second with physics-based fielding
-- **545 players**: Real-world stats converted to 1-20 attribute scale
+- **376 players**: Real-world stats converted to 1-20 attribute scale
 - **Deep tactics**: 24 playstyles, 5 acceleration tiers, 14 bowling plans
 - **Current phase**: Frontend UI development (Phase 5)
 
@@ -44,7 +44,7 @@ src/
 ├── components/             # React UI (Dashboard, League, Squad, Match, Auction)
 ├── data/
 │   ├── config/            # JSON probability configs (NEVER hardcode probabilities)
-│   └── players/           # 545-player database
+│   └── players/           # 376-player database
 └── test/                  # CLI test scripts
 ```
 

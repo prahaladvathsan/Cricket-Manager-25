@@ -7,11 +7,23 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.1.3';
+const CURRENT_VERSION = '1.1.4';
 const RELEASE_DATE = 'February 2026';
-const RELEASE_TAGLINE = 'Tactics & Polish Update';
+const RELEASE_TAGLINE = 'Identity Crisis Hotfix';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.1.4 Identity Crisis Hotfix',
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/30',
+    items: [
+      '🎭 **All-Rounder Playstyle Fix** - Rashid Khan was cosplaying as an Opener. All-rounders now correctly show their actual best batting playstyle',
+      '⚡ **advanceDay() Memory Fix** - 376 individual store updates batched into 1. Your browser was doing more work per day than the players.'
+    ],
+    note: 'All-rounders were having an identity crisis — Rashid Khan thought he was an opener. Therapy complete. 🧠'
+  },
   {
     icon: Wrench,
     title: 'v1.1.3 Tactics & Polish Fixes',
