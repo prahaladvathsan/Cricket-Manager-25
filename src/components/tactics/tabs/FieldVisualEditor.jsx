@@ -9,7 +9,8 @@
  */
 
 import React, { useState } from 'react';
-import { Edit3, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Edit3, X } from 'lucide-react';
+import { validateFieldingSetup } from '../../../core/match-engine/validation/FieldingRulesValidator';
 import useTeamStore from '../../../stores/teamStore';
 import usePlayerStore from '../../../stores/playerStore';
 import fieldPositionsComplete from '../../../data/config/fielding-positions-complete.json';
@@ -17,6 +18,7 @@ import fieldPositionsComplete from '../../../data/config/fielding-positions-comp
 const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, onUpdateSetup }) => {
   const [customizeMode, setCustomizeMode] = useState(false);
   const [selectedFielderIndex, setSelectedFielderIndex] = useState(null);
+  const [setupSnapshot, setSetupSnapshot] = useState(null);
 
   const { getUserTeam, getTeamTactics, updateWicketKeeper } = useTeamStore();
   const { players } = usePlayerStore();
@@ -159,10 +161,27 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
     return player ? player.name : null;
   };
 
-  // Close customize modal
+  // Compute live validation for the modal (re-runs on positions change)
+  const modalOverNumber = phase === 'powerplay' ? 1 : 7;
+  const modalValidation = positions?.length === 11
+    ? validateFieldingSetup(positions, modalOverNumber)
+    : null;
+  const criticalViolations = modalValidation?.violations?.filter(v => v.severity === 'critical') || [];
+
+  // Open customize modal — snapshot current setup so we can revert if needed
+  const openCustomizeMode = () => {
+    setSetupSnapshot(currentSetup ? JSON.parse(JSON.stringify(currentSetup)) : null);
+    setCustomizeMode(true);
+  };
+
+  // Close customize modal — revert to snapshot if there are illegal positions
   const closeCustomizeMode = () => {
+    if (criticalViolations.length > 0 && setupSnapshot && onUpdateSetup) {
+      onUpdateSetup(setupSnapshot);
+    }
     setCustomizeMode(false);
     setSelectedFielderIndex(null);
+    setSetupSnapshot(null);
   };
 
   // Render the field SVG (reusable for both normal and modal views)
@@ -355,7 +374,7 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold text-text-primary">Field Setup</h4>
           <button
-            onClick={() => setCustomizeMode(true)}
+            onClick={openCustomizeMode}
             className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded transition-colors bg-transparent border border-white/10 text-text-secondary hover:text-text-primary border border-border-primary"
           >
             <Edit3 className="w-3 h-3" />
@@ -502,11 +521,32 @@ const FieldVisualEditor = ({ positions, validationResult, phase, currentSetup, o
             </button>
 
             {/* Instructions */}
-            <div className="absolute top-4 left-4 z-10 px-3 py-2 bg-bg-secondary/90 rounded text-xs text-text-secondary">
-              {selectedFielderIndex !== null ? (
-                <span className="text-cricket-accent font-medium">Click a position to move the fielder</span>
-              ) : (
-                <span>Click a fielder to select (bowler & keeper locked)</span>
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+              <div className="px-3 py-2 bg-bg-secondary/90 rounded text-xs text-text-secondary">
+                {selectedFielderIndex !== null ? (
+                  <span className="text-cricket-accent font-medium">Click a position to move the fielder</span>
+                ) : (
+                  <span>Click a fielder to select (bowler & keeper locked)</span>
+                )}
+              </div>
+              {/* Live fielding validation */}
+              {modalValidation && (
+                <div className={`px-3 py-2 rounded text-xs flex items-start gap-2 ${criticalViolations.length > 0 ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
+                  {criticalViolations.length > 0 ? (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <div className="text-red-300">
+                        <div className="font-medium mb-0.5">Illegal setup — closing will revert changes:</div>
+                        {criticalViolations.map((v, i) => <div key={i}>• {v.description}</div>)}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                      <span className="text-green-300">Valid fielding setup</span>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 

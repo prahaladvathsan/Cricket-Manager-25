@@ -187,22 +187,6 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
   // Validation warnings
   const getWarnings = () => {
     const warnings = [];
-    const bowlerOvers = {};
-
-    // Count overs per bowler
-    overAssignments.forEach(playerId => {
-      if (playerId) {
-        bowlerOvers[playerId] = (bowlerOvers[playerId] || 0) + 1;
-      }
-    });
-
-    // Check for >4 overs per bowler
-    Object.entries(bowlerOvers).forEach(([playerId, count]) => {
-      if (count > 4) {
-        const player = players[playerId];
-        warnings.push(`${player?.name || 'Unknown'} assigned ${count} overs (max 4)`);
-      }
-    });
 
     // Check for unassigned overs
     const unassigned = overAssignments.filter(id => !id).length;
@@ -357,6 +341,35 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                   // Add class to first over select for tutorial
                   const isFirstOver = phaseIndex === 0 && overIdx === 0;
 
+                  // Compute which bowlers are illegal for this over slot
+                  const isBowlerDisabled = (bowlerId) => {
+                    // Count overs excluding this slot
+                    let count = 0;
+                    overAssignments.forEach((id, idx) => {
+                      if (id === bowlerId && idx !== overIndex) count++;
+                    });
+                    if (count >= 4) return true;
+                    // Consecutive over restriction
+                    if (overIndex > 0 && overAssignments[overIndex - 1] === bowlerId) return true;
+                    if (overIndex < 19 && overAssignments[overIndex + 1] === bowlerId) return true;
+                    return false;
+                  };
+
+                  const renderOption = (bowler) => {
+                    const disabled = isBowlerDisabled(bowler.id);
+                    return (
+                      <option
+                        key={bowler.id}
+                        value={bowler.id}
+                        disabled={disabled}
+                        className="bg-bg-tertiary text-text-primary"
+                        style={disabled ? { color: '#6b7280' } : undefined}
+                      >
+                        {bowler.name}{disabled ? ' (unavailable)' : ''}
+                      </option>
+                    );
+                  };
+
                   return (
                     <div key={overIndex} className="space-y-0.5">
                       <div className="text-xs text-text-secondary">Over {overNumber}</div>
@@ -368,20 +381,12 @@ const BowlingPlansTab = ({ teamId, teamPlayers, onPlayerClick }) => {
                         <option value="" className="bg-bg-tertiary text-text-primary">—</option>
                         {primaryBowlers.length > 0 && (
                           <optgroup label="Primary" className="bg-bg-tertiary text-text-primary">
-                            {primaryBowlers.map(bowler => (
-                              <option key={bowler.id} value={bowler.id} className="bg-bg-tertiary text-text-primary">
-                                {bowler.name}
-                              </option>
-                            ))}
+                            {primaryBowlers.map(renderOption)}
                           </optgroup>
                         )}
                         {partTimerPlayers.length > 0 && (
                           <optgroup label="Part-timers" className="bg-bg-tertiary text-text-primary">
-                            {partTimerPlayers.map(bowler => (
-                              <option key={bowler.id} value={bowler.id} className="bg-bg-tertiary text-text-primary">
-                                {bowler.name}
-                              </option>
-                            ))}
+                            {partTimerPlayers.map(renderOption)}
                           </optgroup>
                         )}
                       </select>

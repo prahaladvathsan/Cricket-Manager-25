@@ -46,7 +46,7 @@ class EnergyManager {
    * @returns {number} Updated energy value
    */
   updateBattingEnergy(player, ballsFaced, runsTaken) {
-    let currentEnergy = player.condition?.energy ?? 100;
+    let currentEnergy = player.condition?.energy ?? player.condition?.fitness ?? 100;
     const stamina = player.attributes?.physical?.stamina;
 
     // Depletion for balls faced
@@ -75,7 +75,7 @@ class EnergyManager {
    * @returns {number} Updated energy value
    */
   updateBowlingEnergy(bowler, overNumber, ballsBowled) {
-    let currentEnergy = bowler.condition?.energy ?? 100;
+    let currentEnergy = bowler.condition?.energy ?? bowler.condition?.fitness ?? 100;
     const stamina = bowler.attributes?.physical?.stamina;
 
     // Determine base depletion rate based on over number
@@ -105,7 +105,7 @@ class EnergyManager {
    * @returns {number} Updated energy value
    */
   updateFieldingEnergy(fielder, action) {
-    let currentEnergy = fielder.condition?.energy ?? 100;
+    let currentEnergy = fielder.condition?.energy ?? fielder.condition?.fitness ?? 100;
     const stamina = fielder.attributes?.physical?.stamina;
 
     let baseDepletion;

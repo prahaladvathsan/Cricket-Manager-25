@@ -31,7 +31,7 @@ const Sidebar = ({ currentPath }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showAuctionLockModal, setShowAuctionLockModal] = useState(false);
   const [showTacticsLockModal, setShowTacticsLockModal] = useState(false);
-  const { preferences, toggleSidebar, hasInvalidTactics } = useUIStore();
+  const { preferences, toggleSidebar, hasInvalidTactics, tacticsErrors } = useUIStore();
   const { sidebarCollapsed } = preferences;
   const { getUserTeam } = useTeamStore();
   const { currentSeason, currentWeek, currentPhase, isSimulating } = useGameStore();
@@ -248,24 +248,31 @@ const Sidebar = ({ currentPath }) => {
       {/* Tactics Lock Modal */}
       {showTacticsLockModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-cricket-surface border-2 border-yellow-500/50 rounded-lg p-6 max-w-md w-full">
+          <div className="bg-cricket-surface border-2 border-red-500/50 rounded-lg p-6 max-w-md w-full">
             <div className="flex items-start gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">Invalid Tactics</h3>
+              <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-2">Illegal Tactics</h3>
                 <p className="text-sm text-cricket-text-secondary mb-3">
-                  You have validation errors in your tactics. Please fix them before navigating away.
+                  Fix these illegal tactics before leaving:
                 </p>
+                {tacticsErrors.length > 0 && (
+                  <ul className="text-sm text-red-400 space-y-1 mb-3">
+                    {tacticsErrors.map((err, idx) => (
+                      <li key={idx}>• {err}</li>
+                    ))}
+                  </ul>
+                )}
                 <p className="text-xs text-cricket-text-tertiary">
-                  💡 Tip: Click "Generate Default Tactics" button in the red error box to auto-fix all errors.
+                  💡 Tip: Click "Generate Default Tactics" to auto-fix all illegal tactics.
                 </p>
               </div>
             </div>
             <button
               onClick={() => setShowTacticsLockModal(false)}
-              className="btn-primary w-full"
+              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
             >
-              Stay on Tactics Page
+              Fix Illegal Tactics
             </button>
           </div>
         </div>

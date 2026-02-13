@@ -50,7 +50,9 @@ const useUIStore = create(
 
       // Tactics validation state (for navigation blocking)
       hasInvalidTactics: false,
+      tacticsErrors: [],
       setHasInvalidTactics: (invalid) => set({ hasInvalidTactics: invalid }),
+      setTacticsErrors: (errors) => set({ tacticsErrors: errors }),
 
       // Actions
       /**

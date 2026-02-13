@@ -29,6 +29,7 @@ import FieldingTab from './tabs/FieldingTab';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
+import { validateFieldingSetup } from '../../core/match-engine/validation/FieldingRulesValidator';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -48,7 +49,7 @@ const TacticsPage = () => {
   const { getUserTeam, getTeamTactics, hasTactics } = useTeamStore();
   const { players } = usePlayerStore();
   const { auctionState } = useAuctionStore();
-  const { setHasInvalidTactics } = useUIStore();
+  const { setHasInvalidTactics, setTacticsErrors } = useUIStore();
 
   const userTeam = getUserTeam();
   const teamId = userTeam?.id;
@@ -132,6 +133,45 @@ const TacticsPage = () => {
       errors.push(`Injured players in XI: ${injuredPlayerNames}. Remove them from playing XI.`);
     }
 
+    // Bowling legality
+    const overCounts = {};
+    Object.values(teamTactics.overAssignments || {}).forEach(bowlerId => {
+      if (bowlerId) overCounts[bowlerId] = (overCounts[bowlerId] || 0) + 1;
+    });
+
+    Object.entries(overCounts).forEach(([bowlerId, count]) => {
+      if (count > 4) {
+        const p = players[bowlerId];
+        errors.push(`${p?.name || 'A bowler'} is assigned ${count} overs (maximum is 4)`);
+      }
+    });
+
+    const assignments = Array.from({ length: 20 }, (_, i) =>
+      teamTactics.overAssignments?.[i + 1] || null
+    );
+    for (let i = 0; i < 19; i++) {
+      if (assignments[i] && assignments[i] === assignments[i + 1]) {
+        const p = players[assignments[i]];
+        errors.push(`${p?.name || 'A bowler'} bowls consecutive overs (${i + 1} & ${i + 2})`);
+      }
+    }
+
+    // Fielding legality
+    const fieldingSections = [
+      { label: 'Powerplay', positions: teamTactics.fielding?.powerplay?.positions, over: 1 },
+      { label: 'Post-Powerplay', positions: teamTactics.fielding?.postPowerplay?.positions, over: 7 },
+    ];
+    fieldingSections.forEach(({ label, positions, over }) => {
+      if (positions?.length === 11) {
+        const result = validateFieldingSetup(positions, over);
+        if (!result.isValid) {
+          result.violations
+            .filter(v => v.severity === 'critical')
+            .forEach(v => errors.push(`${label}: ${v.description}`));
+        }
+      }
+    });
+
     return { errors, warnings };
   };
 
@@ -149,14 +189,16 @@ const TacticsPage = () => {
 
     const { errors } = validateTactics();
     setHasInvalidTactics(errors.length > 0);
-  }, [teamTactics, players, setHasInvalidTactics]);
+    setTacticsErrors(errors);
+  }, [teamTactics, players, setHasInvalidTactics, setTacticsErrors]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       setHasInvalidTactics(false);
+      setTacticsErrors([]);
     };
-  }, [setHasInvalidTactics]);
+  }, [setHasInvalidTactics, setTacticsErrors]);
 
   // Initialize tactics if they don't exist
   useEffect(() => {
@@ -318,7 +360,7 @@ const TacticsPage = () => {
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
         <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded">
-          <p className="text-red-400 text-sm font-semibold mb-1">Validation errors:</p>
+          <p className="text-red-400 text-sm font-semibold mb-1">Illegal tactics:</p>
           <ul className="text-red-400 text-sm space-y-0.5">
             {validationErrors.map((error, idx) => (
               <li key={idx}>• {error}</li>
