@@ -7,11 +7,28 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.1.2';
+const CURRENT_VERSION = '1.1.3';
 const RELEASE_DATE = 'February 2026';
-const RELEASE_TAGLINE = 'UI Polish & Stability Update';
+const RELEASE_TAGLINE = 'Tactics & Polish Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.1.3 Tactics & Polish Fixes',
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/30',
+    items: [
+      '🎳 **Illegal Bowling Plans Blocked** - Bumrah can no longer bowl all 20 overs. Sorry Bumrah fans.',
+      '🔄 **Fielding Revert on Cancel** - Closing the fielding editor without saving reverts to last legal setup. Your chaos is contained.',
+      '✅ **Live Fielding Validation** - Real-time warning when you set up something illegal. Like 5 slips in a T20.',
+      '🚨 **Tactics Sidebar Actually Explains Itself** - Navigation block now tells you WHAT is illegal instead of just vibing with a red screen',
+      '🧤 **Emergency Keeper Quick-Sim Fix** - Quick-sim was refusing to start if your keeper was injured and you picked an emergency one. Rude.',
+      '🌑 **Darker Modal Backdrops** - You could barely read modals on bright backgrounds. Now you can. Revolutionary.',
+      '⚡ **Energy Reset Fix** - Players were magically recovering to 100 energy overnight like they had a Red Bull sponsorship. Fixed.'
+    ],
+    note: 'Mostly stopping you from accidentally (or deliberately) breaking cricket law. The ICC thanks us. 🏏'
+  },
   {
     icon: Sparkles,
     title: 'v1.1.2 UI Polish & Bug Fixes',

@@ -140,23 +140,20 @@ const Header = () => {
           errors.push('Must select exactly 11 players');
         }
 
-        // Validate minimum bowlers (5)
-        const bowlers = tactics.squadSelection?.filter(playerId => {
+        // Validate minimum bowlers (5, including part-timers)
+        const primaryBowlers = tactics.squadSelection?.filter(playerId => {
           const player = players[playerId];
           return player && (player.role === 'bowler' || player.role === 'all-rounder');
         }) || [];
+        const partTimers = tactics.partTimers || [];
+        const totalBowlingOptions = primaryBowlers.length + partTimers.length;
 
-        if (bowlers.length < 5) {
-          errors.push('Must have at least 5 bowling options');
+        if (totalBowlingOptions < 5) {
+          errors.push(`Must have at least 5 bowling options (currently ${totalBowlingOptions})`);
         }
 
-        // Validate wicket-keeper
-        const hasWicketKeeper = tactics.squadSelection?.some(playerId => {
-          const player = players[playerId];
-          return player && player.role === 'wicket-keeper';
-        });
-
-        if (!hasWicketKeeper) {
+        // Validate wicket-keeper (allow emergency keepers)
+        if (!tactics.wicketKeeper) {
           errors.push('Must have at least 1 wicket-keeper');
         }
 
