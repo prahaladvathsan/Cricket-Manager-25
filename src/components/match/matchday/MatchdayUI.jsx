@@ -899,13 +899,13 @@ export default function MatchdayUI() {
       }
     };
 
-    // Only initialize if match isn't already loaded
-    if (!matchStoreId || matchStoreId !== matchId) {
-      initializeMatch();
-    } else {
-      setIsInitializing(false);
-      console.log('✅ Match already loaded in store');
-    }
+    // Always initialize - MatchEngine is React state and lost on remount,
+    // even if matchStore still has the matchId from a previous session or save load.
+    // Reset matchStore first to avoid stale state from previous match/save.
+    console.log('🏏 MatchdayUI mount: resetting matchStore and initializing fresh engine',
+      { matchId, currentStoreMatchId: matchStoreId, currentStatus: useMatchStore.getState().status });
+    useMatchStore.getState().resetMatch();
+    initializeMatch();
 
     // Cleanup function to prevent state updates after unmount
     return () => {
@@ -1596,6 +1596,8 @@ export default function MatchdayUI() {
 
   // Don't render UI until match engine is ready
   if (!matchEngine) {
+    console.warn('⚠️ MatchdayUI: matchEngine is null but passed all checks.',
+      { isInitializing, initError, matchStoreId, status, matchId });
     return (
       <LoadingScreen
         message="Preparing Match"

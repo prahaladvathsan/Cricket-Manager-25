@@ -1170,10 +1170,12 @@ class SaveGameManager {
       financeEngine.transactionHistory = saveData.financeState.transactionHistory;
     }
 
-    // Match Store
+    // Match Store - always reset to clean state on save load.
+    // Match data is ephemeral (not persisted by partialize) and stale matchId/status
+    // can cause MatchdayUI to get stuck on "Preparing Match" screen.
     stores.matchStore.setState({
-      matchId: saveData.matchState?.matchId || null,
-      status: saveData.matchState?.status || 'idle'
+      matchId: null,
+      status: 'scheduled'
     });
 
     // Auction Store
