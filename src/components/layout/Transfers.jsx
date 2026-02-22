@@ -14,6 +14,7 @@ import useFinanceStore from '../../stores/financeStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
 import AuctionEngine from '../../core/auction-system/AuctionEngine';
+import AuctionTransferAI from '../../core/ai/AuctionTransferAI';
 import aiCore from '../../core/ai/AICore';
 import PlayerCard from '../shared/PlayerCard';
 import PlayerCardModal from '../shared/PlayerCardModal';
@@ -21,6 +22,7 @@ import PlayerName from '../shared/PlayerName';
 import MatchWeekScheduleGenerator from '../../core/league/MatchWeekScheduleGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
 import TransferMarketView from '../Transfers/TransferMarketView';
+import TransferSeasonSummary from '../Transfers/TransferSeasonSummary';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
 import { ContextualTip, useScreenTip, screenTips, TutorialSpotlight, useAuctionTutorial, auctionTutorialSteps } from '../tutorial';
@@ -36,7 +38,7 @@ const Transfers = () => {
   const { addMessage } = useInboxStore();
   const savedAuction = useAuctionStore();
   const { setUserMaxBid, clearUserMaxBid, getUserMaxBid, userMaxBid, userMaxBidPlayerId, userAutoBidEnabled, toggleAutoBid, setAutoBid } = useAuctionStore();
-  const { transferWindow, openTransferWindow, closeTransferWindow } = useTransferStore();
+  const { transferWindow, openTransferWindow, closeTransferWindow, showTransferSummary } = useTransferStore();
 
   // Initialize transfer system
   const { transferHandler, transferMarket, isReady } = useTransferSystem();
@@ -149,27 +151,35 @@ const Transfers = () => {
   const pendingBidsRef = useRef([]);
 
   // Transfer window management
-  const isTransferWindowOpen = transferWindow.isOpen || (currentWeek >= 22 && currentWeek <= 26);
+  // IMPORTANT: Only use transferWindow.isOpen (calendar-driven via Header.jsx/SimulationEngine.js).
+  // Do NOT derive this from currentWeek — the transfer market should only open when the
+  // calendar system explicitly opens it, not on navigation to this page.
+  const isTransferWindowOpen = transferWindow.isOpen;
   const isLeagueActive = currentPhase === 'league' || currentPhase === 'playoffs';
   const auctionCompleted = savedAuction.auctionState === 'completed';
 
-  // Automatically open/close transfer window based on current week
+  // Defensive store cleanup: close the UI window state if we've moved past the off-season.
+  // Only runs during offseason phase to avoid accidentally closing a legitimately open window
+  // during league play. The actual window close (with transfer resolution) happens in Header.jsx.
   useEffect(() => {
-    if (!isReady || !transferMarket || !auctionCompleted) return;
+    if (!isReady || !auctionCompleted) return;
+    if (currentPhase !== 'offseason') return; // Only clean up during off-season phase
 
     const isOffSeasonWindow = currentWeek >= 22 && currentWeek <= 26;
-    const shouldBeOpen = isOffSeasonWindow;
-
-    if (shouldBeOpen && !transferWindow.isOpen) {
-      console.log(`🔓 Opening off-season transfer window (Week ${currentWeek})`);
-      transferMarket.openTransferWindow('offSeason', currentWeek, 14);
-      openTransferWindow(22, 26);
-    } else if (!shouldBeOpen && transferWindow.isOpen) {
-      console.log(`🔒 Closing transfer window (Week ${currentWeek})`);
-      transferMarket.closeTransferWindow();
+    if (!isOffSeasonWindow && transferWindow.isOpen) {
+      console.log(`🔒 Transfer window UI state closed (Week ${currentWeek})`);
+      // Populate summary before closing if not already set
+      const tStore = useTransferStore.getState();
+      if (!tStore.showTransferSummary && tStore.completedTransfers.length > 0) {
+        tStore.setTransferWindowSummary({
+          completedTransfers: [...tStore.completedTransfers],
+          totalListings: tStore.activeListings.length,
+          freeAgents: [...tStore.freeAgents]
+        });
+      }
       closeTransferWindow();
     }
-  }, [currentWeek, transferWindow.isOpen, transferMarket, isReady, openTransferWindow, closeTransferWindow, auctionCompleted]);
+  }, [currentWeek, currentPhase, transferWindow.isOpen, isReady, closeTransferWindow, auctionCompleted]);
 
   // Warn user if they try to close browser/tab during active auction
   useEffect(() => {
@@ -242,6 +252,8 @@ const Transfers = () => {
       }
 
       savedAuction.resetAuction();
+      // Clear any lingering transfer window summary
+      useTransferStore.getState().clearTransferWindowSummary();
       const engine = new AuctionEngine({ fastMode: false });
       const teamsArray = Object.values(teams).map(team => ({
         ...team,
@@ -797,6 +809,23 @@ const Transfers = () => {
     setAuctionState('completed');
     savedAuction.completeAuction();
 
+    // Populate free agency with permanently unsold auction players
+    if (auctionEngine.permanentlyUnsold && auctionEngine.permanentlyUnsold.length > 0) {
+      const auctionAI = new AuctionTransferAI();
+      const freeAgents = auctionEngine.permanentlyUnsold.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        playstyleRatings: p.playstyleRatings,
+        topPlaystyles: p.topPlaystyles,
+        askingPrice: auctionAI.calculateBasePrice(p),
+        currentTeam: null,
+        status: 'unsold'
+      }));
+      useTransferStore.getState().setFreeAgents(freeAgents);
+      console.log(`🆓 ${freeAgents.length} permanently unsold players added to free agency`);
+    }
+
     clearEvents();
     setTimeout(() => {
       initializeLeague();
@@ -1053,6 +1082,11 @@ const Transfers = () => {
   // If transfer window is open and auction completed, show transfer market
   if (isTransferWindowOpen && auctionCompleted && userTeam && isReady) {
     return <TransferMarketView transferHandler={transferHandler} />;
+  }
+
+  // If window closed but summary is active, show transfer season summary
+  if (!isTransferWindowOpen && auctionCompleted && showTransferSummary) {
+    return <TransferSeasonSummary />;
   }
 
   return (

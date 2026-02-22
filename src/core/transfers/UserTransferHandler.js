@@ -6,6 +6,7 @@
  */
 
 import useInboxStore from '../../stores/inboxStore';
+import useGameStore from '../../stores/gameStore';
 
 export default class UserTransferHandler {
   constructor(transferMarket, financeStore, teamStore, transferStore, playerStore) {
@@ -23,6 +24,39 @@ export default class UserTransferHandler {
   }
 
   /**
+   * Check if transfer window is open — checks both in-memory TransferMarket
+   * AND the persisted transferStore. If the store says open but in-memory says
+   * closed, syncs the in-memory state (handles the case where Header.jsx
+   * hasn't called handleContinue yet but UI store already marked window open).
+   * @returns {boolean}
+   */
+  _isWindowOpen() {
+    if (this.transferMarket.windowOpen) return true;
+
+    // Fallback: check store state and sync in-memory if needed
+    const storeWindow = this.transferStore.getState().transferWindow;
+    if (storeWindow && storeWindow.isOpen) {
+      // Open the in-memory window to match store state
+      this.transferMarket.windowOpen = true;
+      this.transferMarket.currentWindow = {
+        type: storeWindow.type || 'offSeason',
+        name: storeWindow.name || 'Off-Season Transfer Window',
+        startWeek: storeWindow.startWeek,
+        endWeek: storeWindow.endWeek,
+        duration: storeWindow.daysRemaining || 14,
+        enabled: true
+      };
+      const gameState = useGameStore.getState();
+      this.transferMarket.currentWeek = gameState.currentWeek || 0;
+      this.transferMarket.listingDurationDays = 14;
+      console.log('🔧 UserTransferHandler: Synced in-memory window state from store');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * List a player for sale
    * @param {string} userTeamId - User's team ID
    * @param {string} playerId - Player ID to list
@@ -30,8 +64,8 @@ export default class UserTransferHandler {
    * @returns {Object} Result {success, listingId?, error?, message?}
    */
   listPlayerForSale(userTeamId, playerId, askingPrice) {
-    // Validate transfer window
-    if (!this.transferMarket.windowOpen) {
+    // Validate transfer window (checks both in-memory and store state)
+    if (!this._isWindowOpen()) {
       return {
         success: false,
         error: 'Transfer window is currently closed'
@@ -78,18 +112,23 @@ export default class UserTransferHandler {
     const previousPrice = player.purchasePrice || 500000; // Default if unknown
     const performanceMultiplier = 1.0; // Could calculate based on performance
 
-    // List player on market
+    // List player on market (pass current gameDay for game-day-based expiry)
+    const currentGameDay = useGameStore.getState().gameDay;
     const result = this.transferMarket.listPlayer({
       teamId: userTeamId,
       playerId,
       player,
       listingPrice: askingPrice,
       previousPrice,
-      performanceMultiplier
+      performanceMultiplier,
+      gameDay: currentGameDay
     });
 
     if (result.success) {
-      // Add to user listings in transferStore
+      // Add to both activeListings (marketplace) and userListings (my listings tab)
+      // addUserListing only updates userListings; addListing updates activeListings
+      // Without addListing, marketplace doesn't show the listing until the 1-second sync fires
+      this.transferStore.getState().addListing(result.listing);
       this.transferStore.getState().addUserListing(result.listing);
 
       // Send inbox message
@@ -123,8 +162,8 @@ export default class UserTransferHandler {
    * @returns {Object} Result {success, error?, message?}
    */
   placeBid(userTeamId, listingId, bidAmount) {
-    // Validate transfer window
-    if (!this.transferMarket.windowOpen) {
+    // Validate transfer window (checks both in-memory and store state)
+    if (!this._isWindowOpen()) {
       return {
         success: false,
         error: 'Transfer window is currently closed'
@@ -166,7 +205,8 @@ export default class UserTransferHandler {
       };
     }
 
-    const validation = this.financeStore.getState().validateBudget(userTeamId, bidAmount);
+    // Half-price economics: only half the bid amount is actually deducted
+    const validation = this.financeStore.getState().validateBudget(userTeamId, Math.round(bidAmount / 2));
     if (!validation.canAfford) {
       return {
         success: false,
@@ -210,69 +250,6 @@ export default class UserTransferHandler {
       return {
         success: true,
         message: `Bid placed: $${(bidAmount / 1000).toFixed(0)}K on ${listing.player.name}`
-      };
-    }
-
-    return result;
-  }
-
-  /**
-   * Accept a bid on user's listing
-   * @param {string} userTeamId - User's team ID
-   * @param {string} listingId - Listing ID
-   * @returns {Object} Result {success, transfer?, error?, message?}
-   */
-  acceptBid(userTeamId, listingId) {
-    // Get listing
-    const listing = this.transferMarket.getListing(listingId);
-    if (!listing) {
-      return {
-        success: false,
-        error: 'Listing not found'
-      };
-    }
-
-    // Check ownership
-    if (listing.teamId !== userTeamId) {
-      return {
-        success: false,
-        error: 'You do not own this listing'
-      };
-    }
-
-    // Check if there are bids
-    if (!listing.currentBidder || listing.bids.length === 0) {
-      return {
-        success: false,
-        error: 'No bids to accept'
-      };
-    }
-
-    // Complete transfer immediately
-    const result = this.transferMarket.completeTransfer(listing);
-
-    if (result.success) {
-      // Remove from user listings
-      this.transferStore.getState().removeListing(listingId);
-
-      // Send inbox message
-      this.inboxStore.getState().addMessage({
-        type: 'transfer_completed',
-        subject: '✅ Transfer Completed - Player Sold',
-        body: `**${listing.player.name}** has been sold to **${result.transfer?.buyerTeam || 'another team'}** for **$${(listing.currentBid / 1000).toFixed(0)}K**.\n\nThe transfer fee has been added to your budget.`,
-        sender: 'Transfer Market',
-        metadata: {
-          playerId: listing.playerId,
-          listingId,
-          transferFee: listing.currentBid,
-          buyerTeamId: listing.currentBidder
-        }
-      });
-
-      return {
-        success: true,
-        transfer: result.transfer,
-        message: `${listing.player.name} sold for $${(listing.currentBid / 1000).toFixed(0)}K`
       };
     }
 
@@ -343,7 +320,7 @@ export default class UserTransferHandler {
    * @param {number} signPrice - Signing price
    * @returns {Object} Result {success, error?, message?}
    */
-  signFreeAgent(userTeamId, playerId, signPrice) {
+  signFreeAgent(userTeamId, playerId, askingPrice) {
     // Check squad size limit
     const squad = this.teamStore.getState().squadLists[userTeamId] || [];
     if (squad.length >= this.MAX_SQUAD_SIZE) {
@@ -371,8 +348,12 @@ export default class UserTransferHandler {
       };
     }
 
-    // Validate budget
-    const validation = this.financeStore.getState().validateBudget(userTeamId, signPrice);
+    // Half-price economics: signing cost = askingPrice / 2
+    // processTransferPurchase handles the halving internally
+    const signingCost = Math.round(askingPrice / 2);
+
+    // Validate budget against half-price cost
+    const validation = this.financeStore.getState().validateBudget(userTeamId, signingCost);
     if (!validation.canAfford) {
       return {
         success: false,
@@ -381,39 +362,155 @@ export default class UserTransferHandler {
       };
     }
 
-    // Process signing through finance system
+    // Process signing through finance system (pass full askingPrice — engine halves it)
     const success = this.financeStore.getState().processTransferPurchase(
       userTeamId,
       null, // No seller for free agents
       player,
-      signPrice
+      askingPrice
     );
 
     if (success) {
+      // Set player's soldPrice to full asking price (annual salary)
+      this.playerStore.getState().setPlayerSoldPrice(playerId, askingPrice);
+      // Assign player to team
+      this.playerStore.getState().assignPlayerToTeam(playerId, userTeamId);
+      this.teamStore.getState().addPlayerToSquad(userTeamId, playerId);
+
       // Remove from free agents
       this.transferStore.getState().removeFreeAgent(playerId);
+
+      // Record completed transfer
+      this.transferStore.getState().addCompletedTransfer({
+        playerId,
+        playerName: player.name,
+        playerRole: player.primaryRole || player.role,
+        playerRating: player.rating || null,
+        fromTeamId: null,
+        toTeamId: userTeamId,
+        oldPrice: 0,
+        newPrice: askingPrice,
+        type: 'free_agency'
+      });
 
       // Send inbox message
       this.inboxStore.getState().addMessage({
         type: 'free_agent_signed',
         subject: '✍️ Free Agent Signed',
-        body: `**${player.name}** has been signed as a free agent for **$${(signPrice / 1000).toFixed(0)}K**.\n\nThe player has been added to your squad.`,
+        body: `**${player.name}** has been signed as a free agent for **$${(signingCost / 1000).toFixed(0)}K** (half-year salary of $${(askingPrice / 1000).toFixed(0)}K).\n\nThe player has been added to your squad.`,
         sender: 'Transfer Market',
         metadata: {
           playerId,
-          signPrice
+          askingPrice,
+          signingCost
         }
       });
 
       return {
         success: true,
-        message: `${player.name} signed for $${(signPrice / 1000).toFixed(0)}K`
+        message: `${player.name} signed for $${(signingCost / 1000).toFixed(0)}K`
       };
     }
 
     return {
       success: false,
       error: 'Failed to process signing'
+    };
+  }
+
+  /**
+   * Release a player from the user's squad (adds to free agency)
+   * @param {string} userTeamId - User's team ID
+   * @param {string} playerId - Player ID to release
+   * @returns {Object} Result {success, error?, message?}
+   */
+  releasePlayer(userTeamId, playerId) {
+    // Get team squad
+    const squad = this.teamStore.getState().squadLists[userTeamId] || [];
+
+    // Check minimum squad size
+    if (squad.length <= this.MIN_SQUAD_SIZE) {
+      return {
+        success: false,
+        error: `Cannot release - minimum squad size is ${this.MIN_SQUAD_SIZE} players`
+      };
+    }
+
+    // Check player exists in squad
+    if (!squad.includes(playerId)) {
+      return {
+        success: false,
+        error: 'Player not found in your squad'
+      };
+    }
+
+    // Check player is not currently listed
+    const userListings = this.getUserListings(userTeamId);
+    if (userListings.some(l => l.playerId === playerId)) {
+      return {
+        success: false,
+        error: 'Cannot release a player with an active listing. Cancel the listing first.'
+      };
+    }
+
+    // Get player details
+    const player = this.playerStore.getState().players[playerId];
+    if (!player) {
+      return {
+        success: false,
+        error: 'Player data not found'
+      };
+    }
+
+    // Process financial recoup (30% of half-year salary)
+    this.financeStore.getState().processPlayerRelease(userTeamId, player);
+
+    // Remove from team
+    this.playerStore.getState().releasePlayer(playerId);
+    this.teamStore.getState().removePlayerFromSquad(userTeamId, playerId);
+
+    // Add to free agency
+    const askingPrice = player.soldPrice || 200000;
+    this.transferStore.getState().addFreeAgent({
+      id: player.id,
+      name: player.name,
+      role: player.role,
+      playstyleRatings: player.playstyleRatings,
+      topPlaystyles: player.topPlaystyles,
+      askingPrice,
+      status: 'released'
+    });
+
+    // Calculate recoup amount for display
+    const recoup = Math.round((player.soldPrice || 0) * 0.5 * 0.3);
+
+    // Record in completed transfers
+    this.transferStore.getState().addCompletedTransfer({
+      playerId,
+      playerName: player.name,
+      playerRole: player.primaryRole || player.role,
+      fromTeamId: userTeamId,
+      toTeamId: null,
+      oldPrice: player.soldPrice || 0,
+      newPrice: recoup,
+      type: 'release'
+    });
+
+    // Send inbox message
+    this.inboxStore.getState().addMessage({
+      type: 'player_released',
+      subject: 'Player Released',
+      body: `**${player.name}** has been released from your squad.${recoup > 0 ? `\n\nYou recouped **$${(recoup / 1000).toFixed(0)}K** from the release.` : ''}\n\nThe player is now a free agent.`,
+      sender: 'Transfer Market',
+      metadata: {
+        playerId,
+        recoup
+      }
+    });
+
+    return {
+      success: true,
+      message: `${player.name} released${recoup > 0 ? ` ($${(recoup / 1000).toFixed(0)}K recouped)` : ''}`
     };
   }
 

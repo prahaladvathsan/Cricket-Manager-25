@@ -6,6 +6,7 @@
 
 import quickSimMatch from '../match-engine/utils/QuickSimMatch';
 import AuctionEngine from '../auction-system/AuctionEngine';
+import AuctionTransferAI from '../ai/AuctionTransferAI';
 import MatchWeekScheduleGenerator from '../league/MatchWeekScheduleGenerator';
 import PlayoffGenerator from '../league/PlayoffGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
@@ -14,7 +15,7 @@ import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueIn
 import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
-import { getTransferManager } from '../finance/transferManagerSingleton';
+import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../finance/transferManagerSingleton';
 import { indexedDBStorage } from '../../utils/indexedDBStorage';
 
 /**
@@ -298,6 +299,23 @@ class SimulationEngine {
     // Mark auction as complete
     this.auctionStore.getState().completeAuction();
 
+    // Populate free agency with permanently unsold auction players
+    if (auctionEngine.permanentlyUnsold && auctionEngine.permanentlyUnsold.length > 0) {
+      const auctionAI = new AuctionTransferAI();
+      const freeAgents = auctionEngine.permanentlyUnsold.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        playstyleRatings: p.playstyleRatings,
+        topPlaystyles: p.topPlaystyles,
+        askingPrice: auctionAI.calculateBasePrice(p),
+        currentTeam: null,
+        status: 'unsold'
+      }));
+      this.transferStore.getState().setFreeAgents(freeAgents);
+      console.log(`🆓 ${freeAgents.length} permanently unsold players added to free agency`);
+    }
+
     // Emit auction event for live feed
     this.emitEvent('auction', {
       playersSold: totalPlayers,
@@ -482,7 +500,55 @@ class SimulationEngine {
       // Initialize league
       await this.initializeLeague();
       summary.eventsProcessed++;
-    } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
+    } else if (event && event.type === 'offseason_start') {
+      // OFFSEASON START — set phase and open transfer window immediately.
+      // transfer_window_open fires on the same calendar day but find() only returns one
+      // event per day; opening here keeps game behaviour in sync with the calendar display.
+      console.log('📅 Off-season started — setting phase to offseason and opening transfer window');
+      this.gameStore.getState().advancePhase('offseason');
+
+      const currentWeek = this.gameStore.getState().currentWeek;
+      const transferManager = getTransferManager();
+      if (!transferManager.transferMarket.windowOpen) {
+        transferManager.allowUserTeamAI = true; // Sim mode: AI controls all teams
+        transferManager.setCurrentWeek(currentWeek);
+
+        if (!getHasRunPreReleases()) {
+          const preReleaseTeams = Object.values(this.teamStore.getState().teams || {}).map(team => {
+            const squadIds = this.teamStore.getState().squadLists[team.id] || [];
+            return { ...team, squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean) };
+          });
+          transferManager.transferAI.releasePreTransferWindow(preReleaseTeams);
+          setHasRunPreReleases(true);
+        }
+
+        transferManager.openWindow('offSeason', 14);
+        const gameDay = this.gameStore.getState().gameDay;
+        this.transferStore.getState().openTransferWindow(currentWeek, currentWeek + 4, gameDay);
+        console.log(`🔓 Transfer window opened on gameDay ${gameDay} (Week ${currentWeek})`);
+      }
+
+      summary.eventsProcessed++;
+    } else if (event && event.type === 'transfer_window_close') {
+      // TRANSFER WINDOW CLOSE — calendar event fires at the correct close date
+      console.log('🔒 Transfer window close event — closing transfer window');
+      const transferManager = getTransferManager();
+      if (transferManager.transferMarket.windowOpen) {
+        transferManager.closeWindow();
+        setHasRunPreReleases(false);
+
+        const useTransferStore = (await import('../../stores/transferStore')).default;
+        const tStore = useTransferStore.getState();
+        tStore.setTransferWindowSummary({
+          completedTransfers: [...tStore.completedTransfers],
+          totalListings: tStore.activeListings.length,
+          freeAgents: [...tStore.freeAgents]
+        });
+        useTransferStore.getState().closeTransferWindow();
+        console.log('🔒 Transfer window closed and summary saved');
+      }
+      summary.eventsProcessed++;
+    } else if (event && event.type === 'season_end') {
       // CRITICAL: Check if playoffs are actually complete before processing season end
       const leagueStage = this.leagueStore.getState().stage;
       const champion = this.leagueStore.getState().champion;
@@ -572,38 +638,23 @@ class SimulationEngine {
       summary.eventsProcessed++;
     }
 
-    // Process off-season transfers during weeks 22-26
+    // Process daily transfer cycle if the window is open.
+    // Open/close is driven by calendar events (offseason_start / transfer_window_close),
+    // not by week numbers — this keeps sim-to-date in sync with the calendar display.
     const currentPhase = this.gameStore.getState().currentPhase;
     const currentWeek = this.gameStore.getState().currentWeek;
 
-    if (currentPhase === 'offseason' && currentWeek >= 22 && currentWeek <= 26) {
+    if (currentPhase === 'offseason' && getTransferManager().transferMarket.windowOpen) {
       try {
         const transferManager = getTransferManager();
-
-        // Open transfer window at week 22
-        if (currentWeek === 22 && !transferManager.transferMarket.windowOpen) {
-          transferManager.setCurrentWeek(currentWeek);
-          transferManager.openWindow('offSeason', 14);
-        }
-
-        // Process weekly transfer cycle
-        if (transferManager.transferMarket.windowOpen) {
-          transferManager.setCurrentWeek(currentWeek);
-          const teams = Object.values(this.teamStore.getState().teams || {}).map(team => {
-            const squadIds = this.teamStore.getState().squadLists[team.id] || [];
-            return {
-              ...team,
-              squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean)
-            };
-          });
-          const transferResult = await transferManager.processWeeklyTransferCycle(teams, currentWeek);
-          summary.transfersCompleted += (transferResult.transfers?.completed || 0);
-        }
-
-        // Close transfer window at week 26
-        if (currentWeek === 26 && transferManager.transferMarket.windowOpen) {
-          transferManager.closeWindow();
-        }
+        transferManager.allowUserTeamAI = true;
+        transferManager.setCurrentWeek(currentWeek);
+        const teams = Object.values(this.teamStore.getState().teams || {}).map(team => {
+          const squadIds = this.teamStore.getState().squadLists[team.id] || [];
+          return { ...team, squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean) };
+        });
+        const transferResult = await transferManager.processDailyTransferCycle(teams, currentWeek);
+        summary.transfersCompleted += (transferResult.transfers?.completed || 0);
       } catch (error) {
         console.error('Error processing off-season transfers:', error);
       }
@@ -754,8 +805,11 @@ class SimulationEngine {
       const homeSquad = homeSquadIds
         .map(id => this.playerStore.getState().players[id])
         .filter(Boolean);
+      let homeTactics = null;
       if (homeSquad.length >= 11) {
-        aiTacticsManager.generateTactics(homeTeam.id, homeSquad, this.teamStore);
+        homeTactics = aiTacticsManager.generateTactics(homeTeam.id, homeSquad, this.teamStore);
+      } else {
+        homeTactics = this.teamStore.getState().getTeamTactics(homeTeam.id);
       }
 
       // Away team tactics - regenerate for ALL teams in sim mode
@@ -763,13 +817,12 @@ class SimulationEngine {
       const awaySquad = awaySquadIds
         .map(id => this.playerStore.getState().players[id])
         .filter(Boolean);
+      let awayTactics = null;
       if (awaySquad.length >= 11) {
-        aiTacticsManager.generateTactics(awayTeam.id, awaySquad, this.teamStore);
+        awayTactics = aiTacticsManager.generateTactics(awayTeam.id, awaySquad, this.teamStore);
+      } else {
+        awayTactics = this.teamStore.getState().getTeamTactics(awayTeam.id);
       }
-
-      // Get tactics (now freshly generated for AI teams)
-      const homeTactics = this.teamStore.getState().getTeamTactics(homeTeam.id);
-      const awayTactics = this.teamStore.getState().getTeamTactics(awayTeam.id);
 
       let homePlayingXI, awayPlayingXI;
 

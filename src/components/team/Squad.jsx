@@ -8,12 +8,12 @@ import { useSearchParams } from 'react-router-dom';
 import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Tag, Activity } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
-import useGameStore from '../../stores/gameStore';
 import useFinanceStore from '../../stores/financeStore';
 import useTransferStore from '../../stores/transferStore';
 import { useTransferSystem } from '../../hooks/useTransferSystem';
 import PlayerCard from '../shared/PlayerCard';
 import PlaystyleBadge from '../shared/PlaystyleBadge';
+import CountryFlag from '../shared/CountryFlag';
 import PlayerCardModal from '../shared/PlayerCardModal';
 import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
@@ -59,9 +59,9 @@ const Squad = () => {
   const careerStats = usePlayerStore(state => state.careerStats);
   const currentSeasonId = usePlayerStore(state => state.currentSeasonId);
   const { getPlayersByTeam } = usePlayerStore();
-  const currentWeek = useGameStore(state => state.currentWeek);
   const getTeamFinances = useFinanceStore(state => state.getTeamFinances);
   const transferWindow = useTransferStore(state => state.transferWindow);
+  const activeListings = useTransferStore(state => state.activeListings);
   const { transferHandler, transferMarket, isReady } = useTransferSystem();
 
   const userTeam = getUserTeam();
@@ -71,8 +71,9 @@ const Squad = () => {
   // Tutorial: Screen tip for first-time visitors
   const { shouldShow: showTip, dismiss: dismissTip } = useScreenTip('squad');
 
-  // Check if transfer window is open
-  const isTransferWindowOpen = transferWindow?.isOpen && currentWeek >= 22 && currentWeek <= 26;
+  // Check if transfer window is open — use only the authoritative store flag,
+  // not a hardcoded week range. The flag is set by Header.jsx/SimulationEngine.js.
+  const isTransferWindowOpen = transferWindow?.isOpen === true;
 
   // Handle listing player for transfer
   const handleListPlayer = (player) => {
@@ -91,21 +92,35 @@ const Squad = () => {
       return;
     }
 
-    // Ensure backend transfer window is open
-    if (!transferMarket.windowOpen && isTransferWindowOpen) {
-      console.log('🔓 Opening backend transfer window from Squad page');
-      transferMarket.openTransferWindow('offSeason', currentWeek, 14);
-    }
-
     const result = transferHandler.listPlayerForSale(userTeam.id, selectedPlayerForListing.id, price);
 
     if (result.success) {
       setShowListingModal(false);
       setSelectedPlayerForListing(null);
       setListingPrice('');
-      alert('Player listed successfully!');
+      // Success notification handled via inbox message
     } else {
       alert(result.error || 'Failed to list player');
+    }
+  };
+
+  // Handle releasing a player
+  const handleReleasePlayer = (player) => {
+    if (!transferHandler || !userTeam) return;
+
+    const recoup = Math.round((player.soldPrice || 0) * 0.5 * 0.3);
+    const confirmed = window.confirm(
+      `Release ${player.name} from your squad?\n\n` +
+      (recoup > 0 ? `You will recoup $${(recoup / 1000).toFixed(0)}K.\n` : '') +
+      `The player will become a free agent.`
+    );
+
+    if (confirmed) {
+      const result = transferHandler.releasePlayer(userTeam.id, player.id);
+      if (!result.success) {
+        alert(result.error || 'Failed to release player');
+      }
+      // Success notification handled via inbox message
     }
   };
 
@@ -258,6 +273,33 @@ const Squad = () => {
   }
 
   const renderSquadOverview = () => {
+    // Build a Set of listed player IDs for the user team (for quick lookup)
+    const listedPlayerIds = new Set(
+      activeListings
+        .filter(l => l.teamId === userTeam?.id && l.status === 'active')
+        .map(l => l.playerId)
+    );
+
+    // Helper: get current season stats for a player
+    const getSeasonStats = (playerId) =>
+      careerStats[playerId]?.seasons?.[currentSeasonId] || null;
+
+    // Helper: compute IPM (Impact Per Match) for a player
+    const getIPM = (playerId) => {
+      const stats = getSeasonStats(playerId);
+      if (!stats || !stats.matches) return null;
+      return (stats.totalImpact || 0) / stats.matches;
+    };
+
+    // Role abbreviation map
+    const ROLE_ABBREV = {
+      'batsman': 'BAT',
+      'bowler': 'BOWL',
+      'all-rounder': 'AR',
+      'wicket-keeper': 'WK'
+    };
+
+
     // Custom sort for squad overview
     const squadCustomSort = (a, b, column, direction) => {
       let aVal, bVal;
@@ -287,6 +329,14 @@ const Squad = () => {
           aVal = a.age || 0;
           bVal = b.age || 0;
           break;
+        case 'matchesPlayed':
+          aVal = getSeasonStats(a.id)?.matches || 0;
+          bVal = getSeasonStats(b.id)?.matches || 0;
+          break;
+        case 'impact':
+          aVal = getIPM(a.id);
+          bVal = getIPM(b.id);
+          break;
         default:
           aVal = a[column] || '';
           bVal = b[column] || '';
@@ -305,50 +355,57 @@ const Squad = () => {
         label: 'Player',
         sortKey: 'name',
         render: (player) => <PlayerName playerId={player.id} player={player} className="font-medium" />,
-        cellClassName: 'px-3 py-2 font-medium'
+        cellClassName: 'px-2 py-1 font-medium'
       },
       {
         key: 'age',
         label: 'Age',
         sortKey: 'age',
         align: 'center',
-        render: (player) => <span className="text-text-secondary">{player.age || '-'}</span>,
-        cellClassName: 'px-3 py-2'
+        render: (player) => <span className="text-text-secondary font-mono text-xs">{player.age || '-'}</span>,
+        cellClassName: 'px-1 py-1'
       },
       {
         key: 'nationality',
-        label: 'Nation',
+        label: 'Nat',
         sortKey: 'nationality',
-        render: (player) => <span className="text-xs">{player.nationality || '-'}</span>,
-        headerClassName: 'px-2 py-2 w-16',
-        cellClassName: 'px-2 py-2 text-text-secondary'
+        align: 'center',
+        render: (player) => (
+          <CountryFlag nationality={player.nationality} className="w-5 h-3 mx-auto" />
+        ),
+        cellClassName: 'px-1 py-1'
       },
       {
         key: 'role',
         label: 'Role',
         sortKey: 'role',
-        render: (player) => <span className="capitalize">{player.role || '-'}</span>,
-        cellClassName: 'px-3 py-2 text-text-secondary'
+        align: 'center',
+        render: (player) => (
+          <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+            {ROLE_ABBREV[player.role] || player.role?.slice(0, 4).toUpperCase() || '-'}
+          </span>
+        ),
+        cellClassName: 'px-1 py-1'
       },
       {
         key: 'battingHand',
-        label: 'Bat Hand',
+        label: 'Hand',
         sortKey: 'battingHand',
         align: 'center',
-        render: (player) => <span className="uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</span>,
-        cellClassName: 'px-3 py-2 text-text-secondary'
+        render: (player) => <span className="text-xs text-text-secondary uppercase">{player.battingHand ? player.battingHand.charAt(0) : '-'}</span>,
+        cellClassName: 'px-1 py-1'
       },
       {
         key: 'bowlingStyle',
-        label: 'Bowling Style',
+        label: 'Style',
         sortKey: 'bowlingStyle',
         align: 'center',
-        render: (player) => <span className="text-xs">{player.bowlingStyleAbbrev || '-'}</span>,
-        cellClassName: 'px-3 py-2 text-text-secondary'
+        render: (player) => <span className="text-xs text-text-secondary">{player.bowlingStyleAbbrev || '-'}</span>,
+        cellClassName: 'px-1 py-1'
       },
       {
         key: 'battingPlaystyle',
-        label: 'Batting Playstyle',
+        label: 'Bat PS',
         sortKey: 'battingPlaystyle',
         render: (player) => {
           const rating = getPrimaryBattingRating(player);
@@ -360,11 +417,11 @@ const Squad = () => {
             />
           ) : '-';
         },
-        cellClassName: 'px-3 py-2'
+        cellClassName: 'px-2 py-1'
       },
       {
         key: 'bowlingPlaystyle',
-        label: 'Bowling Playstyle',
+        label: 'Bowl PS',
         sortKey: 'bowlingPlaystyle',
         render: (player) => {
           const rating = getPrimaryBowlingRating(player);
@@ -376,11 +433,11 @@ const Squad = () => {
             />
           ) : '-';
         },
-        cellClassName: 'px-3 py-2'
+        cellClassName: 'px-2 py-1'
       },
       {
         key: 'fieldingPlaystyle',
-        label: 'Fielding Playstyle',
+        label: 'Fld PS',
         sortKey: 'fieldingPlaystyle',
         render: (player) => {
           const rating = getPrimaryFieldingRating(player);
@@ -392,7 +449,7 @@ const Squad = () => {
             />
           ) : '-';
         },
-        cellClassName: 'px-3 py-2'
+        cellClassName: 'px-2 py-1'
       },
       {
         key: 'value',
@@ -400,7 +457,7 @@ const Squad = () => {
         sortKey: 'value',
         align: 'right',
         render: (player) => (
-          <span className="font-mono text-trophy-gold">
+          <span className="font-mono text-xs text-trophy-gold">
             {player.soldPrice ? (
               player.soldPrice >= 1000000
                 ? `$${(player.soldPrice / 1000000).toFixed(1)}M`
@@ -408,7 +465,40 @@ const Squad = () => {
             ) : '$0K'}
           </span>
         ),
-        cellClassName: 'px-3 py-2'
+        cellClassName: 'px-2 py-1'
+      },
+      {
+        key: 'matchesPlayed',
+        label: 'MP',
+        sortKey: 'matchesPlayed',
+        align: 'center',
+        render: (player) => {
+          const stats = getSeasonStats(player.id);
+          const matches = stats?.matches || 0;
+          return (
+            <span className={`font-mono text-xs ${matches > 0 ? 'text-text-primary' : 'text-text-tertiary'}`}>
+              {matches}
+            </span>
+          );
+        },
+        cellClassName: 'px-1 py-1'
+      },
+      {
+        key: 'impact',
+        label: 'IPM',
+        sortKey: 'impact',
+        align: 'center',
+        render: (player) => {
+          const ipm = getIPM(player.id);
+          if (ipm === null) return <span className="text-text-tertiary">-</span>;
+          const colorClass = ipm >= 0 ? 'text-green-400' : 'text-red-400';
+          return (
+            <span className={`font-mono font-semibold text-xs ${colorClass}`}>
+              {ipm >= 0 ? '+' : ''}{ipm.toFixed(2)}
+            </span>
+          );
+        },
+        cellClassName: 'px-1 py-1'
       }
     ];
 
@@ -420,16 +510,37 @@ const Squad = () => {
         sortKey: 'id',
         sortable: false,
         align: 'center',
-        render: (player) => (
-          <button
-            onClick={() => handleListPlayer(player)}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors mx-auto"
-          >
-            <Tag className="w-3 h-3" />
-            <span>List</span>
-          </button>
-        ),
-        cellClassName: 'px-3 py-2'
+        render: (player) => {
+          const isListed = listedPlayerIds.has(player.id);
+
+          if (isListed) {
+            return (
+              <span className="flex items-center gap-1 text-xs text-green-400 font-medium">
+                <Tag className="w-3 h-3" />
+                Listed
+              </span>
+            );
+          }
+
+          return (
+            <div className="flex flex-col items-center gap-0.5">
+              <button
+                onClick={() => handleListPlayer(player)}
+                className="flex items-center gap-1 px-2 py-0.5 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors w-full justify-center"
+              >
+                <Tag className="w-3 h-3" />
+                <span>List</span>
+              </button>
+              <button
+                onClick={() => handleReleasePlayer(player)}
+                className="flex items-center gap-1 px-2 py-0.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors w-full justify-center"
+              >
+                <span>Release</span>
+              </button>
+            </div>
+          );
+        },
+        cellClassName: 'px-2 py-1'
       });
     }
 
@@ -1014,23 +1125,29 @@ const Squad = () => {
           <div className="card p-4 max-w-md w-full">
             <h3 className="text-lg font-bold text-text-primary mb-3">List Player for Transfer</h3>
 
-            <div className="mb-4">
-              <div className="text-sm text-text-secondary mb-2">Player:</div>
+            <div className="mb-3">
               <div className="text-base font-semibold text-text-primary">{selectedPlayerForListing.name}</div>
-              <div className="text-xs text-text-tertiary mt-1">{selectedPlayerForListing.role} • ${selectedPlayerForListing.auctionValue?.toFixed(1)}M Value</div>
+              <div className="text-xs text-text-tertiary mt-0.5">
+                {selectedPlayerForListing.role}
+                {selectedPlayerForListing.soldPrice > 0 && ` · Bought for $${(selectedPlayerForListing.soldPrice / 1000).toFixed(0)}K`}
+              </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm text-text-secondary mb-2">Asking Price (in $K)</label>
+            <div className="mb-3">
+              <label className="block text-sm text-text-secondary mb-1">Asking Price (in $K)</label>
               <input
                 type="number"
                 value={listingPrice}
                 onChange={(e) => setListingPrice(e.target.value)}
-                placeholder="e.g. 500 for $500K"
+                placeholder={selectedPlayerForListing.soldPrice > 0 ? `e.g. ${Math.round(selectedPlayerForListing.soldPrice / 1000)}` : 'e.g. 500'}
                 min="50"
                 className="w-full card border border-border-primary px-3 py-2 text-text-primary focus:outline-none focus:border-cricket-accent"
               />
               <div className="text-xs text-text-tertiary mt-1">Minimum: $50K</div>
+            </div>
+
+            <div className="mb-3 p-2 bg-bg-tertiary rounded text-xs text-text-secondary">
+              The listing lasts 14 days. If bids come in, the highest bid is automatically accepted when the listing expires. If no bids, the player is released to free agency.
             </div>
 
             <div className="flex gap-2">
@@ -1039,7 +1156,7 @@ const Squad = () => {
                 disabled={!listingPrice || parseFloat(listingPrice) < 50}
                 className="flex-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Listing
+                List for Transfer
               </button>
               <button
                 onClick={() => {

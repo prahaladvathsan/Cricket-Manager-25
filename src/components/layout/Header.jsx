@@ -33,7 +33,7 @@ import ContributeDropdown from './ContributeDropdown';
 import JoinCommunityDropdown from './JoinCommunityDropdown';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useTransferStore from '../../stores/transferStore';
-import { getTransferManager } from '../../core/finance/transferManagerSingleton';
+import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../../core/finance/transferManagerSingleton';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -67,6 +67,7 @@ const Header = () => {
     isWeekend,
     calendarEvents,
     resetForNewSeason,
+    advancePhase,
     isSimulating: globalIsSimulating,
     isProcessingTurn
   } = useGameStore();
@@ -605,7 +606,57 @@ const Header = () => {
         console.log('➡️ Navigating to auction');
         navigate('/game/transfers');
       }
-    } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
+    } else if (event && event.type === 'offseason_start') {
+      // OFFSEASON START — set phase and open transfer window immediately.
+      // The transfer_window_open calendar event is scheduled on the same day but
+      // calendarEvents.find() only returns one event per day; handling it here keeps
+      // the game in sync with the date shown on the calendar.
+      console.log('📅 Off-season started — setting phase to offseason and opening transfer window');
+      advancePhase('offseason');
+
+      const transferManager = getTransferManager();
+      if (!transferManager.transferMarket.windowOpen) {
+        transferManager.allowUserTeamAI = false;
+        transferManager.setCurrentWeek(currentWeek);
+
+        if (!getHasRunPreReleases()) {
+          const preReleaseTeams = Object.values(useLeagueStore.getState().clubs || {}).map(club => {
+            const squadIds = useTeamStore.getState().squadLists[club.id] || [];
+            const players = usePlayerStore.getState().players;
+            return { ...club, squad: squadIds.map(id => players[id]).filter(Boolean) };
+          });
+          console.log(`🔴 Pre-transfer window releases: ${preReleaseTeams.length} teams`);
+          transferManager.transferAI.releasePreTransferWindow(preReleaseTeams);
+          setHasRunPreReleases(true);
+        }
+
+        transferManager.openWindow('offSeason', 14);
+        // Sync Zustand store so the Transfers page renders the marketplace
+        useTransferStore.getState().openTransferWindow(currentWeek, currentWeek + 4, gameDay);
+        console.log(`🔓 Transfer window opened on gameDay ${gameDay} (Week ${currentWeek})`);
+      }
+
+      advanceDay();
+    } else if (event && event.type === 'transfer_window_close') {
+      // TRANSFER WINDOW CLOSE — calendar event fires at the correct close date
+      console.log('🔒 Transfer window close event — closing transfer window');
+      const transferManager = getTransferManager();
+      if (transferManager.transferMarket.windowOpen) {
+        transferManager.closeWindow();
+        setHasRunPreReleases(false);
+
+        // Capture summary BEFORE calling closeTransferWindow (it clears activeListings)
+        const tStore = useTransferStore.getState();
+        tStore.setTransferWindowSummary({
+          completedTransfers: [...tStore.completedTransfers],
+          totalListings: tStore.activeListings.length,
+          freeAgents: [...tStore.freeAgents]
+        });
+        useTransferStore.getState().closeTransferWindow();
+        console.log('🔒 Transfer window closed and summary saved');
+      }
+      advanceDay();
+    } else if (event && event.type === 'season_end') {
       // CRITICAL: Check if playoffs are actually complete before processing season end
       const leagueStage = useLeagueStore.getState().stage;
       const currentChampion = useLeagueStore.getState().champion;
@@ -669,37 +720,20 @@ const Header = () => {
         advanceDay();
       }
     } else {
-      // Process off-season transfers during weeks 22-26
-      if (currentPhase === 'offseason' && currentWeek >= 22 && currentWeek <= 26) {
+      // Process daily transfer cycle if the window is open.
+      // Open/close is now driven by calendar events (offseason_start / transfer_window_close),
+      // not by week numbers — this keeps the game in sync with the calendar display.
+      if (currentPhase === 'offseason' && getTransferManager().transferMarket.windowOpen) {
         try {
           const transferManager = getTransferManager();
-
-          // Open transfer window at week 22 (if not already open)
-          if (currentWeek === 22 && !transferManager.transferMarket.windowOpen) {
-            console.log('🔓 Opening off-season transfer window...');
-            transferManager.setCurrentWeek(currentWeek);
-            transferManager.openWindow('offSeason', 14);
-          }
-
-          // Process weekly transfer cycle if window is open
-          if (transferManager.transferMarket.windowOpen) {
-            transferManager.setCurrentWeek(currentWeek);
-            const teams = Object.values(useLeagueStore.getState().clubs || {}).map(club => {
-              const squadIds = useTeamStore.getState().squadLists[club.id] || [];
-              const players = usePlayerStore.getState().players;
-              return {
-                ...club,
-                squad: squadIds.map(id => players[id]).filter(Boolean)
-              };
-            });
-            await transferManager.processWeeklyTransferCycle(teams, currentWeek);
-          }
-
-          // Close transfer window at week 26
-          if (currentWeek === 26 && transferManager.transferMarket.windowOpen) {
-            console.log('🔒 Closing off-season transfer window...');
-            transferManager.closeWindow();
-          }
+          transferManager.allowUserTeamAI = false;
+          transferManager.setCurrentWeek(currentWeek);
+          const teams = Object.values(useLeagueStore.getState().clubs || {}).map(club => {
+            const squadIds = useTeamStore.getState().squadLists[club.id] || [];
+            const players = usePlayerStore.getState().players;
+            return { ...club, squad: squadIds.map(id => players[id]).filter(Boolean) };
+          });
+          await transferManager.processDailyTransferCycle(teams, currentWeek);
         } catch (error) {
           console.error('Error processing off-season transfers:', error);
         }

@@ -24,6 +24,9 @@ const useTransferStore = create(
       // Free agents (players without teams)
       freeAgents: [],
 
+      // Completed transfers (persisted for display in Completed Transfers tab)
+      completedTransfers: [],
+
       // Transfer notifications
       notifications: [],
 
@@ -47,8 +50,13 @@ const useTransferStore = create(
         isOpen: false,
         startWeek: null,
         endWeek: null,
-        daysRemaining: 0
+        daysRemaining: 0,
+        windowOpenGameDay: null
       },
+
+      // Transfer window summary (shown after window closes, until auction)
+      transferWindowSummary: null,
+      showTransferSummary: false,
 
       // Actions
 
@@ -132,11 +140,31 @@ const useTransferStore = create(
       setFreeAgents: (agents) => set({ freeAgents: agents }),
 
       /**
+       * Add a single free agent
+       * @param {Object} player - Free agent player object
+       */
+      addFreeAgent: (player) => set((state) => ({
+        freeAgents: [...state.freeAgents, player]
+      })),
+
+      /**
        * Remove free agent (signed)
        * @param {string} playerId - Player ID
        */
       removeFreeAgent: (playerId) => set((state) => ({
         freeAgents: state.freeAgents.filter(p => p.id !== playerId)
+      })),
+
+      /**
+       * Add a completed transfer record
+       * @param {Object} transfer - Transfer record
+       */
+      addCompletedTransfer: (transfer) => set((state) => ({
+        completedTransfers: [...state.completedTransfers, {
+          id: `ct_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          timestamp: new Date().toISOString(),
+          ...transfer
+        }]
       })),
 
       /**
@@ -218,13 +246,20 @@ const useTransferStore = create(
        * @param {number} startWeek - Start week
        * @param {number} endWeek - End week
        */
-      openTransferWindow: (startWeek, endWeek) => set({
+      openTransferWindow: (startWeek, endWeek, gameDay = null) => set({
         transferWindow: {
           isOpen: true,
           startWeek,
           endWeek,
-          daysRemaining: (endWeek - startWeek) * 7
-        }
+          daysRemaining: (endWeek - startWeek) * 7,
+          windowOpenGameDay: gameDay
+        },
+        // Reset seasonal transfer data so each window starts fresh
+        completedTransfers: [],
+        freeAgents: [],
+        activeListings: [],
+        userListings: [],
+        userBids: []
       }),
 
       /**
@@ -235,11 +270,29 @@ const useTransferStore = create(
           isOpen: false,
           startWeek: null,
           endWeek: null,
-          daysRemaining: 0
+          daysRemaining: 0,
+          windowOpenGameDay: null
         },
         activeListings: [],
         userListings: [],
         userBids: []
+      }),
+
+      /**
+       * Set transfer window summary data (shown after window closes)
+       * @param {Object} summary - Summary data
+       */
+      setTransferWindowSummary: (summary) => set({
+        transferWindowSummary: summary,
+        showTransferSummary: true
+      }),
+
+      /**
+       * Clear transfer window summary (when auction phase begins)
+       */
+      clearTransferWindowSummary: () => set({
+        transferWindowSummary: null,
+        showTransferSummary: false
       }),
 
       /**
@@ -345,6 +398,7 @@ const useTransferStore = create(
         userListings: [],
         userBids: [],
         freeAgents: [],
+        completedTransfers: [],
         notifications: [],
         filters: {
           position: 'all',
@@ -362,8 +416,11 @@ const useTransferStore = create(
           isOpen: false,
           startWeek: null,
           endWeek: null,
-          daysRemaining: 0
-        }
+          daysRemaining: 0,
+          windowOpenGameDay: null
+        },
+        transferWindowSummary: null,
+        showTransferSummary: false
       })
     }),
     {
