@@ -203,58 +203,47 @@
 
 ## Sprint 4: Retention & Re-Auction
 
-### 4.1 RetentionManager
-- [ ] Create `src/core/offseason/RetentionManager.js`
-- [ ] Add `startRetentionPhase()` method
-- [ ] Add `validateRetention(teamId, playerIds)` method (3-8 players)
-- [ ] Add `calculateRetentionCost(playerId)` method (70% of last price)
-- [ ] Add `processUserRetention(teamId, selections)` method
-- [ ] Add `processAIRetention(teamId)` method
-- [ ] Add `gatherReleasedPlayers()` method
-- [ ] Add `buildAuctionPool()` method
-- [ ] Add budget validation
-- [ ] Test all validation rules
+### 4.1 RetentionEngine & Config ✅
+- [x] Create `src/data/config/retentionConfig.json` (tiered caps, negotiation, AI, purse)
+- [x] Create `src/core/retention/RetentionEngine.js` (orchestrator)
+- [x] Create `src/core/retention/RetentionAI.js` (IPM/VFM-based AI decisions)
+- [x] Create `src/core/retention/PlayerAcceptance.js` (3-attempt negotiation)
+- [x] Add `initializeRetentionPhase()`, `validateRetention()`, `finalizeRetentions()`
+- [x] Add tiered salary cap validation ($5M/5, $7.5M/10, $8.5M/15)
+- [x] Add elite player auto-retention (rating >= 85)
 
-### 4.2 RetentionView
-- [ ] Create `src/components/Retention/RetentionView.jsx`
-- [ ] Display full squad with performance stats
-- [ ] Add multi-select UI (checkboxes)
-- [ ] Show retention cost per player (70% price)
-- [ ] Show total retention cost
-- [ ] Show budget remaining
-- [ ] Validate 3-8 players selected
-- [ ] Validate total cost within budget
-- [ ] Add "Confirm Retention" button
-- [ ] Show confirmation dialog
+### 4.2 RetentionStore ✅
+- [x] Create `src/stores/retentionStore.js` (Zustand + IndexedDB)
+- [x] Register in storeHydration.js
+- [x] Track per-team retentions, active negotiations, phase state
 
-### 4.3 League-Wide Retention Display
-- [ ] Add retention summary screen
-- [ ] Show all teams' retained players
-- [ ] Show released players pool
-- [ ] Display retention spending by team
-- [ ] Add "Continue to Auction" button
+### 4.3 RetentionView & NegotiationModal ✅
+- [x] Create `src/components/Retention/RetentionView.jsx` (two-column FM layout)
+- [x] Create `src/components/Retention/RetentionNegotiationModal.jsx`
+- [x] SortableTable with retain/release actions per player
+- [x] Tier cap progress bars and auction purse display
+- [x] Salary slider with market value hint range
+- [x] 3-attempt counter-offer negotiation flow
 
-### 4.4 Auction Pool Integration
-- [ ] Merge released players with unsold pool
-- [ ] Mark players as "retained" in database
-- [ ] Update team rosters after retention
-- [ ] Prepare auction pool for re-auction
-- [ ] Test pool composition
+### 4.4 Auction Integration ✅
+- [x] Modified AuctionEngine.initializeAuction() to accept teamPurses + retainedSquads
+- [x] Pre-populate squads with retained players, set reduced budgets
+- [x] Exclude retained player IDs from auction pool
+- [x] Updated Transfers.jsx to pass retention data (both fresh + restore paths)
 
-### 4.5 Re-Auction Trigger
-- [ ] Add `shouldTriggerReAuction()` check in OffSeasonManager
-- [ ] Trigger retention phase in even seasons
-- [ ] Schedule re-auction after retention deadline
-- [ ] Integrate with existing AuctionView.jsx
-- [ ] Test re-auction flow
+### 4.5 Game Flow Integration ✅
+- [x] Header.jsx: odd seasons >= 3 → AI retentions + navigate to /game/retention
+- [x] SimulationEngine.js: runRetention() before runAuction() for sim-to-date
+- [x] App.jsx: /game/retention route added
 
-### 4.6 Testing
-- [ ] Test retention validation (3-8 players)
-- [ ] Test retention cost calculation
-- [ ] Test budget constraints
-- [ ] Test AI retention logic
-- [ ] Test auction pool generation
-- [ ] Test full retention → re-auction flow
+### 4.6 Testing (TODO)
+- [ ] Test Season 2 → Season 3 retention screen appears
+- [ ] Test tier cap validation in UI
+- [ ] Test 3-attempt negotiation with various salary offers
+- [ ] Test AI team retention results (8-12 players each)
+- [ ] Test auction reduced purse matches retention spending
+- [ ] Test sim-to-date through even season end
+- [ ] Test save/load during retention phase
 
 ---
 
@@ -373,10 +362,13 @@
 - [ ] Budget constraints enforced
 
 ### Sprint 4 Complete When:
-- [ ] Retention works for even seasons
-- [ ] 3-8 player validation working
-- [ ] Re-auction triggers correctly
-- [ ] Released players enter auction pool
+- [x] Retention phase triggers before odd-season auctions (season >= 3)
+- [x] Tiered salary cap validation working (up to 15 players)
+- [x] 3-attempt negotiation with counter-offers
+- [x] AI retention decisions based on IPM/elite status
+- [x] Auction receives reduced purses and pre-populated squads
+- [x] Both UI and sim-to-date paths implemented
+- [ ] Manual testing complete (see 4.6)
 
 ### Sprint 5 Complete When:
 - [ ] Full season cycle works automatically

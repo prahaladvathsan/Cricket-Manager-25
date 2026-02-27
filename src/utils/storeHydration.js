@@ -17,7 +17,8 @@ const hydrationStatus = {
   auction: false,
   inbox: false,
   transfer: false,
-  auth: false
+  auth: false,
+  retention: false
 };
 
 // Callbacks to notify when all stores are hydrated

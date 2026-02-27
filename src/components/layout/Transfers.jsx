@@ -13,6 +13,7 @@ import useLeagueStore from '../../stores/leagueStore';
 import useFinanceStore from '../../stores/financeStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
+import useRetentionStore from '../../stores/retentionStore';
 import AuctionEngine from '../../core/auction-system/AuctionEngine';
 import AuctionTransferAI from '../../core/ai/AuctionTransferAI';
 import aiCore from '../../core/ai/AICore';
@@ -204,7 +205,20 @@ const Transfers = () => {
         ...team,
         isUserControlled: team.id === userTeamId
       }));
-      engine.initializeAuction(teamsArray, Object.values(players));
+      // Build retention options for restore path too
+      const retState = useRetentionStore.getState();
+      const restoreOptions = {};
+      if (retState.retentionState === 'completed' && Object.keys(retState.teamRetentions).length > 0) {
+        const tp = {};
+        const rs = {};
+        for (const [tid, ret] of Object.entries(retState.teamRetentions)) {
+          tp[tid] = ret.auctionPurse;
+          rs[tid] = (ret.retainedPlayers || []).map(r => players[r.playerId]).filter(Boolean);
+        }
+        restoreOptions.teamPurses = tp;
+        restoreOptions.retainedSquads = rs;
+      }
+      engine.initializeAuction(teamsArray, Object.values(players), restoreOptions);
 
       savedAuction.soldPlayers.forEach(sale => {
         const player = engine.playerPool.find(p => p.id === sale.playerId);
@@ -259,7 +273,21 @@ const Transfers = () => {
         ...team,
         isUserControlled: team.id === userTeamId
       }));
-      engine.initializeAuction(teamsArray, playersArray);
+      // Build retention options if retention was completed
+      const retentionState = useRetentionStore.getState();
+      const auctionOptions = {};
+      if (retentionState.retentionState === 'completed' && Object.keys(retentionState.teamRetentions).length > 0) {
+        const teamPurses = {};
+        const retainedSquads = {};
+        for (const [teamId, ret] of Object.entries(retentionState.teamRetentions)) {
+          teamPurses[teamId] = ret.auctionPurse;
+          retainedSquads[teamId] = (ret.retainedPlayers || []).map(r => players[r.playerId]).filter(Boolean);
+        }
+        auctionOptions.teamPurses = teamPurses;
+        auctionOptions.retainedSquads = retainedSquads;
+      }
+
+      engine.initializeAuction(teamsArray, playersArray, auctionOptions);
 
       const categorized = engine.categorizePlayers();
       const auctionRounds = engine.createAuctionRounds(categorized);

@@ -17,6 +17,9 @@ import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
 import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../finance/transferManagerSingleton';
 import { indexedDBStorage } from '../../utils/indexedDBStorage';
+import RetentionEngine from '../retention/RetentionEngine';
+import RetentionAI from '../retention/RetentionAI';
+import useRetentionStore from '../../stores/retentionStore';
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -196,6 +199,44 @@ class SimulationEngine {
   }
 
   /**
+   * Run the retention phase (automated — all teams processed by AI)
+   */
+  async runRetention() {
+    console.log('🔄 Running automated retention phase...');
+    await this.updateProgressMessage('Running retention phase...');
+
+    const retentionEngine = new RetentionEngine();
+    const retentionAIInstance = new RetentionAI();
+    const allTeams = Object.values(this.teamStore.getState().teams);
+    const allPlayers = this.playerStore.getState().players;
+    const allSquadLists = this.teamStore.getState().squadLists;
+
+    // Initialize retention state
+    const teamRetentions = retentionEngine.initializeRetentionPhase(allTeams, allSquadLists, allPlayers);
+
+    // Process ALL teams via AI (including user team in sim mode)
+    for (const team of allTeams) {
+      const squadIds = allSquadLists[team.id] || [];
+      const squad = squadIds.map(id => allPlayers[id]).filter(Boolean);
+      const getStats = (playerId) => this.teamStore.getState().playerStats?.[team.id]?.[playerId] || null;
+      const result = retentionAIInstance.processTeamRetention(team, squad, getStats);
+      teamRetentions[team.id] = { ...teamRetentions[team.id], ...result, completed: true };
+    }
+
+    // Finalize — update squads and player assignments
+    retentionEngine.finalizeRetentions(teamRetentions, {
+      playerStore: this.playerStore,
+      teamStore: this.teamStore
+    });
+
+    // Update retention store
+    useRetentionStore.getState().startRetentionPhase(teamRetentions);
+    useRetentionStore.getState().completeRetentionPhase();
+
+    console.log('✅ Retention phase complete');
+  }
+
+  /**
    * Run the auction (automated)
    */
   async runAuction() {
@@ -208,9 +249,26 @@ class SimulationEngine {
     const allPlayers = Object.values(this.playerStore.getState().players);
     const userTeamId = this.teamStore.getState().userTeamId;
 
+    // Build retention options if retention phase was completed
+    const retentionState = useRetentionStore.getState();
+    const auctionOptions = {};
+    if (retentionState.retentionState === 'completed' && Object.keys(retentionState.teamRetentions).length > 0) {
+      const teamPurses = {};
+      const retainedSquads = {};
+      for (const [teamId, ret] of Object.entries(retentionState.teamRetentions)) {
+        teamPurses[teamId] = ret.auctionPurse;
+        retainedSquads[teamId] = (ret.retainedPlayers || []).map(r => {
+          const p = allPlayers.find ? allPlayers.find(pl => pl.id === r.playerId) : allPlayers[r.playerId];
+          return p;
+        }).filter(Boolean);
+      }
+      auctionOptions.teamPurses = teamPurses;
+      auctionOptions.retainedSquads = retainedSquads;
+    }
+
     // Initialize auction engine
     const auctionEngine = new AuctionEngine({ fastMode: true });
-    auctionEngine.initializeAuction(teams, allPlayers);
+    auctionEngine.initializeAuction(teams, allPlayers, auctionOptions);
 
     // Categorize players
     const categorizedPlayers = auctionEngine.categorizePlayers();
@@ -444,8 +502,13 @@ class SimulationEngine {
       const isNewSeasonOdd = newSeason % 2 === 1;
 
       if (isNewSeasonOdd) {
-        // Odd season (3, 5, 7...): Run auction then initialize league
-        console.log(`🏏 Season ${newSeason} is ODD - Running auction...`);
+        // Odd season: Run retention (if season >= 3) then auction then league
+        if (newSeason >= 3) {
+          console.log(`🏏 Season ${newSeason} is ODD (>=3) - Running retention then auction...`);
+          await this.runRetention();
+        } else {
+          console.log(`🏏 Season ${newSeason} is ODD (Season 1) - Running auction...`);
+        }
         await this.runAuction();
         await this.initializeLeague();
         // Autosave after auction completion

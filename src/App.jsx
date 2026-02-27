@@ -28,11 +28,13 @@ import Settings from './components/menu/Settings';
 import { GameManual } from './components/manual';
 import { TutorialController } from './components/tutorial';
 import CalendarPage from './components/calendar/CalendarPage';
+import RetentionView from './components/Retention/RetentionView';
 import TestingDashboard from './components/testing/TestingDashboard';
 import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
 import useAuthStore from './stores/authStore';
+import './stores/retentionStore'; // Trigger hydration for retention store
 import './styles/wallpaper.css';
 import { getGameLogo } from './utils/assetHelpers';
 import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBStorage';
@@ -268,6 +270,7 @@ function App() {
                                             <Route path="match/:matchId" element={<Navigate to="preview" replace />} />
                                             <Route path="calendar" element={<CalendarPage />} />
                                             <Route path="league" element={<League />} />
+                                            <Route path="retention" element={<RetentionView />} />
                                             <Route path="transfers" element={<Transfers />} />
                                             <Route path="board" element={<Board />} />
                                             <Route path="*" element={<Navigate to="/game/home" replace />} />

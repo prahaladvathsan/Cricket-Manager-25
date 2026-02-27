@@ -1,9 +1,9 @@
 # Seasonal Loop System - Development Context
 
-**Last Updated**: 2025-01-18 (Mid-Season Window Removed)
-**Current Sprint**: Sprint 3 - Enhanced Transfer System (100% COMPLETE ✅)
-**Files Modified**: 22
-**Session Status**: Sprint 3 Complete - Ready for Testing
+**Last Updated**: 2026-02-28 (Retention System Implemented)
+**Current Sprint**: Sprint 4 - Retention & Re-Auction (100% COMPLETE ✅)
+**Files Modified**: 28
+**Session Status**: Sprint 4 Complete - Ready for Testing
 
 ---
 
@@ -43,19 +43,34 @@
   - [x] Updated TransferMarketView.jsx closed state (single window display)
   - [x] All components compile successfully (verified via dev server)
 
-### Next Steps for Future Session
-**Priority 1**: Sprint 3 Testing & AI Enhancement
-1. ✅ Dev server compilation verified (all green)
-2. ✅ TransferMarketView integrated into Transfers.jsx
-3. Test in-game: Advance to week 22 and verify transfer window opens
-4. Test listing → bidding → acceptance flow
-5. Test free agency signing
-6. Verify budget constraints work correctly
-7. Consider adding AI automatic listing generation (marketplace currently empty until AI lists players)
+- [x] **Sprint 4 Complete (100%) ✅**: Retention & Re-Auction
+  - [x] Created retentionConfig.json with tiered salary caps ($5M/5, $7.5M/10, $8.5M/15)
+  - [x] Created RetentionEngine.js orchestrator (init, validate, finalize)
+  - [x] Created RetentionAI.js (IPM-based ranking, elite auto-retain, greedy tier fill)
+  - [x] Created PlayerAcceptance.js (3-attempt negotiation with seeded variance)
+  - [x] Created retentionStore.js (Zustand + IndexedDB persistence + hydration)
+  - [x] Created RetentionView.jsx (two-column FM layout with SortableTable + tier progress)
+  - [x] Created RetentionNegotiationModal.jsx (salary slider, 3-attempt counter-offer UI)
+  - [x] Modified Header.jsx: odd seasons >= 3 run AI retentions then navigate to /game/retention
+  - [x] Modified SimulationEngine.js: added runRetention() before runAuction() for sim-to-date
+  - [x] Modified AuctionEngine.js: initializeAuction() accepts teamPurses + retainedSquads
+  - [x] Modified Transfers.jsx: passes retention data to auction init (both fresh + restore paths)
+  - [x] Modified App.jsx: added /game/retention route + retention store hydration import
+  - [x] Modified storeHydration.js: registered 'retention' store
+  - [x] Build verified successfully
 
-**Priority 2**: Sprint 4 - Retention & Re-Auction
-**Priority 3**: Sprint 5 - Seasonal Loop Integration
-**Priority 4**: Sprint 6 - Polish & Testing
+### Next Steps for Future Session
+**Priority 1**: Sprint 4 Testing
+1. Play through Season 1 → Season 2 → Season 2 end → verify retention screen appears
+2. Test tier cap validation (try to exceed caps)
+3. Test 3-attempt negotiation flow
+4. Verify AI teams have 8-12 retained players
+5. Verify auction shows reduced purses matching retention spending
+6. Test sim-to-date through even season end
+7. Test save/load during retention phase
+
+**Priority 2**: Sprint 5 - Seasonal Loop Integration
+**Priority 3**: Sprint 6 - Polish & Testing
 
 ---
 
@@ -113,6 +128,66 @@
    - Quick navigation to Squad/League/Transfers
    - "Advance Week" button
    - "Start New Season" button (when complete)
+
+### Sprint 4: Retention & Re-Auction
+
+10. **src/data/config/retentionConfig.json** (NEW)
+   - Tiered salary caps: $5M/5 players, $7.5M/10, $8.5M/15
+   - 3-attempt negotiation with counter-offers (90%, 85%, final rejection)
+   - AI config: min IPM 3.0, max 12 retentions, elite always-retain at 85+ rating
+   - Auction purse: $10M base, $500K minimum remaining
+
+11. **src/core/retention/RetentionEngine.js** (NEW)
+   - initializeRetentionPhase(), processAITeamRetention(), validateRetention()
+   - finalizeRetentions() — clears squads, re-adds retained, releases others
+   - getTeamAuctionPurse() — calculates reduced purse
+
+12. **src/core/retention/RetentionAI.js** (NEW)
+   - IPM-based player ranking with elite auto-retention
+   - Greedy retention within tier caps
+   - Uses AuctionTransferAI for market value, PerformanceValuation for IPM
+
+13. **src/core/retention/PlayerAcceptance.js** (NEW)
+   - evaluateOffer() pure function with seeded random variance
+   - Elite hardness multiplier (1.15x threshold)
+   - 3-attempt counter-offer system
+
+14. **src/stores/retentionStore.js** (NEW)
+   - Zustand + IndexedDB persistence
+   - Tracks per-team retentions, active negotiations, phase state
+   - Registered in storeHydration.js
+
+15. **src/components/Retention/RetentionView.jsx** (NEW)
+   - Two-column FM-style layout
+   - SortableTable with player status (retained/released/pending)
+   - Right panel: tier cap progress bars, auction purse, complete button
+
+16. **src/components/Retention/RetentionNegotiationModal.jsx** (NEW)
+   - Salary slider + market value hint range
+   - 3-attempt counter with visual indicators
+   - Accept counter / propose / release actions
+
+17. **src/components/layout/Header.jsx** (ENHANCED)
+   - new_season_start: seasons >= 3 (odd) run AI retentions, navigate to /game/retention
+   - Season 1 keeps existing behavior (straight to auction)
+
+18. **src/core/simulation/SimulationEngine.js** (ENHANCED)
+   - Added runRetention() method for sim-to-date
+   - Passes retention data (purses + retained squads) to runAuction()
+
+19. **src/core/auction-system/AuctionEngine.js** (ENHANCED)
+   - initializeAuction() accepts optional teamPurses + retainedSquads
+   - Pre-populates squads, sets reduced budgets, excludes retained from pool
+
+20. **src/components/layout/Transfers.jsx** (ENHANCED)
+   - Both auction init paths pass retention data to AuctionEngine
+
+21. **src/App.jsx** (ENHANCED)
+   - Added /game/retention route
+   - Added retention store import for hydration
+
+22. **src/utils/storeHydration.js** (ENHANCED)
+   - Added 'retention' to hydration tracking
 
 ### Sprint 3: Transfer System Foundation & Playoff Fix
 

@@ -34,6 +34,9 @@ import JoinCommunityDropdown from './JoinCommunityDropdown';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useTransferStore from '../../stores/transferStore';
 import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../../core/finance/transferManagerSingleton';
+import useRetentionStore from '../../stores/retentionStore';
+import RetentionEngine from '../../core/retention/RetentionEngine';
+import RetentionAI from '../../core/retention/RetentionAI';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -583,9 +586,36 @@ const Header = () => {
       const isNewSeasonOdd = newSeason % 2 === 1;
 
       if (isNewSeasonOdd) {
-        // Odd season (3, 5, 7...): Go to auction page
-        console.log(`🏏 Season ${newSeason} is ODD - Navigating to auction...`);
-        navigate('/game/transfers');
+        if (newSeason >= 3) {
+          // Season 3+: Retention phase before auction
+          console.log(`🏏 Season ${newSeason} is ODD (>=3) - Starting retention phase...`);
+
+          const retentionEngine = new RetentionEngine();
+          const retentionAIInstance = new RetentionAI();
+          const allTeams = Object.values(useTeamStore.getState().teams);
+          const allPlayers = usePlayerStore.getState().players;
+          const allSquadLists = useTeamStore.getState().squadLists;
+
+          // Initialize retention state for all teams
+          const initialRetentions = retentionEngine.initializeRetentionPhase(allTeams, allSquadLists, allPlayers);
+
+          // Process AI retentions for all non-user teams
+          for (const team of allTeams) {
+            if (team.id === userTeam?.id) continue;
+            const squadIds = allSquadLists[team.id] || [];
+            const squad = squadIds.map(id => allPlayers[id]).filter(Boolean);
+            const getStats = (playerId) => useTeamStore.getState().playerStats?.[team.id]?.[playerId] || null;
+            const result = retentionAIInstance.processTeamRetention(team, squad, getStats);
+            initialRetentions[team.id] = { ...initialRetentions[team.id], ...result, completed: true };
+          }
+
+          useRetentionStore.getState().startRetentionPhase(initialRetentions);
+          navigate('/game/retention');
+        } else {
+          // Season 1: Straight to auction (no prior squads)
+          console.log(`🏏 Season ${newSeason} is ODD (Season 1) - Navigating to auction...`);
+          navigate('/game/transfers');
+        }
       } else {
         // Even season (2, 4, 6...): Initialize league with existing squads
         console.log(`🏏 Season ${newSeason} is EVEN - Initializing league directly...`);
