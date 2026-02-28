@@ -11,7 +11,8 @@ import {
   Trophy,
   DollarSign,
   Gavel,
-  Zap
+  Zap,
+  Shield
 } from 'lucide-react';
 import TeamName from '../shared/TeamName';
 
@@ -84,6 +85,13 @@ export const getEventStyle = (event, currentDate, userTeamId = null) => {
         bgClass: 'bg-gray-700/20',
         textClass: 'text-gray-400',
         borderClass: 'border-gray-600/30'
+      };
+    case 'retention_start':
+      return {
+        icon: Shield,
+        bgClass: 'bg-orange-900/20',
+        textClass: 'text-orange-400',
+        borderClass: 'border-orange-500/30'
       };
     case 'season_end':
       return {

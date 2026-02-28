@@ -34,7 +34,7 @@ import JoinCommunityDropdown from './JoinCommunityDropdown';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useTransferStore from '../../stores/transferStore';
 import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../../core/finance/transferManagerSingleton';
-import useRetentionStore from '../../stores/retentionStore';
+// Retention state now lives in gameStore + teamStore
 import RetentionEngine from '../../core/retention/RetentionEngine';
 import RetentionAI from '../../core/retention/RetentionAI';
 
@@ -567,7 +567,42 @@ const Header = () => {
           setIsSimulating(false);
         }
       }
+    } else if (event && event.type === 'retention_start') {
+      // RETENTION PHASE — runs before new_season_start for odd seasons >= 3
+      console.log(`🏏 Retention Start - Season ${event.data.season}`);
+
+      const retentionEngine = new RetentionEngine();
+      const retentionAIInstance = new RetentionAI();
+      const allTeams = Object.values(useTeamStore.getState().teams);
+      const allPlayers = usePlayerStore.getState().players;
+      const allSquadLists = useTeamStore.getState().squadLists;
+
+      // Initialize retention state for all teams
+      const initialRetentions = retentionEngine.initializeRetentionPhase(allTeams, allSquadLists, allPlayers);
+
+      // Process AI retentions for all non-user teams
+      for (const team of allTeams) {
+        if (team.id === userTeam?.id) continue;
+        const squadIds = allSquadLists[team.id] || [];
+        const squad = squadIds.map(id => allPlayers[id]).filter(Boolean);
+        const getStats = (playerId) => useTeamStore.getState().playerStats?.[team.id]?.[playerId] || null;
+        const result = retentionAIInstance.processTeamRetention(team, squad, getStats);
+        initialRetentions[team.id] = { ...initialRetentions[team.id], ...result, completed: true };
+      }
+
+      useTeamStore.getState().setTeamRetentions(initialRetentions);
+      useGameStore.getState().startRetentionPhase();
+      navigate('/game/retention');
     } else if (event && event.type === 'new_season_start') {
+      // Guard: Don't start new season if playoffs haven't completed
+      const leagueStageCheck = useLeagueStore.getState().stage;
+      const championCheck = useLeagueStore.getState().champion;
+      if (leagueStageCheck === 'playoffs' && !championCheck) {
+        console.warn('⚠️ new_season_start fired but playoffs not complete - skipping');
+        advanceDay();
+        return;
+      }
+
       // NEW SEASON TRANSITION (Season 2, 3, 4, 5, ...)
       console.log(`🔄 New Season Start - Transitioning to Season ${event.data.season}...`);
 
@@ -586,36 +621,10 @@ const Header = () => {
       const isNewSeasonOdd = newSeason % 2 === 1;
 
       if (isNewSeasonOdd) {
-        if (newSeason >= 3) {
-          // Season 3+: Retention phase before auction
-          console.log(`🏏 Season ${newSeason} is ODD (>=3) - Starting retention phase...`);
-
-          const retentionEngine = new RetentionEngine();
-          const retentionAIInstance = new RetentionAI();
-          const allTeams = Object.values(useTeamStore.getState().teams);
-          const allPlayers = usePlayerStore.getState().players;
-          const allSquadLists = useTeamStore.getState().squadLists;
-
-          // Initialize retention state for all teams
-          const initialRetentions = retentionEngine.initializeRetentionPhase(allTeams, allSquadLists, allPlayers);
-
-          // Process AI retentions for all non-user teams
-          for (const team of allTeams) {
-            if (team.id === userTeam?.id) continue;
-            const squadIds = allSquadLists[team.id] || [];
-            const squad = squadIds.map(id => allPlayers[id]).filter(Boolean);
-            const getStats = (playerId) => useTeamStore.getState().playerStats?.[team.id]?.[playerId] || null;
-            const result = retentionAIInstance.processTeamRetention(team, squad, getStats);
-            initialRetentions[team.id] = { ...initialRetentions[team.id], ...result, completed: true };
-          }
-
-          useRetentionStore.getState().startRetentionPhase(initialRetentions);
-          navigate('/game/retention');
-        } else {
-          // Season 1: Straight to auction (no prior squads)
-          console.log(`🏏 Season ${newSeason} is ODD (Season 1) - Navigating to auction...`);
-          navigate('/game/transfers');
-        }
+        // Season 1: Straight to auction (no prior squads)
+        // Season 3+: retention_start event already handled retention, go to auction
+        console.log(`🏏 Season ${newSeason} is ODD - Navigating to auction...`);
+        navigate('/game/transfers');
       } else {
         // Even season (2, 4, 6...): Initialize league with existing squads
         console.log(`🏏 Season ${newSeason} is EVEN - Initializing league directly...`);
@@ -637,6 +646,15 @@ const Header = () => {
         navigate('/game/transfers');
       }
     } else if (event && event.type === 'offseason_start') {
+      // Guard: Don't start offseason if playoffs haven't completed
+      const leagueStageForOffseason = useLeagueStore.getState().stage;
+      const championForOffseason = useLeagueStore.getState().champion;
+      if (leagueStageForOffseason === 'playoffs' && !championForOffseason) {
+        console.warn('⚠️ offseason_start fired but playoffs not complete - skipping');
+        advanceDay();
+        return;
+      }
+
       // OFFSEASON START — set phase and open transfer window immediately.
       // The transfer_window_open calendar event is scheduled on the same day but
       // calendarEvents.find() only returns one event per day; handling it here keeps
@@ -739,7 +757,20 @@ const Header = () => {
           console.log(`📬 Season summary message sent to ${userTeam.name}`);
         }
 
-        // 3. Show Season Summary Modal (user must acknowledge before continuing)
+        // 3. Record season to history
+        const sortedForHistory = [...standings].sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return b.netRunRate - a.netRunRate;
+        });
+        useGameStore.getState().recordSeasonHistory({
+          season: currentSeason,
+          champion: champion?.championName || null,
+          runnerUp: champion?.runnerUpName || null,
+          standings: sortedForHistory.map(s => ({ clubId: s.clubId, clubName: s.clubName, points: s.points, nrr: s.netRunRate })),
+          userPosition: userTeam ? sortedForHistory.findIndex(s => s.clubId === userTeam.id) + 1 : null
+        });
+
+        // 4. Show Season Summary Modal (user must acknowledge before continuing)
         setShowSeasonSummary(true);
         // Don't advance day yet - modal will advance on close
         // NOTE: Do NOT call resetForNewSeason() here! That happens later.

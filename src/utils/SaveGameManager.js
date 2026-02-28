@@ -12,6 +12,7 @@
 import { compressData, decompressData, getCompressionStats } from './compression';
 import { get, set, del, keys } from 'idb-keyval';
 import customDatabaseManager from './CustomDatabaseManager';
+import { getTransferManager, resetTransferManager } from '../core/finance/transferManagerSingleton.js';
 
 const SAVE_PREFIX = 'cm25_save_';
 const SAVE_INDEX_KEY = 'cm25_save_index';
@@ -931,7 +932,10 @@ class SaveGameManager {
         calendarEvents: gameState.calendarEvents || [],
         settings: gameState.settings,
         seasonObjectives: gameState.seasonObjectives || [],
-        objectiveTracking: gameState.objectiveTracking || {}
+        objectiveTracking: gameState.objectiveTracking || {},
+        retentionState: gameState.retentionState || 'not_started',
+        userRetentionComplete: gameState.userRetentionComplete || false,
+        seasonHistory: gameState.seasonHistory || []
       },
 
       teamState: {
@@ -945,7 +949,8 @@ class SaveGameManager {
         ),
         teamTactics: teamState.teamTactics || {},
         playerStats: teamState.playerStats,
-        teamStats: teamState.teamStats
+        teamStats: teamState.teamStats,
+        teamRetentions: teamState.teamRetentions || {}
       },
 
       playerState: {
@@ -961,6 +966,14 @@ class SaveGameManager {
           .reduce((acc, [playerId, player]) => {
             if (player.condition) {
               acc[playerId] = player.condition;
+            }
+            return acc;
+          }, {}),
+        // Save soldPrice for all players (critical for transfer valuations & salary economics)
+        playerSoldPrices: Object.entries(playerState.players)
+          .reduce((acc, [playerId, player]) => {
+            if (player.soldPrice) {
+              acc[playerId] = player.soldPrice;
             }
             return acc;
           }, {})
@@ -1015,14 +1028,47 @@ class SaveGameManager {
         unreadCount: inboxState.unreadCount || 0
       } : null,
 
-      transferState: transferState ? {
-        activeListings: transferState.activeListings || [],
-        userListings: transferState.userListings || [],
-        userBids: transferState.userBids || [],
-        freeAgents: transferState.freeAgents || [],
-        notifications: transferState.notifications || [],
-        transferWindow: transferState.transferWindow || { isOpen: false }
-      } : null,
+      transferState: (() => {
+        if (!transferState) return null;
+        // Capture live listings from TransferManager singleton (source of truth)
+        // The transferStore.activeListings may be stale if transfer UI is not mounted
+        let liveListings = transferState.activeListings || [];
+        let liveWindow = transferState.transferWindow || { isOpen: false };
+        try {
+          const tm = getTransferManager();
+          if (tm && tm.transferMarket) {
+            const marketListings = tm.transferMarket.getActiveListings();
+            if (marketListings.length > 0) {
+              liveListings = marketListings;
+            }
+            // Capture accurate window state from the singleton
+            if (tm.transferMarket.windowOpen) {
+              liveWindow = {
+                isOpen: true,
+                type: tm.transferMarket.currentWindow?.type || 'offSeason',
+                name: tm.transferMarket.currentWindow?.name || 'Transfer Window',
+                startWeek: liveWindow.startWeek,
+                endWeek: liveWindow.endWeek,
+                daysRemaining: liveWindow.daysRemaining || 0,
+                windowOpenGameDay: liveWindow.windowOpenGameDay || null
+              };
+            }
+          }
+        } catch (e) {
+          // Singleton not available — fall back to store state
+        }
+        return {
+          activeListings: liveListings,
+          userListings: transferState.userListings || [],
+          userBids: transferState.userBids || [],
+          freeAgents: transferState.freeAgents || [],
+          completedTransfers: transferState.completedTransfers || [],
+          notifications: transferState.notifications || [],
+          transferWindow: liveWindow,
+          transferWindowSummary: transferState.transferWindowSummary || null,
+          showTransferSummary: transferState.showTransferSummary || false
+        };
+      })(),
 
       metadata
     };
@@ -1085,6 +1131,9 @@ class SaveGameManager {
       settings: saveData.gameState.settings,
       seasonObjectives: saveData.gameState.seasonObjectives || [],
       objectiveTracking: saveData.gameState.objectiveTracking || {},
+      retentionState: saveData.gameState.retentionState || 'not_started',
+      userRetentionComplete: saveData.gameState.userRetentionComplete || false,
+      seasonHistory: saveData.gameState.seasonHistory || [],
       isSimulating: false
     });
 
@@ -1095,7 +1144,8 @@ class SaveGameManager {
       squadLists: saveData.teamState.squadLists,
       teamTactics: saveData.teamState.teamTactics || {},
       playerStats: saveData.teamState.playerStats,
-      teamStats: saveData.teamState.teamStats
+      teamStats: saveData.teamState.teamStats,
+      teamRetentions: saveData.teamState.teamRetentions || {}
     });
 
     // Player Store
@@ -1116,6 +1166,14 @@ class SaveGameManager {
     Object.entries(playerConditions).forEach(([playerId, condition]) => {
       if (updatedPlayers[playerId]) {
         updatedPlayers[playerId] = { ...updatedPlayers[playerId], condition };
+      }
+    });
+
+    // Restore soldPrice (critical for transfer valuations & salary economics)
+    const playerSoldPrices = saveData.playerState.playerSoldPrices || {};
+    Object.entries(playerSoldPrices).forEach(([playerId, soldPrice]) => {
+      if (updatedPlayers[playerId]) {
+        updatedPlayers[playerId] = { ...updatedPlayers[playerId], soldPrice };
       }
     });
 
@@ -1199,17 +1257,25 @@ class SaveGameManager {
       });
     }
 
-    // Transfer Store
-    if (saveData.transferState && stores.transferStore) {
+    // Transfer Store — always reset (even if save has no transferState, clear stale data)
+    if (stores.transferStore) {
+      const ts = saveData.transferState || {};
       stores.transferStore.setState({
-        activeListings: saveData.transferState.activeListings || [],
-        userListings: saveData.transferState.userListings || [],
-        userBids: saveData.transferState.userBids || [],
-        freeAgents: saveData.transferState.freeAgents || [],
-        notifications: saveData.transferState.notifications || [],
-        transferWindow: saveData.transferState.transferWindow || { isOpen: false }
+        activeListings: ts.activeListings || [],
+        userListings: ts.userListings || [],
+        userBids: ts.userBids || [],
+        freeAgents: ts.freeAgents || [],
+        completedTransfers: ts.completedTransfers || [],
+        notifications: ts.notifications || [],
+        transferWindow: ts.transferWindow || { isOpen: false, startWeek: null, endWeek: null, daysRemaining: 0, windowOpenGameDay: null },
+        transferWindowSummary: ts.transferWindowSummary || null,
+        showTransferSummary: ts.showTransferSummary || false
       });
     }
+
+    // Reset TransferManager singleton so it rebuilds from fresh store state
+    // Must be done AFTER stores are restored so the new singleton reads correct data
+    resetTransferManager();
   }
 
   _migrateSaveData(saveData) {

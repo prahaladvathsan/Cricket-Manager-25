@@ -11,6 +11,7 @@ import {
   DollarSign,
   Gavel,
   Zap,
+  Shield,
   Grid3X3,
   List
 } from 'lucide-react';
@@ -289,6 +290,8 @@ const CalendarPage = () => {
         return { icon: Trophy, style: 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30' };
       case 'offseason_start':
         return { icon: Calendar, style: 'bg-gray-700/30 text-gray-400 border-gray-600/30' };
+      case 'retention_start':
+        return { icon: Shield, style: 'bg-orange-900/30 text-orange-400 border-orange-500/30' };
       case 'season_end':
         return { icon: Trophy, style: 'bg-red-900/30 text-red-400 border-red-500/30' };
       default:

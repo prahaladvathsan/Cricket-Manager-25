@@ -49,6 +49,13 @@ const useGameStore = create(
       isSimulating: false,
       isProcessingTurn: false,
 
+      // Season History (persisted across seasons)
+      seasonHistory: [], // Array of { season, champion, runnerUp, standings, userPosition }
+
+      // Retention Phase State
+      retentionState: 'not_started', // 'not_started' | 'in_progress' | 'completed'
+      userRetentionComplete: false,
+
       // Board Objectives
       seasonObjectives: [], // Array of 5 objectives for current season
       objectiveTracking: {}, // Track objective-specific data (home wins, streaks, etc.)
@@ -195,7 +202,7 @@ const useGameStore = create(
                     const endurance = player.attributes?.physical?.endurance ?? 10;
                     const maxFitness = player.attributes?.physical?.maxFitness ?? 10;
                     const fitnessCap = Math.min(100, 50 + (maxFitness * 2.5));
-                    const recoveryAmount = endurance / 2;
+                    const recoveryAmount = endurance;
                     const newFitness = Math.min(currentFitness + recoveryAmount, fitnessCap);
 
                     if (newFitness > currentFitness) {
@@ -206,8 +213,10 @@ const useGameStore = create(
                     const currentFatigue = player.condition?.fatigue ?? 0;
                     if (currentFatigue > 0) {
                       const restDays = updates.consecutiveRestDays;
-                      const baseRecovery = restDays <= 5 ? 0 : 0.2;
-                      const bonusRecovery = (restDays % 5 === 0) ? 1 : 0;
+                      // No recovery in first 10 days, 0.2 starting from day 11
+                      const baseRecovery = restDays > 10 ? 0.2 : 0;
+                      // Bonus +1 recovery every 7th rest day (14, 21...) ONLY after reaching 10 day threshold
+                      const bonusRecovery = (restDays > 10 && restDays % 7 === 0) ? 1 : 0;
                       const totalRecovery = baseRecovery + bonusRecovery;
 
                       if (totalRecovery > 0) {
@@ -420,6 +429,19 @@ const useGameStore = create(
       stopSimulation: () => set({ isSimulating: false }),
 
       /**
+       * Record completed season to history
+       * @param {Object} data - { season, champion, runnerUp, standings, userPosition }
+       */
+      recordSeasonHistory: (data) => set((state) => ({
+        seasonHistory: [...state.seasonHistory, data]
+      })),
+
+      // Retention phase actions
+      startRetentionPhase: () => set({ retentionState: 'in_progress', userRetentionComplete: false }),
+      completeRetentionPhase: () => set({ retentionState: 'completed', userRetentionComplete: true }),
+      resetRetention: () => set({ retentionState: 'not_started', userRetentionComplete: false }),
+
+      /**
        * Reset game state for new season
        */
       resetForNewSeason: () => set((state) => {
@@ -451,6 +473,7 @@ const useGameStore = create(
           // NOTE: Don't clear calendarEvents here - let league initialization handle that
           // This allows scheduled events (auction, preseason_start) to still fire
           isSimulating: false,
+          // NOTE: Don't clear retentionState here — auction needs it. Cleared by resetRetention() after auction.
           // Reset objectives for new season
           seasonObjectives: [],
           objectiveTracking: {

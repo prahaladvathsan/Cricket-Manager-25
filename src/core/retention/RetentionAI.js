@@ -121,15 +121,25 @@ export default class RetentionAI {
   }
 
   /**
-   * Get estimated market value for a player (simplified — uses base price as proxy)
+   * Get estimated market value for a player using VFM/auction valuation
+   * with ±20% seeded randomness to mimic player judgement variance
    * @param {Object} player - Player object
    * @returns {number} Estimated market value
    */
   getMarketValue(player) {
-    const basePrice = this.auctionAI.calculateBasePrice(player);
-    const primaryRating = this.getPrimaryRating(player);
-    // Scale base price by rating to get a market value estimate
-    return Math.round(basePrice * (primaryRating / 80));
+    // Use actual price (soldPrice or rating-based estimate) as the ground truth
+    const baseValue = this.perfValuation.getActualPrice(player);
+
+    // Apply ±20% seeded randomness per player for consistent "player judgement"
+    let hash = 0;
+    for (let i = 0; i < player.id.length; i++) {
+      hash = ((hash << 5) - hash) + player.id.charCodeAt(i);
+      hash |= 0;
+    }
+    const rand = (Math.abs(hash) % 10000) / 10000; // 0..1
+    const variance = 0.8 + (rand * 0.4); // 0.8 to 1.2 (±20%)
+
+    return Math.round(baseValue * variance);
   }
 
   /**

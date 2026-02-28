@@ -220,12 +220,17 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   console.log(`   Transfer window: ${transferWindowStartDate.toDateString()} - ${transferWindowEndDate.toDateString()}`);
   console.log(`   Next season start: ${nextSeasonStartDate.toDateString()} (Day ${nextSeasonStartDay})`);
 
+  const nextSeason = currentSeason + 1;
+  const nextSeasonHasRetention = nextSeason % 2 === 1 && nextSeason >= 3;
   const additionalEvents = [
-    { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } },
+    // NOTE: season_end is NOT pre-scheduled here — it's dynamically scheduled by
+    // recordResult() after the Final completes, which is more reliable than a fixed day
     { day: offseasonStartDay, type: 'offseason_start' },
     { day: transferWindowStartDay, type: 'transfer_window_open' },
     { day: transferWindowEndDay, type: 'transfer_window_close' },
-    { day: nextSeasonStartDay, type: 'new_season_start', data: { season: currentSeason + 1 } }
+    // Show retention day on calendar for odd seasons >= 3
+    ...(nextSeasonHasRetention ? [{ day: nextSeasonStartDay, type: 'retention_start', data: { season: nextSeason } }] : []),
+    { day: nextSeasonStartDay + (nextSeasonHasRetention ? 1 : 0), type: 'new_season_start', data: { season: nextSeason } }
   ];
 
   // Schedule all events

@@ -13,7 +13,7 @@ import useLeagueStore from '../../stores/leagueStore';
 import useFinanceStore from '../../stores/financeStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
-import useRetentionStore from '../../stores/retentionStore';
+// Retention state now in gameStore + teamStore
 import AuctionEngine from '../../core/auction-system/AuctionEngine';
 import AuctionTransferAI from '../../core/ai/AuctionTransferAI';
 import aiCore from '../../core/ai/AICore';
@@ -206,12 +206,13 @@ const Transfers = () => {
         isUserControlled: team.id === userTeamId
       }));
       // Build retention options for restore path too
-      const retState = useRetentionStore.getState();
+      const retPhase = useGameStore.getState().retentionState;
+      const retTeams = useTeamStore.getState().teamRetentions;
       const restoreOptions = {};
-      if (retState.retentionState === 'completed' && Object.keys(retState.teamRetentions).length > 0) {
+      if (retPhase === 'completed' && Object.keys(retTeams).length > 0) {
         const tp = {};
         const rs = {};
-        for (const [tid, ret] of Object.entries(retState.teamRetentions)) {
+        for (const [tid, ret] of Object.entries(retTeams)) {
           tp[tid] = ret.auctionPurse;
           rs[tid] = (ret.retainedPlayers || []).map(r => players[r.playerId]).filter(Boolean);
         }
@@ -274,12 +275,13 @@ const Transfers = () => {
         isUserControlled: team.id === userTeamId
       }));
       // Build retention options if retention was completed
-      const retentionState = useRetentionStore.getState();
+      const retPhase2 = useGameStore.getState().retentionState;
+      const retTeams2 = useTeamStore.getState().teamRetentions;
       const auctionOptions = {};
-      if (retentionState.retentionState === 'completed' && Object.keys(retentionState.teamRetentions).length > 0) {
+      if (retPhase2 === 'completed' && Object.keys(retTeams2).length > 0) {
         const teamPurses = {};
         const retainedSquads = {};
-        for (const [teamId, ret] of Object.entries(retentionState.teamRetentions)) {
+        for (const [teamId, ret] of Object.entries(retTeams2)) {
           teamPurses[teamId] = ret.auctionPurse;
           retainedSquads[teamId] = (ret.retainedPlayers || []).map(r => players[r.playerId]).filter(Boolean);
         }
@@ -853,6 +855,10 @@ const Transfers = () => {
       useTransferStore.getState().setFreeAgents(freeAgents);
       console.log(`🆓 ${freeAgents.length} permanently unsold players added to free agency`);
     }
+
+    // Clear retention data now that auction is done
+    useGameStore.getState().resetRetention();
+    useTeamStore.getState().clearTeamRetentions();
 
     clearEvents();
     setTimeout(() => {

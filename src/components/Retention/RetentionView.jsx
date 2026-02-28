@@ -6,7 +6,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, UserX, Shield, DollarSign, AlertTriangle } from 'lucide-react';
-import useRetentionStore from '../../stores/retentionStore';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -32,11 +31,13 @@ const RetentionView = () => {
   const [negotiatingPlayer, setNegotiatingPlayer] = useState(null);
   const [playerResponse, setPlayerResponse] = useState(null);
   const [attemptNumber, setAttemptNumber] = useState(1);
+  const [confirmAction, setConfirmAction] = useState(null); // { type, playerId, playerName }
 
   // Store state
-  const { teamRetentions, confirmRetention, releaseToPool, completeRetentionPhase } = useRetentionStore();
+  const { teamRetentions, confirmRetention, releaseToPool } = useTeamStore();
   const userTeamId = useTeamStore(s => s.userTeamId);
   const squadLists = useTeamStore(s => s.squadLists);
+  const completeRetentionPhase = useGameStore(s => s.completeRetentionPhase);
   const players = usePlayerStore(s => s.players);
   const currentSeason = useGameStore(s => s.currentSeason);
 
@@ -107,13 +108,23 @@ const RetentionView = () => {
   };
 
   const handleRelease = (playerId) => {
+    const player = players[playerId];
+    setConfirmAction({ type: 'release', playerId, playerName: player?.name || 'this player' });
+  };
+
+  const confirmRelease = (playerId) => {
     releaseToPool(userTeamId, playerId, 'user_released');
     setNegotiatingPlayer(null);
     setPlayerResponse(null);
     setAttemptNumber(1);
+    setConfirmAction(null);
   };
 
   const handleComplete = () => {
+    setConfirmAction({ type: 'complete', pendingCount: pendingPlayers.length });
+  };
+
+  const confirmComplete = () => {
     // Release all pending players
     for (const p of pendingPlayers) {
       releaseToPool(userTeamId, p.id, 'not_retained');
@@ -121,8 +132,9 @@ const RetentionView = () => {
 
     // Finalize retentions
     const stores = { playerStore: usePlayerStore, teamStore: useTeamStore };
-    retentionEngine.finalizeRetentions(useRetentionStore.getState().teamRetentions, stores);
+    retentionEngine.finalizeRetentions(useTeamStore.getState().teamRetentions, stores);
     completeRetentionPhase();
+    setConfirmAction(null);
 
     // Navigate to auction
     navigate('/game/transfers');
@@ -193,7 +205,7 @@ const RetentionView = () => {
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleRelease(row.id); }}
-            className="px-2 py-1 bg-surface-600 hover:bg-surface-500 text-text-secondary rounded text-xs"
+            className="px-2 py-1 bg-red-800 hover:bg-red-700 text-red-200 rounded text-xs font-medium"
           >
             Release
           </button>
@@ -306,6 +318,39 @@ const RetentionView = () => {
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50">
+          <div className="bg-bg-tertiary border border-border-primary rounded-lg w-full max-w-sm shadow-xl p-5">
+            <h3 className="text-lg font-bold text-text-primary mb-3">
+              {confirmAction.type === 'release' ? 'Release Player' : 'Complete Retentions'}
+            </h3>
+            <p className="text-sm text-text-secondary mb-4">
+              {confirmAction.type === 'release'
+                ? `Are you sure you want to release ${confirmAction.playerName}? They will be added to the auction pool.`
+                : `Are you sure you want to complete retentions?${confirmAction.pendingCount > 0 ? ` ${confirmAction.pendingCount} pending player(s) will be released to the auction pool.` : ''}`
+              }
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="flex-1 px-3 py-2 bg-bg-tertiary hover:bg-bg-hover text-text-secondary rounded text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmAction.type === 'release' ? confirmRelease(confirmAction.playerId) : confirmComplete()}
+                className={`flex-1 px-3 py-2 rounded text-sm font-medium text-white ${
+                  confirmAction.type === 'release' ? 'bg-red-700 hover:bg-red-600' : 'bg-cricket-green hover:bg-green-700'
+                }`}
+              >
+                {confirmAction.type === 'release' ? 'Release' : 'Complete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Negotiation Modal */}
       {negotiatingPlayer && (

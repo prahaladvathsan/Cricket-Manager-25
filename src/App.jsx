@@ -34,7 +34,7 @@ import useTeamStore from './stores/teamStore';
 import usePlayerStore from './stores/playerStore';
 import useGameStore from './stores/gameStore';
 import useAuthStore from './stores/authStore';
-import './stores/retentionStore'; // Trigger hydration for retention store
+// Retention state now in gameStore + teamStore (no separate store)
 import './styles/wallpaper.css';
 import { getGameLogo } from './utils/assetHelpers';
 import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBStorage';
