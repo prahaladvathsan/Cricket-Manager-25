@@ -30,6 +30,7 @@ import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
 import { validateFieldingSetup } from '../../core/match-engine/validation/FieldingRulesValidator';
+import TacticsRecommendations from './TacticsRecommendations';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -413,7 +414,10 @@ const TacticsPage = () => {
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-2 bg-bg-primary">
         {activeTab === 'overview' && (
-          <OverviewTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
+          <div className="space-y-3">
+            <TacticsRecommendations teamId={teamId} />
+            <OverviewTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
+          </div>
         )}
         {activeTab === 'squad' && (
           <SquadPlaystyleTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />

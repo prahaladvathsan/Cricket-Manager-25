@@ -1103,8 +1103,8 @@ const useTeamStore = create(
         for (let overIndex = 0; overIndex < 20; overIndex++) {
           // Determine phase for this over
           let phase = 'powerplay';
-          if (overIndex >= 6 && overIndex < 12) phase = 'middle';
-          else if (overIndex >= 12 && overIndex < 16) phase = 'middle';
+          if (overIndex >= 6 && overIndex < 12) phase = 'earlyMiddle';
+          else if (overIndex >= 12 && overIndex < 16) phase = 'lateMiddle';
           else if (overIndex >= 16) phase = 'death';
 
           // Score each eligible bowler
@@ -1128,7 +1128,8 @@ const useTeamStore = create(
               // Phase-based bonuses (tertiary consideration)
               const phaseBonuses = {
                 powerplay: { 'Swing Bowler': 3, 'Wicket-Taker': 3 },
-                middle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
+                earlyMiddle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
+                lateMiddle: { 'Flat Spinner': 2, 'Containment Spinner': 2, 'Hit-the-Deck Seamer': 2 },
                 death: { 'Death Specialist': 4, 'Yorker Specialist': 3 },
               };
               score += phaseBonuses[phase]?.[bowlerPlaystyle] || 0;

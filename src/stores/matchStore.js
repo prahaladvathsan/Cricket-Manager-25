@@ -92,7 +92,7 @@ const useMatchStore = create(
     nonStriker: null,
     fieldingPositions: {},
     matchSituation: {
-      phase: 'powerplay', // powerplay | middle | death
+      phase: 'powerplay', // powerplay | earlyMiddle | lateMiddle | death
       required: null, // runs required (2nd innings)
       ballsLeft: null // balls remaining (2nd innings)
     }
@@ -386,8 +386,9 @@ const useMatchStore = create(
     // Calculate match phase
     const totalBalls = newOver * 6 + newBall;
     let phase = 'powerplay';
-    if (totalBalls > 36) phase = 'middle'; // After 6 overs
-    if (totalBalls > 96) phase = 'death'; // After 16 overs
+    if (totalBalls > 36) phase = 'earlyMiddle'; // After 6 overs
+    if (totalBalls > 72) phase = 'lateMiddle';  // After 12 overs
+    if (totalBalls > 96) phase = 'death';        // After 16 overs
 
     return {
       teams: newTeams,

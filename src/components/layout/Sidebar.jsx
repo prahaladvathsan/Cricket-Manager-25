@@ -54,7 +54,7 @@ const Sidebar = ({ currentPath }) => {
     { path: '/game/inbox', label: 'Inbox', icon: Mail, badge: unreadCount },
     { path: '/game/squad', label: 'Squad', icon: Users },
     { path: '/game/tactics', label: 'Tactics', icon: Clipboard },
-    { path: '/game/matches', label: 'Matches', icon: Target },
+    { path: '/game/matches', label: 'Stats', icon: Target },
     { path: '/game/calendar', label: 'Calendar', icon: Calendar },
     { path: '/game/league', label: 'League', icon: Trophy },
     { path: '/game/transfers', label: 'Transfers', icon: ArrowRightLeft },
