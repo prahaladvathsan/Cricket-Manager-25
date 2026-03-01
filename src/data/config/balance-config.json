@@ -16,10 +16,15 @@
         "range": [35, 70],
         "runsPerOver": 8.3
       },
-      "middle": {
-        "average": 63,
-        "range": [45, 85],
+      "earlyMiddle": {
+        "average": 42,
+        "range": [28, 58],
         "runsPerOver": 7.0
+      },
+      "lateMiddle": {
+        "average": 30,
+        "range": [18, 44],
+        "runsPerOver": 7.5
       },
       "death": {
         "average": 47,
@@ -39,9 +44,13 @@
           "fours": 0.40,
           "sixes": 0.25
         },
-        "middle": {
-          "fours": 0.35,
-          "sixes": 0.35
+        "earlyMiddle": {
+          "fours": 0.20,
+          "sixes": 0.20
+        },
+        "lateMiddle": {
+          "fours": 0.15,
+          "sixes": 0.15
         },
         "death": {
           "fours": 0.25,
@@ -59,7 +68,8 @@
       "percentage": 0.45,
       "phaseDistribution": {
         "powerplay": 0.30,
-        "middle": 0.45,
+        "earlyMiddle": 0.25,
+        "lateMiddle": 0.20,
         "death": 0.25
       }
     },
@@ -83,9 +93,13 @@
         "percentage": 0.25,
         "average": 1.8
       },
-      "middle": {
-        "percentage": 0.45,
-        "average": 3.2
+      "earlyMiddle": {
+        "percentage": 0.25,
+        "average": 1.8
+      },
+      "lateMiddle": {
+        "percentage": 0.20,
+        "average": 1.4
       },
       "death": {
         "percentage": 0.30,
@@ -159,7 +173,8 @@
     "batting": {
       "avgStrikeRate": {
         "powerplay": 135,
-        "middle": 115,
+        "earlyMiddle": 115,
+        "lateMiddle": 120,
         "death": 155
       },
       "consistencyFactors": {
@@ -177,7 +192,8 @@
     "bowling": {
       "avgEconomy": {
         "powerplay": 8.3,
-        "middle": 7.0,
+        "earlyMiddle": 7.0,
+        "lateMiddle": 7.5,
         "death": 9.4
       },
       "avgStrikeRate": 18.5,
@@ -235,7 +251,8 @@
       },
       "phases": {
         "powerplay": 0.3,
-        "middle": 0.4,
+        "earlyMiddle": 0.2,
+        "lateMiddle": 0.2,
         "death": 0.3
       }
     },

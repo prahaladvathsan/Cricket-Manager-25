@@ -1,15 +1,221 @@
 /**
  * @file Matches.jsx
- * @description User team fixtures and results page
+ * @description User team fixtures, results, and player statistics page
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar, History, PlayCircle, Trophy, MapPin, Clock } from 'lucide-react';
+import { Calendar, History, MapPin, BarChart3, Users } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
 import usePlayerStore from '../../stores/playerStore';
 import TeamName from '../shared/TeamName';
+import PlayerName from '../shared/PlayerName';
+import MatchAnalysisDrawer from './MatchAnalysisDrawer';
+import PlayerCardModal from '../shared/PlayerCardModal';
+import { aggregateStats } from '../../utils/matchAnalytics';
+
+// ─── Season Stats aggregation ────────────────────────────────────────────────
+
+function buildSeasonStats(results, userTeamId, players) {
+  const batting = {};  // playerId -> { runs, balls, dismissed, fours, sixes, innings }
+  const bowling = {};  // playerId -> { runs, balls, wickets, dots, innings }
+
+  for (const result of results) {
+    if (!result.analytics) continue;
+    for (const inn of result.analytics.innings || []) {
+      const isBattingTeam = inn.battingTeamId === userTeamId;
+      const isBowlingTeam = inn.bowlingTeamId === userTeamId;
+
+      for (const [playerId, pdata] of Object.entries(inn.players || {})) {
+        // Batting stats — only collect when this player's team batted
+        if (isBattingTeam && pdata.batting?.length) {
+          const agg = aggregateStats(pdata.batting, {});
+          if (!batting[playerId]) batting[playerId] = { runs: 0, balls: 0, dismissed: 0, fours: 0, sixes: 0, innings: 0 };
+          batting[playerId].runs += agg.runs;
+          batting[playerId].balls += agg.balls;
+          batting[playerId].dismissed += agg.dismissed || 0;
+          batting[playerId].fours += agg.fours;
+          batting[playerId].sixes += agg.sixes;
+          if (agg.balls > 0) batting[playerId].innings += 1;
+        }
+
+        // Bowling stats — only collect when this player's team bowled
+        if (isBowlingTeam && pdata.bowling?.length) {
+          const agg = aggregateStats(pdata.bowling, {});
+          if (!bowling[playerId]) bowling[playerId] = { runs: 0, balls: 0, wickets: 0, dots: 0, innings: 0 };
+          bowling[playerId].runs += agg.runs;
+          bowling[playerId].balls += agg.balls;
+          bowling[playerId].wickets += agg.wickets;
+          bowling[playerId].dots += agg.dots;
+          if (agg.balls > 0) bowling[playerId].innings += 1;
+        }
+      }
+    }
+  }
+
+  return { batting, bowling };
+}
+
+// ─── Statistics Tab ───────────────────────────────────────────────────────────
+
+const StatisticsTab = ({ results, userTeamId, onPlayerClick }) => {
+  const { players } = usePlayerStore();
+  const [statsView, setStatsView] = useState('batting');
+  const [sortKey, setSortKey] = useState('runs');
+  const [sortDir, setSortDir] = useState('desc');
+
+  const seasonStats = useMemo(
+    () => buildSeasonStats(results, userTeamId, players),
+    [results, userTeamId, players]
+  );
+
+  const hasData = Object.keys(seasonStats.batting).length > 0 || Object.keys(seasonStats.bowling).length > 0;
+
+  const handleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    else { setSortKey(key); setSortDir('desc'); }
+  };
+
+  const thCls = 'text-right pb-1 text-text-tertiary font-medium cursor-pointer select-none hover:text-text-primary transition-colors';
+  const thLCls = 'text-left pb-1 text-text-tertiary font-medium';
+  const tdCls = 'py-1 text-right font-mono text-white/80';
+  const tdLCls = 'py-1 text-left';
+
+  const SortIndicator = ({ col }) => sortKey === col
+    ? <span className="ml-0.5 text-cricket-accent">{sortDir === 'desc' ? '↓' : '↑'}</span>
+    : null;
+
+  if (!hasData) {
+    return (
+      <div className="text-center py-12">
+        <Users className="w-8 h-8 text-text-tertiary mx-auto mb-3" />
+        <p className="text-text-secondary">No statistics yet</p>
+        <p className="text-sm text-text-tertiary mt-1">Play matches to see player statistics here</p>
+      </div>
+    );
+  }
+
+  // ── Batting table ──
+  if (statsView === 'batting') {
+    const rows = Object.entries(seasonStats.batting)
+      .map(([playerId, s]) => {
+        const sr = s.balls > 0 ? (s.runs / s.balls * 100) : 0;
+        const avg = s.dismissed > 0 ? (s.runs / s.dismissed) : s.runs;
+        return { playerId, ...s, sr, avg };
+      })
+      .filter(r => r.innings > 0)
+      .sort((a, b) => sortDir === 'desc' ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey]);
+
+    return (
+      <div>
+        <div className="flex gap-2 mb-3">
+          <button onClick={() => { setStatsView('batting'); setSortKey('runs'); setSortDir('desc'); }}
+            className={`text-xs px-3 py-1 rounded border transition-colors ${statsView === 'batting' ? 'border-cricket-accent text-cricket-accent bg-cricket-accent/10' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}>
+            Batting
+          </button>
+          <button onClick={() => { setStatsView('bowling'); setSortKey('wickets'); setSortDir('desc'); }}
+            className={`text-xs px-3 py-1 rounded border transition-colors ${statsView === 'bowling' ? 'border-cricket-accent text-cricket-accent bg-cricket-accent/10' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}>
+            Bowling
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border-primary">
+                <th className={thLCls}>Player</th>
+                <th className={thCls} onClick={() => handleSort('innings')}>Inn<SortIndicator col="innings" /></th>
+                <th className={thCls} onClick={() => handleSort('runs')}>Runs<SortIndicator col="runs" /></th>
+                <th className={thCls} onClick={() => handleSort('avg')}>Avg<SortIndicator col="avg" /></th>
+                <th className={thCls} onClick={() => handleSort('sr')}>SR<SortIndicator col="sr" /></th>
+                <th className={thCls} onClick={() => handleSort('fours')}>4s<SortIndicator col="fours" /></th>
+                <th className={thCls} onClick={() => handleSort('sixes')}>6s<SortIndicator col="sixes" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.playerId} className="border-b border-border-primary/30 hover:bg-bg-secondary cursor-pointer"
+                  onClick={() => onPlayerClick(r.playerId)}>
+                  <td className={tdLCls}><PlayerName playerId={r.playerId} /></td>
+                  <td className={tdCls}>{r.innings}</td>
+                  <td className={`${tdCls} text-trophy-gold font-bold`}>{r.runs}</td>
+                  <td className={tdCls}>{r.avg.toFixed(1)}</td>
+                  <td className={`${tdCls} ${r.sr >= 150 ? 'text-green-300' : r.sr >= 120 ? 'text-blue-300' : 'text-white/60'}`}>{r.sr.toFixed(1)}</td>
+                  <td className={`${tdCls} text-blue-300`}>{r.fours}</td>
+                  <td className={`${tdCls} text-purple-300`}>{r.sixes}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={7} className="py-4 text-center text-text-tertiary">No batting data</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Bowling table ──
+  const rows = Object.entries(seasonStats.bowling)
+    .map(([playerId, s]) => {
+      const overs = Math.floor(s.balls / 6) + (s.balls % 6) / 10;
+      const econ = s.balls > 0 ? (s.runs / s.balls * 6) : 0;
+      const avg = s.wickets > 0 ? (s.runs / s.wickets) : null;
+      const dotPct = s.balls > 0 ? (s.dots / s.balls * 100) : 0;
+      return { playerId, ...s, overs, econ, avg, dotPct };
+    })
+    .filter(r => r.innings > 0)
+    .sort((a, b) => sortDir === 'desc' ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey]);
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-3">
+        <button onClick={() => { setStatsView('batting'); setSortKey('runs'); setSortDir('desc'); }}
+          className={`text-xs px-3 py-1 rounded border transition-colors ${statsView === 'batting' ? 'border-cricket-accent text-cricket-accent bg-cricket-accent/10' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}>
+          Batting
+        </button>
+        <button onClick={() => { setStatsView('bowling'); setSortKey('wickets'); setSortDir('desc'); }}
+          className={`text-xs px-3 py-1 rounded border transition-colors ${statsView === 'bowling' ? 'border-cricket-accent text-cricket-accent bg-cricket-accent/10' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}>
+          Bowling
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-border-primary">
+              <th className={thLCls}>Player</th>
+              <th className={thCls} onClick={() => handleSort('innings')}>Inn<SortIndicator col="innings" /></th>
+              <th className={thCls} onClick={() => handleSort('wickets')}>Wkts<SortIndicator col="wickets" /></th>
+              <th className={thCls} onClick={() => handleSort('econ')}>Econ<SortIndicator col="econ" /></th>
+              <th className={thCls} onClick={() => handleSort('avg')}>Avg<SortIndicator col="avg" /></th>
+              <th className={thCls} onClick={() => handleSort('dotPct')}>Dot%<SortIndicator col="dotPct" /></th>
+              <th className={thCls} onClick={() => handleSort('runs')}>Runs<SortIndicator col="runs" /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.playerId} className="border-b border-border-primary/30 hover:bg-bg-secondary cursor-pointer"
+                onClick={() => onPlayerClick(r.playerId)}>
+                <td className={tdLCls}><PlayerName playerId={r.playerId} /></td>
+                <td className={tdCls}>{r.innings}</td>
+                <td className={`${tdCls} text-trophy-gold font-bold`}>{r.wickets}</td>
+                <td className={`${tdCls} ${r.econ < 7 ? 'text-green-300' : r.econ < 9 ? 'text-blue-300' : 'text-red-400'}`}>{r.econ.toFixed(2)}</td>
+                <td className={tdCls}>{r.avg != null ? r.avg.toFixed(1) : '—'}</td>
+                <td className={`${tdCls} text-blue-300`}>{r.dotPct.toFixed(0)}%</td>
+                <td className={tdCls}>{r.runs}</td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={7} className="py-4 text-center text-text-tertiary">No bowling data</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const Matches = () => {
   const navigate = useNavigate();
@@ -17,13 +223,15 @@ const Matches = () => {
   const { getUserTeam } = useTeamStore();
   const { fixtures, results, clubs } = useLeagueStore();
   const [activeTab, setActiveTab] = useState('fixtures');
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analyticsPlayerId, setAnalyticsPlayerId] = useState(null);
 
   const userTeam = getUserTeam();
 
   // Handle tab from URL query param
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'results' || tabParam === 'fixtures') {
+    if (['results', 'fixtures', 'statistics'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -54,7 +262,6 @@ const Matches = () => {
     const wins = userResults.filter(r => r.winner === userTeam.id).length;
     const losses = userResults.filter(r => r.winner && r.winner !== userTeam.id).length;
 
-    // Calculate NRR
     let runsScored = 0, ballsFaced = 0, runsConceded = 0, ballsBowled = 0;
 
     userResults.forEach(result => {
@@ -64,7 +271,7 @@ const Matches = () => {
 
       if (ourInnings) {
         runsScored += ourInnings.totalScore || 0;
-        ballsFaced += ourInnings.ballsBowled || 120; // Default to full 20 overs
+        ballsFaced += ourInnings.ballsBowled || 120;
       }
       if (theirInnings) {
         runsConceded += theirInnings.totalScore || 0;
@@ -76,22 +283,18 @@ const Matches = () => {
       ? (runsScored / ballsFaced * 6) - (runsConceded / ballsBowled * 6)
       : 0;
 
-    return {
-      played: userResults.length,
-      wins,
-      losses,
-      nrr
-    };
+    return { played: userResults.length, wins, losses, nrr };
   }, [userResults, userTeam]);
 
   const tabs = [
     { id: 'fixtures', label: 'Fixtures', count: userFixtures.length },
     { id: 'results', label: 'Results', count: userResults.length },
+    { id: 'statistics', label: 'Statistics', count: null },
   ];
 
-  return (
+  return (<>
     <div className="space-y-2">
-      <h1 className="sr-only">Fixtures & Results</h1>
+      <h1 className="sr-only">Stats</h1>
       {/* Quick Stats */}
       {userTeam && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -154,9 +357,6 @@ const Matches = () => {
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
                 {userFixtures.map((fixture, idx) => {
                   const isHome = fixture.homeTeam === userTeam?.id;
-                  const opponent = isHome
-                    ? clubs[fixture.awayTeam]
-                    : clubs[fixture.homeTeam];
 
                   return (
                     <div
@@ -174,8 +374,7 @@ const Matches = () => {
                                 {fixture.date}
                               </span>
                             )}
-                            <span className={`text-xs font-medium ${isHome ? 'text-cricket-accent' : 'text-blue-400'
-                              }`}>
+                            <span className={`text-xs font-medium ${isHome ? 'text-cricket-accent' : 'text-blue-400'}`}>
                               {isHome ? 'Home' : 'Away'}
                             </span>
                           </div>
@@ -225,9 +424,6 @@ const Matches = () => {
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
                 {userResults.map((result, idx) => {
                   const isHome = result.homeTeam === userTeam?.id;
-                  const opponent = isHome
-                    ? clubs[result.awayTeam]
-                    : clubs[result.homeTeam];
                   const won = result.winner === userTeam?.id;
                   const ourInnings = isHome ? result.innings1 : result.innings2;
                   const theirInnings = isHome ? result.innings2 : result.innings1;
@@ -283,9 +479,17 @@ const Matches = () => {
                         </div>
                       </div>
                       {result.margin && (
-                        <div className={`text-xs mt-2 pt-2 border-t ${won ? 'border-status-win/20 text-status-win' : 'border-status-loss/20 text-status-loss'
-                          }`}>
-                          {result.margin}
+                        <div className={`text-xs mt-2 pt-2 border-t flex items-center justify-between ${won ? 'border-status-win/20 text-status-win' : 'border-status-loss/20 text-status-loss'}`}>
+                          <span>{result.margin}</span>
+                          {result.analytics && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setAnalysisResult(result); }}
+                              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-bg-tertiary text-text-secondary hover:text-cricket-accent border border-border-primary hover:border-cricket-accent transition-colors"
+                            >
+                              <BarChart3 className="w-3 h-3" />
+                              Analyse
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -299,8 +503,41 @@ const Matches = () => {
             )}
           </>
         )}
+
+        {activeTab === 'statistics' && (
+          <>
+            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
+              <BarChart3 className="w-4 h-4 text-cricket-accent" />
+              <h3 className="text-lg font-semibold text-text-primary">
+                Season Statistics
+              </h3>
+            </div>
+            <StatisticsTab
+              results={userResults}
+              userTeamId={userTeam?.id}
+              onPlayerClick={pid => setAnalyticsPlayerId(pid)}
+            />
+          </>
+        )}
       </div>
     </div>
+
+    {/* Match Analysis Drawer (portal-based, renders at document.body) */}
+    <MatchAnalysisDrawer
+      isOpen={!!analysisResult}
+      onClose={() => setAnalysisResult(null)}
+      result={analysisResult}
+      onPlayerClick={pid => setAnalyticsPlayerId(pid)}
+    />
+
+    {/* Player Card Modal opened from drawer or stats table */}
+    <PlayerCardModal
+      isOpen={!!analyticsPlayerId}
+      onClose={() => setAnalyticsPlayerId(null)}
+      playerId={analyticsPlayerId}
+      initialTab="analytics"
+    />
+    </>
   );
 };
 

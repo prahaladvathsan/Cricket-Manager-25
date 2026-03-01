@@ -101,7 +101,12 @@
         "goodHit": 1.0,
         "smashed": 1.3
       },
-      "middle": {
+      "earlyMiddle": {
+        "mishit": 1.0,
+        "goodHit": 1.1,
+        "smashed": 0.9
+      },
+      "lateMiddle": {
         "mishit": 1.0,
         "goodHit": 1.1,
         "smashed": 0.9

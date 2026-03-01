@@ -13,7 +13,8 @@
     "situational": {
       "matchPhase": {
         "powerplay": -0.1,
-        "middle": 0.0,
+        "earlyMiddle": 0.0,
+        "lateMiddle": 0.0,
         "death": 0.3
       },
       "chase": {
