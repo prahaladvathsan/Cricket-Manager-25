@@ -65,16 +65,19 @@
   }
 
   .card {
-    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md hover:border-border-accent transition-colors;
+    background-color: rgba(0, 0, 0, 0.4);
+    @apply border border-border-primary rounded-lg shadow-md hover:border-border-accent transition-colors;
   }
 
   /* Interactive card variant for clickable dashboard cards */
   .card-interactive {
-    @apply bg-bg-secondary border border-border-primary rounded-lg shadow-md hover:border-cricket-accent/50 hover:bg-cricket-primary/10 transition-colors cursor-pointer;
+    background-color: rgba(0, 0, 0, 0.4);
+    @apply border border-border-primary rounded-lg shadow-md hover:border-cricket-accent/50 hover:bg-cricket-primary/10 transition-colors cursor-pointer;
   }
 
   .input-field {
-    @apply bg-bg-secondary border border-border-primary rounded px-3 py-2 text-text-primary focus:border-cricket-accent focus:outline-none transition-colors;
+    background-color: rgba(0, 0, 0, 0.4);
+    @apply border border-border-primary rounded px-3 py-2 text-text-primary focus:border-cricket-accent focus:outline-none transition-colors;
   }
 
   .nav-link {
@@ -120,4 +123,22 @@
     display: none;
     /* Chrome, Safari, Opera */
   }
+}
+
+/* Override bg-bg-secondary: Tailwind config changes don't hot-reload in Vite.
+   This unlayered rule has higher cascade priority than @layer utilities. */
+.bg-bg-secondary {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.bg-bg-secondary\/50 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.bg-bg-secondary\/80 {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.bg-bg-secondary\/90 {
+  background-color: rgba(0, 0, 0, 0.9);
 }
