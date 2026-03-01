@@ -6,6 +6,7 @@
 
 import quickSimMatch from '../match-engine/utils/QuickSimMatch';
 import AuctionEngine from '../auction-system/AuctionEngine';
+import AuctionTransferAI from '../ai/AuctionTransferAI';
 import MatchWeekScheduleGenerator from '../league/MatchWeekScheduleGenerator';
 import PlayoffGenerator from '../league/PlayoffGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
@@ -14,8 +15,11 @@ import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueIn
 import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
-import { getTransferManager } from '../finance/transferManagerSingleton';
+import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../finance/transferManagerSingleton';
 import { indexedDBStorage } from '../../utils/indexedDBStorage';
+import RetentionEngine from '../retention/RetentionEngine';
+import RetentionAI from '../retention/RetentionAI';
+// Retention state now lives in gameStore + teamStore
 
 /**
  * Simulation Engine for fast-forwarding game state
@@ -195,6 +199,45 @@ class SimulationEngine {
   }
 
   /**
+   * Run the retention phase (automated — all teams processed by AI)
+   */
+  async runRetention() {
+    console.log('🔄 Running automated retention phase...');
+    await this.updateProgressMessage('Running retention phase...');
+
+    const retentionEngine = new RetentionEngine();
+    const retentionAIInstance = new RetentionAI();
+    const allTeams = Object.values(this.teamStore.getState().teams);
+    const allPlayers = this.playerStore.getState().players;
+    const allSquadLists = this.teamStore.getState().squadLists;
+
+    // Initialize retention state
+    const teamRetentions = retentionEngine.initializeRetentionPhase(allTeams, allSquadLists, allPlayers);
+
+    // Process ALL teams via AI (including user team in sim mode)
+    for (const team of allTeams) {
+      const squadIds = allSquadLists[team.id] || [];
+      const squad = squadIds.map(id => allPlayers[id]).filter(Boolean);
+      const getStats = (playerId) => this.teamStore.getState().playerStats?.[team.id]?.[playerId] || null;
+      const result = retentionAIInstance.processTeamRetention(team, squad, getStats);
+      teamRetentions[team.id] = { ...teamRetentions[team.id], ...result, completed: true };
+    }
+
+    // Finalize — update squads and player assignments
+    retentionEngine.finalizeRetentions(teamRetentions, {
+      playerStore: this.playerStore,
+      teamStore: this.teamStore
+    });
+
+    // Update stores with retention data
+    this.teamStore.getState().setTeamRetentions(teamRetentions);
+    this.gameStore.getState().startRetentionPhase();
+    this.gameStore.getState().completeRetentionPhase();
+
+    console.log('✅ Retention phase complete');
+  }
+
+  /**
    * Run the auction (automated)
    */
   async runAuction() {
@@ -207,9 +250,27 @@ class SimulationEngine {
     const allPlayers = Object.values(this.playerStore.getState().players);
     const userTeamId = this.teamStore.getState().userTeamId;
 
+    // Build retention options if retention phase was completed
+    const retentionPhase = this.gameStore.getState().retentionState;
+    const teamRetentions = this.teamStore.getState().teamRetentions;
+    const auctionOptions = {};
+    if (retentionPhase === 'completed' && Object.keys(teamRetentions).length > 0) {
+      const teamPurses = {};
+      const retainedSquads = {};
+      for (const [teamId, ret] of Object.entries(teamRetentions)) {
+        teamPurses[teamId] = ret.auctionPurse;
+        retainedSquads[teamId] = (ret.retainedPlayers || []).map(r => {
+          const p = allPlayers.find ? allPlayers.find(pl => pl.id === r.playerId) : allPlayers[r.playerId];
+          return p;
+        }).filter(Boolean);
+      }
+      auctionOptions.teamPurses = teamPurses;
+      auctionOptions.retainedSquads = retainedSquads;
+    }
+
     // Initialize auction engine
     const auctionEngine = new AuctionEngine({ fastMode: true });
-    auctionEngine.initializeAuction(teams, allPlayers);
+    auctionEngine.initializeAuction(teams, allPlayers, auctionOptions);
 
     // Categorize players
     const categorizedPlayers = auctionEngine.categorizePlayers();
@@ -297,6 +358,23 @@ class SimulationEngine {
 
     // Mark auction as complete
     this.auctionStore.getState().completeAuction();
+
+    // Populate free agency with permanently unsold auction players
+    if (auctionEngine.permanentlyUnsold && auctionEngine.permanentlyUnsold.length > 0) {
+      const auctionAI = new AuctionTransferAI();
+      const freeAgents = auctionEngine.permanentlyUnsold.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        playstyleRatings: p.playstyleRatings,
+        topPlaystyles: p.topPlaystyles,
+        askingPrice: auctionAI.calculateBasePrice(p),
+        currentTeam: null,
+        status: 'unsold'
+      }));
+      this.transferStore.getState().setFreeAgents(freeAgents);
+      console.log(`🆓 ${freeAgents.length} permanently unsold players added to free agency`);
+    }
 
     // Emit auction event for live feed
     this.emitEvent('auction', {
@@ -403,8 +481,23 @@ class SimulationEngine {
     // Get current day's event
     const event = this.gameStore.getState().getCurrentEvent();
 
+    // Handle retention_start event (pre-auction retention for odd seasons >= 3)
+    if (event && event.type === 'retention_start') {
+      console.log(`🏏 Retention Start - Season ${event.data.season} (sim mode)`);
+      await this.runRetention();
+      summary.eventsProcessed++;
+    }
+
     // Handle new_season_start event (Season transitions)
     if (event && event.type === 'new_season_start') {
+      // Guard: Don't start new season if playoffs haven't completed
+      const leagueStageCheck = this.leagueStore.getState().stage;
+      const championCheck = this.leagueStore.getState().champion;
+      if (leagueStageCheck === 'playoffs' && !championCheck) {
+        console.warn('⚠️ new_season_start fired but playoffs not complete - skipping');
+        return;
+      }
+
       console.log(`🔄 New Season Start - Transitioning to Season ${event.data.season}...`);
 
       // Reset for new season (increments season number, resets calendar)
@@ -426,9 +519,13 @@ class SimulationEngine {
       const isNewSeasonOdd = newSeason % 2 === 1;
 
       if (isNewSeasonOdd) {
-        // Odd season (3, 5, 7...): Run auction then initialize league
+        // Odd season: retention_start event (if applicable) already ran retention
+        // Season 1 has no retention. Season 3+ retention ran on previous day's retention_start event.
         console.log(`🏏 Season ${newSeason} is ODD - Running auction...`);
         await this.runAuction();
+        // Clear retention data after auction
+        this.gameStore.getState().resetRetention();
+        this.teamStore.getState().clearTeamRetentions();
         await this.initializeLeague();
         // Autosave after auction completion
         await this.autosaveAfterAuction();
@@ -482,7 +579,63 @@ class SimulationEngine {
       // Initialize league
       await this.initializeLeague();
       summary.eventsProcessed++;
-    } else if (event && (event.type === 'season_end' || event.type === 'offseason_start')) {
+    } else if (event && event.type === 'offseason_start') {
+      // Guard: Don't start offseason if playoffs haven't completed
+      const leagueStageForOffseason = this.leagueStore.getState().stage;
+      const championForOffseason = this.leagueStore.getState().champion;
+      if (leagueStageForOffseason === 'playoffs' && !championForOffseason) {
+        console.warn('⚠️ offseason_start fired but playoffs not complete - skipping');
+        return;
+      }
+
+      // OFFSEASON START — set phase and open transfer window immediately.
+      // transfer_window_open fires on the same calendar day but find() only returns one
+      // event per day; opening here keeps game behaviour in sync with the calendar display.
+      console.log('📅 Off-season started — setting phase to offseason and opening transfer window');
+      this.gameStore.getState().advancePhase('offseason');
+
+      const currentWeek = this.gameStore.getState().currentWeek;
+      const transferManager = getTransferManager();
+      if (!transferManager.transferMarket.windowOpen) {
+        transferManager.allowUserTeamAI = true; // Sim mode: AI controls all teams
+        transferManager.setCurrentWeek(currentWeek);
+
+        if (!getHasRunPreReleases()) {
+          const preReleaseTeams = Object.values(this.teamStore.getState().teams || {}).map(team => {
+            const squadIds = this.teamStore.getState().squadLists[team.id] || [];
+            return { ...team, squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean) };
+          });
+          transferManager.transferAI.releasePreTransferWindow(preReleaseTeams);
+          setHasRunPreReleases(true);
+        }
+
+        transferManager.openWindow('offSeason', 14);
+        const gameDay = this.gameStore.getState().gameDay;
+        this.transferStore.getState().openTransferWindow(currentWeek, currentWeek + 4, gameDay);
+        console.log(`🔓 Transfer window opened on gameDay ${gameDay} (Week ${currentWeek})`);
+      }
+
+      summary.eventsProcessed++;
+    } else if (event && event.type === 'transfer_window_close') {
+      // TRANSFER WINDOW CLOSE — calendar event fires at the correct close date
+      console.log('🔒 Transfer window close event — closing transfer window');
+      const transferManager = getTransferManager();
+      if (transferManager.transferMarket.windowOpen) {
+        transferManager.closeWindow();
+        setHasRunPreReleases(false);
+
+        const useTransferStore = (await import('../../stores/transferStore')).default;
+        const tStore = useTransferStore.getState();
+        tStore.setTransferWindowSummary({
+          completedTransfers: [...tStore.completedTransfers],
+          totalListings: tStore.activeListings.length,
+          freeAgents: [...tStore.freeAgents]
+        });
+        useTransferStore.getState().closeTransferWindow();
+        console.log('🔒 Transfer window closed and summary saved');
+      }
+      summary.eventsProcessed++;
+    } else if (event && event.type === 'season_end') {
       // CRITICAL: Check if playoffs are actually complete before processing season end
       const leagueStage = this.leagueStore.getState().stage;
       const champion = this.leagueStore.getState().champion;
@@ -541,6 +694,20 @@ class SimulationEngine {
           }
         }
 
+        // Record season to history
+        const sortedForHistory = [...standings].sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return b.netRunRate - a.netRunRate;
+        });
+        const userTeamIdForHistory = this.teamStore.getState().userTeamId;
+        this.gameStore.getState().recordSeasonHistory({
+          season: this.gameStore.getState().currentSeason,
+          champion: champion?.championName || null,
+          runnerUp: champion?.runnerUpName || null,
+          standings: sortedForHistory.map(s => ({ clubId: s.clubId, clubName: s.clubName, points: s.points, nrr: s.netRunRate })),
+          userPosition: userTeamIdForHistory ? sortedForHistory.findIndex(s => s.clubId === userTeamIdForHistory) + 1 : null
+        });
+
         summary.eventsProcessed++;
 
         // Emit season end event for live feed
@@ -572,38 +739,23 @@ class SimulationEngine {
       summary.eventsProcessed++;
     }
 
-    // Process off-season transfers during weeks 22-26
+    // Process daily transfer cycle if the window is open.
+    // Open/close is driven by calendar events (offseason_start / transfer_window_close),
+    // not by week numbers — this keeps sim-to-date in sync with the calendar display.
     const currentPhase = this.gameStore.getState().currentPhase;
     const currentWeek = this.gameStore.getState().currentWeek;
 
-    if (currentPhase === 'offseason' && currentWeek >= 22 && currentWeek <= 26) {
+    if (currentPhase === 'offseason' && getTransferManager().transferMarket.windowOpen) {
       try {
         const transferManager = getTransferManager();
-
-        // Open transfer window at week 22
-        if (currentWeek === 22 && !transferManager.transferMarket.windowOpen) {
-          transferManager.setCurrentWeek(currentWeek);
-          transferManager.openWindow('offSeason', 14);
-        }
-
-        // Process weekly transfer cycle
-        if (transferManager.transferMarket.windowOpen) {
-          transferManager.setCurrentWeek(currentWeek);
-          const teams = Object.values(this.teamStore.getState().teams || {}).map(team => {
-            const squadIds = this.teamStore.getState().squadLists[team.id] || [];
-            return {
-              ...team,
-              squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean)
-            };
-          });
-          const transferResult = await transferManager.processWeeklyTransferCycle(teams, currentWeek);
-          summary.transfersCompleted += (transferResult.transfers?.completed || 0);
-        }
-
-        // Close transfer window at week 26
-        if (currentWeek === 26 && transferManager.transferMarket.windowOpen) {
-          transferManager.closeWindow();
-        }
+        transferManager.allowUserTeamAI = true;
+        transferManager.setCurrentWeek(currentWeek);
+        const teams = Object.values(this.teamStore.getState().teams || {}).map(team => {
+          const squadIds = this.teamStore.getState().squadLists[team.id] || [];
+          return { ...team, squad: squadIds.map(id => this.playerStore.getState().players[id]).filter(Boolean) };
+        });
+        const transferResult = await transferManager.processDailyTransferCycle(teams, currentWeek);
+        summary.transfersCompleted += (transferResult.transfers?.completed || 0);
       } catch (error) {
         console.error('Error processing off-season transfers:', error);
       }
@@ -754,8 +906,11 @@ class SimulationEngine {
       const homeSquad = homeSquadIds
         .map(id => this.playerStore.getState().players[id])
         .filter(Boolean);
+      let homeTactics = null;
       if (homeSquad.length >= 11) {
-        aiTacticsManager.generateTactics(homeTeam.id, homeSquad, this.teamStore);
+        homeTactics = aiTacticsManager.generateTactics(homeTeam.id, homeSquad, this.teamStore);
+      } else {
+        homeTactics = this.teamStore.getState().getTeamTactics(homeTeam.id);
       }
 
       // Away team tactics - regenerate for ALL teams in sim mode
@@ -763,13 +918,12 @@ class SimulationEngine {
       const awaySquad = awaySquadIds
         .map(id => this.playerStore.getState().players[id])
         .filter(Boolean);
+      let awayTactics = null;
       if (awaySquad.length >= 11) {
-        aiTacticsManager.generateTactics(awayTeam.id, awaySquad, this.teamStore);
+        awayTactics = aiTacticsManager.generateTactics(awayTeam.id, awaySquad, this.teamStore);
+      } else {
+        awayTactics = this.teamStore.getState().getTeamTactics(awayTeam.id);
       }
-
-      // Get tactics (now freshly generated for AI teams)
-      const homeTactics = this.teamStore.getState().getTeamTactics(homeTeam.id);
-      const awayTactics = this.teamStore.getState().getTeamTactics(awayTeam.id);
 
       let homePlayingXI, awayPlayingXI;
 

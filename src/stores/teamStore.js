@@ -53,6 +53,34 @@ const useTeamStore = create(
       playerStats: {}, // teamId -> { playerId -> stats }
       teamStats: {}, // teamId -> aggregated team stats
 
+      // Retention Phase Data (per-team): { [teamId]: { retainedPlayers, releasedPlayers, totalSalary, auctionPurse, completed } }
+      teamRetentions: {},
+
+      // Retention Actions
+      setTeamRetentions: (teamRetentions) => set({ teamRetentions }),
+      clearTeamRetentions: () => set({ teamRetentions: {} }),
+      confirmRetention: (teamId, playerId, salary) => set(state => {
+        const team = state.teamRetentions[teamId] || { retainedPlayers: [], releasedPlayers: [], totalSalary: 0, auctionPurse: 10000000 };
+        const newRetained = [...team.retainedPlayers, { playerId, salary }];
+        const newTotal = team.totalSalary + salary;
+        const auctionPurse = Math.max(500000, 10000000 - newTotal);
+        return {
+          teamRetentions: {
+            ...state.teamRetentions,
+            [teamId]: { ...team, retainedPlayers: newRetained, totalSalary: newTotal, auctionPurse }
+          }
+        };
+      }),
+      releaseToPool: (teamId, playerId, reason = 'released') => set(state => {
+        const team = state.teamRetentions[teamId] || { retainedPlayers: [], releasedPlayers: [], totalSalary: 0, auctionPurse: 10000000 };
+        return {
+          teamRetentions: {
+            ...state.teamRetentions,
+            [teamId]: { ...team, releasedPlayers: [...team.releasedPlayers, { playerId, reason }] }
+          }
+        };
+      }),
+
       // Actions
       /**
        * Initialize teams from data

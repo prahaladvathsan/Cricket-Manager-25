@@ -11,6 +11,7 @@ import usePlayerStore from '../../stores/playerStore';
 import useTeamStore from '../../stores/teamStore';
 import TeamName from '../shared/TeamName';
 import PlayerName from '../shared/PlayerName';
+import { ICON_MAP } from '../../utils/ObjectiveGenerator';
 
 const SeasonSummaryView = ({ onContinue }) => {
   const { seasonName, standings, champion, stats } = useLeagueStore();
@@ -588,7 +589,10 @@ const SeasonSummaryView = ({ onContinue }) => {
             <div className="space-y-4">
               {seasonObjectives && seasonObjectives.length > 0 ? (
                 seasonObjectives.map((objective) => {
-                  const IconComponent = objective.icon || Target;
+                  // Resolve icon component from ICON_MAP if it's a string, otherwise fallback
+                  const IconComponent = typeof objective.icon === 'string' 
+                    ? (ICON_MAP[objective.icon] || Target)
+                    : (objective.icon || Target);
 
                   // Status badge configuration
                   const statusConfig = {

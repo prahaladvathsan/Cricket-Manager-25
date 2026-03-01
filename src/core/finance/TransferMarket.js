@@ -1,11 +1,12 @@
 /**
  * @file TransferMarket.js
- * @description Transfer System V2 - Weekly bidding with 7-day listings
- * Players listed at internal value, teams bid hourly for 7 days
+ * @description Transfer System V2 - Weekly listings with daily bidding
+ * Players listed at internal value, teams bid once per day
  */
 
 import transferConfig from '../../data/config/transferConfig.json';
 import { getPlayerRating } from '../../utils/ratingHelper.js';
+import useTransferStore from '../../stores/transferStore.js';
 
 export default class TransferMarket {
   constructor(financeStore = null, teamStore = null, playerStore = null) {
@@ -27,7 +28,7 @@ export default class TransferMarket {
 
   /**
    * Open a transfer window
-   * @param {string} windowType - Type of window ('preAuction', 'midSeason', 'emergency', 'offSeason')
+   * @param {string} windowType - Type of window ('preAuction', 'offSeason', 'emergency')
    * @param {number} currentWeek - Current match week
    * @param {number} listingDurationDays - Duration for listings in days (default: 7)
    */
@@ -92,7 +93,9 @@ export default class TransferMarket {
       player,
       listingPrice,
       previousPrice,
-      performanceMultiplier
+      performanceMultiplier,
+      gameDay,
+      reason
     } = params;
 
     // Validate transfer window
@@ -124,6 +127,9 @@ export default class TransferMarket {
       previousPrice,
       performanceMultiplier,
 
+      // Listing reason (composition_surplus, dead_capital, vfm_failure, manual)
+      reason: reason || 'manual',
+
       // Bidding state
       currentBid: 0, // No bids yet
       currentBidder: null,
@@ -133,14 +139,14 @@ export default class TransferMarket {
       // Timing
       listedAt,
       expiresAt,
+      createdOnGameDay: gameDay || 0,
+      durationDays,
       lastBidAt: null,
 
       status: 'active'
     };
 
     this.listings.set(listingId, listing);
-
-    console.log(`📋 Listed ${player.name} from team ${teamId} at $${(listingPrice / 1000).toFixed(0)}K (${(performanceMultiplier * 100).toFixed(0)}% performance)`);
 
     return {
       success: true,
@@ -158,28 +164,39 @@ export default class TransferMarket {
    */
   identifyInterestedTeams(listing, allTeams, calculateValuation) {
     const interestedTeams = [];
+    const RESERVE = 100000;
 
+    let skipReasons = { seller: 0, squadFull: 0, lowVal: 0, noBudget: 0 };
     allTeams.forEach(team => {
       // Skip the selling team
-      if (team.id === listing.teamId) return;
+      if (team.id === listing.teamId) { skipReasons.seller++; return; }
+
+      // Skip teams at max squad size (account for listed players as outgoing)
+      const squad = team.squad || [];
+      const teamListedCount = Array.from(this.listings.values()).filter(l => l.teamId === team.id && l.status === 'active').length;
+      const effectiveSquadSize = squad.length - teamListedCount;
+      if (effectiveSquadSize >= 25) { skipReasons.squadFull++; return; }
 
       // Calculate this team's valuation of the player
       const valuation = calculateValuation(listing.player, team);
 
       // Interested if valuation > listing price and budget allows
       if (valuation > listing.listingPrice) {
-        // Check if team has budget for at least initial bid
+        // Check if team has budget for at least initial bid + $100K reserve
         const teamFinances = this.financeStore?.getState().getTeamFinances(team.id);
-        if (teamFinances && teamFinances.currentBudget > listing.listingPrice + 500000) {
+        if (teamFinances && teamFinances.currentBudget > listing.listingPrice / 2 + RESERVE) {
           interestedTeams.push(team.id);
+        } else {
+          skipReasons.noBudget++;
         }
+      } else {
+        skipReasons.lowVal++;
       }
     });
 
     // Update listing with interested teams
     listing.interestedTeams = interestedTeams;
 
-    console.log(`   ${interestedTeams.length} teams interested in ${listing.player.name}`);
 
     return interestedTeams;
   }
@@ -213,21 +230,16 @@ export default class TransferMarket {
       return { success: false, error: 'Cannot bid on your own player' };
     }
 
-    // Validate bid amount
+    // Validate bid amount — must beat current bid by at least $10K
     const minBid = listing.currentBid > 0 ? listing.currentBid + 10000 : listing.listingPrice;
-    const maxJump = listing.currentBid + 50000;
 
     if (bidAmount < minBid) {
       return { success: false, error: `Bid must be at least $${(minBid / 1000).toFixed(0)}K` };
     }
 
-    if (bidAmount > maxJump) {
-      return { success: false, error: `Bid cannot exceed $${(maxJump / 1000).toFixed(0)}K (max jump $50K)` };
-    }
-
-    // Validate budget
+    // Validate budget — half-price economics (only half of bid is actually deducted)
     if (this.financeStore) {
-      const validation = this.financeStore.getState().validateBudget(teamId, bidAmount);
+      const validation = this.financeStore.getState().validateBudget(teamId, Math.round(bidAmount / 2));
       if (!validation.canAfford) {
         return { success: false, error: 'Insufficient budget', shortfall: validation.shortfall };
       }
@@ -250,16 +262,26 @@ export default class TransferMarket {
 
   /**
    * Process expired listings (complete transfers or remove)
-   * @param {Date} currentDate - Current date
+   * Uses game-day comparison when available, falls back to wall-clock
+   * @param {number} [currentGameDay] - Current game day for game-day-based expiry
    * @returns {Object} {completed: number, expired: number}
    */
-  processExpiredListings(currentDate = new Date()) {
-    const now = currentDate instanceof Date ? currentDate.getTime() : Date.now();
+  processExpiredListings(currentGameDay) {
     let completed = 0;
     let expired = 0;
+    const expiredNoBid = []; // Listings that expired with no bids (for auto-release)
 
     const expiredListings = Array.from(this.listings.values())
-      .filter(l => l.status === 'active' && now >= l.expiresAt);
+      .filter(l => {
+        if (l.status !== 'active') return false;
+        // Use game-day-based expiry if listing has createdOnGameDay
+        if (currentGameDay != null && l.createdOnGameDay) {
+          const elapsed = currentGameDay - l.createdOnGameDay;
+          return elapsed >= (l.durationDays || 14);
+        }
+        // Fallback to wall-clock expiry
+        return Date.now() >= l.expiresAt;
+      });
 
     expiredListings.forEach(listing => {
       if (listing.bids.length > 0) {
@@ -269,7 +291,8 @@ export default class TransferMarket {
           completed++;
         }
       } else {
-        // No bids, remove listing
+        // No bids — collect for potential auto-release, then remove
+        expiredNoBid.push({ ...listing });
         listing.status = 'expired';
         this.listings.delete(listing.id);
         expired++;
@@ -280,7 +303,7 @@ export default class TransferMarket {
       console.log(`\n🔄 Processed expired listings: ${completed} completed, ${expired} removed`);
     }
 
-    return { completed, expired };
+    return { completed, expired, expiredNoBid };
   }
 
   /**
@@ -293,83 +316,106 @@ export default class TransferMarket {
       return { success: false, error: 'No bids on this listing' };
     }
 
-    const winningBid = listing.currentBid;
-    const buyerTeamId = listing.currentBidder;
+    // Build unique bidders sorted by amount descending (highest first)
+    const seen = new Set();
+    const sortedBidders = [...listing.bids]
+      .sort((a, b) => b.amount - a.amount)
+      .filter(b => {
+        if (seen.has(b.teamId)) return false;
+        seen.add(b.teamId);
+        return true;
+      });
 
-    // Check buyer squad size (must be < 25)
-    if (this.teamStore) {
-      const buyerSquad = this.teamStore.getState().squadLists[buyerTeamId] || [];
-      const MAX_SQUAD_SIZE = 25; // Must match auctionConfig.squadSize.max
-      if (buyerSquad.length >= MAX_SQUAD_SIZE) {
-        console.warn(`⚠️  Transfer failed: ${buyerTeamId} has reached squad cap (${MAX_SQUAD_SIZE} players)`);
-        listing.status = 'expired';
-        this.listings.delete(listing.id);
-        return { success: false, error: `Buyer has reached maximum squad size (${MAX_SQUAD_SIZE} players)` };
+    const MAX_SQUAD_SIZE = 25;
+
+    // Try each bidder in order until one succeeds
+    for (const bid of sortedBidders) {
+      const buyerTeamId = bid.teamId;
+      const bidAmount = bid.amount;
+
+      // Check squad cap
+      if (this.teamStore) {
+        const buyerSquad = this.teamStore.getState().squadLists[buyerTeamId] || [];
+        if (buyerSquad.length >= MAX_SQUAD_SIZE) {
+          console.warn(`⚠️  Transfer skipped: ${buyerTeamId} at squad cap (${MAX_SQUAD_SIZE}), trying next bidder`);
+          continue;
+        }
       }
-    }
 
-    // Final budget validation
-    if (this.financeStore) {
-      const validation = this.financeStore.getState().validateBudget(buyerTeamId, winningBid);
-      if (!validation.canAfford) {
-        console.warn(`⚠️  Transfer failed: ${buyerTeamId} cannot afford $${(winningBid / 1000).toFixed(0)}K`);
-        listing.status = 'expired';
-        this.listings.delete(listing.id);
-        return { success: false, error: 'Buyer budget insufficient' };
+      // Budget validation — half-price economics
+      if (this.financeStore) {
+        const halfPrice = Math.round(bidAmount / 2);
+        const validation = this.financeStore.getState().validateBudget(buyerTeamId, halfPrice);
+        if (!validation.canAfford) {
+          console.warn(`⚠️  Transfer skipped: ${buyerTeamId} can't afford $${(bidAmount / 1000).toFixed(0)}K, trying next bidder`);
+          continue;
+        }
+
+        const transferSuccess = this.financeStore.getState().processTransferPurchase(
+          buyerTeamId,
+          listing.teamId,
+          listing.player,
+          bidAmount
+        );
+
+        if (!transferSuccess) {
+          console.warn(`⚠️  Transfer skipped: ${buyerTeamId} financial transaction failed, trying next bidder`);
+          continue;
+        }
       }
 
-      // Process financial transaction
-      const transferSuccess = this.financeStore.getState().processTransferPurchase(
-        buyerTeamId,
-        listing.teamId,
-        listing.player,
-        winningBid
-      );
-
-      if (!transferSuccess) {
-        listing.status = 'expired';
-        this.listings.delete(listing.id);
-        return { success: false, error: 'Financial transaction failed' };
+      // Move player between teams
+      if (this.playerStore) {
+        this.playerStore.getState().assignPlayerToTeam(listing.playerId, buyerTeamId);
+        this.playerStore.getState().setPlayerSoldPrice(listing.playerId, bidAmount);
       }
+      if (this.teamStore) {
+        this.teamStore.getState().removePlayerFromSquad(listing.teamId, listing.playerId);
+        this.teamStore.getState().addPlayerToSquad(buyerTeamId, listing.playerId);
+        this.teamStore.getState().recalculateTeamStats(listing.teamId);
+        this.teamStore.getState().recalculateTeamStats(buyerTeamId);
+      }
+
+      // Record completed transfer
+      const transfer = {
+        id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        player: listing.player,
+        fromTeamId: listing.teamId,
+        toTeamId: buyerTeamId,
+        transferFee: bidAmount,
+        listingPrice: listing.listingPrice,
+        previousPrice: listing.previousPrice,
+        performanceMultiplier: listing.performanceMultiplier,
+        totalBids: listing.bids.length,
+        completedAt: new Date().toISOString()
+      };
+
+      this.completedTransfers.push(transfer);
+
+      useTransferStore.getState().addCompletedTransfer({
+        playerId: listing.playerId,
+        playerName: listing.player.name,
+        playerRole: listing.player.primaryRole || listing.player.role,
+        playerRating: listing.player.rating || null,
+        fromTeamId: listing.teamId,
+        toTeamId: buyerTeamId,
+        oldPrice: listing.previousPrice || listing.player.soldPrice || 0,
+        newPrice: bidAmount,
+        type: 'transfer'
+      });
+
+      listing.status = 'sold';
+      this.listings.delete(listing.id);
+
+      console.log(`✅ Transfer completed: ${listing.player.name} to ${buyerTeamId} for $${(bidAmount / 1000).toFixed(0)}K (${listing.bids.length} bids)`);
+      return { success: true, transfer };
     }
 
-    // Move player between teams
-    if (this.playerStore) {
-      this.playerStore.getState().assignPlayerToTeam(listing.playerId, buyerTeamId);
-      // Update sold price for future transfer valuation
-      this.playerStore.getState().setPlayerSoldPrice(listing.playerId, winningBid);
-    }
-    if (this.teamStore) {
-      this.teamStore.getState().removePlayerFromSquad(listing.teamId, listing.playerId);
-      this.teamStore.getState().addPlayerToSquad(buyerTeamId, listing.playerId);
-      // Recalculate team aggregate stats (preserves player stats for historical viewing)
-      this.teamStore.getState().recalculateTeamStats(listing.teamId);
-      this.teamStore.getState().recalculateTeamStats(buyerTeamId);
-    }
-
-    // Record completed transfer
-    const transfer = {
-      id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      player: listing.player,
-      fromTeamId: listing.teamId,
-      toTeamId: buyerTeamId,
-      transferFee: winningBid,
-      listingPrice: listing.listingPrice,
-      previousPrice: listing.previousPrice,
-      performanceMultiplier: listing.performanceMultiplier,
-      totalBids: listing.bids.length,
-      completedAt: new Date().toISOString()
-    };
-
-    this.completedTransfers.push(transfer);
-
-    // Remove listing
-    listing.status = 'sold';
+    // All bidders failed — player goes unsold
+    console.warn(`❌ Transfer unsold: ${listing.player.name} — all ${sortedBidders.length} bidders failed validation`);
+    listing.status = 'expired';
     this.listings.delete(listing.id);
-
-    console.log(`✅ Transfer completed: ${listing.player.name} to ${buyerTeamId} for $${(winningBid / 1000).toFixed(0)}K (${listing.bids.length} bids)`);
-
-    return { success: true, transfer };
+    return { success: false, error: 'All bidders failed validation' };
   }
 
   /**

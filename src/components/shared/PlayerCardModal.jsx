@@ -5,19 +5,162 @@
  * Uses React Portal to render at document body level for proper stacking
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, BarChart3, Activity, Edit3, Sparkles } from 'lucide-react';
+import { X, BarChart3, Activity, Edit3, Sparkles, ArrowRightLeft, DollarSign } from 'lucide-react';
 import usePlayerStore from '../../stores/playerStore';
+import useTransferStore from '../../stores/transferStore';
 import { computePlayerRatings } from '../../utils/ratingHelper';
 import TeamName from './TeamName';
 import CountryFlag from './CountryFlag';
 import PlaystyleBadge from './PlaystyleBadge';
 import PlayerEditorModal from '../modals/PlayerEditorModal';
 
-const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
+const formatPrice = (price) => {
+  if (!price || price === 0) return '-';
+  return price >= 1000000
+    ? `$${(price / 1000000).toFixed(1)}M`
+    : `$${(price / 1000).toFixed(0)}K`;
+};
+
+const TransferHistorySection = ({ player, playerId, completedTransfers, activeListings }) => {
+  // Get transfers involving this player
+  const playerTransfers = useMemo(() => {
+    return (completedTransfers || [])
+      .filter(t => t.playerId === playerId)
+      .reverse(); // newest first
+  }, [completedTransfers, playerId]);
+
+  // Get current active listing for this player
+  const currentListing = useMemo(() => {
+    return (activeListings || []).find(l => l.playerId === playerId);
+  }, [activeListings, playerId]);
+
+  return (
+    <div className="space-y-4">
+      {/* Current Value */}
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-primary">
+          <DollarSign className="w-4 h-4 text-trophy-gold" />
+          <h3 className="text-base font-semibold text-text-primary">Current Value</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 bg-bg-tertiary rounded">
+            <div className="text-xs text-text-secondary mb-1">Annual Salary</div>
+            <div className="text-lg font-bold text-trophy-gold">
+              {formatPrice(player.soldPrice)}
+            </div>
+          </div>
+          <div className="p-3 bg-bg-tertiary rounded">
+            <div className="text-xs text-text-secondary mb-1">Current Team</div>
+            <div className="text-sm font-semibold text-text-primary mt-1">
+              {player.currentTeam
+                ? <TeamName teamId={player.currentTeam} variant="short" inline={true} />
+                : <span className="text-gray-500 italic">Free Agent</span>}
+            </div>
+          </div>
+          <div className="p-3 bg-bg-tertiary rounded">
+            <div className="text-xs text-text-secondary mb-1">Status</div>
+            <div className="text-sm font-semibold text-text-primary mt-1">
+              {currentListing ? (
+                <span className="text-yellow-400">Listed for Transfer</span>
+              ) : !player.currentTeam ? (
+                <span className="text-red-400">Uncontracted</span>
+              ) : (
+                <span className="text-green-400">Contracted</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Listing Info */}
+      {currentListing && (
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-primary">
+            <ArrowRightLeft className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-base font-semibold text-text-primary">Active Listing</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="p-2 bg-bg-tertiary rounded">
+              <div className="text-xs text-text-secondary">Asking Price</div>
+              <div className="text-sm font-bold text-trophy-gold">{formatPrice(currentListing.listingPrice)}</div>
+            </div>
+            <div className="p-2 bg-bg-tertiary rounded">
+              <div className="text-xs text-text-secondary">Top Bid</div>
+              <div className="text-sm font-bold text-cricket-accent">
+                {currentListing.currentBid > 0 ? formatPrice(currentListing.currentBid) : 'No bids'}
+              </div>
+            </div>
+          </div>
+          {currentListing.bids && currentListing.bids.length > 0 && (
+            <div>
+              <div className="text-xs text-text-secondary mb-2">Bid History ({currentListing.bids.length} bid{currentListing.bids.length !== 1 ? 's' : ''})</div>
+              <div className="space-y-1">
+                {[...currentListing.bids].reverse().slice(0, 5).map((bid, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs p-1.5 bg-bg-tertiary rounded">
+                    <TeamName teamId={bid.teamId} className="text-text-secondary" />
+                    <span className="text-text-primary font-semibold">{formatPrice(bid.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Transfer History */}
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-primary">
+          <ArrowRightLeft className="w-4 h-4 text-cricket-accent" />
+          <h3 className="text-base font-semibold text-text-primary">Transfer History</h3>
+        </div>
+        {playerTransfers.length > 0 ? (
+          <div className="space-y-2">
+            {playerTransfers.map((transfer, idx) => (
+              <div key={transfer.id || idx} className="flex items-center gap-3 p-2 bg-bg-tertiary rounded text-sm">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    {transfer.fromTeamId ? (
+                      <TeamName teamId={transfer.fromTeamId} variant="short" inline={true} className="text-text-secondary" />
+                    ) : (
+                      <span className="text-text-tertiary italic">Free Agent</span>
+                    )}
+                    <span className="text-text-tertiary">→</span>
+                    {transfer.toTeamId ? (
+                      <TeamName teamId={transfer.toTeamId} variant="short" inline={true} className="text-text-primary font-medium" />
+                    ) : (
+                      <span className="text-text-tertiary italic">Free Agent</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-text-tertiary mt-0.5">
+                    {transfer.type === 'release' ? 'Released' : transfer.type === 'free_agency' ? 'Signed' : 'Transfer'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-trophy-gold">{formatPrice(transfer.newPrice)}</div>
+                  {transfer.oldPrice > 0 && (
+                    <div className="text-xs text-text-tertiary">was {formatPrice(transfer.oldPrice)}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-text-tertiary text-sm">
+            No transfer history — player acquired at auction
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PlayerCardModal = ({ isOpen, onClose, playerId, initialTab }) => {
   const { players, careerStats, currentSeasonId, isPlayerCustomized } = usePlayerStore();
+  const { completedTransfers, activeListings } = useTransferStore();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(initialTab || 'profile');
 
   if (!isOpen || !playerId) return null;
 
@@ -79,8 +222,34 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex border-b border-border-primary px-4">
+          <button
+            onClick={() => setActiveSection('profile')}
+            className={`px-3 py-2 text-sm border-b-2 transition-colors ${
+              activeSection === 'profile'
+                ? 'border-cricket-accent text-text-primary font-semibold'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Profile
+          </button>
+          <button
+            onClick={() => setActiveSection('transfers')}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 transition-colors ${
+              activeSection === 'transfers'
+                ? 'border-cricket-accent text-text-primary font-semibold'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <ArrowRightLeft className="w-3.5 h-3.5" />
+            Transfer History
+          </button>
+        </div>
+
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-4">
+          {activeSection === 'profile' && (<>
           {/* Player Header */}
           <div className="card p-4 mb-4">
             <div className="flex items-start justify-between mb-3 pb-3 border-b border-border-primary">
@@ -365,6 +534,17 @@ const PlayerCardModal = ({ isOpen, onClose, playerId }) => {
                 </div>
               </div>
             </div>
+          )}
+
+          </>)}
+
+          {activeSection === 'transfers' && (
+            <TransferHistorySection
+              player={player}
+              playerId={playerId}
+              completedTransfers={completedTransfers}
+              activeListings={activeListings}
+            />
           )}
 
         </div>

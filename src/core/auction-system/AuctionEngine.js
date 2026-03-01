@@ -43,9 +43,11 @@ class AuctionEngine {
       case 'bowler':
         return player.topPlaystyles.bowling?.[0]?.rating || 0;
       case 'wicket-keeper':
-        // Wicket-keepers: use fielding if available, otherwise batting
-        return player.topPlaystyles.fielding?.[0]?.rating ||
-               player.topPlaystyles.batting?.[0]?.rating || 0;
+        // Wicket-keepers: use simplified rating max((batting + keeping) / 2, batting)
+        // to prevent pure keepers from dominating Marquee status
+        const batRating = player.topPlaystyles.batting?.[0]?.rating || 0;
+        const keepRating = player.topPlaystyles.fielding?.[0]?.rating || 0;
+        return Math.max((batRating + keepRating) / 2, batRating);
       case 'all-rounder':
         // All-rounders: use the higher of batting or bowling
         const battingRating = player.topPlaystyles.batting?.[0]?.rating || 0;
@@ -60,24 +62,45 @@ class AuctionEngine {
    * Initialize auction with teams and player pool
    * @param {Array} teams - Array of team objects { id, name, budget }
    * @param {Array} players - Array of player objects from master database
+   * @param {Object} [options] - Optional retention data
+   * @param {Object} [options.teamPurses] - Map of teamId -> auction purse amount (from retention)
+   * @param {Object} [options.retainedSquads] - Map of teamId -> array of retained player objects
    */
-  initializeAuction(teams, players) {
-    // Initialize teams with auction state
-    this.teams = teams.map(team => ({
-      ...team,
-      squad: [],
-      budgetRemaining: this.config.budget.total,
-      totalSpent: 0
-    }));
+  initializeAuction(teams, players, options = {}) {
+    const { teamPurses, retainedSquads } = options;
 
-    // Filter and prepare player pool
+    // Initialize teams with auction state, using retained data if available
+    this.teams = teams.map(team => {
+      const retained = retainedSquads?.[team.id] || [];
+      const purse = teamPurses?.[team.id] ?? this.config.budget.total;
+      return {
+        ...team,
+        squad: [...retained],
+        budgetRemaining: purse,
+        totalSpent: this.config.budget.total - purse
+      };
+    });
+
+    // Collect all retained player IDs to exclude from pool
+    const retainedIds = new Set();
+    if (retainedSquads) {
+      for (const squad of Object.values(retainedSquads)) {
+        for (const p of squad) {
+          retainedIds.add(p.id);
+        }
+      }
+    }
+
+    // Filter and prepare player pool (exclude retained players)
     // Use primary playstyle rating >= 30 (on 0-100 scale) as minimum quality threshold
-    this.playerPool = players.filter(p => this.getPrimaryPlaystyleRatingScore(p) >= 30).map(p => ({
-      ...p,
-      basePrice: this.ai.calculateBasePrice(p),
-      isMarquee: this.ai.isMarqueePlayer(p),
-      status: 'available'
-    }));
+    this.playerPool = players
+      .filter(p => this.getPrimaryPlaystyleRatingScore(p) >= 30 && !retainedIds.has(p.id))
+      .map(p => ({
+        ...p,
+        basePrice: this.ai.calculateBasePrice(p),
+        isMarquee: this.ai.isMarqueePlayer(p),
+        status: 'available'
+      }));
 
   }
 

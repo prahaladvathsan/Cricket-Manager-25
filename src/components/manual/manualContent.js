@@ -756,7 +756,7 @@ Note: You cannot go into debt. All spending is limited by available funds.`
         text: `**Auction Seasons (1, 3, 5)**
 - Most budget goes to player purchases
 - Balance star signings with depth
-- Keep reserve for mid-season transfers
+- Keep reserve for off-season transfers
 
 **Even Seasons (2, 4)**
 - Lower spending needs

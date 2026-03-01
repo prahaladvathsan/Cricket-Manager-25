@@ -5,12 +5,15 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ShoppingCart, Users, Clock, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Users, Clock, AlertCircle, CheckCircle, ClipboardList } from 'lucide-react';
 import useTransferStore from '../../stores/transferStore';
 import useTeamStore from '../../stores/teamStore';
 import useFinanceStore from '../../stores/financeStore';
+import useGameStore from '../../stores/gameStore';
 import MarketplaceView from './MarketplaceView';
+import MyListingsView from './MyListingsView';
 import FreeAgencyView from './FreeAgencyView';
+import CompletedTransfersView from './CompletedTransfersView';
 
 const TransferMarketView = ({ transferHandler }) => {
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -19,11 +22,21 @@ const TransferMarketView = ({ transferHandler }) => {
   const {
     transferWindow,
     activeListings,
-    freeAgents
+    freeAgents,
+    completedTransfers
   } = useTransferStore();
 
   const { userTeamId } = useTeamStore();
   const { getTeamFinances } = useFinanceStore();
+  const { gameDay } = useGameStore();
+
+  // Compute days remaining dynamically from gameDay
+  const daysRemaining = useMemo(() => {
+    if (!transferWindow.windowOpenGameDay) return transferWindow.daysRemaining;
+    const windowDuration = (transferWindow.endWeek - transferWindow.startWeek + 1) * 7;
+    const elapsed = gameDay - transferWindow.windowOpenGameDay;
+    return Math.max(0, windowDuration - elapsed);
+  }, [gameDay, transferWindow]);
 
   // Get user's finances
   const userFinances = useMemo(() => {
@@ -70,6 +83,23 @@ const TransferMarketView = ({ transferHandler }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('myListings')}
+          className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors text-sm ${
+            activeTab === 'myListings'
+              ? 'border-cricket-accent text-text-primary font-semibold'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          <span>My Listings</span>
+          {activeListings.filter(l => l.teamId === userTeamId).length > 0 && (
+            <span className="bg-cricket-accent/20 text-cricket-accent text-xs px-1.5 py-0.5 rounded">
+              {activeListings.filter(l => l.teamId === userTeamId).length}
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('freeAgency')}
           className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors text-sm ${
             activeTab === 'freeAgency'
@@ -83,13 +113,30 @@ const TransferMarketView = ({ transferHandler }) => {
             {freeAgents.length}
           </span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors text-sm ${
+            activeTab === 'completed'
+              ? 'border-cricket-accent text-text-primary font-semibold'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          <CheckCircle className="w-4 h-4" />
+          <span>Completed</span>
+          {completedTransfers.length > 0 && (
+            <span className="bg-bg-tertiary text-text-secondary text-xs px-1.5 py-0.5 rounded">
+              {completedTransfers.length}
+            </span>
+          )}
+        </button>
         </div>
 
         {/* Days Remaining and Budget */}
         <div className="flex items-center gap-3 px-3 text-xs text-text-secondary">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            <span>{transferWindow.daysRemaining} days left</span>
+            <span>{daysRemaining} days left</span>
           </div>
           {userFinances && (
             <div className="flex items-center gap-1">
@@ -111,11 +158,22 @@ const TransferMarketView = ({ transferHandler }) => {
           />
         )}
 
+        {activeTab === 'myListings' && (
+          <MyListingsView
+            userTeamId={userTeamId}
+            transferHandler={transferHandler}
+          />
+        )}
+
         {activeTab === 'freeAgency' && (
           <FreeAgencyView
             userTeamId={userTeamId}
             transferHandler={transferHandler}
           />
+        )}
+
+        {activeTab === 'completed' && (
+          <CompletedTransfersView />
         )}
       </div>
 

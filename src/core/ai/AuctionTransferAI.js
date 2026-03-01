@@ -71,7 +71,9 @@ class AuctionTransferAI {
     let combinedRating;
     if (role === 'wicket-keeper') {
       const wicketkeepingRating = this.getWicketkeepingRating(player);
-      combinedRating = this.calculateCombinedRating(primaryBatRating, wicketkeepingRating);
+      // Simplified rating for keepers: max of (average of both) and (just batting)
+      // This nerfs pure keepers and prevents them from all becoming Marquee/Elite
+      combinedRating = Math.max((primaryBatRating + wicketkeepingRating) / 2, primaryBatRating);
     } else {
       const primaryBowlRating = this.getPrimaryBowlingRating(player);
       combinedRating = this.calculateCombinedRating(primaryBatRating, primaryBowlRating);
@@ -88,68 +90,118 @@ class AuctionTransferAI {
 
   /**
    * Estimate market value for a player
-   * Formula: (basePrice + fitValue) * tierMultiplier * squadMultiplier * budgetPenalty
+   * Formula: (baseValue + fitValue + performanceBonus) * squadMultiplier * budgetPenalty
    * @param {Object} player - Player object
    * @param {number} fitScore - Squad fit score
-   * @param {number} budgetRemaining - Team's remaining budget
+   * @param {number} annualBudget - Team's total annual budget (pre-salary, pre-spending)
    * @param {number} currentSquadSize - Current squad size
    * @param {Object} teamNeeds - Team needs analysis (unused but kept for API compatibility)
+   * @param {number} performanceBonus - Performance bonus from IPM rank mapping (default 0)
    * @returns {number} Estimated market value
    */
-  estimateMarketValue(player, fitScore, budgetRemaining, currentSquadSize, teamNeeds = null) {
+  estimateMarketValue(player, fitScore, annualBudget, currentSquadSize, teamNeeds = null, performanceBonus = 0) {
     const basePrice = this.calculateBasePrice(player);
     const primaryRating = this.core.getPrimaryPlaystyleRatingScore(player);
-    const qualityTier = this.core.getQualityTier(primaryRating);
 
     // Base value from rating
     const baseValue = (primaryRating / 100) * basePrice * this.config.aiStrategy.baseValueMultiplier;
 
     // Fit score contribution - scale appropriately
-    // fitScore is now in range 0-100 (cuberoot formula output)
-    // Scale to dollars: fitScore * 5000 means a perfect 100 fit = $500K bonus
     const fitValue = fitScore * 500;
-
-    // Tier multipliers
-    const tierMultipliers = { elite: 1.4, premium: 1.2, standard: 1.0, emerging: 0.85, base: 0.7 };
-    const tierMultiplier = tierMultipliers[qualityTier] || 1.0;
 
     // Squad gap urgency - need players to fill minimum squad
     const minSquad = this.config.squadSize.min;
     const squadGap = minSquad - currentSquadSize;
     const squadMultiplier = squadGap > 0 ? 1.3 : 1.0;
 
-    // Budget penalty - be stingy if budget per remaining player needed is low
-    const budgetPenalty = this.calculateBudgetPenalty(budgetRemaining, currentSquadSize);
+    // Budget penalty - uses annual budget (total pre-salary budget)
+    const budgetPenalty = this.calculateBudgetPenalty(annualBudget, currentSquadSize);
 
-    const marketValue = (baseValue + fitValue) * tierMultiplier * squadMultiplier * budgetPenalty;
+    const marketValue = (baseValue + fitValue + performanceBonus) * squadMultiplier * budgetPenalty;
 
-    return Math.round(marketValue);
+    return Math.round(Math.max(0, marketValue));
   }
 
   /**
-   * Calculate budget penalty based on budget remaining vs players needed
+   * Calculate budget penalty based on annual budget vs players needed
    * If budget per player needed is below $500K, apply stingy multiplier
-   * @param {number} budgetRemaining - Remaining budget
+   * @param {number} annualBudget - Team's total annual budget (pre-salary, pre-spending)
    * @param {number} currentSquadSize - Current squad size
    * @returns {number} Budget penalty multiplier (0.4 to 1.0)
    */
-  calculateBudgetPenalty(budgetRemaining, currentSquadSize) {
+  calculateBudgetPenalty(annualBudget, currentSquadSize) {
     const minSquad = this.config.squadSize.min;
     const playersNeeded = Math.max(1, minSquad - currentSquadSize);
 
     // If squad is complete, no penalty
     if (playersNeeded <= 0) return 1.0;
 
-    const budgetPerPlayer = budgetRemaining / playersNeeded;
+    const budgetPerPlayer = annualBudget / playersNeeded;
     const stingyThreshold = 500000; // $500K per player threshold
 
     if (budgetPerPlayer >= stingyThreshold) {
       return 1.0; // No penalty
     }
 
-    // Linear penalty from 1.0 at $300K down to 0.4 at $0
+    // Linear penalty from 1.0 at $500K down to 0.4 at $0
     const penalty = 0.4 + 0.6 * (budgetPerPlayer / stingyThreshold);
     return Math.max(0.4, Math.min(1.0, penalty));
+  }
+
+  /**
+   * Calculate performance bonus based on how player's IPM ranks vs buyer squad prices
+   * @param {Object} player - Player being evaluated
+   * @param {Array} buyerSquad - Buyer's current squad
+   * @param {Object} teamStore - teamStore for accessing player stats
+   * @returns {number} Performance bonus (can be negative, clamped to -200K..+1M)
+   */
+  calculatePerformanceBonus(player, buyerSquad, teamStore) {
+    if (!teamStore) return 0;
+
+    const teamStoreState = typeof teamStore.getState === 'function' ? teamStore.getState() : teamStore;
+
+    // Get player's IPM from their current team's stats
+    const playerStats = player.currentTeam
+      ? teamStoreState.getPlayerStats?.(player.currentTeam, player.id)
+      : null;
+
+    if (!playerStats || !playerStats.matches || playerStats.matches === 0) return 0;
+    const playerIPM = (playerStats.totalImpact || 0) / playerStats.matches;
+
+    // Get buyer squad IPMs
+    const squadIPMs = [];
+    for (const squadPlayer of buyerSquad) {
+      const stats = squadPlayer.currentTeam
+        ? teamStoreState.getPlayerStats?.(squadPlayer.currentTeam, squadPlayer.id)
+        : null;
+      if (stats && stats.matches > 0) {
+        squadIPMs.push({
+          ipm: (stats.totalImpact || 0) / stats.matches,
+          soldPrice: squadPlayer.soldPrice || 0
+        });
+      }
+    }
+
+    if (squadIPMs.length === 0) return 0;
+
+    // Insert listed player's IPM and find rank
+    const allIPMs = [...squadIPMs.map(s => s.ipm), playerIPM];
+    allIPMs.sort((a, b) => b - a); // Descending
+    const rank = allIPMs.indexOf(playerIPM);
+
+    // Sort buyer squad by soldPrice descending, find price at that rank
+    const pricesSorted = squadIPMs.map(s => s.soldPrice).sort((a, b) => b - a);
+    const justifiedPrice = rank < pricesSorted.length
+      ? pricesSorted[rank]
+      : pricesSorted[pricesSorted.length - 1] || 0;
+
+    const soldPrice = player.soldPrice || 0;
+    const bonus = justifiedPrice - soldPrice;
+    const clamped = Math.max(-soldPrice * 0.4, Math.min(soldPrice * 1.0, Math.round(bonus)));
+
+    console.log(`  📊 PERF ${(player.name || '?').padEnd(20)}: IPM=${playerIPM.toFixed(1)}, rank=${rank}/${allIPMs.length}, justifiedPrice=$${(justifiedPrice/1000).toFixed(0)}K, soldPrice=$${(soldPrice/1000).toFixed(0)}K, bonus=$${(clamped/1000).toFixed(0)}K`);
+
+    return clamped;
   }
 
   // =============================================================================
@@ -490,6 +542,7 @@ class AuctionTransferAI {
 
     const teamNeeds = this.analyzeTeamNeeds(team.squad);
     const playerFit = this.evaluatePlayerFit(player, teamNeeds);
+    // For auction bidding, use budgetRemaining as annualBudget proxy (no salary system in auction)
     const marketValue = this.estimateMarketValue(player, playerFit.fitScore, budgetRemaining, squadSize, teamNeeds);
 
     const reserveAmount = this.calculateReserveAmount(squadSize, budgetRemaining);

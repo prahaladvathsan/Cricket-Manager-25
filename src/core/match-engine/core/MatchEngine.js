@@ -107,32 +107,55 @@ class MatchEngine {
       // Load bowling plans and rotation from team tactics for the bowling team
       const matchState = this.matchStore.getState();
       const bowlingTeamId = matchState.teams.bowling.id;
+      const bowlingTeamConfig = matchConfig.homeTeam.id === bowlingTeamId ? matchConfig.homeTeam : matchConfig.awayTeam;
       const teamTactics = this.teamStore.getState().getTacticsForMatch(bowlingTeamId);
 
-      if (teamTactics) {
+      if (teamTactics || bowlingTeamConfig.bowlingRotation) {
         const tacticsUpdate = {};
 
         // Load bowling plans
-        if (teamTactics.bowlingPlans) {
+        if (teamTactics?.bowlingPlans) {
           tacticsUpdate.bowlingPlans = teamTactics.bowlingPlans;
         }
 
-        // Load over assignments - prefer explicit overAssignments over bowlingRotation
-        // overAssignments is the authoritative source set by Tactics page
-        if (teamTactics.overAssignments && Object.keys(teamTactics.overAssignments).length > 0) {
+        // Load over assignments - prioritize matchConfig's rotation as it's guaranteed fresh
+        const configRotation = bowlingTeamConfig.bowlingRotation;
+        const configPlayingXI = bowlingTeamConfig.playingXI || [];
+
+        if (teamTactics?.overAssignments && Object.keys(teamTactics.overAssignments).length > 0) {
           // Use explicit over assignments directly
-          tacticsUpdate.overAssignments = teamTactics.overAssignments;
-        } else if (teamTactics.bowlingRotation && teamTactics.bowlingRotation.length > 0) {
-          // Fallback: Convert bowling rotation array to overAssignments object
-          // bowlingRotation is an array where index = over number (0-19)
-          // overAssignments is an object where key = over number (1-20), value = bowler ID
+          tacticsUpdate.overAssignments = { ...teamTactics.overAssignments };
+        } else if (configRotation && configRotation.length > 0) {
+          // Fallback 1: Use fresh rotation from matchConfig (set by SimulationEngine/QuickSimMatch)
           const overAssignments = {};
-          teamTactics.bowlingRotation.forEach((bowlerId, index) => {
+          configRotation.forEach((bowlerId, index) => {
             if (bowlerId) {
-              overAssignments[index + 1] = bowlerId; // Convert from 0-indexed to 1-indexed
+              overAssignments[index + 1] = bowlerId;
             }
           });
           tacticsUpdate.overAssignments = overAssignments;
+        } else if (teamTactics?.bowlingRotation && teamTactics.bowlingRotation.length > 0) {
+          // Fallback 2: Use rotation from team store
+          const overAssignments = {};
+          teamTactics.bowlingRotation.forEach((bowlerId, index) => {
+            if (bowlerId) {
+              overAssignments[index + 1] = bowlerId;
+            }
+          });
+          tacticsUpdate.overAssignments = overAssignments;
+        }
+
+        // CRITICAL VALIDATION: Ensure all assigned bowlers are actually in the playing XI
+        if (tacticsUpdate.overAssignments) {
+          Object.keys(tacticsUpdate.overAssignments).forEach(overNum => {
+            const bId = tacticsUpdate.overAssignments[overNum];
+            if (!configPlayingXI.includes(bId)) {
+              // Bowler not in XI! Replace with first available bowler from XI
+              const fallbackBowler = configRotation?.find(id => configPlayingXI.includes(id)) || configPlayingXI[0];
+              console.warn(`[MatchEngine] Bowler ${bId} for over ${overNum} not in XI. Replacing with ${fallbackBowler}.`);
+              tacticsUpdate.overAssignments[overNum] = fallbackBowler;
+            }
+          });
         }
 
         // Update matchStore with tactics
@@ -392,6 +415,14 @@ class MatchEngine {
   initializePlayerConditions(allPlayers) {
     const matchState = this.matchStore.getState();
 
+    // CRITICAL: Only initialize if conditions don't exist yet
+    // This prevents resetting energy/confidence if the UI remounts or match reloads
+    const existingConditions = matchState.matchConditions || {};
+    if (Object.keys(existingConditions).length > 0) {
+      // console.log('[MatchEngine] Using existing match conditions, skipping initialization');
+      return;
+    }
+
     // Get full player objects
     const playerObjects = allPlayers.map(id => this.playerStore.getState().getPlayer(id));
 
@@ -412,16 +443,22 @@ class MatchEngine {
       }
     });
 
-    // Update match conditions
-    matchState.matchConditions = conditionUpdates;
-
-    // Initialize match situation tracking for confidence/energy updates
-    if (!matchState.matchTracking) {
-      matchState.matchTracking = {};
+    // Update match conditions in store via action
+    if (typeof matchState.setMatchConditions === 'function') {
+      matchState.setMatchConditions(conditionUpdates);
+    } else {
+      // Fallback: This should ideally not be used anymore
+      matchState.matchConditions = conditionUpdates;
     }
-    matchState.matchTracking.consecutiveDots = {};      // playerId → consecutive dot ball count
-    matchState.matchTracking.batsmanMilestones = {};    // playerId → [25, 50, ...] milestones reached
-    matchState.matchTracking.overTargets = {};          // teamId → required run rate for current over
+
+    // Initialize match situation tracking for confidence/energy updates via store update action
+    if (typeof matchState.setMatchTracking === 'function') {
+      matchState.setMatchTracking({
+        consecutiveDots: {},      // playerId → consecutive dot ball count
+        batsmanMilestones: {},    // playerId → [25, 50, ...] milestones reached
+        overTargets: {}           // teamId → required run rate for current over
+      });
+    }
   }
 
   /**
@@ -910,46 +947,41 @@ class MatchEngine {
     // Get player IDs
     const strikerId = ballResult.batsmanId;
     const bowlerId = ballResult.bowlerId;
+    const fielderId = ballResult.fielderId;
 
-    // Get full player objects with current conditions
+    // Initialize condition updates object
+    const conditionUpdates = {};
+
+    // Get or initialize conditions
+    const strikerCondition = { ...(matchState.matchConditions[strikerId] || { energy: 100, confidence: 50, fatigue: 0 }) };
+    const bowlerCondition = { ...(matchState.matchConditions[bowlerId] || { energy: 100, confidence: 50, fatigue: 0 }) };
+
+    // Get full player objects with current conditions for calculation
     const striker = {
       ...this.playerStore.getState().getPlayer(strikerId),
-      condition: matchState.matchConditions[strikerId]
+      condition: strikerCondition
     };
     const bowler = {
       ...this.playerStore.getState().getPlayer(bowlerId),
-      condition: matchState.matchConditions[bowlerId]
+      condition: bowlerCondition
     };
 
-    // Ensure matchConditions exists for these players
-    if (!matchState.matchConditions[strikerId]) {
-      matchState.matchConditions[strikerId] = { energy: 100, confidence: 50, fatigue: 0 };
-    }
-    if (!matchState.matchConditions[bowlerId]) {
-      matchState.matchConditions[bowlerId] = { energy: 100, confidence: 50, fatigue: 0 };
-    }
-
-    // Update energy
+    // 1. Update Energy
+    // Striker energy
     const strikerEnergy = energyManager.updateBattingEnergy(striker, 1, ballResult.runs);
+    strikerCondition.energy = strikerEnergy;
+
+    // Bowler energy
     const bowlerOversCount = this.calculateOversBowled(matchState.ballByBall)[bowlerId] || 1;
     const bowlerEnergy = energyManager.updateBowlingEnergy(bowler, bowlerOversCount, 1);
+    bowlerCondition.energy = bowlerEnergy;
 
-    matchState.matchConditions[strikerId].energy = strikerEnergy;
-    matchState.matchConditions[bowlerId].energy = bowlerEnergy;
-
-    // Update fielding energy for all fielders
-    const fieldingTeamSquad = innings.bowlingTeam === teams.bowling.id
-      ? teams.bowling.squad
-      : teams.batting.squad;
-
-    fieldingTeamSquad.forEach(fielderId => {
-      if (!matchState.matchConditions[fielderId]) {
-        matchState.matchConditions[fielderId] = { energy: 100, confidence: 50, fatigue: 0 };
-      }
-
+    // Involved fielder energy (if any)
+    if (fielderId) {
+      const fielderCondition = { ...(matchState.matchConditions[fielderId] || { energy: 100, confidence: 50, fatigue: 0 }) };
       const fielder = {
         ...this.playerStore.getState().getPlayer(fielderId),
-        condition: matchState.matchConditions[fielderId]
+        condition: fielderCondition
       };
 
       const action = {
@@ -959,10 +991,11 @@ class MatchEngine {
       };
 
       const fielderEnergy = energyManager.updateFieldingEnergy(fielder, action);
-      matchState.matchConditions[fielderId].energy = fielderEnergy;
-    });
+      fielderCondition.energy = fielderEnergy;
+      conditionUpdates[fielderId] = fielderCondition;
+    }
 
-    // Initialize match tracking if not exists
+    // 2. Prepare Match Situation for Confidence/Pressure updates
     if (!matchState.matchTracking) {
       matchState.matchTracking = {
         consecutiveDots: {},
@@ -985,7 +1018,7 @@ class MatchEngine {
       matchState.matchTracking.batsmanMilestones[strikerId] = [];
     }
 
-    // Get striker's current score from ballByBall data
+    // Get striker's current score
     const strikerScore = this.getPlayerScore(matchState.ballByBall, strikerId);
     const milestones = matchState.matchTracking.batsmanMilestones[strikerId];
 
@@ -1008,19 +1041,16 @@ class MatchEngine {
       consecutiveDots: matchState.matchTracking.consecutiveDots[strikerId] || 0
     };
 
-    // Check if over just completed for over-level confidence updates
+    // Check if over just completed
     const ballsThisOver = (teams.batting.balls % 6) || 6;
     const isOverComplete = ballsThisOver === 6;
 
     let overResult = null;
     if (isOverComplete) {
-      // Calculate over statistics
       const overBalls = matchState.ballByBall.slice(-6);
       const overRuns = overBalls.reduce((sum, b) => sum + (b.bowlerId === bowlerId ? b.runs : 0), 0);
       const overWickets = overBalls.filter(b => b.bowlerId === bowlerId && b.isWicket).length;
       const isMaiden = overRuns === 0 && overWickets === 0;
-
-      // Get bowler's total wickets this match
       const bowlerWickets = matchState.ballByBall.filter(b => b.bowlerId === bowlerId && b.isWicket).length;
       const wicketHaul = bowlerWickets >= 3 ? bowlerWickets : null;
 
@@ -1031,11 +1061,9 @@ class MatchEngine {
       };
     }
 
-    // Prepare match situation for confidence updates
+    // Prepare match situation context
     const strikerBalls = matchState.ballByBall.filter(b => b.batsmanId === strikerId).length;
     const actualRunRate = strikerBalls > 0 ? (strikerScore / strikerBalls) * 6 : 0;
-
-    // Check if batsman just reached a milestone
     const recentMilestone = milestones.length > 0 ? milestones[milestones.length - 1] : null;
     const justReachedMilestone = recentMilestone && strikerScore === recentMilestone;
 
@@ -1048,7 +1076,7 @@ class MatchEngine {
       recentMilestone: justReachedMilestone ? recentMilestone : null
     };
 
-    // Update batting confidence
+    // 3. Update Confidence
     const strikerConfidence = confidenceManager.updateBattingConfidence(
       striker,
       confidenceResult,
@@ -1056,7 +1084,6 @@ class MatchEngine {
       matchSituation
     );
 
-    // Update bowling confidence
     const bowlerConfidence = confidenceManager.updateBowlingConfidence(
       bowler,
       confidenceResult,
@@ -1064,17 +1091,29 @@ class MatchEngine {
       matchSituation
     );
 
-    // Store updated confidence values
-    matchState.matchConditions[strikerId].confidence = strikerConfidence;
-    matchState.matchConditions[bowlerId].confidence = bowlerConfidence;
+    strikerCondition.confidence = strikerConfidence;
+    bowlerCondition.confidence = bowlerConfidence;
 
-    // Update pressure using new combined formula (resource ratio + CRR/RRR)
+    // Direct persistence: Update player conditions in the store immediately
+    // This ensures updates are saved even if processBallResult was already called
+    matchState.updatePlayerConditions(strikerId, strikerCondition);
+    matchState.updatePlayerConditions(bowlerId, bowlerCondition);
+    
+    if (fielderId && conditionUpdates[fielderId]) {
+      matchState.updatePlayerConditions(fielderId, conditionUpdates[fielderId]);
+    }
+
+    // Also keep ballResult.conditionUpdates for history/completeness
+    conditionUpdates[strikerId] = strikerCondition;
+    conditionUpdates[bowlerId] = bowlerCondition;
+    ballResult.conditionUpdates = conditionUpdates;
+
+    // 4. Update Pressure index
     const ballsRemaining = currentBall.matchSituation.ballsLeft || 120;
     const wicketsInHand = 10 - teams.batting.wickets;
     const currentScore = teams.batting.totalScore;
     const targetScore = innings.target || matchState.tacticsState?.battingParScore || 160;
 
-    // Calculate current and required run rates
     const ballsBowled = 120 - ballsRemaining;
     const oversBowled = ballsBowled / 6;
     const currentRunRate = oversBowled > 0 ? currentScore / oversBowled : 0;
@@ -1090,7 +1129,11 @@ class MatchEngine {
       currentRunRate,
       requiredRunRate
     });
-    matchState.tacticsState.pressureIndex = pressure;
+
+    // Directly update tactics state through store action to ensure persistence
+    matchState.updateTacticsState({
+      pressureIndex: pressure
+    });
   }
 
   /**
@@ -1130,7 +1173,7 @@ class MatchEngine {
     // Initialize match conditions for new batsman if not already initialized
     if (!matchState.matchConditions[newBatsmanId]) {
       // console.log(`[MatchEngine handleWicket] Initializing match conditions for ${newBatsman.name}`);
-      matchState.matchConditions[newBatsmanId] = { energy: 100, confidence: 50, fatigue: 0 };
+      matchState.updatePlayerConditions(newBatsmanId, { energy: 100, confidence: 50, fatigue: 0 });
     }
 
     // Update striker/non-striker based on who got out
@@ -1809,6 +1852,9 @@ class MatchEngine {
 
     // Complete super over in store
     this.matchStore.getState().completeSuperOver(winnerId);
+
+    // Finalize tactical state (energy, fatigue, morale)
+    this.finalizeTacticalState();
 
     return {
       winner: winnerId,

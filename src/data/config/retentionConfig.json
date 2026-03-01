@@ -1,0 +1,33 @@
+{
+  "retentionCaps": {
+    "maxRetentionsPerTeam": 15,
+    "tiers": [
+      { "retentionsUpTo": 5,  "cumulativeSalaryCap": 5000000 },
+      { "retentionsUpTo": 10, "cumulativeSalaryCap": 7500000 },
+      { "retentionsUpTo": 15, "cumulativeSalaryCap": 8500000 }
+    ]
+  },
+  "negotiation": {
+    "maxAttemptsPerPlayer": 3,
+    "autoReleaseAfterMaxAttempts": true
+  },
+  "playerAcceptance": {
+    "baseAcceptanceThreshold": 0.75,
+    "topPlayerHardnessMultiplier": 1.15,
+    "eliteRatingThreshold": 85,
+    "counterOfferFraction": { "attempt1": 0.90, "attempt2": 0.85, "attempt3": null },
+    "randomVarianceRange": 0.05
+  },
+  "ai": {
+    "minVfmScoreToRetain": 0.8,
+    "minIpmThreshold": 3.0,
+    "maxRetentions": 12,
+    "eliteAlwaysRetain": true,
+    "eliteMinRating": 85,
+    "fairMarketFraction": 0.90
+  },
+  "auctionPurse": {
+    "base": 10000000,
+    "minimumRemaining": 500000
+  }
+}

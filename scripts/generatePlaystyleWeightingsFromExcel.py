@@ -244,14 +244,36 @@ output['roleCategories'] = {
         "Opener - Slogger", "Opener - Balanced", "Opener - Anchor",
         "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor",
         "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor",
+        "Lower Order - Slogger", "Lower Order - Balanced", "Lower Order - Anchor",
         "Finisher", "Runner", "Pinch-Hitter", "Wall"
     ],
     "bowler": {
         "pace": ["Swing Bowler", "Hit-the-Deck Seamer", "Short-Ball Specialist", "Death Specialist"],
         "spin": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner"]
     },
-    "all-rounder": ["Opener - Balanced", "Top Order - Balanced", "Middle Order - Balanced"],
-    "wicket-keeper": ["Wicketkeeper"]
+    "all-rounder": {
+        "batting": [
+            "Opener - Slogger", "Opener - Balanced", "Opener - Anchor",
+            "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor",
+            "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor",
+            "Lower Order - Slogger", "Lower Order - Balanced", "Lower Order - Anchor",
+            "Finisher", "Runner", "Pinch-Hitter", "Wall"
+        ],
+        "bowling": {
+            "pace": ["Swing Bowler", "Hit-the-Deck Seamer", "Short-Ball Specialist", "Death Specialist"],
+            "spin": ["Classical Spinner", "Flat Spinner", "Mystery Spinner", "Containment Spinner"]
+        }
+    },
+    "wicket-keeper": {
+        "batting": [
+            "Opener - Slogger", "Opener - Balanced", "Opener - Anchor",
+            "Top Order - Slogger", "Top Order - Balanced", "Top Order - Anchor",
+            "Middle Order - Slogger", "Middle Order - Balanced", "Middle Order - Anchor",
+            "Lower Order - Slogger", "Lower Order - Balanced", "Lower Order - Anchor",
+            "Finisher", "Runner", "Pinch-Hitter", "Wall"
+        ],
+        "fielding": ["Wicketkeeper"]
+    }
 }
 
 print("  ✓ Role categories configured\n")

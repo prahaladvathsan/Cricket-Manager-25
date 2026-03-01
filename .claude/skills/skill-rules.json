@@ -25,6 +25,96 @@
                 ]
             }
         },
+        "match-engine-debugger": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "high",
+            "description": "Debug and trace the 7-stage match engine modifier chain",
+            "promptTriggers": {
+                "keywords": [
+                    "match engine",
+                    "ball simulation",
+                    "modifier chain",
+                    "playstyle modifier",
+                    "attribute modifier",
+                    "SimpleBallSimulator",
+                    "TacticsModifierSystem",
+                    "contact calculator",
+                    "trajectory",
+                    "fielding calculator",
+                    "decision calculator",
+                    "ball outcome"
+                ],
+                "intentPatterns": [
+                    "(debug|fix|trace|investigate).*?(match|ball|modifier|playstyle|attribute)",
+                    "(why|how).*?(ball|outcome|modifier|runs|wicket|boundary)",
+                    "(match engine|ball sim).*?(bug|issue|problem|wrong)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/core/match-engine/**/*.js",
+                    "src/core/tactics/**/*.js",
+                    "src/data/config/playstyle-*.json",
+                    "src/data/config/tactics-config.json",
+                    "src/data/config/bowling-plans-config.json"
+                ]
+            }
+        },
+        "dual-mode-validator": {
+            "type": "domain",
+            "enforcement": "warn",
+            "priority": "critical",
+            "description": "Validate Normal UI and Sim-to-Date mode produce identical outcomes",
+            "promptTriggers": {
+                "keywords": [
+                    "game flow",
+                    "handleContinue",
+                    "simulateDay",
+                    "sim-to-date",
+                    "SimulationEngine",
+                    "calendar event",
+                    "advance day",
+                    "continue button"
+                ],
+                "intentPatterns": [
+                    "(modify|change|update|fix).*?(game flow|progression|continue|calendar|advance)",
+                    "(add|create).*?(calendar event|game event|match day)",
+                    "(Header|SimulationEngine).*?(change|update|modify)"
+                ]
+            },
+            "fileTriggers": {
+                "pathPatterns": [
+                    "src/components/layout/Header.jsx",
+                    "src/core/simulation/SimulationEngine.js"
+                ]
+            }
+        },
+        "cricket-domain-context": {
+            "type": "domain",
+            "enforcement": "suggest",
+            "priority": "medium",
+            "description": "Cricket Manager 25 domain reference - attributes, playstyles, formulas, rules",
+            "promptTriggers": {
+                "keywords": [
+                    "player attribute",
+                    "playstyle rating",
+                    "NRR",
+                    "net run rate",
+                    "auction formula",
+                    "valuation",
+                    "transfer listing",
+                    "retention",
+                    "salary cap",
+                    "combined rating",
+                    "quality tier"
+                ],
+                "intentPatterns": [
+                    "(how|what|explain).*?(attribute|playstyle|rating|NRR|valuation|auction|transfer)",
+                    "(calculate|compute|formula).*?(rating|value|price|NRR)"
+                ]
+            }
+        },
         "react-tailwind-zustand-guidelines": {
             "type": "domain",
             "enforcement": "suggest",

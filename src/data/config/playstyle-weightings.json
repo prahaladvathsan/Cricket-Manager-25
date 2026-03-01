@@ -507,6 +507,9 @@
       "Middle Order - Slogger",
       "Middle Order - Balanced",
       "Middle Order - Anchor",
+      "Lower Order - Slogger",
+      "Lower Order - Balanced",
+      "Lower Order - Anchor",
       "Finisher",
       "Runner",
       "Pinch-Hitter",
@@ -526,24 +529,40 @@
         "Containment Spinner"
       ]
     },
-    "all-rounder": [
-      "Opener - Slogger",
-      "Opener - Balanced",
-      "Opener - Anchor",
-      "Top Order - Slogger",
-      "Top Order - Balanced",
-      "Top Order - Anchor",
-      "Middle Order - Slogger",
-      "Middle Order - Balanced",
-      "Middle Order - Anchor",
-      "Lower Order - Slogger",
-      "Lower Order - Balanced",
-      "Lower Order - Anchor",
-      "Finisher",
-      "Runner",
-      "Pinch-Hitter",
-      "Wall"
-    ],
+    "all-rounder": {
+      "batting": [
+        "Opener - Slogger",
+        "Opener - Balanced",
+        "Opener - Anchor",
+        "Top Order - Slogger",
+        "Top Order - Balanced",
+        "Top Order - Anchor",
+        "Middle Order - Slogger",
+        "Middle Order - Balanced",
+        "Middle Order - Anchor",
+        "Lower Order - Slogger",
+        "Lower Order - Balanced",
+        "Lower Order - Anchor",
+        "Finisher",
+        "Runner",
+        "Pinch-Hitter",
+        "Wall"
+      ],
+      "bowling": {
+        "pace": [
+          "Swing Bowler",
+          "Hit-the-Deck Seamer",
+          "Short-Ball Specialist",
+          "Death Specialist"
+        ],
+        "spin": [
+          "Classical Spinner",
+          "Flat Spinner",
+          "Mystery Spinner",
+          "Containment Spinner"
+        ]
+      }
+    },
     "wicket-keeper": {
       "batting": [
         "Opener - Slogger",
@@ -555,6 +574,9 @@
         "Middle Order - Slogger",
         "Middle Order - Balanced",
         "Middle Order - Anchor",
+        "Lower Order - Slogger",
+        "Lower Order - Balanced",
+        "Lower Order - Anchor",
         "Finisher",
         "Runner",
         "Pinch-Hitter",

@@ -260,8 +260,26 @@ class PlaystyleCalculator {
 
     result.batting = battingPlaystyles;
 
-    // Bowling playstyles - no role filtering, based on bowlingType only
+    // Bowling playstyles - filter based on roleCategories if specified
+    let applicableBowlingPlaystyles = [];
+    const bowlingType = player.bowlingType || 'pace';
+
+    if (roleCategories && roleCategories.bowling) {
+      if (Array.isArray(roleCategories.bowling)) {
+        applicableBowlingPlaystyles = roleCategories.bowling;
+      } else if (roleCategories.bowling[bowlingType]) {
+        applicableBowlingPlaystyles = roleCategories.bowling[bowlingType];
+      }
+    } else if (role.toLowerCase() === 'bowler') {
+      // For bowlers, default to all playstyles for their type
+      applicableBowlingPlaystyles = Object.keys(allRatings.bowling);
+    } else {
+      // Default: all bowling playstyles
+      applicableBowlingPlaystyles = Object.keys(allRatings.bowling);
+    }
+
     const bowlingPlaystyles = Object.entries(allRatings.bowling)
+      .filter(([name]) => applicableBowlingPlaystyles.includes(name))
       .map(([name, rating]) => ({ name, rating }))
       .sort((a, b) => b.rating - a.rating)
       .slice(0, topN);

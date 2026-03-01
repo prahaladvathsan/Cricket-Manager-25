@@ -22,7 +22,7 @@ export const indexedDBStorage = {
    */
   startBatching: () => {
     indexedDBStorage.isBatching = true;
-    console.log('📦 Persistence batching started');
+    // console.log('📦 Persistence batching started');
   },
 
   /**
@@ -32,7 +32,7 @@ export const indexedDBStorage = {
     if (indexedDBStorage.isBatching) {
       await indexedDBStorage.flushBuffer();
       indexedDBStorage.isBatching = false;
-      console.log('📦 Persistence batching stopped');
+      // console.log('📦 Persistence batching stopped');
     }
   },
 
@@ -46,7 +46,7 @@ export const indexedDBStorage = {
     const count = indexedDBStorage.pendingWrites.size;
     const writePromises = [];
 
-    console.log(`💾 Flushing ${count} buffered writes to IndexedDB...`);
+    // console.log(`💾 Flushing ${count} buffered writes to IndexedDB...`);
 
     for (const [key, value] of indexedDBStorage.pendingWrites.entries()) {
       // Create promise for each write
@@ -60,7 +60,7 @@ export const indexedDBStorage = {
 
     // Wait for all writes to complete
     await Promise.all(writePromises);
-    console.log(`✅ Flushed ${count} items`);
+    // console.log(`✅ Flushed ${count} items`);
   },
 
   /**

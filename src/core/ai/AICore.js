@@ -29,33 +29,20 @@ class AICore {
   }
 
   /**
-   * Calculate fitness penalty for a player (gradual, fitness-based)
-   * @param {Object} player - Player object with condition.fitness
+   * Calculate fatigue penalty for a player (linear, 5 points per 10 fatigue above threshold)
+   * @param {Object} player - Player object with condition.fatigue
    * @returns {number} Penalty to subtract from selection score
    */
-  getFitnessPenalty(player) {
-    const fitness = player.condition?.fitness ?? 100;
-    const penalty = this.config.squadSelection.fitnessPenalty;
+  getFatiguePenalty(player) {
+    const fatigue = player.condition?.fatigue ?? 0;
+    const penalty = this.config.squadSelection.fatiguePenalty;
 
-    // Gradual penalty curve based on fitness (higher = better)
-    // 70-100 fitness = no penalty
-    // 40-70 = minor penalty
-    // 20-40 = major penalty
-    // 0-20 = severe penalty
-    if (fitness >= penalty.noImpactThreshold) {
+    // Linear penalty: no penalty below threshold, then 0.5 per fatigue point gained
+    if (fatigue <= penalty.noImpactThreshold) {
       return 0;
     }
-    if (fitness >= penalty.minorPenaltyThreshold) {
-      return (penalty.noImpactThreshold - fitness) * penalty.minorPenaltyRate;
-    }
-    if (fitness >= penalty.majorPenaltyThreshold) {
-      const basePenalty = (penalty.noImpactThreshold - penalty.minorPenaltyThreshold) * penalty.minorPenaltyRate;
-      return basePenalty + (penalty.minorPenaltyThreshold - fitness) * penalty.majorPenaltyRate;
-    }
-    // Severe penalty for <20 fitness
-    const basePenalty = (penalty.noImpactThreshold - penalty.minorPenaltyThreshold) * penalty.minorPenaltyRate;
-    const majorPenalty = (penalty.minorPenaltyThreshold - penalty.majorPenaltyThreshold) * penalty.majorPenaltyRate;
-    return basePenalty + majorPenalty + (penalty.majorPenaltyThreshold - fitness) * penalty.severePenaltyRate;
+
+    return (fatigue - penalty.noImpactThreshold) * penalty.penaltyRate;
   }
 
   /**
@@ -113,9 +100,11 @@ class AICore {
 
     if (role === 'wicket-keeper') {
       const battingRatings = playstyleRatings.batting || {};
-      primaryRating = Math.max(...Object.values(battingRatings), 0);
+      const topBatting = Math.max(...Object.values(battingRatings), 0);
       const keepingRating = playstyleRatings.fielding?.isWicketKeeper || 0;
-      primaryRating = Math.cbrt(primaryRating**3 + keepingRating**3);
+      // Simplified rating: max of (average of both) and (just batting)
+      // This nerfs pure keepers who can't bat, while rewarding true keeper-batsmen
+      primaryRating = Math.max((topBatting + keepingRating) / 2, topBatting);
     } else {
       const battingRatings = playstyleRatings.batting || {};
       const bowlingRatings = playstyleRatings.bowling || {};

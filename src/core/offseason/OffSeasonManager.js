@@ -55,6 +55,24 @@ class OffSeasonManager {
     const { standings, champion } = seasonResults;
     const prizeResults = this.prizeDistributor.distributePrizes(standings, champion);
 
+    // Deduct squad salaries for season 2+ (sum of soldPrice for each team's squad)
+    if (this.teamStore && this.playerStore && this.financeStore) {
+      const squadLists = this.teamStore.getState().squadLists || {};
+      const players = this.playerStore.getState().players || {};
+
+      for (const [teamId, squadIds] of Object.entries(squadLists)) {
+        const totalSalary = (squadIds || []).reduce((sum, pid) => {
+          const p = players[pid];
+          return sum + (p?.soldPrice || 0);
+        }, 0);
+
+        if (totalSalary > 0) {
+          this.financeStore.getState().deductSquadSalaries(teamId, totalSalary);
+          console.log(`💰 ${teamId}: Deducted $${(totalSalary / 1000).toFixed(0)}K squad salary`);
+        }
+      }
+    }
+
     // Generate season summary
     const seasonSummary = this.generateSeasonSummary(seasonResults, prizeResults);
 
@@ -90,8 +108,12 @@ class OffSeasonManager {
       });
     }
 
-    // Week 22: Open transfer window
+    // Week 22: Pre-window releases + Open transfer window
     if (weekNumber === this.transferStartWeek && this.transferManager) {
+      // Release surplus/underperforming players before window opens
+      const teams = this.buildTeamsWithSquads();
+      this.transferManager.transferAI.releasePreTransferWindow(teams);
+
       console.log('🔓 Opening transfer window...');
       this.transferManager.openWindow('offSeason', 14);
       result.events.push({
@@ -107,7 +129,7 @@ class OffSeasonManager {
       // Build team objects with squad arrays for AI evaluation
       const teams = this.buildTeamsWithSquads();
 
-      const transferActivity = await this.transferManager.processWeeklyTransferCycle(
+      const transferActivity = await this.transferManager.processDailyTransferCycle(
         teams,
         weekNumber
       );

@@ -123,6 +123,48 @@ const useFinanceStore = create(
     return success;
   },
 
+  /**
+   * Deduct squad salaries for a team at season start
+   * @param {string} teamId - Team ID
+   * @param {number} totalSalary - Total squad salary
+   * @returns {boolean} Success status
+   */
+  deductSquadSalaries: (teamId, totalSalary) => {
+    const state = get();
+    const success = state.engine.deductSquadSalaries(teamId, totalSalary);
+
+    if (success) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return success;
+  },
+
+  /**
+   * Process a player release (recoup partial salary)
+   * @param {string} teamId - Team releasing the player
+   * @param {Object} player - Player being released
+   * @returns {number} Amount recouped
+   */
+  processPlayerRelease: (teamId, player) => {
+    const state = get();
+    const recoup = state.engine.processPlayerRelease(teamId, player);
+
+    if (recoup >= 0) {
+      set({
+        teamFinances: new Map(state.engine.teamFinances),
+        transactionHistory: [...state.engine.transactionHistory],
+        lastUpdate: Date.now()
+      });
+    }
+
+    return recoup;
+  },
+
   // ============================================
   // REVENUES
   // ============================================
@@ -241,7 +283,15 @@ const useFinanceStore = create(
     // Update team's budget
     const finance = state.engine.teamFinances.get(teamId);
     if (finance) {
-      finance.budget += revenueData.amount;
+      finance.currentBudget += revenueData.amount;
+      finance.totalRevenue += revenueData.amount;
+
+      // Update specific category tracking if applicable
+      if (revenueData.category === 'revenue_season_end_prize') {
+        finance.prizeMoneySeasonEnd += revenueData.amount;
+      } else if (revenueData.category === 'revenue_match_win') {
+        finance.prizeMoneyWins += revenueData.amount;
+      }
     }
 
     set({

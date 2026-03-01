@@ -73,7 +73,7 @@ const ListingCard = ({ listing, onPlaceBid, userTeamId }) => {
 
       {/* Listed By */}
       <div className="mb-2 text-xs text-text-secondary">
-        By: <TeamName teamId={listing.teamId} className="text-text-primary" />
+        By: <TeamName teamId={listing.teamId} className="text-text-primary" showYouSuffix />
       </div>
 
       {/* Pricing */}

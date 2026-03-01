@@ -65,7 +65,7 @@ const Home = () => {
   const userTeam = getUserTeam();
   const { auctionState, soldPlayers } = useAuctionStore();
   const { addMessage } = useInboxStore();
-  const { transferWindow } = useTransferStore();
+  const { transferWindow, completedTransfers, showTransferSummary, transferWindowSummary } = useTransferStore();
 
   // Component state
   const [showResultModal, setShowResultModal] = useState(false);
@@ -250,13 +250,34 @@ const Home = () => {
       .slice(0, 5);
   }, [fixtures, calendarEvents, currentDate, gameDay]);
 
-  // Get latest transfers - auction buys when transfer window closed, transfers when open
+  // Determine whether to show transfer activity or auction buys
+  const isTransferMode = transferWindow.isOpen || showTransferSummary;
+
+  // Get latest transfers - transfer activity during/after window, auction buys before
   const latestTransfers = useMemo(() => {
-    // When transfer window is open, show actual transfers (TODO: implement transfer history)
-    // For now, always show top auction buys
+    if (isTransferMode) {
+      // During or after transfer window: show completed transfers
+      const source = showTransferSummary && transferWindowSummary?.completedTransfers
+        ? transferWindowSummary.completedTransfers
+        : completedTransfers;
+      if (!source || source.length === 0) return [];
+
+      return [...source]
+        .sort((a, b) => (b.newPrice || 0) - (a.newPrice || 0)) // highest fee first
+        .slice(0, 5)
+        .map(t => ({
+          playerId: t.playerId,
+          teamId: t.toTeamId || t.fromTeamId,
+          price: t.type === 'release' ? t.newPrice : Math.round((t.newPrice || 0) / 2),
+          type: t.type,
+          fromTeamId: t.fromTeamId,
+          toTeamId: t.toTeamId
+        }));
+    }
+
+    // Default: show top auction buys
     if (!soldPlayers || soldPlayers.length === 0) return [];
 
-    // Get top 5 auction buys by price
     const topBuys = [...soldPlayers]
       .sort((a, b) => b.price - a.price)
       .slice(0, 5);
@@ -271,7 +292,7 @@ const Home = () => {
         teamShortName: team?.shortName || '???'
       };
     });
-  }, [soldPlayers, getClub, transferWindow?.isOpen]);
+  }, [soldPlayers, getClub, isTransferMode, completedTransfers, showTransferSummary, transferWindowSummary]);
 
   // Initialize league after auction completes
   useEffect(() => {
@@ -1064,9 +1085,12 @@ const Home = () => {
             onClick={() => navigate('/game/transfers')}
           >
             <div className="flex items-center gap-2 mb-1 border-b border-border-primary pb-1">
-              <Gavel className="w-4 h-4 text-cricket-accent" />
+              {isTransferMode
+                ? <ArrowRightLeft className="w-4 h-4 text-cricket-accent" />
+                : <Gavel className="w-4 h-4 text-cricket-accent" />
+              }
               <h3 className="text-lg font-semibold text-text-primary">
-                Top Buys
+                {isTransferMode ? 'Transfer Activity' : 'Top Buys'}
               </h3>
               <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
             </div>
@@ -1078,14 +1102,39 @@ const Home = () => {
                       <td className="py-1 text-text-primary truncate max-w-[100px]">
                         <PlayerName playerId={transfer.playerId} className="text-xs" />
                       </td>
-                      <td className="py-1 text-center px-1">
-                        <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
-                      </td>
-                      <td className="py-1 text-text-secondary truncate max-w-[60px]">
-                        <TeamName teamId={transfer.teamId} variant="short" inline className="text-xs" />
-                      </td>
+                      {isTransferMode ? (
+                        <>
+                          <td className="py-1 text-text-secondary truncate max-w-[60px]">
+                            {transfer.fromTeamId
+                              ? <TeamName teamId={transfer.fromTeamId} variant="short" inline className="text-xs" />
+                              : <span className="text-text-tertiary text-xs">FA</span>
+                            }
+                          </td>
+                          <td className="py-1 text-center px-0.5">
+                            <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
+                          </td>
+                          <td className="py-1 text-text-primary truncate max-w-[60px]">
+                            {transfer.toTeamId
+                              ? <TeamName teamId={transfer.toTeamId} variant="short" inline className="text-xs" />
+                              : <span className="text-text-tertiary text-xs">FA</span>
+                            }
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-1 text-center px-1">
+                            <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
+                          </td>
+                          <td className="py-1 text-text-secondary truncate max-w-[60px]">
+                            <TeamName teamId={transfer.teamId} variant="short" inline className="text-xs" />
+                          </td>
+                        </>
+                      )}
                       <td className="py-1 text-right font-mono text-trophy-gold whitespace-nowrap">
-                        ${(transfer.price / 1000000).toFixed(1)}M
+                        {transfer.price >= 1000000
+                          ? `$${(transfer.price / 1000000).toFixed(1)}M`
+                          : `$${(transfer.price / 1000).toFixed(0)}K`
+                        }
                       </td>
                     </tr>
                   ))}
@@ -1093,7 +1142,7 @@ const Home = () => {
               </table>
             ) : (
               <p className="text-xs text-text-tertiary italic text-center py-3">
-                No auction data yet
+                {isTransferMode ? 'No transfer activity yet' : 'No auction data yet'}
               </p>
             )}
           </div>

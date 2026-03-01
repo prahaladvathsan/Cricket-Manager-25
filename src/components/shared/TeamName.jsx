@@ -39,6 +39,7 @@ import { getTeamIcon, getTeamBadge } from '../../utils/assetHelpers';
  * @param {boolean} disableClick - Disable click handling (useful when inside clickable parent) (default: false)
  * @param {function} onBeforeOpen - Callback to execute before opening modal (e.g., to close parent modal)
  * @param {boolean|'icon'|'badge'} showTeamAsset - Show team icon/badge before name (default: false)
+ * @param {boolean} showYouSuffix - Append " (You)" if this is the user's team (default: false)
  */
 const TeamName = ({
   teamId,
@@ -49,11 +50,12 @@ const TeamName = ({
   showHoverEffect = true,
   disableClick = false,
   onBeforeOpen = null,
-  showTeamAsset = false
+  showTeamAsset = false,
+  showYouSuffix = false
 }) => {
   const [showModal, setShowModal] = useState(false);
   const { clubs } = useLeagueStore();
-  const { getTeam } = useTeamStore();
+  const { getTeam, userTeamId } = useTeamStore();
 
   // Get team data from stores
   const teamData = useMemo(() => {
@@ -113,7 +115,7 @@ const TeamName = ({
             className="w-4 h-4 inline-block"
           />
         )}
-        {displayName}
+        {displayName}{showYouSuffix && teamId === userTeamId && <span className="text-trophy-gold ml-1">(You)</span>}
       </ElementType>
 
       {!disableClick && (

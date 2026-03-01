@@ -57,7 +57,7 @@ class PrizeDistributor {
         if (this.financeStore) {
           this.financeStore.getState().addRevenue(team.clubId, {
             amount: prize,
-            category: 'prize_money',
+            category: 'revenue_season_end_prize',
             description: `Season-end prize (${this.getPositionSuffix(position)} place)`,
             date: new Date().toISOString()
           });

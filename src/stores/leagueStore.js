@@ -211,7 +211,7 @@ const useLeagueStore = create(
 
         // Schedule season_end event for the next day
         const gameStore = useGameStore.getState();
-        const nextDay = gameStore.currentDay + 1;
+        const nextDay = gameStore.gameDay + 1;
         gameStore.scheduleEvent(nextDay, 'season_end', {
           season: gameStore.currentSeason,
           championId,
@@ -730,7 +730,7 @@ const useLeagueStore = create(
 
       // Return first playoff fixture that hasn't been played yet
       const nextPlayoffFixture = playoffFixtures.find(f =>
-        !playedMatchIds.has(f.matchId) && f.status === 'scheduled'
+        !playedMatchIds.has(f.matchId) && f.status === 'scheduled' && f.homeTeam && f.awayTeam
       );
 
       return nextPlayoffFixture || null;

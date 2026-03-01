@@ -42,7 +42,8 @@ const PlayerName = ({
   inline = true,
   className = '',
   showHoverEffect = true,
-  onBeforeOpen = null
+  onBeforeOpen = null,
+  initialTab = null
 }) => {
   const [showModal, setShowModal] = useState(false);
   const { players } = usePlayerStore();
@@ -113,6 +114,7 @@ const PlayerName = ({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         playerId={playerId || playerData.id}
+        initialTab={initialTab}
       />
     </>
   );

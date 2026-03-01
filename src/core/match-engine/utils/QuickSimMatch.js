@@ -125,6 +125,10 @@ function autoFixInjuredPlayersInLineup(teamId, teamStore, playerStore) {
     console.log(`  ↳ Clearing bowling rotation and over assignments to force auto-generation with updated squad`);
     teamStore.getState().updateBowlingRotation(teamId, null);
     teamStore.getState().updateOverAssignments(teamId, {});
+    
+    // Immediately ensure a complete rotation is generated for the new squad
+    // to avoid discrepancies during match simulation
+    teamStore.getState().ensureCompleteBowlingRotation(teamId);
   }
 
   console.log(`  ✓ Final squad (${newSquadSelection.length} players):`, newSquadSelection.map(id => players[id]?.name).join(', '));
@@ -192,6 +196,12 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
 
     // Run the match
     await engine.startMatch(matchConfig);
+
+    // CRITICAL: Explicitly call completeMatch to finalize tactical state (energy, fitness, etc.)
+    // Only call if not already completed (startMatch usually completes it unless paused)
+    if (matchStore.getState().status !== 'completed') {
+      await engine.completeMatch();
+    }
 
     // Get match state to extract result
     const state = matchStore.getState();

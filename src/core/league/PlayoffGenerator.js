@@ -128,7 +128,10 @@ class PlayoffGenerator {
       if (q2Match) {
         q2Match.homeTeam = loser;
         q2Match.homeTeamName = getTeamName(loser);
-        q2Match.status = 'scheduled'; // Can now be played
+        // Only schedule Q2 when BOTH teams are known (awayTeam comes from Eliminator)
+        if (q2Match.awayTeam) {
+          q2Match.status = 'scheduled';
+        }
       }
     }
 
@@ -141,7 +144,10 @@ class PlayoffGenerator {
       if (q2Match) {
         q2Match.awayTeam = winner;
         q2Match.awayTeamName = getTeamName(winner);
-        q2Match.status = 'scheduled'; // Can now be played
+        // Only schedule Q2 when BOTH teams are known (homeTeam comes from Q1 loser)
+        if (q2Match.homeTeam) {
+          q2Match.status = 'scheduled';
+        }
       }
     }
 
