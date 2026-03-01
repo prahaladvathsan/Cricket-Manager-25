@@ -40,13 +40,13 @@ const FinancesTab = () => {
   const getTransactionLabel = (type) => {
     const labels = {
       'expense_auction': 'Auction Spending',
-      'expense_transfer': 'Transfer Purchase',
-      'revenue_transfer': 'Transfer Sale',
+      'expense_transfer_purchase': 'Transfer Purchase',
+      'revenue_transfer_sale': 'Transfer Sale',
       'revenue_sponsorship': 'Sponsorship',
       'revenue_tickets': 'Ticket Sales',
       'revenue_broadcast': 'Broadcast Revenue',
-      'revenue_prize_win': 'Match Win Bonus',
-      'revenue_prize_season': 'Season Prize Money'
+      'revenue_match_win': 'Match Win Bonus',
+      'revenue_season_end_prize': 'Season Prize Money'
     };
     return labels[type] || type;
   };

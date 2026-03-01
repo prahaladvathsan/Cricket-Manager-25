@@ -16,6 +16,7 @@ import useAuctionStore from '../../stores/auctionStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
 import useUIStore from '../../stores/uiStore';
+import { resetTransferManager } from '../../core/finance/transferManagerSingleton';
 import MessageGenerator from '../../utils/MessageGenerator';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
@@ -134,10 +135,11 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       financeStore.resetFinances();
     }
 
-    // Reset transfer store (clear any transfer market data)
+    // Reset transfer store and singleton (clear any transfer market data)
     if (transferStore.reset) {
       transferStore.reset();
     }
+    resetTransferManager();
 
     // Reset UI state (clear any invalid tactics flags)
     if (uiStore.setHasInvalidTactics) {

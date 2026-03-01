@@ -12,9 +12,10 @@ npm run build        # Build for production
 npm run lint:fix     # Fix ESLint issues
 
 # Testing
-node src/test/demoInteractiveMatch.js                      # Run demo match
-node src/test/leagueTest.js --full --playoffs              # Run full season
-node src/test/diagnosticBallTest.js                        # Test match engine outcomes
+node src/test/validateFieldTemplates.js                    # Validate field formations vs T20 rules
+# Browser console (dev tools):
+#   import('/src/test/advanceDayTest.js')                  # Load advanceDay tests
+#   window.__CM25_TEST.runAll()                            # Run all 9 tests
 ```
 
 ## Project Overview
@@ -39,13 +40,30 @@ Cricket Manager is a T20 cricket management simulation game (Football Manager fo
 ```
 src/
 ├── core/
-│   └── match-engine/       # SimpleBallSimulator (4-step: Decision → Contact → Trajectory → 2D Fielding)
-├── stores/                 # Zustand state management
-├── components/             # React UI (Dashboard, League, Squad, Match, Auction)
+│   ├── match-engine/       # SimpleBallSimulator (4-step: Decision → Contact → Trajectory → 2D Fielding)
+│   │   ├── core/           # MatchEngine, SimpleBallSimulator
+│   │   ├── simulation/     # Decision, Contact, Trajectory, Fielding calculators
+│   │   ├── physics/        # Ball physics, fielder movement
+│   │   ├── systems/        # AttributeModifier, ProbabilityEngine
+│   │   ├── interactive/    # User input, AI controller, formatting
+│   │   └── utils/          # QuickSimMatch, validation
+│   ├── tactics/            # 7-stage modifier chain (TacticsModifierSystem + 7 managers)
+│   ├── league/             # Schedule generation, standings, playoffs
+│   ├── ai/                 # AICore, AuctionTransferAI, AITacticsManager
+│   ├── finance/            # FinanceEngine, TransferAI, TransferMarket, TransferManager
+│   ├── offseason/          # OffSeasonManager, PrizeDistributor
+│   ├── retention/          # RetentionEngine, RetentionAI, PlayerAcceptance
+│   ├── auction-system/     # AuctionEngine
+│   ├── simulation/         # SimulationEngine (sim-to-date)
+│   └── game/               # GameController
+├── stores/                 # 13 Zustand stores with IndexedDB persistence
+├── components/             # React UI (Dashboard, League, Squad, Match, Auction, Transfers, Retention, Playoffs)
+├── hooks/                  # Custom React hooks (useGameController, useMatchResultModal, useTransferSystem)
+├── workers/                # Web workers (playerDatabaseWorker.js)
 ├── data/
 │   ├── config/            # JSON probability configs (NEVER hardcode probabilities)
 │   └── players/           # 376-player database
-└── test/                  # CLI test scripts
+└── test/                  # Test scripts (validateFieldTemplates, advanceDayTest)
 ```
 
 **Core Systems**:
@@ -53,7 +71,10 @@ src/
 - **Playstyle System**: 24 dynamic modifiers (16 batting + 8 bowling)
 - **League System**: 10 teams, 90 matches, playoffs with NRR calculation
 - **Auction System**: Playstyle-based player bidding with quota system
+- **Retention System**: Pre-auction player retention with tiered salary caps
+- **Transfer System**: Off-season marketplace with AI-driven listing/bidding
 - **Save System**: Multi-slot saves with autosave after matches/auctions
+- **Cloud Saves**: Optional Supabase integration for cloud save sync
 
 See `docs/architecture/system-overview.md` for detailed architecture.
 
@@ -67,7 +88,7 @@ See `docs/architecture/system-overview.md` for detailed architecture.
 - `src/utils/SaveGameManager.js` - Multi-slot save/load/export/import
 
 **How It Works**:
-1. All 9 Zustand stores use `persist` middleware with IndexedDB
+1. All 13 Zustand stores use `persist` middleware with IndexedDB (game, league, player, team, match, finance, transfer, retention, auction, auth, inbox, navigation, ui)
 2. On app load, stores rehydrate asynchronously from IndexedDB
 3. `App.jsx` waits for `waitForHydration()` before rendering
 4. Autosaves trigger after user matches and auctions (keeps last 10)
@@ -143,7 +164,7 @@ This master reference document contains:
 ### Configuration-Driven Development
 - **ALL probabilities** must be in `src/data/config/*.json` files
 - **NEVER hardcode probabilities** in code - import from configs
-- Test outcomes with `node src/test/diagnosticBallTest.js`
+- Test field formations with `node src/test/validateFieldTemplates.js`
 
 ### Game Progression Standardization (CRITICAL)
 
@@ -256,7 +277,7 @@ git checkout testing  # Switch back to testing
 
 **Quick Links**:
 - [Developer Guide](docs/dev/README.md) - Complete dev documentation index
-- [Roadmap & Status](ROADMAP.md) - Current development status and next priorities
+- [Active Development](docs/dev/active/) - Current features in development
 - [Design System](docs/frontend/design-system.md) - UI components and patterns
 - [Integration Patterns](docs/frontend/integration-patterns.md) - Store integration patterns
 - [Active Tracking Templates](docs/dev/active/README.md) - Task management templates
@@ -278,17 +299,17 @@ See `docs/dev/testing.md` for testing guidelines.
 
 ## Version Updates & Patch Notes
 
-**Current Version**: 1.1.0 (February 2026)
+**Current Version**: 1.2.0 (March 2026)
 
 **When releasing a new version**, update these files:
 1. `src/components/menu/PatchNotesModal.jsx` - Update `CURRENT_VERSION`, `RELEASE_DATE`, `RELEASE_TAGLINE`, and `PATCH_NOTES` array
-2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.1.0`)
+2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.2.0`)
 
 The version indicator on the start menu is an animated, clickable badge that opens a patch notes modal with feature highlights, improvements, and release notes.
 
 ## Important Notes
 
-- **Client-side only** - No backend, uses LocalStorage
+- **Primarily client-side** - IndexedDB for local persistence, optional Supabase for cloud saves
 - **No Python dependencies** - Data processing is separate
 - **Performance critical** - Match engine must maintain ~50k+ balls/second
 - **Deterministic** - Seeded randomization for reproducible results
@@ -297,4 +318,4 @@ The version indicator on the start menu is an animated, clickable badge that ope
 ---
 
 **Current Phase**: Phase 5 - Frontend UI (Match View, State Persistence, 2D Visualization)
-**Last Updated**: January 2026
+**Last Updated**: February 2026

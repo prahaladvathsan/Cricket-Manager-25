@@ -1,7 +1,7 @@
 /**
  * @file PerformanceValuation.js
  * @description Transfer System V2 - Performance-based player valuation
- * Uses simplified equal-weighted multiplier system for internal value calculation
+ * VFM (Value-for-Money) engine using rank-mapping IPM to price ranks
  * Auction-style logic for purchase valuation
  */
 
@@ -21,321 +21,163 @@ export default class PerformanceValuation {
     };
   }
 
-  /**
-   * Calculate performance multiplier based on stats vs team average
-   * Uses simplified equal-weighted ratios (V2 design)
-   * @param {Object} player - Player object
-   * @param {Object} playerStats - Player stats from teamStore
-   * @param {Object} teamStats - Team aggregate stats
-   * @returns {number} Multiplier (0.5 to 2.0)
-   */
-  calculatePerformanceMultiplier(player, playerStats, teamStats) {
-    if (!playerStats || !teamStats) {
-      return 1.0; // No data, use base value
-    }
-
-    const role = player.role;
-
-    // Batsmen: (avg_ratio + SR_ratio) / 2
-    if (role === 'batsman' || role === 'wicket-keeper') {
-      const playerAvg = playerStats.battingAverage || 0;
-      const teamAvg = teamStats.battingAverage || 20;
-      const playerSR = playerStats.strikeRate || 0;
-      const teamSR = teamStats.strikeRate || 120;
-
-      // Calculate ratios
-      const avgRatio = teamAvg > 0 ? playerAvg / teamAvg : 1.0;
-      const srRatio = teamSR > 0 ? playerSR / teamSR : 1.0;
-
-      // Equal weight
-      const multiplier = (avgRatio + srRatio) / 2;
-
-      // Clamp between 0.5 and 2.0
-      return Math.max(0.5, Math.min(2.0, multiplier));
-    }
-
-    // Bowlers: (econ_ratio + avg_ratio) / 2
-    // Lower is better for both economy and bowling average (inverse ratios)
-    if (role === 'bowler') {
-      const playerEcon = playerStats.economy || 999;
-      const teamEcon = teamStats.economy || 8.0;
-      const playerBowlAvg = playerStats.bowlingAverage || 999;
-      const teamBowlAvg = teamStats.bowlingAverage || 25.0;
-
-      // Inverse ratios (lower is better)
-      const econRatio = playerEcon > 0 ? teamEcon / playerEcon : 1.0;
-      const avgRatio = playerBowlAvg > 0 ? teamBowlAvg / playerBowlAvg : 1.0;
-
-      // Equal weight
-      const multiplier = (econRatio + avgRatio) / 2;
-
-      // Clamp between 0.5 and 2.0
-      return Math.max(0.5, Math.min(2.0, multiplier));
-    }
-
-    // All-rounders: return object with separate batting and bowling multipliers
-    // (Caller will handle the logic for combining them)
-    if (role === 'all-rounder') {
-      // Batting component
-      const playerBatAvg = playerStats.battingAverage || 0;
-      const teamBatAvg = teamStats.battingAverage || 20;
-      const playerSR = playerStats.strikeRate || 0;
-      const teamSR = teamStats.strikeRate || 120;
-
-      const batAvgRatio = teamBatAvg > 0 ? playerBatAvg / teamBatAvg : 1.0;
-      const srRatio = teamSR > 0 ? playerSR / teamSR : 1.0;
-      const battingMult = (batAvgRatio + srRatio) / 2;
-
-      // Bowling component
-      const playerEcon = playerStats.economy || 999;
-      const teamEcon = teamStats.economy || 8.0;
-      const playerBowlAvg = playerStats.bowlingAverage || 999;
-      const teamBowlAvg = teamStats.bowlingAverage || 25.0;
-
-      const econRatio = playerEcon > 0 ? teamEcon / playerEcon : 1.0;
-      const bowlAvgRatio = playerBowlAvg > 0 ? teamBowlAvg / playerBowlAvg : 1.0;
-      const bowlingMult = (econRatio + bowlAvgRatio) / 2;
-
-      // Average of both (but caller can use them separately for sell decisions)
-      const combinedMult = (battingMult + bowlingMult) / 2;
-
-      // Clamp combined multiplier
-      return Math.max(0.5, Math.min(2.0, combinedMult));
-    }
-
-    return 1.0; // Default
-  }
+  // =============================================================================
+  // VFM ENGINE — New methods for investment & utility model
+  // =============================================================================
 
   /**
-   * Get separate batting and bowling multipliers for all-rounders
+   * Estimate a price for a player based on their rating when no soldPrice exists
+   * Uses basePriceByRating table + getPlayerRating()
    * @param {Object} player - Player object
-   * @param {Object} playerStats - Player stats
-   * @param {Object} teamStats - Team stats
-   * @returns {Object} { batting: number, bowling: number }
+   * @returns {number} Estimated price
    */
-  getAllRounderMultipliers(player, playerStats, teamStats) {
-    if (player.role !== 'all-rounder' || !playerStats || !teamStats) {
-      return { batting: 1.0, bowling: 1.0 };
-    }
-
-    // Batting component
-    const playerBatAvg = playerStats.battingAverage || 0;
-    const teamBatAvg = teamStats.battingAverage || 20;
-    const playerSR = playerStats.strikeRate || 0;
-    const teamSR = teamStats.strikeRate || 120;
-
-    const batAvgRatio = teamBatAvg > 0 ? playerBatAvg / teamBatAvg : 1.0;
-    const srRatio = teamSR > 0 ? playerSR / teamSR : 1.0;
-    const battingMult = Math.max(0.5, Math.min(2.0, (batAvgRatio + srRatio) / 2));
-
-    // Bowling component
-    const playerEcon = playerStats.economy || 999;
-    const teamEcon = teamStats.economy || 8.0;
-    const playerBowlAvg = playerStats.bowlingAverage || 999;
-    const teamBowlAvg = teamStats.bowlingAverage || 25.0;
-
-    const econRatio = playerEcon > 0 ? teamEcon / playerEcon : 1.0;
-    const bowlAvgRatio = playerBowlAvg > 0 ? teamBowlAvg / playerBowlAvg : 1.0;
-    const bowlingMult = Math.max(0.5, Math.min(2.0, (econRatio + bowlAvgRatio) / 2));
-
-    return {
-      batting: battingMult,
-      bowling: bowlingMult
-    };
-  }
-
-  /**
-   * Determine if player should be listed for sale
-   * V2 logic: < 0.7 multiplier for role
-   * All-rounders: BOTH batting AND bowling must be < 0.7
-   * @param {Object} player - Player object
-   * @param {Object} playerStats - Player stats
-   * @param {Object} teamStats - Team stats
-   * @returns {boolean} True if player should be sold
-   */
-  shouldSellPlayer(player, playerStats, teamStats) {
-    if (!playerStats || !teamStats) {
-      return false; // No data, don't sell
-    }
-
-    const role = player.role;
-
-    // All-rounders: BOTH batting AND bowling must be < 0.7
-    if (role === 'all-rounder') {
-      const multipliers = this.getAllRounderMultipliers(player, playerStats, teamStats);
-      return multipliers.batting < 0.7 && multipliers.bowling < 0.7;
-    }
-
-    // Batsmen and bowlers: single multiplier < 0.7
-    const multiplier = this.calculatePerformanceMultiplier(player, playerStats, teamStats);
-    return multiplier < 0.7;
-  }
-
-  /**
-   * Calculate internal value (listing price) based on previous price and performance
-   * V2 formula: previousPrice × performanceMultiplier
-   * @param {number} previousPrice - What team originally paid
-   * @param {Object} player - Player object
-   * @param {Object} playerStats - Player stats
-   * @param {Object} teamStats - Team stats
-   * @returns {number} Internal value for listing
-   */
-  calculateInternalValue(previousPrice, player, playerStats, teamStats) {
-    const multiplier = this.calculatePerformanceMultiplier(player, playerStats, teamStats);
-    const value = previousPrice * multiplier;
-
-    // Round to nearest 10K
-    return Math.round(value / 10000) * 10000;
-  }
-
-  /**
-   * Calculate auction-style purchase valuation
-   * Uses same logic as auction: base + gap-based fitscore + bonuses + multipliers
-   * @param {Object} player - Player object
-   * @param {Object} team - Team object
-   * @param {Object} teamFinances - Team finances
-   * @param {Object} categoryGaps - Team's category gaps
-   * @returns {number} Purchase value willing to pay
-   */
-  calculatePurchaseValue(player, team, teamFinances, categoryGaps) {
-    // Base price - convert 0-100 rating to 0-10 scale, then floor
+  estimatePriceFromRating(player) {
     const ratingValue = getPlayerRating(player);
     const rating = Math.max(3, Math.min(9, Math.floor(ratingValue / 10)));
-    let value = this.basePriceByRating[rating] || 80000;
-
-    // Gap-based fitscore value
-    const fitscore = this.calculateFitscore(player, categoryGaps);
-    const gapBonus = fitscore * 20000; // $20K per fitscore point
-
-    value += gapBonus;
-
-    // Tier multiplier
-    if (rating >= 9) {
-      value *= 1.5; // Elite tier
-    } else if (rating >= 7) {
-      value *= 1.2; // Quality tier
-    }
-
-    // Budget multiplier
-    const budget = teamFinances.currentBudget;
-    const budgetRatio = budget / 5000000; // Ratio to $5M baseline
-    if (budgetRatio > 1.5) {
-      value *= 1.2; // 20% premium if rich
-    } else if (budgetRatio < 0.5) {
-      value *= 0.8; // 20% discount if poor
-    }
-
-    // Category deficit multiplier
-    const primaryCategory = this.getPrimaryPlaystyleCategory(player);
-    const categoryDeficit = categoryGaps[primaryCategory] || 0;
-    if (categoryDeficit > 300) {
-      value *= 1.3; // 30% premium if desperate for this category
-    }
-
-    // Round to nearest 10K
-    return Math.round(value / 10000) * 10000;
+    return this.basePriceByRating[rating] || 80000;
   }
 
   /**
-   * Calculate fitscore (how well player fills team's gaps)
+   * Get a player's actual price — soldPrice or rating-based estimate
    * @param {Object} player - Player object
-   * @param {Object} categoryGaps - Team's category gaps {category: gap}
-   * @returns {number} Fitscore (0-100+)
+   * @returns {number} Actual price
    */
-  calculateFitscore(player, categoryGaps) {
-    const playstyles = player.playstyleRatings || {};
-    let totalFit = 0;
-
-    // Map playstyles to categories and sum gaps
-    Object.entries(playstyles).forEach(([style, rating]) => {
-      const category = this.mapPlaystyleToCategory(style);
-      const gap = categoryGaps[category] || 0;
-
-      if (gap > 0) {
-        // Contribute to fitscore proportional to rating and gap
-        totalFit += (rating / 10) * (gap / 100);
-      }
-    });
-
-    return Math.min(100, totalFit);
+  getActualPrice(player) {
+    return player.soldPrice || this.estimatePriceFromRating(player);
   }
 
   /**
-   * Get player's primary playstyle category
-   * @param {Object} player - Player object
-   * @returns {string} Category name
+   * Calculate Impact Per Match (IPM)
+   * @param {Object} playerStats - Player stats from teamStore (has totalImpact, matches)
+   * @returns {number} IPM score (0 if no matches)
    */
-  getPrimaryPlaystyleCategory(player) {
-    const playstyles = player.playstyleRatings || {};
+  calculateIPM(playerStats) {
+    if (!playerStats || !playerStats.matches || playerStats.matches === 0) {
+      return 0;
+    }
+    return (playerStats.totalImpact || 0) / playerStats.matches;
+  }
 
-    // Batting categories
-    const battingCategories = {
-      anchor: playstyles.anchor || 0,
-      aggressor: playstyles.aggressor || 0,
-      finisher: playstyles.finisher || 0,
-      powerplay_specialist: playstyles.powerplay_specialist || 0,
-      accumulator: playstyles.accumulator || 0
-    };
+  /**
+   * Calculate VFM (Value-for-Money) Score using rank-mapping
+   *
+   * Algorithm:
+   * 1. Collect all squad players with sufficient matches
+   * 2. Rank A: Sort by IPM (highest first) → Performance Rank
+   * 3. Rank B: Sort by Actual Price (highest first) → Financial Rank
+   * 4. Find target's Performance Rank position
+   * 5. "Justified Price" = price of the player at that same rank in Rank B
+   * 6. VFM = Justified Price / Actual Price
+   *
+   * @param {Array} squad - Full squad of player objects
+   * @param {Object} targetPlayer - The player to evaluate
+   * @param {Object} targetPlayerStats - Target player's stats from teamStore
+   * @param {Function} getPlayerStatsFn - Function(playerId) that returns player stats
+   * @param {number} minimumMatches - Minimum matches to include a player in ranking
+   * @returns {Object} { vfmScore, justifiedPrice, actualPrice, performanceRank, ipm }
+   */
+  calculateVFMScore(squad, targetPlayer, targetPlayerStats, getPlayerStatsFn, minimumMatches = 3) {
+    const actualPrice = this.getActualPrice(targetPlayer);
+    const targetIPM = this.calculateIPM(targetPlayerStats);
 
-    // Bowling categories
-    const bowlingCategories = {
-      swing_bowler: (playstyles.swing_bowler || 0) + (playstyles.swing_bowler_spin || 0),
-      pace_bowler: (playstyles.express_pace || 0) + (playstyles.death_bowler || 0),
-      spin_bowler: (playstyles.off_spinner || 0) + (playstyles.leg_spinner || 0),
-      economical_bowler: playstyles.economical_bowler || 0
-    };
+    // Collect all active players (with enough matches) and their data
+    const activePlayers = [];
+    for (const player of squad) {
+      const stats = player.id === targetPlayer.id
+        ? targetPlayerStats
+        : getPlayerStatsFn(player.id);
 
-    // Find highest batting category
-    let maxBatting = 0;
-    let battingCat = null;
-    Object.entries(battingCategories).forEach(([cat, val]) => {
-      if (val > maxBatting) {
-        maxBatting = val;
-        battingCat = cat;
-      }
-    });
+      if (!stats || stats.matches < minimumMatches) continue;
 
-    // Find highest bowling category
-    let maxBowling = 0;
-    let bowlingCat = null;
-    Object.entries(bowlingCategories).forEach(([cat, val]) => {
-      if (val > maxBowling) {
-        maxBowling = val;
-        bowlingCat = cat;
-      }
-    });
-
-    // Return the dominant category
-    if (maxBatting > maxBowling) {
-      return battingCat;
-    } else if (maxBowling > 0) {
-      return bowlingCat;
+      activePlayers.push({
+        id: player.id,
+        ipm: this.calculateIPM(stats),
+        price: this.getActualPrice(player)
+      });
     }
 
-    return 'generic';
+    // Need at least 2 players to rank
+    if (activePlayers.length < 2) {
+      return { vfmScore: 1.0, justifiedPrice: actualPrice, actualPrice, performanceRank: 0, ipm: targetIPM };
+    }
+
+    // Rank A: Sort by IPM descending (performance rank)
+    const ipmRanked = [...activePlayers].sort((a, b) => b.ipm - a.ipm);
+
+    // Rank B: Sort by price descending (financial rank)
+    const priceRanked = [...activePlayers].sort((a, b) => b.price - a.price);
+
+    // Find target's performance rank position
+    const performanceRank = ipmRanked.findIndex(p => p.id === targetPlayer.id);
+
+    // Justified Price = price of the player at that same rank in Rank B
+    const justifiedPrice = priceRanked[performanceRank]?.price || priceRanked[priceRanked.length - 1].price;
+
+    // VFM = Justified Price / Actual Price
+    const vfmScore = actualPrice > 0 ? justifiedPrice / actualPrice : 1.0;
+
+    return {
+      vfmScore,
+      justifiedPrice,
+      actualPrice,
+      performanceRank: performanceRank + 1, // 1-indexed for display
+      ipm: targetIPM
+    };
   }
 
   /**
-   * Map playstyle to category
-   * @param {string} style - Playstyle name
-   * @returns {string} Category
+   * Check if a player is "dead capital" — expensive but not getting matches
+   * @param {Object} player - Player object
+   * @param {Object} playerStats - Player stats from teamStore
+   * @param {Object} teamStats - Team aggregate stats from teamStore
+   * @param {Object} config - aiListingCriteria.deadCapital config
+   * @returns {boolean} True if player is dead capital
    */
-  mapPlaystyleToCategory(style) {
-    const mapping = {
-      anchor: 'anchor',
-      aggressor: 'aggressor',
-      finisher: 'finisher',
-      powerplay_specialist: 'powerplay_specialist',
-      accumulator: 'accumulator',
-      swing_bowler: 'swing_bowler',
-      swing_bowler_spin: 'swing_bowler',
-      express_pace: 'pace_bowler',
-      death_bowler: 'pace_bowler',
-      off_spinner: 'spin_bowler',
-      leg_spinner: 'spin_bowler',
-      economical_bowler: 'economical_bowler'
-    };
+  isDeadCapital(player, playerStats, teamStats, config) {
+    if (!teamStats || teamStats.matches < config.minimumTeamMatches) {
+      return false; // Not enough team history to judge
+    }
 
-    return mapping[style] || 'generic';
+    const actualPrice = this.getActualPrice(player);
+    const playerMatches = playerStats?.matches || 0;
+
+    // Walk through price-match slabs from highest to lowest
+    for (const slab of config.priceMatchSlabs) {
+      if (actualPrice >= slab.minPrice && playerMatches < slab.minMatches) {
+        return true;
+      }
+    }
+
+    return false;
   }
+
+  /**
+   * Calculate listing price with safety-net
+   * @param {Object} player - Player object
+   * @param {number} justifiedPrice - From VFM calculation (or null for non-VFM listings)
+   * @param {Object} config - aiListingCriteria config
+   * @param {string} reason - Listing reason ('composition_surplus', 'dead_capital', 'vfm_failure')
+   * @returns {number} Listing price rounded to nearest $10K
+   */
+  calculateListingPrice(player, justifiedPrice, config, reason) {
+    const actualPrice = this.getActualPrice(player);
+
+    let price;
+    if (reason === 'dead_capital') {
+      // Heavily discounted to move quickly
+      price = actualPrice * 0.60;
+    } else if (reason === 'composition_surplus') {
+      // Moderate discount — no performance issue, just surplus
+      price = actualPrice * 0.75;
+    } else {
+      // VFM failure — average of justified price and actual price, floored at 50%
+      const floor = actualPrice * (config.listingPrice?.safetyFloorPercent || 0.5);
+      const averaged = ((justifiedPrice || 0) + actualPrice) / 2;
+      price = Math.max(floor, averaged);
+    }
+
+    // Round to nearest $10K, minimum $50K
+    return Math.max(50000, Math.round(price / 10000) * 10000);
+  }
+
 }

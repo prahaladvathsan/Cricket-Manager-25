@@ -1,0 +1,29 @@
+# Build artifacts & dependencies
+node_modules/
+dist/
+build/
+package-lock.json
+
+# Large static data (managed by external cricket-data-processor pipeline)
+src/data/players/processed/*.json
+src/data/players/*.xlsx
+
+# Non-code assets
+misc/
+notebooks/
+
+# Utility scripts (maintenance only, not active development)
+scripts/
+
+# Other AI tool configs
+.gemini/
+.gemini-clipboard/
+
+# System & IDE
+.git/
+.DS_Store
+Thumbs.db
+*.log
+coverage/
+.nyc_output/
+.eslintcache

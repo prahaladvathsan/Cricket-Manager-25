@@ -65,25 +65,25 @@
         "description": "Energy lost per ball faced, scaled by stamina"
       },
       "perRunTaken": {
-        "base": -1,
+        "base": -0.5,
         "description": "Energy lost per run between wickets, scaled by stamina"
       }
     },
     "bowling": {
       "over1": {
-        "perBall": -1,
+        "perBall": -1.25,
         "description": "First over, scaled by stamina"
       },
       "over2": {
-        "perBall": -1.5,
+        "perBall": -2,
         "description": "Second over, scaled by stamina"
       },
       "over3": {
-        "perBall": -2,
+        "perBall": -2.75,
         "description": "Third over, scaled by stamina"
       },
       "over4": {
-        "perBall": -2.5,
+        "perBall": -3.5,
         "description": "Fourth over, scaled by stamina"
       }
     },
@@ -98,7 +98,7 @@
       }
     },
     "staminaScaling": {
-      "formula": "actualDepletion = baseDepletion × (1 - 0.01 × staminaAttribute)",
+      "formula": "actualDepletion = baseDepletion ×- (1 - 0.01 × staminaAttribute)",
       "description": "Energy depletion is reduced by 1% per stamina point",
       "example": "Player with stamina=10 loses 0.9 energy instead of 1.0 per action"
     }
@@ -114,7 +114,7 @@
     },
     "recovery": {
       "description": "Fitness recovers per rest day (non-match days) based on endurance",
-      "formula": "fitness += endurance / 2",
+      "formula": "fitness += endurance",
       "cap": "min(maxFitness × 5, 100)",
       "conditions": [
         "Only on rest days (not match days)",
@@ -130,8 +130,8 @@
       "example": "If energy=40 at match end, 60% chance fatigue increases by 1"
     },
     "fatigueRecovery": {
-      "description": "For every match rested, fatigue reduces",
-      "reduction": "endurance value",
+      "description": "Fatigue reduces after 10 days of rest. Base 0.2/day from day 11, with +1.0 bonus every 7th rest day (starting from Day 14).",
+      "reduction": "0.2 per day (after day 10) + 1.0 bonus (every 7 days, after 10 day threshold)",
       "limits": {
         "min": 0,
         "max": 100

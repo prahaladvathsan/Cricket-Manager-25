@@ -10,16 +10,6 @@
       "maxTransfersPerTeam": 3,
       "enabled": true
     },
-    "midSeason": {
-      "name": "Mid-Season Transfer Window",
-      "description": "Disabled - transfers only available during off-season",
-      "startAfterMatchday": 45,
-      "startAfterMatchWeek": 10,
-      "duration": 14,
-      "timing": "mid_season",
-      "maxTransfersPerTeam": 5,
-      "enabled": false
-    },
     "offSeason": {
       "name": "Off-Season Transfer Window",
       "description": "Extended transfer window during off-season (weeks 22-26)",
@@ -40,160 +30,71 @@
   "transferRules": {
     "squadSizeMin": 15,
     "squadSizeMax": 25,
-    "description_squadSize": "Teams must maintain 15-25 players at all times",
 
     "minimumListingPrice": 50000,
-    "maximumListingPrice": 10000000,
-    "description_pricing": "Min $50K, Max $10M per player",
 
-    "bidIncrement": {
-      "percentage": 5,
-      "minimum": 10000,
-      "description": "Bids must be at least 5% higher or $10K minimum"
-    },
-
-    "tradingRules": {
-      "canTradeForPlayers": true,
-      "canIncludeCash": true,
-      "maxPlayersInTrade": 3,
-      "description": "Multi-player trades allowed with optional cash compensation"
-    },
+    "bidMinIncrement": 10000,
 
     "roleProtection": {
-      "minimumBatsmen": 8,
-      "minimumBowlers": 7,
+      "minimumBatsmen": 7,
+      "minimumBowlers": 6,
       "minimumAllRounders": 2,
-      "minimumKeepers": 2,
-      "description": "Teams must maintain minimum role counts to prevent unbalanced squads"
+      "minimumKeepers": 2
     }
   },
 
   "listingDuration": {
     "default": 7,
-    "minimum": 1,
-    "maximum": 14,
-    "description": "Players listed for transfer remain available for 1-14 days (default 7)"
+    "maximum": 14
   },
 
-  "transferFees": {
-    "listingFee": {
-      "percentage": 1,
-      "minimum": 5000,
-      "description": "1% of asking price, minimum $5K (paid by seller when listing)"
+  "aiBuyingBehavior": {
+    "reserveAfterBid": 100000,
+    "bidFractionMin": 0.10,
+    "bidFractionMax": 0.70,
+    "dailyBidProbability": 0.50
+  },
+
+  "aiListingCriteria": {
+    "compositionSurplus": {
+      "enabled": true
     },
-    "transferTax": {
-      "buyerTax": 0,
-      "sellerTax": 0,
-      "description": "No transfer taxes in current implementation"
+    "deadCapital": {
+      "enabled": true,
+      "priceMatchSlabs": [
+        { "minPrice": 1000000, "minMatches": 10 },
+        { "minPrice": 500000, "minMatches": 5 },
+        { "minPrice": 200000, "minMatches": 1 }
+      ],
+      "minimumTeamMatches": 5
     },
-    "agentFees": {
-      "percentage": 5,
-      "paidBy": "buyer",
-      "description": "5% agent fee paid by buyer on top of transfer fee"
+    "vfmEngine": {
+      "enabled": true,
+      "vfmThreshold": 0.7,
+      "minimumMatches": 3
+    },
+    "listingPrice": {
+      "safetyFloorPercent": 0.5
+    },
+    "maxListingsPerCycle": 5,
+    "minimumEffectiveSquad": 18
+  },
+
+  "releaseRules": {
+    "preWindowSquadThreshold": 23,
+    "preWindowMaxReleases": 2,
+    "unplayedMinPrice": 200000,
+    "releaseRecoupRate": 0.30,
+    "autoReleaseOnExpiry": {
+      "compositionSurplus": { "requireStillSurplus": true, "requireNotTop11IPM": true },
+      "deadCapital": { "requireZeroMatches": true, "minPrice": 200000 },
+      "vfmFailure": { "maxVfmScore": 0.30 }
     }
-  },
-
-  "valuationModifiers": {
-    "recentForm": {
-      "goodForm": 1.15,
-      "poorForm": 0.85,
-      "description": "Recent performance affects market value (±15%)"
-    },
-    "age": {
-      "under25": 1.10,
-      "over35": 0.75,
-      "description": "Young players premium, older players discounted"
-    },
-    "desperation": {
-      "urgentSale": 0.70,
-      "normalSale": 1.00,
-      "noUrgency": 1.20,
-      "description": "Seller urgency affects pricing"
-    }
-  },
-
-  "transferMarketBehavior": {
-    "biddingType": "direct_purchase",
-    "description_biddingType": "Direct purchase at asking price (no competitive bidding)",
-
-    "negotiationRounds": 3,
-    "description_negotiation": "Buyer can make 3 counter-offers before seller rejects",
-
-    "priceReductionPerDay": 2,
-    "description_priceReduction": "Unsold players' prices drop 2% per day after 3 days",
-
-    "autoAcceptThreshold": 1.25,
-    "description_autoAccept": "Offers 25% above asking price auto-accepted"
-  },
-
-  "aiTransferBehavior": {
-    "evaluationInterval": 1,
-    "description_interval": "AI teams evaluate needs every match day",
-
-    "buyingTriggers": {
-      "squadBelowMin": true,
-      "roleImbalance": true,
-      "keyPlayerInjured": true,
-      "opportunisticPurchase": true,
-      "description": "Conditions that trigger AI buying behavior"
-    },
-
-    "sellingTriggers": {
-      "squadAboveMax": true,
-      "duplicateRoles": true,
-      "financialPressure": true,
-      "underperformingPlayer": true,
-      "description": "Conditions that trigger AI selling behavior"
-    },
-
-    "budgetAllocation": {
-      "maxPercentPerTransfer": 20,
-      "minReserveAfterTransfer": 500000,
-      "description": "AI won't spend more than 20% budget on one player, keeps $500K reserve"
-    }
-  },
-
-  "playerConsent": {
-    "requiredForTransfer": false,
-    "description": "Player consent not required (team-controlled transfers)"
-  },
-
-  "contractClauses": {
-    "releaseClause": {
-      "enabled": false,
-      "description": "Release clauses not implemented yet"
-    },
-    "buyBackClause": {
-      "enabled": false,
-      "description": "Buy-back clauses not implemented yet"
-    }
-  },
-
-  "restrictions": {
-    "cannotSellPlayerWithin": 2,
-    "description_sellRestriction": "Cannot sell a player within 2 matchdays of acquiring them",
-
-    "cannotBuyFromSameTeamWithin": 1,
-    "description_buyRestriction": "Cannot buy from same team within 1 matchday of previous purchase",
-
-    "maxTransfersWithSameTeam": 5,
-    "description_maxWithTeam": "Maximum 5 transfers with same team per season"
   },
 
   "notifications": {
     "newListing": true,
     "offerReceived": true,
-    "offerAccepted": true,
-    "offerRejected": true,
-    "transferCompleted": true,
-    "description": "User notifications for transfer market events"
-  },
-
-  "notes": [
-    "Transfer windows can be opened at specific times during season",
-    "Pre-auction window allows trades before auction starts",
-    "Mid-season window is the main trading period",
-    "All transfer fees flow through FinanceEngine",
-    "AI behavior is governed by squad needs and budget constraints"
-  ]
+    "transferCompleted": true
+  }
 }

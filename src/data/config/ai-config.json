@@ -16,14 +16,10 @@
       "primaryRoleRating": 0.5,
       "playstyleFit": 0.5
     },
-    "fitnessPenalty": {
-      "description": "Gradual penalty curve based on fitness (not fatigue) - higher fitness = no penalty",
-      "noImpactThreshold": 70,
-      "minorPenaltyThreshold": 40,
-      "majorPenaltyThreshold": 20,
-      "minorPenaltyRate": 0.5,
-      "majorPenaltyRate": 1.0,
-      "severePenaltyRate": 2.0
+    "fatiguePenalty": {
+      "description": "Linear penalty: 40 points for every 10 fatigue (4.0 rate)",
+      "noImpactThreshold": 0,
+      "penaltyRate": 4.0
     },
     "refinementIterations": 10,
     "roleGapPenalty": {

@@ -2,632 +2,242 @@
 
 ## Overview
 
-The Transfer System enables mid-season player trading with performance-based valuations. The system uses a **simple, instant transaction model** based on player performance statistics compared to team averages.
+The Transfer System enables **off-season player trading** between AI teams (and user). It runs during weeks 22-26 of each season. The system uses a **three-pass listing model** and a **daily bidding cycle** with hourly auctions.
 
 **Key Features**:
-- Performance-based player valuation
-- Team-specific stats (reset on transfer)
-- Career stats tracking (never reset)
-- Instant buy/sell transactions (no negotiations)
-- Weekly bidding with random hourly auctions
-- Category balance considerations (batting/bowling playstyles)
+- Three-pass AI listing: Composition Surplus → Dead Capital → VFM Failure
+- Playstyle-quota-based composition analysis (reuses AuctionTransferAI)
+- IPM (Impact Per Match) rank-mapping for value-for-money detection
+- Daily bidding with 24 hourly auction rounds
+- Candidate queue system for overflow (promotes when listings expire)
+- Per-team listing cap of 5, minimum effective squad of 18
 
-**Status**: ✅ Complete (Phase 4)
-
----
-
-## System Philosophy
-
-### Design Principles
-
-1. **Performance-Based**: Player values determined by stats, not age/form/urgency
-2. **Instant Transactions**: No negotiations - buy if valuation > asking price
-3. **Team Context**: Stats are team-specific and reset on transfer
-4. **Career Tracking**: Lifetime career stats preserved across teams
-5. **Simple AI**: Clear sell/buy triggers based on performance thresholds
-
-### Simplifications from V1
-
-**Removed Complexity**:
-- ❌ Offer/counter-offer negotiation system
-- ❌ Agent fees and listing fees
-- ❌ Age/form/urgency modifiers
-- ❌ Price reduction over time
-- ❌ Multi-round negotiation logic
-
-**New Approach**:
-- ✅ Instant buy if buyer valuation > asking price
-- ✅ Performance multiplier (0.5x - 2.0x) based on stats
-- ✅ Category balance adjustments (±30%)
-- ✅ Simple sell trigger: value < 80% of purchase price
+**Status**: Active Development (Listing AI complete, Buying AI needs rework)
 
 ---
 
-## Data Structures
+## Architecture
 
-### Team Store (`teamStore.js`)
+### File Map
 
-Team-specific player performance stats that **reset on transfer**:
+| File | Role |
+|---|---|
+| `src/data/config/transferConfig.json` | All transfer rules, listing criteria, role protection |
+| `src/data/config/auctionConfig.json` | Playstyle rating quotas (consumed read-only for composition checks) |
+| `src/core/finance/TransferManager.js` | Orchestrator — weekly listings, daily bidding, expiry processing |
+| `src/core/finance/TransferAI.js` | AI decision engine — listing evaluation, queue promotion, bidding |
+| `src/core/finance/TransferMarket.js` | Market state — listings Map, bids, interested teams, transfer completion |
+| `src/core/finance/PerformanceValuation.js` | Valuation math — VFM score, IPM, dead capital, listing price, purchase value |
+| `src/core/finance/transferManagerSingleton.js` | Shared singleton across Header.jsx, SimulationEngine, UI |
+| `src/core/ai/AuctionTransferAI.js` | Consumed read-only for `analyzePlaystyleCoverage()`, `evaluatePlayerFit()` |
+| `src/components/layout/Header.jsx` | Normal UI progression — opens window, runs daily cycle |
+| `src/core/simulation/SimulationEngine.js` | Sim-to-Date progression — identical transfer logic |
 
-```javascript
-{
-  // NEW: Performance stats (RESET on transfer)
-  playerStats: {
-    teamId: {
-      playerId: {
-        matches: 10,
-        runs: 450,
-        ballsFaced: 300,
-        battingAverage: 45.0,
-        strikeRate: 150.0,
-        wickets: 12,
-        ballsBowled: 120,
-        runsConceded: 150,
-        economy: 7.5,
-        bowlingAverage: 12.5
-      }
-    }
-  },
+### Trigger Chain
 
-  // NEW: Team aggregate stats
-  teamStats: {
-    teamId: {
-      matches: 10,
-      battingAverage: 32.5,
-      strikeRate: 135.0,
-      economy: 8.2,
-      bowlingAverage: 25.0
-    }
-  }
-}
-```
-
-**Methods**:
-- `initializeTeamStats(teamId)` - Initialize empty stats for team
-- `updatePlayerStats(teamId, playerId, matchStats)` - Update after match
-- `recalculateTeamStats(teamId)` - Recalculate team averages
-- `resetPlayerStats(playerId, oldTeamId)` - Reset on transfer
-- `getPlayerStats(teamId, playerId)` - Retrieve player stats
-- `getTeamStats(teamId)` - Retrieve team averages
-
-### Player Store (`playerStore.js`)
-
-Lifetime career statistics that **never reset**:
-
-```javascript
-{
-  // NEW: Career stats (NEVER reset)
-  careerStats: {
-    playerId: {
-      totalMatches: 150,
-      totalRuns: 6500,
-      careerBattingAvg: 43.3,
-      careerStrikeRate: 142.0,
-      totalWickets: 85,
-      careerEconomy: 7.8,
-      careerBowlingAvg: 23.5,
-      centuries: 5,
-      fifties: 35,
-      fiveWickets: 3
-    }
-  },
-
-  // Season-specific stats
-  seasonStats: {
-    playerId: {
-      seasonId: {
-        matches: 15,
-        runs: 650,
-        // ... etc
-      }
-    }
-  }
-}
-```
-
-**Methods**:
-- `initializeCareerStats(playerId)` - Initialize career tracking
-- `updateCareerStats(playerId, seasonId, matchStats)` - Update cumulative and season stats
-- `getCareerStats(playerId)` - Retrieve lifetime stats
-- `getSeasonStats(playerId, seasonId)` - Retrieve season-specific stats
-
-### Transfer Market (`TransferMarket.js`)
-
-Active transfer listings and completed transactions:
-
-```javascript
-{
-  listings: {
-    listingId: {
-      playerId: 'p123',
-      sellingTeam: 'teamId',
-      askingPrice: 2500000,
-      listedDate: '2025-03-15',
-      purchasePrice: 2000000  // Original price team paid
-    }
-  },
-
-  completedTransfers: [
-    {
-      playerId: 'p123',
-      fromTeam: 'teamId1',
-      toTeam: 'teamId2',
-      transferFee: 2800000,
-      date: '2025-03-20'
-    }
-  ]
-}
-```
-
-**Simplified Methods**:
-- `listPlayer(teamId, playerId, askingPrice)` - Create listing (no fees)
-- `attemptPurchase(teamId, listingId)` - Instant buy if valuation > price
-- `displayTransferList()` - Show active listings
-- `displayCompletedTransfers()` - Show transfer history
+1. Calendar event `offseason_start` fires → `advancePhase('offseason')` sets phase
+2. On subsequent Continue clicks (weeks 22-26): Header.jsx `else` block activates
+3. `getTransferManager()` lazily creates singleton → `openWindow('offSeason', 14)`
+4. `processDailyTransferCycle(teams, weekNumber)` runs each day:
+   - Phase 1: Weekly listings (once per week via `lastListingWeek` guard)
+   - Phase 2: Daily bidding (24 hourly auctions)
+   - Phase 3: Process expired listings
+   - Phase 4: Promote from candidate queue
+   - Phase 5: Identify interested teams for promoted listings
+5. Window closes at week 26
 
 ---
 
-## Performance Valuation System
+## AI Listing System (Three-Pass Model)
 
-### Core Algorithm: `PerformanceValuation.js`
+### Entry Point
 
-#### 1. Performance Multiplier Calculation
+`TransferAI.evaluateWeeklyListings(team, weekNumber)` — called once per week per AI team.
 
-Compares player stats to team averages:
+**Guards** (skip if any fail):
+- Team is not user's team
+- Squad size > 0
+- Effective squad (squad - active listings) > `minimumEffectiveSquad` (18)
+- Listing budget = `min(maxListingsPerCycle, effectiveSquad - minEffectiveSquad)`
 
-```javascript
-/**
- * Calculate performance multiplier (0.5x - 2.0x)
- */
-function calculatePerformanceMultiplier(player, teamStats, playerStats) {
-  const role = player.primaryRole;
+### Pass 1: Composition Surplus (Rating-Quota Based)
 
-  if (role === 'Batsman') {
-    const avgRatio = playerStats.battingAverage / teamStats.battingAverage;
-    const srRatio = playerStats.strikeRate / teamStats.strikeRate;
-    return clamp((avgRatio + srRatio) / 2, 0.5, 2.0);
-  }
+**Method**: `_getCompositionSurplusCandidates(squad, alreadyListedIds)`
 
-  if (role === 'Bowler') {
-    const econRatio = teamStats.economy / playerStats.economy;  // Inverted
-    const avgRatio = teamStats.bowlingAverage / playerStats.bowlingAverage;  // Inverted
-    return clamp((econRatio + avgRatio) / 2, 0.5, 2.0);
-  }
+Uses `AuctionTransferAI.analyzePlaystyleCoverage()` to get current rating totals per playstyle category, then compares against **half of auction quotas** as surplus ceilings.
 
-  if (role === 'All-rounder') {
-    const battingMult = /* batting calculation */;
-    const bowlingMult = /* bowling calculation */;
-    return (battingMult + bowlingMult) / 2;
-  }
-}
-```
+**Auction quotas → Surplus ceilings** (÷2):
 
-**Performance Ratios**:
-- **Batsmen**: Equal weight to batting average and strike rate
-- **Bowlers**: Equal weight to economy and bowling average (inverted)
-- **All-rounders**: Average of batting and bowling multipliers
-- **Range**: Clamped to 0.5x (underperforming) to 2.0x (star player)
+| Batting Category | Quota | Ceiling | Bowling Category | Quota | Ceiling |
+|---|---|---|---|---|---|
+| openers | 730 | 365 | powerplay | 830 | 415 |
+| topOrder | 610 | 305 | earlyMiddle | 1200 | 600 |
+| middleOrder | 470 | 235 | lateMiddle | 1250 | 625 |
+| lowerOrder | 310 | 155 | death | 880 | 440 |
+| tailenders | 60 | 30 | wicketkeeper | 350 | 175 |
 
-#### 2. Sell Valuation
+**Algorithm**:
+1. Assign each player to their primary batting category and primary bowling category (via `getPrimaryBattingPlaystyle`/`getPrimaryBowlingPlaystyle`)
+2. Compute `evaluatePlayerFit()` fitScore for each player
+3. For each category where `currentRating > ceiling`: sort players by fitScore ascending, flag the lowest-fitScore players one by one (subtracting their rating) until category ≤ ceiling
+4. **Role-aware flag requirements**:
+   - **Batsmen**: surplus only if flagged in batting category
+   - **Bowlers**: surplus only if flagged in bowling category (NOT batting — a bowler's batting is incidental)
+   - **All-rounders**: surplus only if flagged in BOTH batting AND bowling
+   - **Keepers**: surplus only if flagged in BOTH batting AND wicketkeeping
+5. Role protection floor enforced (never drop below minimumBatsmen/Bowlers/etc.)
 
-Calculate internal transfer value for selling:
+**Listing price**: `actualPrice * 0.75` (composition surplus discount)
 
-```javascript
-/**
- * Calculate player's transfer value for selling
- */
-function calculateTransferValue(player, teamStats, playerStats, categoryBalance) {
-  const purchasePrice = teamStore.getPurchasePrice(playerId);
-  const performanceMult = calculatePerformanceMultiplier(player, teamStats, playerStats);
+### Pass 2: Dead Capital
 
-  let internalValue = purchasePrice * performanceMult;
+**Method**: `PerformanceValuation.isDeadCapital(player, playerStats, teamStats, config)`
 
-  // Category balance adjustment
-  const category = getPlaystyleCategory(player);
-  if (categoryBalance[category].surplus) {
-    internalValue *= 0.7;  // -30% for surplus
-  } else if (categoryBalance[category].deficit) {
-    internalValue *= 1.3;  // +30% for deficit
-  }
+Flags expensive players not getting matches. Walks through price-match slabs:
 
-  return internalValue;
-}
-```
+| Price Threshold | Minimum Matches Required |
+|---|---|
+| $1,000,000+ | 10 matches |
+| $500,000+ | 5 matches |
+| $200,000+ | 1 match |
 
-**Factors**:
-1. **Base**: Original purchase price
-2. **Performance**: Multiplier (0.5x - 2.0x)
-3. **Category Balance**: ±30% based on team needs
+Only runs if team has played ≥ `minimumTeamMatches` (5).
 
-#### 3. Buy Valuation
+**Listing price**: `actualPrice * 0.60` (heavy discount to move quickly)
 
-Calculate purchase value using auction-style logic:
+### Pass 3: VFM Failure (Value-for-Money)
 
-```javascript
-/**
- * Calculate how much team should pay for player
- */
-function calculatePurchaseValue(player, team, teamFinances, categoryGaps) {
-  const basePrice = player.marketValue;
+**Method**: `PerformanceValuation.calculateVFMScore(squad, player, playerStats, getPlayerStatsFn, minimumMatches)`
 
-  // Fit score based on category gaps
-  const fitScore = calculateFitScore(player, categoryGaps);
+**Top 5 IPM Protection**: Before running VFM, the top 5 players by IPM are identified and skipped entirely. This prevents listing star performers who are expensive but delivering.
 
-  // Budget health multiplier
-  const budgetMult = calculateBudgetMultiplier(teamFinances);
+**VFM Algorithm** (rank-mapping):
+1. Collect all players with ≥ `minimumMatches` (3) and their stats
+2. **Rank A**: Sort by IPM descending → Performance Rank
+3. **Rank B**: Sort by Actual Price descending → Financial Rank
+4. Find target player's position in Rank A
+5. "Justified Price" = the price at that same rank position in Rank B
+6. `VFM Score = Justified Price / Actual Price`
 
-  // Rating tier bonus
-  const ratingBonus = getRatingBonus(player.overallRating);
+**Example**: Player costs $1.5M but performs as #8 best. The #8 highest salary is $400K. VFM = $400K/$1.5M = 0.27 → below threshold 0.7 → flagged.
 
-  return basePrice + (fitScore * budgetMult) + ratingBonus;
-}
-```
+**Listing price**: `max(actualPrice × 0.5, (justifiedPrice + actualPrice) / 2)` — averaged with floor at 50%.
 
-**Factors**:
-1. **Base Price**: Player's market value
-2. **Fit Score**: How well player fills team gaps
-3. **Budget Health**: More aggressive if budget allows
-4. **Rating Tier**: Bonus for high-rated players
+### Priority & Sorting
+
+Candidates sorted: `dead_capital(0)` → `vfm_failure(1)` → `composition_surplus(2)`
+
+Top candidates listed up to budget (5). Overflow stored in candidate queue per team.
+
+### Candidate Queue System
+
+`TransferAI.promoteFromQueue(expiredCount)` — runs after `processExpiredListings`:
+- For each team with queued candidates, checks active listings < `maxListingsPerCycle` (5)
+- Validates player still on squad and not already listed
+- Promotes next candidate(s) up to headroom
+- Phase 5 in TransferManager re-runs `identifyInterestedTeams` for promoted listings
 
 ---
 
-## AI Decision Logic
-
-### Selling Logic (`TransferAI.evaluateSelling`)
-
-```javascript
-// For each player in squad
-for (const player of squad) {
-  const purchasePrice = teamStore.getPurchasePrice(player.id);
-  const currentValue = calculateTransferValue(player, teamStats, playerStats, categoryBalance);
-
-  // Sell if underperforming
-  if (currentValue < purchasePrice * 0.8) {  // 80% threshold
-    const listPrice = currentValue * 1.1;     // +10% markup
-    transferMarket.listPlayer(teamId, player.id, listPrice);
-  }
-}
-```
-
-**Sell Trigger**: Current value < 80% of original purchase price
-
-**All-rounder Special Case**:
-- Must underperform in BOTH batting AND bowling to trigger sell
-- Prevents selling all-rounders who excel in one discipline
-
-### Buying Logic (`TransferAI.evaluatePurchase`)
-
-```javascript
-// For each listing on market
-for (const listing of transferMarket.listings) {
-  const player = getPlayer(listing.playerId);
-  const valuation = calculatePurchaseValue(player, team, finances, categoryGaps);
-
-  // Buy if valuation exceeds asking price
-  if (valuation > listing.askingPrice && budget >= listing.askingPrice) {
-    transferMarket.attemptPurchase(teamId, listing.id);
-  }
-}
-```
-
-**Buy Trigger**: Perceived value > Asking price
-
----
-
-## Weekly Transfer Cycle
-
-### Schedule
-
-**Transfer Windows**: Every week during the season
-
-1. **Monday 12:00 PM**: Transfer window opens
-   - AI teams evaluate squads
-   - Underperforming players listed for sale
-
-2. **Monday-Sunday**: Hourly random auctions
-   - Random time each hour (prevents predictability)
-   - AI teams attempt purchases
-   - Instant transaction if valuation > price
-
-3. **Sunday 11:59 PM**: Transfer window closes
-   - All unsold listings removed
-   - Stats reset for transferred players
-
-### Auction Timing
-
-```javascript
-// Hourly random auction (0-59 minutes past the hour)
-const randomMinute = Math.floor(Math.random() * 60);
-const auctionTime = `${hour}:${randomMinute}`;
-
-// Execute auction
-transferMarket.runAuction();
-```
-
----
-
-## Stats Management
-
-### Match Stats Population
-
-After each match, stats are updated in two stores:
-
-```javascript
-// PostMatchProcessor.js
-function processMatchResults(matchResult) {
-  const homeTeamId = matchResult.homeTeam.id;
-  const awayTeamId = matchResult.awayTeam.id;
-
-  // Extract player stats from match
-  for (const player of matchResult.battingCard) {
-    const stats = {
-      runs: player.runs,
-      ballsFaced: player.balls,
-      // ... other stats
-    };
-
-    // Update team-specific stats
-    teamStore.updatePlayerStats(homeTeamId, player.id, stats);
-
-    // Update career stats
-    playerStore.updateCareerStats(player.id, currentSeasonId, stats);
-  }
-
-  // Recalculate team averages
-  teamStore.recalculateTeamStats(homeTeamId);
-  teamStore.recalculateTeamStats(awayTeamId);
-}
-```
-
-### Transfer Stats Reset
-
-When player transfers, team stats reset but career stats persist:
-
-```javascript
-function completeTransfer(playerId, fromTeamId, toTeamId) {
-  // Reset old team stats
-  teamStore.resetPlayerStats(playerId, fromTeamId);
-
-  // Initialize new team stats
-  teamStore.initializePlayerStats(toTeamId, playerId);
-
-  // Career stats UNCHANGED
-  const careerStats = playerStore.getCareerStats(playerId);  // Still intact
-}
-```
-
----
-
-## Category Balance System
-
-### Playstyle Categories
-
-**9 Categories** (5 batting + 4 bowling):
-
-**Batting**:
-1. Aggressive Batsmen
-2. Anchor Batsmen
-3. Power Hitters
-4. Technical Batsmen
-5. Finishers
-
-**Bowling**:
-6. Fast Bowlers (Death + Powerplay)
-7. Swing Bowlers
-8. Spin Bowlers (Off + Leg)
-9. Economy Bowlers
-
-### Balance Calculation
-
-```javascript
-function calculateCategoryBalance(squad, targetQuotas) {
-  const balance = {};
-
-  for (const category of categories) {
-    const currentRating = sumCategoryRatings(squad, category);
-    const target = targetQuotas[category];
-    const gap = target - currentRating;
-
-    balance[category] = {
-      current: currentRating,
-      target: target,
-      gap: gap,
-      surplus: gap < -100,   // Over-quota
-      deficit: gap > 100     // Under-quota
-    };
-  }
-
-  return balance;
-}
-```
-
-**Impact on Valuation**:
-- **Surplus categories**: -30% value (team wants to sell)
-- **Deficit categories**: +30% value (team wants to buy)
-- **Balanced categories**: No adjustment
-
----
-
-## Implementation Status
-
-### ✅ Completed
-
-1. **Design Document** - Complete specification
-2. **Team Store Stats** - `playerStats` and `teamStats` structures
-3. **Player Store Career Stats** - `careerStats` and `seasonStats`
-4. **Match Stats Population** - Post-match stat updates
-5. **Performance Valuation** - Multiplier calculation
-6. **Transfer Market** - Simplified instant transaction system
-7. **Transfer AI** - Sell/buy decision logic
-8. **Category Balance** - Playstyle quota system
-9. **Weekly Auction Cycle** - Hourly random auctions
-
-### 🚧 Future Enhancements
-
-- **UI Integration**: React components for transfer market
-- **Transfer History**: Detailed player transfer logs
-- **Market Trends**: Price tracking over time
-- **Loan System**: Temporary player loans
-- **Contract System**: Multi-year contracts with wages
-
----
-
-## Usage Examples
-
-### Example 1: AI Team Selling Underperformer
-
-```javascript
-// Mumbai Thunders evaluates squad after Week 5
-const team = teams['mumbai-thunders'];
-const teamStats = teamStore.getTeamStats(team.id);
-
-// Player: John Smith (Batsman)
-// Purchase Price: $2,000,000
-// Team Batting Avg: 35.0, Player Batting Avg: 20.0
-// Team Strike Rate: 130.0, Player Strike Rate: 100.0
-
-// Calculate performance
-avgRatio = 20.0 / 35.0 = 0.57
-srRatio = 100.0 / 130.0 = 0.77
-performanceMult = (0.57 + 0.77) / 2 = 0.67  // Underperforming
-
-// Calculate value
-internalValue = 2,000,000 * 0.67 = 1,340,000
-
-// Check sell trigger
-if (1,340,000 < 2,000,000 * 0.8):  // 1,340,000 < 1,600,000 ✅
-  listPrice = 1,340,000 * 1.1 = 1,474,000
-  transferMarket.listPlayer(team.id, 'john-smith', 1,474,000)
-```
-
-### Example 2: AI Team Buying to Fill Gap
-
-```javascript
-// London Lions needs Aggressive Batsmen (deficit: 200 rating points)
-const player = players['virat-kohli'];  // Aggressive Batsman
-const listing = { askingPrice: 3,500,000 };
-
-// Calculate purchase value
-basePrice = 3,000,000
-fitScore = 800,000      // High - fills deficit
-budgetMult = 1.2        // Good budget health
-ratingBonus = 200,000   // 90+ rating
-
-purchaseValue = 3,000,000 + (800,000 * 1.2) + 200,000 = 4,160,000
-
-// Check buy trigger
-if (4,160,000 > 3,500,000):  // ✅ Buy!
-  transferMarket.attemptPurchase('london-lions', listing.id)
-```
-
-### Example 3: Player Transfers, Stats Reset
-
-```javascript
-// Before Transfer
-teamStore.playerStats['mumbai-thunders']['john-smith'] = {
-  matches: 10,
-  runs: 200,
-  battingAverage: 20.0
-};
-
-playerStore.careerStats['john-smith'] = {
-  totalMatches: 150,
-  totalRuns: 6500,
-  careerBattingAvg: 43.3
-};
-
-// Transfer Completes
-transferMarket.completeTransfer('john-smith', 'mumbai-thunders', 'london-lions');
-
-// After Transfer
-teamStore.playerStats['mumbai-thunders']['john-smith'] = undefined;  // Reset
-teamStore.playerStats['london-lions']['john-smith'] = {
-  matches: 0,
-  runs: 0,
-  battingAverage: 0.0  // Fresh start
-};
-
-playerStore.careerStats['john-smith'] = {
-  totalMatches: 150,    // UNCHANGED
-  totalRuns: 6500,      // UNCHANGED
-  careerBattingAvg: 43.3  // UNCHANGED
-};
-```
+## AI Buying System (Current — Needs Rework)
+
+### Interest Identification
+
+`TransferMarket.identifyInterestedTeams(listing, allTeams, calculateValuation)`:
+- For each non-selling team: if `calculatePurchaseValue(player, team) > listingPrice` AND budget allows → interested
+
+### Purchase Valuation
+
+`PerformanceValuation.calculatePurchaseValue(player, team, teamFinances, categoryGaps)`:
+- Base price from rating tier (`basePriceByRating` table)
+- Gap bonus: `fitscore × $20K`
+- Rating tier multiplier (1.5x for 90+, 1.2x for 70+)
+- Budget health multiplier (1.2x if flush, 0.8x if poor)
+- Large category deficit: 1.3x bonus
+
+**Known issues with current buying system**:
+- `getCategoryGaps()` uses a hardcoded category system (`anchor`, `aggressor`, `finisher`, etc.) that doesn't match the actual playstyle category mapping from auctionConfig
+- `calculateFitscore()` reads raw `player.playstyleRatings` keys that may not exist in the current data model
+- No squad size awareness — teams can bid even when near cap
+- No consideration of what the team is selling (might buy back similar players)
+- Budget reserve is a flat $500K regardless of team wealth
+- Bid increment capped at $50K max jump — very slow price discovery for expensive players
+
+### Hourly Bidding
+
+`TransferManager.processDailyBidding()` runs 24 hourly auctions:
+1. For each listing with interested teams
+2. Filter teams that haven't bid today
+3. Randomly select one team
+4. Call `evaluateHourlyBid(team, listing)` → if valuation ≥ next bid amount and budget allows → place bid
+5. Bid amount: `min(teamValuation, currentBid + $50K)` with minimum of `currentBid + $10K`
+
+### Transfer Completion
+
+`TransferMarket.processExpiredListings(currentGameDay)`:
+- Listings expire after `durationDays` (14) game days
+- If bids exist → `completeTransfer()`: financial transaction + player moved + soldPrice updated + team stats recalculated
+- If no bids → listing removed
 
 ---
 
 ## Configuration
 
-**Transfer Config** (`src/data/config/transfer-config.json`):
+### transferConfig.json — `aiListingCriteria`
 
 ```json
 {
-  "sellThreshold": 0.8,
-  "listPriceMarkup": 1.1,
-  "performanceMultiplierRange": {
-    "min": 0.5,
-    "max": 2.0
+  "compositionSurplus": { "enabled": true },
+  "deadCapital": {
+    "enabled": true,
+    "priceMatchSlabs": [
+      { "minPrice": 1000000, "minMatches": 10 },
+      { "minPrice": 500000, "minMatches": 5 },
+      { "minPrice": 200000, "minMatches": 1 }
+    ],
+    "minimumTeamMatches": 5
   },
-  "categoryBalanceModifiers": {
-    "surplus": 0.7,
-    "deficit": 1.3
+  "vfmEngine": {
+    "enabled": true,
+    "vfmThreshold": 0.7,
+    "minimumMatches": 3
   },
-  "weeklyAuctionSchedule": {
-    "startDay": "Monday",
-    "startTime": "12:00",
-    "endDay": "Sunday",
-    "endTime": "23:59",
-    "auctionsPerDay": 24
-  },
-  "playstyleQuotas": {
-    "aggressiveBatsmen": 400,
-    "anchorBatsmen": 400,
-    "powerHitters": 400,
-    "technicalBatsmen": 400,
-    "finishers": 400,
-    "fastBowlers": 600,
-    "swingBowlers": 400,
-    "spinBowlers": 600,
-    "economyBowlers": 400
-  }
+  "listingPrice": { "safetyFloorPercent": 0.5 },
+  "maxListingsPerCycle": 5,
+  "minimumEffectiveSquad": 18
 }
 ```
 
----
+### transferConfig.json — `roleProtection`
 
-## Testing
-
-### Test Files
-
-```bash
-# Transfer market simulation
-node src/test/transferTest.js
-
-# Performance valuation tests
-node src/test/valuationTest.js
+```json
+{
+  "minimumBatsmen": 7,
+  "minimumBowlers": 6,
+  "minimumAllRounders": 2,
+  "minimumKeepers": 2
+}
 ```
 
-### Manual Testing Checklist
+### Key Methods Reference
 
-- [ ] Player listed when performance drops below 80%
-- [ ] All-rounder requires BOTH batting/bowling underperformance to sell
-- [ ] Purchase occurs when valuation > asking price
-- [ ] Team stats reset on transfer
-- [ ] Career stats persist on transfer
-- [ ] Category balance affects valuations (±30%)
-- [ ] Budget constraints prevent purchases
-- [ ] Weekly auction cycle runs correctly
+| Method | File | Purpose |
+|---|---|---|
+| `evaluateWeeklyListings(team, week)` | TransferAI.js | Three-pass listing evaluation |
+| `_getCompositionSurplusCandidates(squad, listed)` | TransferAI.js | Rating-quota surplus detection |
+| `promoteFromQueue(expiredCount)` | TransferAI.js | Queue → active listing promotion |
+| `evaluateHourlyBid(team, listing)` | TransferAI.js | Bid decision per hourly auction |
+| `calculateVFMScore(squad, player, stats, fn, min)` | PerformanceValuation.js | Rank-mapping VFM engine |
+| `isDeadCapital(player, stats, teamStats, config)` | PerformanceValuation.js | Price-match slab check |
+| `calculateListingPrice(player, justified, config, reason)` | PerformanceValuation.js | Safety-net pricing |
+| `calculatePurchaseValue(player, team, finances, gaps)` | PerformanceValuation.js | Buy valuation (needs rework) |
+| `calculateIPM(playerStats)` | PerformanceValuation.js | Impact Per Match |
+| `getActualPrice(player)` | PerformanceValuation.js | soldPrice or estimatePriceFromRating fallback |
+| `identifyInterestedTeams(listing, teams, fn)` | TransferMarket.js | Pre-filter interested buyers |
+| `placeBid(listingId, teamId, amount, timestamp)` | TransferMarket.js | Record bid on listing |
+| `completeTransfer(listing)` | TransferMarket.js | Execute player move + finances |
+| `processExpiredListings(gameDay)` | TransferMarket.js | Expire/complete listings |
 
 ---
 
-## Related Documentation
-
-- **[Finance System](finance-system.md)** - Budget management and team finances
-- **[Auction System](auction-system.md)** - Season-start player auction
-- **[Player System](player-system.md)** - Player attributes and progression
-- **[League System](league-system.md)** - Match scheduling and standings
-
----
-
-**Last Updated**: January 2025
-**Status**: ✅ Complete
+**Last Updated**: February 2026

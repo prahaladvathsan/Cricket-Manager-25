@@ -10,6 +10,7 @@ import useTeamStore from '../../stores/teamStore.js';
 import usePlayerStore from '../../stores/playerStore.js';
 
 let sharedInstance = null;
+let hasRunPreReleases = false;
 
 /**
  * Get (or lazily create) the shared TransferManager singleton
@@ -23,8 +24,26 @@ export function getTransferManager() {
       useTeamStore,
       usePlayerStore
     );
+    // Restore in-memory state from persisted transferStore (handles save load)
+    sharedInstance.restoreFromStore();
   }
   return sharedInstance;
+}
+
+/**
+ * Check/set whether pre-releases have already run for the current window.
+ * Prevents double-running if user navigates back and forth.
+ * @returns {boolean}
+ */
+export function getHasRunPreReleases() {
+  return hasRunPreReleases;
+}
+
+/**
+ * @param {boolean} value
+ */
+export function setHasRunPreReleases(value) {
+  hasRunPreReleases = value;
 }
 
 /**
@@ -32,4 +51,5 @@ export function getTransferManager() {
  */
 export function resetTransferManager() {
   sharedInstance = null;
+  hasRunPreReleases = false;
 }

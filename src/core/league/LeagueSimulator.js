@@ -489,25 +489,9 @@ class LeagueSimulator {
       console.log(`📆 MATCH WEEK ${week.weekNumber} - ${week.date}`);
       console.log('═'.repeat(80));
 
-      // V2: Transfer window management and weekly transfer cycle (Weeks 10-12)
+      // Update transfer manager's current week tracking
       if (this.transferManager) {
         this.transferManager.setCurrentWeek(week.weekNumber);
-
-        // Open window at Week 10
-        if (week.weekNumber === 10) {
-          this.transferManager.openWindow('midSeason');
-        }
-
-        // Run weekly transfer cycle during window (Weeks 10-12)
-        if (week.weekNumber >= 10 && week.weekNumber <= 12 && this.transferManager.transferMarket.windowOpen) {
-          const teams = Object.values(clubsMap);
-          await this.transferManager.processWeeklyTransferCycle(teams, week.weekNumber);
-        }
-
-        // Close window after Week 12
-        if (week.weekNumber === 13) {
-          this.transferManager.closeWindow();
-        }
       }
 
       // Simulate all matches in this week

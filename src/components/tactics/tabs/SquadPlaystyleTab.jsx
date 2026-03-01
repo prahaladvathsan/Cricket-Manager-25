@@ -177,7 +177,7 @@ const SquadPlaystyleTab = ({ teamId, teamPlayers, onPlayerClick }) => {
               <h4 className="font-semibold text-text-primary mb-1">Player Conditions Guide:</h4>
               <div className="flex items-center gap-2">
                 <div className="w-10 h-1.5 bg-gray-700 rounded-sm overflow-hidden flex-shrink-0"><div className="h-full bg-[#22C55E]" style={{ width: '75%' }}></div></div>
-                <span><strong className="text-green-500">Green Bar:</strong> Energy/Fitness - Affects performance & fatigue buildup</span>
+                <span><strong className="text-green-500">Green Bar:</strong> Fatigue - High fatigue reduces performance & increases injury risk</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-10 h-1.5 bg-gray-700 rounded-sm overflow-hidden flex-shrink-0"><div className="h-full bg-[#D4AF37]" style={{ width: '75%' }}></div></div>

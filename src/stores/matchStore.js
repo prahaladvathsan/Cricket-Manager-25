@@ -683,6 +683,22 @@ const useMatchStore = create(
   })),
 
   /**
+   * Set entire match conditions object
+   * @param {Object} conditions - Entire match conditions object
+   */
+  setMatchConditions: (conditions) => set(() => ({
+    matchConditions: conditions
+  })),
+
+  /**
+   * Set match tracking object
+   * @param {Object} tracking - Match tracking object
+   */
+  setMatchTracking: (tracking) => set(() => ({
+    matchTracking: tracking
+  })),
+
+  /**
    * Set modifier breakdown for UI display
    * @param {Object} breakdown - Modifier breakdown { striker, bowler, strikerName, bowlerName }
    */

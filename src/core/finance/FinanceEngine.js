@@ -44,6 +44,7 @@ export default class FinanceEngine {
         teamName: team.name,
         currentBudget: initialBudget,
         initialBudget: this.config.initialBudgets.seasonStart,
+        annualBudget: initialBudget, // Total budget before salaries (used for budget penalty calc)
 
         // Revenue tracking
         totalRevenue: sponsorshipRevenue,
@@ -58,6 +59,8 @@ export default class FinanceEngine {
         auctionSpending: 0,
         transferSpending: 0,
         transferEarnings: 0, // Money received from selling players
+        salaryExpenses: 0,
+        releaseEarnings: 0,
 
         // Performance tracking (for revenue calculation)
         matchesPlayed: 0,
@@ -354,52 +357,115 @@ export default class FinanceEngine {
     const buyerFinance = this.teamFinances.get(buyerTeamId);
     if (!buyerFinance) return false;
 
-    // Validate buyer budget
-    if (transferFee > buyerFinance.currentBudget) {
-      console.error(`Team ${buyerTeamId} cannot afford transfer fee of $${transferFee}`);
+    // Half-price economics: transferFee = full annual salary (winning bid)
+    // Actual money exchanged is half (half-year salary)
+    const halfFee = Math.round(transferFee / 2);
+
+    // Validate buyer budget against half fee
+    if (halfFee > buyerFinance.currentBudget) {
+      console.error(`Team ${buyerTeamId} cannot afford transfer fee of $${halfFee} (half of $${transferFee})`);
       return false;
     }
 
-    // Deduct from buyer
-    buyerFinance.currentBudget -= transferFee;
-    buyerFinance.transferSpending += transferFee;
-    buyerFinance.totalExpenses += transferFee;
+    // Deduct half fee from buyer
+    buyerFinance.currentBudget -= halfFee;
+    buyerFinance.transferSpending += halfFee;
+    buyerFinance.totalExpenses += halfFee;
 
     this.recordTransaction({
       type: 'expense_transfer_purchase',
       teamId: buyerTeamId,
-      amount: -transferFee,
-      description: `Purchased ${player.name}${sellerTeamId ? ` from ${sellerTeamId}` : ''}`,
+      amount: -halfFee,
+      description: `Purchased ${player.name}${sellerTeamId ? ` from ${sellerTeamId}` : ''} (half-year salary)`,
       metadata: {
         playerId: player.id,
         sellerTeamId,
-        transferFee
+        transferFee,
+        halfFee
       }
     });
 
-    // Credit seller if applicable
+    // Credit seller half fee if applicable
     if (sellerTeamId) {
       const sellerFinance = this.teamFinances.get(sellerTeamId);
       if (sellerFinance) {
-        sellerFinance.currentBudget += transferFee;
-        sellerFinance.transferEarnings += transferFee;
-        sellerFinance.totalRevenue += transferFee;
+        sellerFinance.currentBudget += halfFee;
+        sellerFinance.transferEarnings += halfFee;
+        sellerFinance.totalRevenue += halfFee;
 
         this.recordTransaction({
           type: 'revenue_transfer_sale',
           teamId: sellerTeamId,
-          amount: transferFee,
-          description: `Sold ${player.name} to ${buyerTeamId}`,
+          amount: halfFee,
+          description: `Sold ${player.name} to ${buyerTeamId} (half-year salary)`,
           metadata: {
             playerId: player.id,
             buyerTeamId,
-            transferFee
+            transferFee,
+            halfFee
           }
         });
       }
     }
 
     return true;
+  }
+
+  /**
+   * Deduct squad salaries for a team at season start
+   * @param {string} teamId - Team ID
+   * @param {number} totalSalary - Total squad salary (sum of soldPrice)
+   * @returns {boolean} Success status
+   */
+  deductSquadSalaries(teamId, totalSalary) {
+    const finance = this.teamFinances.get(teamId);
+    if (!finance) return false;
+
+    finance.currentBudget -= totalSalary;
+    finance.salaryExpenses = totalSalary;
+    finance.totalExpenses += totalSalary;
+
+    this.recordTransaction({
+      type: 'expense_salary',
+      teamId,
+      amount: -totalSalary,
+      description: `Squad salary deduction for season`,
+      metadata: { totalSalary }
+    });
+
+    return true;
+  }
+
+  /**
+   * Process a player release — recoup 30% of half-year salary
+   * @param {string} teamId - Team releasing the player
+   * @param {Object} player - Player being released
+   * @returns {number} Amount recouped
+   */
+  processPlayerRelease(teamId, player) {
+    const finance = this.teamFinances.get(teamId);
+    if (!finance) return 0;
+
+    const soldPrice = player.soldPrice || 0;
+    const recoup = Math.round(soldPrice * 0.5 * 0.3); // 30% of half-year salary
+
+    finance.currentBudget += recoup;
+    finance.releaseEarnings = (finance.releaseEarnings || 0) + recoup;
+    finance.totalRevenue += recoup;
+
+    this.recordTransaction({
+      type: 'revenue_player_release',
+      teamId,
+      amount: recoup,
+      description: `Released ${player.name} (recouped $${(recoup / 1000).toFixed(0)}K)`,
+      metadata: {
+        playerId: player.id,
+        soldPrice,
+        recoup
+      }
+    });
+
+    return recoup;
   }
 
   /**
@@ -525,14 +591,16 @@ export default class FinanceEngine {
           broadcast: finance.broadcastRevenue,
           prizeMoneyWins: finance.prizeMoneyWins,
           prizeMoneySeasonEnd: finance.prizeMoneySeasonEnd,
-          transferSales: finance.transferEarnings
+          transferSales: finance.transferEarnings,
+          playerReleases: finance.releaseEarnings || 0
         }
       },
       expenses: {
         total: finance.totalExpenses,
         breakdown: {
           auction: finance.auctionSpending,
-          transfers: finance.transferSpending
+          transfers: finance.transferSpending,
+          salaries: finance.salaryExpenses || 0
         }
       },
       performance: {

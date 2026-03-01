@@ -5,9 +5,10 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, TrendingUp, Check, Ban } from 'lucide-react';
+import { Search, X, TrendingUp } from 'lucide-react';
 import useTransferStore from '../../stores/transferStore';
 import useFinanceStore from '../../stores/financeStore';
+import useGameStore from '../../stores/gameStore';
 import PlayerName from '../shared/PlayerName';
 import TeamName from '../shared/TeamName';
 import BidModal from './BidModal';
@@ -49,19 +50,22 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
     return filtered;
   }, [activeListings, searchQuery, roleFilter]);
 
-  // Calculate time remaining
-  const getTimeRemaining = (expiresAt) => {
-    const now = Date.now();
-    const expires = new Date(expiresAt).getTime();
-    const diff = expires - now;
-
-    if (diff <= 0) return 'Expired';
-
+  // Calculate time remaining using game-days
+  // Returns { text, isToday } for styling
+  const getTimeRemaining = (listing) => {
+    const currentGameDay = useGameStore.getState().gameDay;
+    if (listing.createdOnGameDay) {
+      const elapsed = currentGameDay - listing.createdOnGameDay;
+      const remaining = (listing.durationDays || 14) - elapsed;
+      if (remaining <= 0) return { text: 'Today', isToday: true };
+      return { text: `${remaining}d`, isToday: false };
+    }
+    // Fallback for legacy listings without game-day info
+    const diff = new Date(listing.expiresAt).getTime() - Date.now();
+    if (diff <= 0) return { text: 'Today', isToday: true };
     const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-
-    if (days > 0) return `${days}d ${hours}h`;
-    return `${hours}h`;
+    if (days > 0) return { text: `${days}d`, isToday: false };
+    return { text: 'Today', isToday: true };
   };
 
   // Handle bid
@@ -81,44 +85,6 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
     }
   };
 
-  // Handle accept bid
-  const handleAcceptBid = (listing) => {
-    if (!listing.currentBidder) {
-      alert('No bids to accept');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Accept bid of $${(listing.currentBid / 1000).toFixed(0)}K for ${listing.player.name}?`
-    );
-
-    if (confirmed) {
-      const result = transferHandler.acceptBid(userTeamId, listing.id);
-      if (!result.success) {
-        alert(result.error || 'Failed to accept bid');
-      }
-    }
-  };
-
-  // Handle cancel listing
-  const handleCancelListing = (listing) => {
-    if (listing.bids.length > 0) {
-      alert('Cannot cancel listing with active bids');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Cancel listing for ${listing.player.name}?`
-    );
-
-    if (confirmed) {
-      const result = transferHandler.cancelListing(userTeamId, listing.id);
-      if (!result.success) {
-        alert(result.error || 'Failed to cancel listing');
-      }
-    }
-  };
-
   // Separate user's listings for stats
   const userListingsCount = filteredListings.filter(l => l.teamId === userTeamId).length;
 
@@ -129,7 +95,7 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
       label: 'Player',
       sortKey: 'player.name',
       render: (listing) => (
-        <PlayerName playerId={listing.player.id} className="text-text-primary font-medium" />
+        <PlayerName playerId={listing.player.id} className="text-text-primary font-medium" initialTab="transfers" />
       ),
     },
     {
@@ -157,10 +123,8 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
       key: 'seller',
       label: 'Seller',
       sortKey: 'teamId',
-      render: (listing) => listing.teamId === userTeamId ? (
-        <span className="text-cricket-accent font-semibold">You</span>
-      ) : (
-        <TeamName teamId={listing.teamId} className="text-text-secondary" />
+      render: (listing) => (
+        <TeamName teamId={listing.teamId} className="text-text-secondary" showYouSuffix />
       ),
     },
     {
@@ -202,57 +166,47 @@ const MarketplaceView = ({ userTeamId, transferHandler }) => {
       ),
     },
     {
+      key: 'highestBidder',
+      label: 'Top Bidder',
+      align: 'center',
+      render: (listing) => listing.currentBidder
+        ? <TeamName teamId={listing.currentBidder} className="text-xs" showYouSuffix />
+        : <span className="text-text-tertiary text-xs">-</span>
+    },
+    {
       key: 'time',
-      label: 'Time',
+      label: 'Expires',
       sortKey: 'expiresAt',
       align: 'center',
-      render: (listing) => (
-        <span className="text-text-secondary text-xs">
-          {getTimeRemaining(listing.expiresAt)}
-        </span>
-      ),
+      render: (listing) => {
+        const { text, isToday } = getTimeRemaining(listing);
+        return (
+          <span className={`text-xs font-medium ${isToday ? 'text-red-400' : 'text-text-secondary'}`}>
+            {text}
+          </span>
+        );
+      },
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: '',
       sortable: false,
       align: 'center',
       render: (listing) => {
         const isOwnListing = listing.teamId === userTeamId;
-        const hasBids = listing.bids.length > 0;
 
         if (isOwnListing) {
-          return (
-            <div className="flex items-center justify-center gap-1">
-              {hasBids ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAcceptBid(listing); }}
-                  className="flex items-center gap-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                >
-                  <Check className="w-3 h-3" />
-                  <span>Accept</span>
-                </button>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleCancelListing(listing); }}
-                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                >
-                  <Ban className="w-3 h-3" />
-                  <span>Cancel</span>
-                </button>
-              )}
-            </div>
-          );
-        } else {
-          return (
-            <button
-              onClick={(e) => { e.stopPropagation(); handlePlaceBid(listing); }}
-              className="bg-cricket-accent hover:bg-cricket-accent-dark text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-            >
-              Bid
-            </button>
-          );
+          return null;
         }
+
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); handlePlaceBid(listing); }}
+            className="bg-cricket-accent hover:bg-cricket-accent-dark text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+          >
+            Bid
+          </button>
+        );
       },
     },
   ];

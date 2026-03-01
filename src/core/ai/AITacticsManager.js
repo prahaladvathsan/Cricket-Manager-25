@@ -3,7 +3,7 @@
  * @description Multi-stage pre-match tactics pipeline for AI teams
  *
  * 5-Stage Pipeline:
- * 1. Playing XI Selection (60% primary role rating + 40% playstyle fit - role gap penalty - fitness penalty)
+ * 1. Playing XI Selection (60% primary role rating + 40% playstyle fit - role gap penalty - fatigue penalty)
  * 2. Playstyle Revision + C/VC/WK Assignment
  * 3. Batting Order + Acceleration Tiers
  * 4. Bowling Over Assignment + Plans
@@ -22,7 +22,7 @@ class AITacticsManager {
   /**
    * Generate a hash from squad state (player IDs + injury status)
    * Used to detect when tactics need to be regenerated
-   * Note: We don't include fitness as it changes daily and would cause excessive cache misses
+   * Note: We don't include fatigue as it changes daily and would cause excessive cache misses
    * @param {Object[]} squad - Full squad
    * @returns {string} Hash string
    * @private
@@ -133,7 +133,7 @@ class AITacticsManager {
 
   /**
    * Select optimal Playing XI from squad
-   * Formula: 50% primary role rating + 50% playstyle fit - role gap penalty - fitness penalty
+   * Formula: 50% primary role rating + 50% playstyle fit - role gap penalty - fatigue penalty
    * Includes refinement iterations to optimize final selection
    * @param {Object[]} squad - Full squad
    * @returns {Object[]} Selected 11 players
@@ -260,10 +260,10 @@ class AITacticsManager {
     // Role gap penalty
     const roleGapPenalty = this._calculateRoleGapPenalty(player, composition, config.roleGapPenalty);
 
-    // Fitness penalty
-    const fitnessPenalty = aiCore.getFitnessPenalty(player);
+    // Fatigue penalty
+    const fatiguePenalty = aiCore.getFatiguePenalty(player);
 
-    const totalScore = baseScore + playstyleFitScore - roleGapPenalty - fitnessPenalty;
+    const totalScore = baseScore + playstyleFitScore - roleGapPenalty - fatiguePenalty;
 
     return totalScore;
   }
@@ -288,8 +288,8 @@ class AITacticsManager {
     const playstyleFitRaw = this._calculatePlaystyleFitScore(player, othersInXI);
     const playstyleFitScore = playstyleFitRaw * weights.playstyleFit;
     const roleGapPenalty = this._calculateRoleGapPenalty(player, composition, config.roleGapPenalty);
-    const fitnessPenalty = aiCore.getFitnessPenalty(player);
-    const totalScore = baseScore + playstyleFitScore - roleGapPenalty - fitnessPenalty;
+    const fatiguePenalty = aiCore.getFatiguePenalty(player);
+    const totalScore = baseScore + playstyleFitScore - roleGapPenalty - fatiguePenalty;
 
     const result = {
       primaryRating,
@@ -297,7 +297,7 @@ class AITacticsManager {
       playstyleFitRaw,
       playstyleFitScore,
       roleGapPenalty,
-      fitnessPenalty,
+      fatiguePenalty,
       totalScore,
       weights
     };
