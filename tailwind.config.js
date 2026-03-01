@@ -23,7 +23,7 @@ export default {
         // Background hierarchy
         bg: {
           primary: '#0F1419',
-          secondary: '#00000066',
+          secondary: 'rgba(0, 0, 0, 0.4)',
           tertiary: '#242B33',
           hover: '#2D3540',
         },
