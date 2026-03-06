@@ -161,6 +161,12 @@ This master reference document contains:
 - **Wicket-keepers show fielding playstyle** (not bowling) as secondary
 - **Default to compact spacing** (`space-y-2`, `gap-2`, `p-2`)
 
+### Season Initialization Architecture (CRITICAL)
+
+Season 1 uses **`src/components/layout/Home.jsx`** for event scheduling. Subsequent seasons use **`src/utils/LeagueInitializer.js`**. These must stay in sync — any calendar event added to one must be mirrored in the other (e.g. `offseason_start`, `transfer_window_close`, `retention_start`).
+
+**`season_end` rule**: NEVER pre-schedule a `season_end` event in either file. It is dynamically scheduled by `leagueStore.recordResult()` the day after the playoff Final completes. Pre-scheduling it causes the season summary modal to fire twice.
+
 ### Configuration-Driven Development
 - **ALL probabilities** must be in `src/data/config/*.json` files
 - **NEVER hardcode probabilities** in code - import from configs
@@ -194,6 +200,8 @@ The game has **two progression modes** that must produce identical outcomes:
 
 **Testing requirement**: Any change to game flow must be verified in both modes to ensure identical outcomes.
 
+**Transfer Manager Singleton**: All code paths must use `getTransferManager()` from `src/core/finance/transferManagerSingleton.js`. Never instantiate `TransferManager` directly — in-memory window state (purchase prices, open windows) will desync between Header.jsx, SimulationEngine.js, and UI components.
+
 ### Clickable Entity Components (CRITICAL)
 
 **NEVER hardcode `player.name` or `team.name`. ALWAYS use:**
@@ -203,6 +211,8 @@ The game has **two progression modes** that must produce identical outcomes:
 This ensures consistent clickable behavior across all screens (Football Manager pattern).
 
 **See `docs/frontend/ui-components-reference.md` for complete PlayerName/TeamName API and usage examples.**
+
+**ContextualTip placement**: `useScreenTip` tips must be rendered in the component that **actually renders** at that route. If a parent component early-returns a different child (e.g. `return <TransferMarketView>`), any tip placed after that early return is dead code and will never show. Always place tips inside the leaf component that is guaranteed to render.
 
 ### Data Processing
 - Player database processing is **external** (`cricket-data-processor` module adjacent to this repo)
@@ -299,11 +309,11 @@ See `docs/dev/testing.md` for testing guidelines.
 
 ## Version Updates & Patch Notes
 
-**Current Version**: 1.2.0 (March 2026)
+**Current Version**: 1.2.1 (March 2026)
 
 **When releasing a new version**, update these files:
 1. `src/components/menu/PatchNotesModal.jsx` - Update `CURRENT_VERSION`, `RELEASE_DATE`, `RELEASE_TAGLINE`, and `PATCH_NOTES` array
-2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.2.0`)
+2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.2.1`)
 
 The version indicator on the start menu is an animated, clickable badge that opens a patch notes modal with feature highlights, improvements, and release notes.
 
@@ -317,5 +327,5 @@ The version indicator on the start menu is an animated, clickable badge that ope
 
 ---
 
-**Current Phase**: Phase 5 - Frontend UI (Match View, State Persistence, 2D Visualization)
-**Last Updated**: February 2026
+**Current Phase**: Phase 5 - Polish & Systems (Tutorial system, UI consistency, bug fixes)
+**Last Updated**: March 2026

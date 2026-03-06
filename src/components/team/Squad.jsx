@@ -5,12 +5,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Tag, Activity } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Activity } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useFinanceStore from '../../stores/financeStore';
-import useTransferStore from '../../stores/transferStore';
-import { useTransferSystem } from '../../hooks/useTransferSystem';
 import PlayerCard from '../shared/PlayerCard';
 import PlaystyleBadge from '../shared/PlaystyleBadge';
 import CountryFlag from '../shared/CountryFlag';
@@ -31,7 +29,7 @@ const Squad = () => {
   // Update tab when URL changes
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['squad', 'condition', 'team-info', 'statistics'].includes(tabParam)) {
+    if (tabParam && ['squad', 'condition', 'team-info'].includes(tabParam)) {
       setSelectedTab(tabParam);
     }
   }, [searchParams]);
@@ -49,80 +47,18 @@ const Squad = () => {
   const [statsRoleFilter, setStatsRoleFilter] = useState('all');
   const [minQualifying, setMinQualifying] = useState(1);
 
-  // Transfer listing modal state
-  const [showListingModal, setShowListingModal] = useState(false);
-  const [selectedPlayerForListing, setSelectedPlayerForListing] = useState(null);
-  const [listingPrice, setListingPrice] = useState('');
-
   const { getUserTeam } = useTeamStore();
   const players = usePlayerStore(state => state.players);
   const careerStats = usePlayerStore(state => state.careerStats);
   const currentSeasonId = usePlayerStore(state => state.currentSeasonId);
   const { getPlayersByTeam } = usePlayerStore();
   const getTeamFinances = useFinanceStore(state => state.getTeamFinances);
-  const transferWindow = useTransferStore(state => state.transferWindow);
-  const activeListings = useTransferStore(state => state.activeListings);
-  const { transferHandler, transferMarket, isReady } = useTransferSystem();
-
   const userTeam = getUserTeam();
   const squadPlayers = userTeam ? getPlayersByTeam(userTeam.id) : [];
   const finances = userTeam ? getTeamFinances(userTeam.id) : null;
 
   // Tutorial: Screen tip for first-time visitors
   const { shouldShow: showTip, dismiss: dismissTip } = useScreenTip('squad');
-
-  // Check if transfer window is open — use only the authoritative store flag,
-  // not a hardcoded week range. The flag is set by Header.jsx/SimulationEngine.js.
-  const isTransferWindowOpen = transferWindow?.isOpen === true;
-
-  // Handle listing player for transfer
-  const handleListPlayer = (player) => {
-    setSelectedPlayerForListing(player);
-    setListingPrice(''); // Reset price
-    setShowListingModal(true);
-  };
-
-  // Confirm listing
-  const confirmListing = () => {
-    if (!selectedPlayerForListing || !userTeam || !listingPrice || !transferMarket) return;
-
-    const price = parseFloat(listingPrice) * 1000; // Convert from K to actual value
-    if (isNaN(price) || price < 50000) {
-      alert('Minimum listing price is $50K');
-      return;
-    }
-
-    const result = transferHandler.listPlayerForSale(userTeam.id, selectedPlayerForListing.id, price);
-
-    if (result.success) {
-      setShowListingModal(false);
-      setSelectedPlayerForListing(null);
-      setListingPrice('');
-      // Success notification handled via inbox message
-    } else {
-      alert(result.error || 'Failed to list player');
-    }
-  };
-
-  // Handle releasing a player
-  const handleReleasePlayer = (player) => {
-    if (!transferHandler || !userTeam) return;
-
-    const recoup = Math.round((player.soldPrice || 0) * 0.5 * 0.3);
-    const confirmed = window.confirm(
-      `Release ${player.name} from your squad?\n\n` +
-      (recoup > 0 ? `You will recoup $${(recoup / 1000).toFixed(0)}K.\n` : '') +
-      `The player will become a free agent.`
-    );
-
-    if (confirmed) {
-      const result = transferHandler.releasePlayer(userTeam.id, player.id);
-      if (!result.success) {
-        alert(result.error || 'Failed to release player');
-      }
-      // Success notification handled via inbox message
-    }
-  };
 
   // Toggle category collapse
   const toggleCategory = (categoryName) => {
@@ -257,8 +193,7 @@ const Squad = () => {
   const tabs = [
     { id: 'squad', label: 'Squad Overview', icon: Users },
     { id: 'condition', label: 'Condition', icon: Activity },
-    { id: 'team-info', label: 'Team Info', icon: Target },
-    { id: 'statistics', label: 'Statistics', icon: TrendingUp }
+    { id: 'team-info', label: 'Team Info', icon: Target }
   ];
 
   if (!userTeam) {
@@ -273,13 +208,6 @@ const Squad = () => {
   }
 
   const renderSquadOverview = () => {
-    // Build a Set of listed player IDs for the user team (for quick lookup)
-    const listedPlayerIds = new Set(
-      activeListings
-        .filter(l => l.teamId === userTeam?.id && l.status === 'active')
-        .map(l => l.playerId)
-    );
-
     // Helper: get current season stats for a player
     const getSeasonStats = (playerId) =>
       careerStats[playerId]?.seasons?.[currentSeasonId] || null;
@@ -501,48 +429,6 @@ const Squad = () => {
         cellClassName: 'px-1 py-1'
       }
     ];
-
-    // Add actions column if transfer window is open
-    if (isTransferWindowOpen) {
-      squadColumns.push({
-        key: 'actions',
-        label: 'Actions',
-        sortKey: 'id',
-        sortable: false,
-        align: 'center',
-        render: (player) => {
-          const isListed = listedPlayerIds.has(player.id);
-
-          if (isListed) {
-            return (
-              <span className="flex items-center gap-1 text-xs text-green-400 font-medium">
-                <Tag className="w-3 h-3" />
-                Listed
-              </span>
-            );
-          }
-
-          return (
-            <div className="flex flex-col items-center gap-0.5">
-              <button
-                onClick={() => handleListPlayer(player)}
-                className="flex items-center gap-1 px-2 py-0.5 text-xs bg-cricket-accent hover:bg-cricket-accent-dark text-white rounded transition-colors w-full justify-center"
-              >
-                <Tag className="w-3 h-3" />
-                <span>List</span>
-              </button>
-              <button
-                onClick={() => handleReleasePlayer(player)}
-                className="flex items-center gap-1 px-2 py-0.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors w-full justify-center"
-              >
-                <span>Release</span>
-              </button>
-            </div>
-          );
-        },
-        cellClassName: 'px-2 py-1'
-      });
-    }
 
     // Filter component
     const filterComponent = (
@@ -1076,28 +962,23 @@ const Squad = () => {
       <h1 className="sr-only">Team Squad</h1>
       {/* Tab Navigation */}
       <div className="border-b border-border-primary">
-        <nav className="flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedTab(tab.id)}
-                  className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${selectedTab === tab.id
-                    ? 'border-cricket-accent text-cricket-accent'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
+        <nav className="flex">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 border-b-2 font-medium text-sm transition-colors ${selectedTab === tab.id
+                  ? 'border-cricket-accent text-cricket-accent'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
@@ -1105,7 +986,6 @@ const Squad = () => {
       {selectedTab === 'squad' && renderSquadOverview()}
       {selectedTab === 'condition' && renderCondition()}
       {selectedTab === 'team-info' && renderTeamInfo()}
-      {selectedTab === 'statistics' && renderStatistics()}
 
 
 
@@ -1118,60 +998,6 @@ const Squad = () => {
         }}
         playerId={selectedPlayerId}
       />
-
-      {/* List for Transfer Modal */}
-      {showListingModal && selectedPlayerForListing && (
-        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-          <div className="card p-4 max-w-md w-full">
-            <h3 className="text-lg font-bold text-text-primary mb-3">List Player for Transfer</h3>
-
-            <div className="mb-3">
-              <div className="text-base font-semibold text-text-primary">{selectedPlayerForListing.name}</div>
-              <div className="text-xs text-text-tertiary mt-0.5">
-                {selectedPlayerForListing.role}
-                {selectedPlayerForListing.soldPrice > 0 && ` · Bought for $${(selectedPlayerForListing.soldPrice / 1000).toFixed(0)}K`}
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-sm text-text-secondary mb-1">Asking Price (in $K)</label>
-              <input
-                type="number"
-                value={listingPrice}
-                onChange={(e) => setListingPrice(e.target.value)}
-                placeholder={selectedPlayerForListing.soldPrice > 0 ? `e.g. ${Math.round(selectedPlayerForListing.soldPrice / 1000)}` : 'e.g. 500'}
-                min="50"
-                className="w-full card border border-border-primary px-3 py-2 text-text-primary focus:outline-none focus:border-cricket-accent"
-              />
-              <div className="text-xs text-text-tertiary mt-1">Minimum: $50K</div>
-            </div>
-
-            <div className="mb-3 p-2 bg-bg-tertiary rounded text-xs text-text-secondary">
-              The listing lasts 14 days. If bids come in, the highest bid is automatically accepted when the listing expires. If no bids, the player is released to free agency.
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={confirmListing}
-                disabled={!listingPrice || parseFloat(listingPrice) < 50}
-                className="flex-1 bg-cricket-accent hover:bg-cricket-accent-dark text-white py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                List for Transfer
-              </button>
-              <button
-                onClick={() => {
-                  setShowListingModal(false);
-                  setSelectedPlayerForListing(null);
-                  setListingPrice('');
-                }}
-                className="flex-1 card border border-border-primary text-text-secondary hover:text-text-primary py-2 rounded font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Contextual Tip for first visit */}
       {showTip && (

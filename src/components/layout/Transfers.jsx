@@ -1225,23 +1225,21 @@ const Transfers = () => {
 
       {/* Tabs */}
       <div className="auction-tab-nav border-b border-border-primary">
-        <nav className="flex gap-2">
+        <nav className="flex">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-cricket-accent text-cricket-accent'
                     : 'border-transparent text-text-secondary hover:text-text-primary'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </div>
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
@@ -2207,6 +2205,7 @@ const Transfers = () => {
           onDismiss={dismissTip}
         />
       )}
+
     </div>
   );
 };

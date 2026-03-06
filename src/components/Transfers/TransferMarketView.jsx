@@ -14,9 +14,11 @@ import MarketplaceView from './MarketplaceView';
 import MyListingsView from './MyListingsView';
 import FreeAgencyView from './FreeAgencyView';
 import CompletedTransfersView from './CompletedTransfersView';
+import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
 
 const TransferMarketView = ({ transferHandler }) => {
   const [activeTab, setActiveTab] = useState('marketplace');
+  const { shouldShow: showWindowTip, dismiss: dismissWindowTip } = useScreenTip('transferWindow');
 
   // Store state
   const {
@@ -176,6 +178,16 @@ const TransferMarketView = ({ transferHandler }) => {
           <CompletedTransfersView />
         )}
       </div>
+
+      {/* Transfer Window contextual tip - first time user sees the market */}
+      {showWindowTip && (
+        <ContextualTip
+          title={screenTips.transferWindow.title}
+          icon={screenTips.transferWindow.icon}
+          tips={screenTips.transferWindow.tips}
+          onDismiss={dismissWindowTip}
+        />
+      )}
 
       {/* Transfer Activity Summary (Footer) */}
       <div className="mt-3 card p-2">

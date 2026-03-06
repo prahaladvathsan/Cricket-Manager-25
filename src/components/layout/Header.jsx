@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Save, ChevronRight, Users, Play, FastForward, ArrowLeft, ChevronDown, Coffee, AlertTriangle } from 'lucide-react';
+import { Settings, Save, ChevronRight, Users, Play, FastForward, ArrowLeft, ChevronDown, Coffee, AlertTriangle, ArrowLeftRight, Shield, X } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 import useTeamStore from '../../stores/teamStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -46,6 +46,7 @@ const Header = () => {
   const [showSeasonSummary, setShowSeasonSummary] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [eventAnnouncement, setEventAnnouncement] = useState(null); // { title, body, icon, ctaLabel, ctaPath }
   const dropdownRef = useRef(null);
 
   // Animation states for visual feedback
@@ -592,6 +593,22 @@ const Header = () => {
 
       useTeamStore.getState().setTeamRetentions(initialRetentions);
       useGameStore.getState().startRetentionPhase();
+
+      // Inbox message + popup announcement before navigating
+      addMessage({
+        type: 'board',
+        subject: '🏏 Retention Phase Begins',
+        body: `Season ${event.data.season} is approaching. Before the auction, you can retain key players from your squad at a negotiated salary. Head to the Retention screen to decide who to keep and at what price.`,
+        sender: 'Board of Directors',
+        metadata: { link: '/game/retention' }
+      });
+      setEventAnnouncement({
+        title: 'Retention Phase Begins',
+        body: `Retain your best players before Season ${event.data.season}'s auction. Negotiate salaries and lock in your key performers.`,
+        Icon: Shield,
+        ctaLabel: 'Go to Retention',
+        ctaPath: '/game/retention'
+      });
       navigate('/game/retention');
     } else if (event && event.type === 'new_season_start') {
       // Guard: Don't start new season if playoffs haven't completed
@@ -682,6 +699,22 @@ const Header = () => {
         // Sync Zustand store so the Transfers page renders the marketplace
         useTransferStore.getState().openTransferWindow(currentWeek, currentWeek + 4, gameDay);
         console.log(`🔓 Transfer window opened on gameDay ${gameDay} (Week ${currentWeek})`);
+
+        // Inbox message + popup announcement
+        addMessage({
+          type: 'transfer',
+          subject: '🔓 Transfer Window Now Open',
+          body: 'The off-season transfer window is now open for 5 weeks. Browse available players in the Transfer Market, list your own players for sale, or pick up free agents. Listings expire after 14 days — highest bid is automatically accepted.',
+          sender: 'League Office',
+          metadata: { link: '/game/transfers' }
+        });
+        setEventAnnouncement({
+          title: 'Transfer Window Open',
+          body: 'The off-season transfer window is now open. You have 5 weeks to buy, sell, and sign free agents.',
+          Icon: ArrowLeftRight,
+          ctaLabel: 'Go to Transfer Market',
+          ctaPath: '/game/transfers'
+        });
       }
 
       advanceDay();
@@ -1022,6 +1055,46 @@ const Header = () => {
           </div>
         </div>
       )}
+      {/* Event Announcement Modal */}
+      {eventAnnouncement && (() => {
+        const AnnouncementIcon = eventAnnouncement.Icon;
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="bg-cricket-primary/20 px-5 py-4 border-b border-border-primary flex items-center gap-3">
+              <div className="bg-cricket-accent/20 p-2 rounded-full">
+                <AnnouncementIcon className="w-5 h-5 text-cricket-accent" />
+              </div>
+              <h3 className="text-base font-bold text-text-primary flex-1">{eventAnnouncement.title}</h3>
+              <button onClick={() => setEventAnnouncement(null)} className="text-text-tertiary hover:text-text-primary">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-text-secondary mb-4">{eventAnnouncement.body}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEventAnnouncement(null);
+                    navigate(eventAnnouncement.ctaPath);
+                  }}
+                  className="flex-1 btn-primary py-2 text-sm font-semibold"
+                >
+                  {eventAnnouncement.ctaLabel}
+                </button>
+                <button
+                  onClick={() => setEventAnnouncement(null)}
+                  className="flex-1 btn-secondary py-2 text-sm"
+                >
+                  Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
+
       {/* Validation Error Modal */}
       {showValidationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
