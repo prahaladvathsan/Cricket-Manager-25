@@ -23,6 +23,7 @@ import CricketBallSpinner from './components/shared/CricketBallSpinner';
 import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
+import ClubEditorScreen from './components/menu/ClubEditorScreen';
 import Credits from './components/menu/Credits';
 import Settings from './components/menu/Settings';
 import { GameManual } from './components/manual';
@@ -226,6 +227,7 @@ function App() {
                     {/* Menu Routes (No Layout) */}
                     <Route path="/load-game" element={<LoadGame />} />
                     <Route path="/player-browser" element={<PlayerBrowser />} />
+                    <Route path="/club-editor" element={<ClubEditorScreen />} />
                     <Route path="/credits" element={<Credits />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/manual" element={<GameManual />} />
