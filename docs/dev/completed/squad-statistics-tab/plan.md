@@ -1,6 +1,6 @@
 # Squad Statistics Tab Implementation Plan
 
-**Status**: Planned
+**Status**: Superseded — Statistics tab moved to Stats Hub (Stats page) in v1.2.1. Squad page Statistics tab removed.
 **Priority**: High
 **Estimated Effort**: 4-6 hours
 **Dependencies**: playerStore.careerStats, leagueStore (for season data)

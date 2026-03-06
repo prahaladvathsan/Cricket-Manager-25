@@ -813,14 +813,14 @@ const League = () => {
 
     // Category tabs filter component
     const CategoryTabs = (
-      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-lg">
+      <div className="flex border-b border-border-primary mb-3">
         {['mvp', 'batting', 'bowling', 'fielding'].map((cat) => (
           <button
             key={cat}
             onClick={() => setLeaderboardCategory(cat)}
-            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${leaderboardCategory === cat
-              ? 'bg-cricket-primary text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+            className={`flex-1 text-center py-2 text-xs font-medium border-b-2 transition-colors ${leaderboardCategory === cat
+              ? 'border-cricket-accent text-text-primary'
+              : 'border-transparent text-text-tertiary hover:text-text-secondary'
               }`}
           >
             {cat === 'mvp' ? 'MVP' : cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -840,13 +840,6 @@ const League = () => {
 
     return (
       <div className="card p-2">
-        <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-          <Award className="w-4 h-4 text-cricket-accent" />
-          <h3 className="text-lg font-semibold text-text-primary">
-            Player Leaderboards
-          </h3>
-        </div>
-
         <SortableTable
           data={currentLeaders}
           columns={columns}
@@ -863,68 +856,58 @@ const League = () => {
     <div className="space-y-2">
       <h1 className="sr-only">League Standings & Fixtures</h1>
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-border-primary">
+      <div className="flex border-b border-border-primary">
         <button
           onClick={() => setActiveTab('standings')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'standings'
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'standings'
             ? 'border-cricket-accent text-cricket-accent'
             : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
         >
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4" />
-            <span>Standings</span>
-          </div>
+          <Trophy className="w-4 h-4" />
+          <span>Standings</span>
         </button>
         <button
           onClick={() => setActiveTab('fixtures')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'fixtures'
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'fixtures'
             ? 'border-cricket-accent text-cricket-accent'
             : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
         >
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span>Fixtures</span>
-          </div>
+          <Calendar className="w-4 h-4" />
+          <span>Fixtures</span>
         </button>
         <button
           onClick={() => setActiveTab('results')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'results'
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'results'
             ? 'border-cricket-accent text-cricket-accent'
             : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
         >
-          <div className="flex items-center gap-2">
-            <History className="w-4 h-4" />
-            <span>Results</span>
-          </div>
+          <History className="w-4 h-4" />
+          <span>Results</span>
         </button>
         <button
           onClick={() => setActiveTab('leaderboards')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'leaderboards'
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'leaderboards'
             ? 'border-cricket-accent text-cricket-accent'
             : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
         >
-          <div className="flex items-center gap-2">
-            <Award className="w-4 h-4" />
-            <span>Leaderboards</span>
-          </div>
+          <Award className="w-4 h-4" />
+          <span>Leaderboards</span>
         </button>
         {/* Playoffs Tab - Show when stage is playoffs or completed */}
         {(stage === 'playoffs' || stage === 'completed') && (
           <button
             onClick={() => setActiveTab('playoffs')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'playoffs'
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'playoffs'
               ? 'border-cricket-accent text-cricket-accent'
               : 'border-transparent text-text-secondary hover:text-text-primary'
               }`}
           >
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              <span>Playoffs</span>
-            </div>
+            <Trophy className="w-4 h-4" />
+            <span>Playoffs</span>
           </button>
         )}
       </div>

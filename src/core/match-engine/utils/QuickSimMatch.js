@@ -6,6 +6,7 @@
 
 import MatchEngine from '../core/MatchEngine.js';
 import { updatePlayerStats } from '../../../utils/MatchStatsUpdater.js';
+import { computeMatchAnalytics } from '../../../utils/matchAnalytics.js';
 
 /**
  * Auto-select best players for super over
@@ -350,6 +351,13 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
     const ballsPerSecond = matchDuration > 0 ? Math.round(totalBalls / (matchDuration / 1000)) : 0;
     console.log(`⚡ Quick-sim completed: ${totalBalls} balls in ${matchDuration}ms (${ballsPerSecond} balls/sec)`);
 
+    // Build partial result for analytics (we know battingTeam/bowlingTeam per innings)
+    const partialResult = {
+      innings1: { battingTeam: innings1.battingTeam, bowlingTeam: innings1.bowlingTeam },
+      innings2: { battingTeam: innings2.battingTeam, bowlingTeam: innings2.bowlingTeam }
+    };
+    const analytics = computeMatchAnalytics(ballByBall || [], partialResult);
+
     return {
       matchId: matchConfig.id || matchConfig.matchId,
       homeTeam: matchConfig.homeTeam.id, // Return ID, not full object
@@ -389,7 +397,9 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
         performance: performanceText
       },
       // Super over data (null if no super over occurred)
-      superOver: superOverResult
+      superOver: superOverResult,
+      // Analytics data (phase breakdown, wagon zones, per-player segments)
+      analytics
     };
   } catch (error) {
     console.error('Error quick-simulating match:', error);

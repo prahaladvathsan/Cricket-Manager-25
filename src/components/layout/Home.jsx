@@ -471,19 +471,17 @@ const Home = () => {
         const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
         const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
-        // Season ends on transfer window close date
-        const seasonEndDay = transferWindowEndDay;
-
-        // Next season auction (first day after current season ends)
+        // Next season auction (first day after transfer window closes)
         const nextSeasonStartDate = new Date(transferWindowEndDate);
         nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
         const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
+        // NOTE: season_end is NOT pre-scheduled here — it's dynamically scheduled by
+        // leagueStore.recordResult() after the Final completes (more reliable than a fixed day)
         const additionalEvents = [
           { day: offseasonStartDay, type: 'offseason_start' },
           { day: transferWindowStartDay, type: 'transfer_window_open' },
           { day: transferWindowEndDay, type: 'transfer_window_close' },
-          { day: seasonEndDay, type: 'season_end', data: { season: currentSeason } },
           { day: nextSeasonStartDay, type: 'auction', data: { season: currentSeason + 1 } }
         ];
 

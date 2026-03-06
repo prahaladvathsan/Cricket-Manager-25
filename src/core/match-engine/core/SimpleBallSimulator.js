@@ -141,12 +141,34 @@ class SimpleBallSimulator {
       // Generate commentary
       const commentary = this.generateCommentary(finalOutcome, ballContext);
 
+      // Analytics tags — always attached (used by matchAnalytics.js)
+      const phase = matchSituation.phase || this.determinePhase(matchSituation.over || 1);
+      const hitZone = trajectoryResult?.direction != null
+        ? this.computeHitZone(trajectoryResult.direction)
+        : 'midOn';
+      const strikerPlaystyle = originalStriker?.primaryPlaystyle?.batting
+        || originalStriker?.primaryPlaystyle
+        || null;
+      const bowlerPlaystyle = originalBowler?.primaryPlaystyle?.bowling
+        || originalBowler?.primaryPlaystyle
+        || null;
+      const strikerTier = tacticsState?.currentAcceleration?.[originalStriker?.id]
+        || tacticsState?.currentAcceleration?.striker
+        || null;
+      const bowlerPlan = tacticsState?.bowlingPlans?.[originalBowler?.id] || null;
+
       // In silent mode (quick-sim), omit heavyweight metadata and modifier breakdown
       // These are only needed for the live match viewer UI
       const result = {
         ...finalOutcome,
         commentary,
-        conditionUpdates: finalOutcome.conditionUpdates || {}
+        conditionUpdates: finalOutcome.conditionUpdates || {},
+        phase,
+        hitZone,
+        strikerPlaystyle,
+        bowlerPlaystyle,
+        strikerTier,
+        bowlerPlan
       };
 
       if (!this.silent) {
@@ -312,13 +334,40 @@ class SimpleBallSimulator {
 
   /**
    * Determine match phase from over number
-   * @param {number} over - Current over
-   * @returns {string} Phase (powerplay, middle, death)
+   * @param {number} over - Current over (1-based)
+   * @returns {string} Phase (powerplay | earlyMiddle | lateMiddle | death)
    */
   determinePhase(over) {
     if (over <= 6) return 'powerplay';
-    if (over >= 17) return 'death';
-    return 'middle';
+    if (over <= 12) return 'earlyMiddle';
+    if (over <= 16) return 'lateMiddle';
+    return 'death';
+  }
+
+  /**
+   * Compute hit zone from shot direction angle.
+   *
+   * Direction system (same as FieldingCalculator2D theta / BallTrajectoryPhysics):
+   *   0°   = +x = leg side (right for right-handed batter)
+   *   90°  = +y = toward fine leg (behind batter, leg side)
+   *   180° = -x = off side (left for right-handed batter)
+   *   270° = -y = toward bowler / straight (mid-on / mid-off region)
+   *
+   * Boundaries derived from actual fielding-positions-complete.json coordinates
+   * (midpoints between adjacent fielder angles):
+   *   midWicket 319.5° | fineLeg 63.0° | point 181.9° | cover 216.4° | midOff 249.5° | midOn 291.2°
+   *
+   * @param {number} direction - Shot direction in degrees
+   * @returns {string} fineLeg | point | cover | midOff | midOn | midWicket
+   */
+  computeHitZone(direction) {
+    const d = ((direction % 360) + 360) % 360;
+    if (d >= 11 && d < 122)  return 'fineLeg';   // ~63°  centre: leg side behind square
+    if (d >= 122 && d < 199) return 'point';      // ~182° centre: off side behind square
+    if (d >= 199 && d < 233) return 'cover';      // ~216° centre: off side forward of square
+    if (d >= 233 && d < 270) return 'midOff';     // ~250° centre: straight off (toward bowler)
+    if (d >= 270 && d < 305) return 'midOn';      // ~291° centre: straight on (toward bowler)
+    return 'midWicket';                           // ~320° centre: leg side square (305-360 and 0-11)
   }
 
   /**

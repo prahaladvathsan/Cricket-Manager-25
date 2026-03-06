@@ -17,6 +17,7 @@ import RetentionEngine from '../../core/retention/RetentionEngine';
 import RetentionAI from '../../core/retention/RetentionAI';
 import { evaluateOffer } from '../../core/retention/PlayerAcceptance';
 import retentionConfig from '../../data/config/retentionConfig.json';
+import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
 
 const retentionEngine = new RetentionEngine();
 const retentionAI = new RetentionAI();
@@ -32,6 +33,9 @@ const RetentionView = () => {
   const [playerResponse, setPlayerResponse] = useState(null);
   const [attemptNumber, setAttemptNumber] = useState(1);
   const [confirmAction, setConfirmAction] = useState(null); // { type, playerId, playerName }
+
+  // Tutorial
+  const { shouldShow: showRetentionTip, dismiss: dismissRetentionTip } = useScreenTip('retention');
 
   // Store state
   const { teamRetentions, confirmRetention, releaseToPool } = useTeamStore();
@@ -172,7 +176,7 @@ const RetentionView = () => {
     },
     {
       key: 'marketValue',
-      label: 'Market Value',
+      label: 'Expected Salary',
       sortKey: 'marketValue',
       render: (row) => <span className="text-trophy-gold font-medium">{formatMoney(row.marketValue)}</span>
     },
@@ -367,6 +371,16 @@ const RetentionView = () => {
             setPlayerResponse(null);
             setAttemptNumber(1);
           }}
+        />
+      )}
+
+      {/* Retention contextual tip - first time visiting retention screen */}
+      {showRetentionTip && (
+        <ContextualTip
+          title={screenTips.retention.title}
+          icon={screenTips.retention.icon}
+          tips={screenTips.retention.tips}
+          onDismiss={dismissRetentionTip}
         />
       )}
     </div>

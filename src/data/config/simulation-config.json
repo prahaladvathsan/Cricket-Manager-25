@@ -38,13 +38,18 @@
         "fieldRestrictions": true,
         "aggressionBonus": 0.2
       },
-      "middle": {
+      "earlyMiddle": {
         "startOver": 7,
-        "endOver": 15,
+        "endOver": 12,
+        "consolidationPhase": true
+      },
+      "lateMiddle": {
+        "startOver": 13,
+        "endOver": 16,
         "consolidationPhase": true
       },
       "death": {
-        "startOver": 16,
+        "startOver": 17,
         "endOver": 20,
         "maximumAggression": true,
         "aggressionMultiplier": 1.5

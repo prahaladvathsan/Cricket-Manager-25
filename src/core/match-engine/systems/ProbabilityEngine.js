@@ -262,7 +262,7 @@ class ProbabilityEngine {
 
     // Get configuration values
     const shotConfig = this.configManager.get('probabilities', 'shotTypes');
-    const situationalConfig = shotConfig.situational[phase] || shotConfig.situational.middle;
+    const situationalConfig = shotConfig.situational[phase] || shotConfig.situational.earlyMiddle;
 
     let probabilities = { ...shotConfig.base };
 

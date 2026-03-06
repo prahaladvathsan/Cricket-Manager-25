@@ -484,6 +484,14 @@ class SimulationEngine {
     // Handle retention_start event (pre-auction retention for odd seasons >= 3)
     if (event && event.type === 'retention_start') {
       console.log(`🏏 Retention Start - Season ${event.data.season} (sim mode)`);
+      // Inbox message (sim mode — no popup)
+      this.inboxStore.getState().addMessage({
+        type: 'board',
+        subject: '🏏 Retention Phase Begins',
+        body: `Season ${event.data.season} is approaching. Before the auction, you can retain key players from your squad at a negotiated salary. Head to the Retention screen to decide who to keep and at what price.`,
+        sender: 'Board of Directors',
+        metadata: { link: '/game/retention' }
+      });
       await this.runRetention();
       summary.eventsProcessed++;
     }
@@ -613,6 +621,15 @@ class SimulationEngine {
         const gameDay = this.gameStore.getState().gameDay;
         this.transferStore.getState().openTransferWindow(currentWeek, currentWeek + 4, gameDay);
         console.log(`🔓 Transfer window opened on gameDay ${gameDay} (Week ${currentWeek})`);
+
+        // Inbox message (sim mode — no popup)
+        this.inboxStore.getState().addMessage({
+          type: 'transfer',
+          subject: '🔓 Transfer Window Now Open',
+          body: 'The off-season transfer window is now open for 5 weeks. Browse available players in the Transfer Market, list your own players for sale, or pick up free agents. Listings expire after 14 days — highest bid is automatically accepted.',
+          sender: 'League Office',
+          metadata: { link: '/game/transfers' }
+        });
       }
 
       summary.eventsProcessed++;
