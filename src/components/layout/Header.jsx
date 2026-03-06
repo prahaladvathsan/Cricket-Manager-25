@@ -719,17 +719,46 @@ const Header = () => {
         const isUserMatch = fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id;
 
         if (isUserMatch) {
-          // Generate match reminder message
           const homeTeam = getClub(fixture.homeTeam);
           const awayTeam = getClub(fixture.awayTeam);
           const isUserHome = fixture.homeTeam === userTeam.id;
 
           if (homeTeam && awayTeam) {
+            // Gather squad intelligence for the reminder
+            const players = usePlayerStore.getState().players;
+            const tactics = useTeamStore.getState().getTeamTactics(userTeam.id);
+            const squadIds = useTeamStore.getState().squadLists[userTeam.id] || [];
+
+            // Full squad injury counts
+            const allSquadInjured = squadIds.filter(id => players[id]?.condition?.injury);
+            const unavailableCount = allSquadInjured.length;
+
+            // XI-specific alerts
+            const xi = tactics?.squadSelection || [];
+            const xiInjured = xi.filter(id => players[id]?.condition?.injury).map(id => ({
+              name: players[id]?.name || id,
+              days: players[id]?.condition?.injuryDuration || '?'
+            }));
+            const hasXI = xi.length === 11;
+            const hasWK = !!tactics?.wicketKeeper;
+            const bowlerCount = xi.filter(id => {
+              const p = players[id];
+              return p && (p.role === 'bowler' || p.role === 'all-rounder');
+            }).length + (tactics?.partTimers?.length || 0);
+            const hasBowlers = bowlerCount >= 5;
+
+            const squadAlerts = [];
+            if (!hasXI) squadAlerts.push(`Playing XI not set (${xi.length}/11 players selected)`);
+            if (!hasWK) squadAlerts.push('No wicket-keeper selected');
+            if (!hasBowlers) squadAlerts.push(`Only ${bowlerCount} bowling options (need 5+)`);
+            if (xiInjured.length > 0) squadAlerts.push(...xiInjured.map(p => `${p.name} is injured (${p.days}d) but still in XI`));
+
             addMessage(MessageGenerator.generateMatchReminderMessage(
               fixture,
               homeTeam,
               awayTeam,
-              isUserHome
+              isUserHome,
+              { unavailableCount, xiInjured, squadAlerts, squadSize: squadIds.length }
             ));
           }
         }
