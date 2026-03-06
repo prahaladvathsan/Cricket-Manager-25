@@ -72,7 +72,8 @@ Good luck,
       metadata: {
         team: team.id,
         season,
-        objective: expectation
+        objective: expectation,
+        link: '/game/board'
       }
     };
   }
@@ -165,15 +166,32 @@ View your complete squad in the Squad section.`,
    * @param {Object} homeTeam - Home team
    * @param {Object} awayTeam - Away team
    * @param {boolean} isUserHome - Whether user is home team
+   * @param {Object} squadIntel - { unavailableCount, xiInjured, squadAlerts, squadSize }
    * @returns {Object} Message data
    */
-  static generateMatchReminderMessage(fixture, homeTeam, awayTeam, isUserHome) {
+  static generateMatchReminderMessage(fixture, homeTeam, awayTeam, isUserHome, squadIntel = {}) {
     const opponent = isUserHome ? awayTeam : homeTeam;
     const venue = isUserHome ? 'at home' : 'away';
+    const { unavailableCount = 0, xiInjured = [], squadAlerts = [], squadSize = 0 } = squadIntel;
+
+    // Build alerts section
+    let alertsSection = '';
+    if (squadAlerts.length > 0) {
+      const alertLines = squadAlerts.map(a => `⚠️ ${a}`).join('\n');
+      alertsSection = `\n**Action Required:**\n${alertLines}\n`;
+    }
+
+    // Build injury summary
+    let injurySection = '';
+    if (unavailableCount > 0) {
+      injurySection = `\n**Squad Availability:** ${squadSize - unavailableCount} of ${squadSize} players available (${unavailableCount} unavailable due to injury)\n`;
+    }
+
+    const allClear = squadAlerts.length === 0 && unavailableCount === 0;
 
     return {
       type: 'match_reminder',
-      subject: `Match Tomorrow: vs ${opponent.name}`,
+      subject: `Match Tomorrow: vs ${opponent.name}${squadAlerts.length > 0 ? ' ⚠️' : ''}`,
       sender: 'Team Analyst',
       body: `Manager,
 
@@ -181,23 +199,24 @@ We have an important match tomorrow against **${opponent.name}** ${venue}.
 
 **Match Details:**
 - **Opponent:** ${opponent.name}
-- **Venue:** ${fixture.venue}
-- **Match Day:** ${fixture.matchday}
-
+- **Venue:** ${fixture.venue || 'Home Ground'}
+- **Match Day:** ${fixture.matchday || 'Tomorrow'}
+${injurySection}${alertsSection}
 **Pre-Match Checklist:**
-- [ ] Review and set tactics
-- [ ] Confirm playing XI
-- [ ] Check player fitness and form
-- [ ] Study opposition strengths
+- [ ] Confirm playing XI and batting order
+- [ ] Check field placement settings
+- [ ] Review opposition strengths${unavailableCount > 0 ? '\n- [ ] Replace injured players in the XI' : ''}
 
-The opposition has been performing ${Math.random() > 0.5 ? 'well' : 'inconsistently'} this season. Make sure your tactics are optimized for this matchup.
-
-Set your tactics before the match begins!`,
+${allClear
+  ? 'Your squad looks fit and ready. Head to Tactics to finalise your XI before the match begins.'
+  : 'Address the alerts above before the match starts to avoid automatic substitutions.'}`,
       metadata: {
         matchId: fixture.matchId,
         opponent: opponent.id,
         venue: fixture.venue,
-        link: '/game/squad' // Link to tactics
+        link: '/game/tactics',
+        squadAlerts,
+        unavailableCount
       }
     };
   }
