@@ -102,10 +102,17 @@ const MessageViewer = ({ message, onDelete, onToggleRead }) => {
                 className="btn-primary flex items-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
-                {message.type === 'auction_summary' && 'View Squad'}
-                {message.type === 'match_reminder' && 'Set Tactics'}
-                {message.type === 'match_result' && 'View Match Details'}
-                {!['auction_summary', 'match_reminder', 'match_result'].includes(message.type) && 'View Details'}
+                {{
+                  auction_summary: 'View Squad',
+                  match_reminder: 'Set Tactics',
+                  match_result: 'View League',
+                  injury: 'Update Tactics',
+                  recovery: 'View Squad',
+                  board_objectives: 'View Objectives',
+                  expectations: 'View Board',
+                  season_summary: 'View Off-Season',
+                  transfer: 'Transfer Market'
+                }[message.type] || 'View Details'}
               </button>
             </div>
           )}

@@ -9,6 +9,22 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { compressedStorageOptions } from '../utils/compression.js';
 import { indexedDBStorage } from '../utils/indexedDBStorage.js';
 import { markHydrated } from '../utils/storeHydration.js';
+import useUIStore from './uiStore.js';
+
+// Maps message types to notification preference categories
+const TYPE_TO_CATEGORY = {
+  match_reminder: 'match',
+  match_result: 'match',
+  injury: 'injury',
+  recovery: 'injury',
+  auction_summary: 'finance',
+  transfer: 'finance',
+  board_objectives: 'board',
+  expectations: 'board',
+  season_summary: 'board',
+  tutorial: 'tutorial',
+  welcome: 'tutorial'
+};
 
 /**
  * @typedef {Object} Message
@@ -58,6 +74,18 @@ const useInboxStore = create(
           messages: [message, ...state.messages],
           unreadCount: state.unreadCount + 1
         }));
+
+        // Trigger a pop-up notification toast
+        const category = TYPE_TO_CATEGORY[message.type];
+        if (category) {
+          useUIStore.getState().enqueueNotification({
+            category,
+            subject: message.subject,
+            sender: message.sender,
+            link: message.metadata?.link || null,
+            messageId: message.id
+          });
+        }
 
         return message.id;
       },
@@ -198,8 +226,9 @@ const useInboxStore = create(
           const filterTypeMap = {
             match: ['match_reminder', 'match_result'],
             injury: ['injury', 'recovery'],
-            finance: ['auction_summary'],
+            finance: ['auction_summary', 'transfer'],
             board: ['expectations', 'season_summary', 'board_objectives'],
+            transfer: ['transfer'],
             tutorial: ['tutorial', 'welcome']
           };
 

@@ -80,6 +80,7 @@ const Inbox = () => {
     { value: 'match', label: 'Match' },
     { value: 'injury', label: 'Injury' },
     { value: 'finance', label: 'Finance' },
+    { value: 'transfer', label: 'Transfer' },
     { value: 'board', label: 'Board' },
     { value: 'tutorial', label: 'Tutorial' }
   ];
