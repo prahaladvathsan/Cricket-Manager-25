@@ -14,7 +14,7 @@ class MessageGenerator {
     return {
       type: 'welcome',
       subject: `Welcome to ${team.name}!`,
-      sender: 'Board of Directors',
+      sender: `${team.name} Board`,
       body: `Dear Manager,
 
 On behalf of the entire ${team.name} organization, we are thrilled to welcome you as our new head coach for Season ${season} of the World Premier League!
@@ -51,7 +51,7 @@ Best regards,
     return {
       type: 'expectations',
       subject: `Season ${season} Objectives`,
-      sender: 'Chairman',
+      sender: `${team.name} Chairman`,
       body: `Manager,
 
 The board has set the following objectives for Season ${season}:
@@ -86,7 +86,7 @@ Good luck,
     return {
       type: 'tutorial',
       subject: 'Getting Started - Game Manual',
-      sender: 'Game Support',
+      sender: 'WPL Game Guide',
       body: `Welcome to Cricket Manager 25!
 
 Here's a quick guide to get you started:
@@ -132,7 +132,7 @@ Enjoy the game!`,
     return {
       type: 'auction_summary',
       subject: 'Auction Complete - Squad Summary',
-      sender: 'Auction Commissioner',
+      sender: 'WPL Auction Commissioner',
       body: `Manager,
 
 The auction has concluded, and your squad is now finalized for the season.
@@ -192,7 +192,7 @@ View your complete squad in the Squad section.`,
     return {
       type: 'match_reminder',
       subject: `Match Tomorrow: vs ${opponent.name}${squadAlerts.length > 0 ? ' ⚠️' : ''}`,
-      sender: 'Team Analyst',
+      sender: 'Head Coach',
       body: `Manager,
 
 We have an important match tomorrow against **${opponent.name}** ${venue}.
@@ -252,7 +252,7 @@ ${allClear
     return {
       type: 'match_result',
       subject: won ? `Victory vs ${opponentName}` : `Defeat vs ${opponentName}`,
-      sender: 'Match Commissioner',
+      sender: 'Head Coach',
       body: `Manager,
 
 ${resultLine}${superOverNote}
@@ -327,7 +327,7 @@ ${won
     return {
       type: 'season_summary',
       subject: `Season ${season} Complete - Final Report`,
-      sender: 'Chairman',
+      sender: `${userTeam.name} Chairman`,
       body: `Manager,
 
 Season ${season} of the World Premier League has concluded.
@@ -414,7 +414,7 @@ Best regards,
     return {
       type: 'injury',
       subject: `${severityEmoji[severity]} ${player.name} - ${severityText[severity]}`,
-      sender: 'Medical Staff',
+      sender: 'Club Physio',
       body: `Manager,
 
 We regret to inform you that **${player.name}** has sustained ${injuryDescriptions[severity]} during the recent match.
@@ -455,7 +455,7 @@ Best regards,
     return {
       type: 'recovery',
       subject: `✅ ${player.name} - Fit and Available`,
-      sender: 'Medical Staff',
+      sender: 'Club Physio',
       body: `Manager,
 
 Good news! **${player.name}** has successfully completed their recovery and is now fully fit for selection.
@@ -500,7 +500,7 @@ Best regards,
     return {
       type: 'board_objectives',
       subject: `Season ${season} Board Objectives - ${teamName}`,
-      sender: 'Board of Directors',
+      sender: `${teamName} Board`,
       body: `Manager,
 
 Welcome to Season ${season}! The Board of Directors has established your performance objectives for this season.

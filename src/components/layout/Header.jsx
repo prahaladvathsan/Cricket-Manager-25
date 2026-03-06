@@ -552,12 +552,8 @@ const Header = () => {
 
           advanceToNextMatch();
 
-          // Show result modal using hook
+          // Show result modal (AI vs AI — no inbox message sent to user)
           showResult(fullScorecard);
-
-          // Send match result inbox message
-          const opponent2 = fixture.homeTeam === userTeam?.id ? awayTeam : homeTeam;
-          addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeam?.id, opponent2.name));
 
           // Don't advance day yet - wait for user to close modal
         } catch (error) {

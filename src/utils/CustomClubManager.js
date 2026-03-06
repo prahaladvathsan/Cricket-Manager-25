@@ -14,6 +14,10 @@ const STORAGE_KEY = 'cm25-custom-clubs';
  * @property {string|null} badgeDataUrl - base64 PNG/JPG/SVG data URL, or null for default
  * @property {string} primaryColor - Hex color string (e.g. '#FF0000')
  * @property {string} secondaryColor - Hex color string
+ * @property {string|null} teamName - Custom team name, or null for default
+ * @property {string|null} shortName - Custom short name (3 chars), or null for default
+ * @property {string|null} coachName - Custom coach name, or null for default
+ * @property {string|null} homeVenue - Custom home venue name, or null for default
  * @property {string} createdAt - ISO timestamp
  */
 
@@ -95,6 +99,10 @@ export function applyCustomClubToTeam(team, customClub) {
       secondary: customClub.secondaryColor || team.colors?.secondary
     },
     customBadgeDataUrl: customClub.badgeDataUrl || null,
+    name: customClub.teamName || team.name,
+    shortName: customClub.shortName || team.shortName,
+    coachName: customClub.coachName || team.coachName,
+    homeVenue: customClub.homeVenue || team.homeVenue,
     hasCustomization: true
   };
 }
