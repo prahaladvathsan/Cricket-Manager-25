@@ -4,14 +4,30 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.1';
+const CURRENT_VERSION = '1.2.2';
 const RELEASE_DATE = 'March 2026';
-const RELEASE_TAGLINE = 'Actionable Intelligence Update';
+const RELEASE_TAGLINE = 'Club Customizer Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Palette,
+    title: 'v1.2.2 Club Customizer',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    items: [
+      '🎨 **Club Customizer** — The World Premier League is fictional. Your teams should look like it. Redesign any of the 10 WPL clubs from the main menu.',
+      '🖌️ **Primary & Secondary Colors** — Giant clickable swatches, live kit preview updates as you pick. Diagonal split banner so you can actually see how the colors interact.',
+      '🦅 **Custom Badge Upload** — Drop in your own PNG, JPG, or SVG. Max 500KB. The badge is yours now.',
+      '✏️ **Rename Everything** — Team name, 3-letter short code, coach name, home venue. Chennai Cobras? Never heard of her.',
+      '🗂️ **Persists Across All Saves** — Customizations live outside your save files so they survive across new games, loaded saves, and the heat death of your season.',
+      '🃏 **Live Kit Card Preview** — See your changes on a full team card in real time — badge, colors, name, venue, perk chip and all.',
+    ],
+    note: 'The WPL is fictional. Your imagination isn\'t. Rename Mumbai Lions to your local pub team. Make Kabul Kites neon pink. Give your club a coach called "Big Dave". Zero notes, full support. 🎨'
+  },
   {
     icon: Sparkles,
     title: 'v1.2.1 Actionable Intelligence Update',

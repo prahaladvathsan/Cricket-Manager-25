@@ -120,6 +120,10 @@ const useTeamStore = create(
               secondary: custom.secondaryColor || updatedTeams[teamId].colors?.secondary
             },
             customBadgeDataUrl: custom.badgeDataUrl || null,
+            ...(custom.teamName && { name: custom.teamName }),
+            ...(custom.shortName && { shortName: custom.shortName }),
+            ...(custom.coachName && { coachName: custom.coachName }),
+            ...(custom.homeVenue && { homeVenue: custom.homeVenue }),
             hasCustomization: true
           };
         });

@@ -557,12 +557,8 @@ const Header = () => {
 
           advanceToNextMatch();
 
-          // Show result modal using hook
+          // Show result modal (AI vs AI — no inbox message sent to user)
           showResult(fullScorecard);
-
-          // Send match result inbox message
-          const opponent2 = fixture.homeTeam === userTeam?.id ? awayTeam : homeTeam;
-          addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeam?.id, opponent2.name));
 
           // Don't advance day yet - wait for user to close modal
         } catch (error) {
@@ -604,7 +600,7 @@ const Header = () => {
         type: 'board',
         subject: '🏏 Retention Phase Begins',
         body: `Season ${event.data.season} is approaching. Before the auction, you can retain key players from your squad at a negotiated salary. Head to the Retention screen to decide who to keep and at what price.`,
-        sender: 'Board of Directors',
+        sender: `${userTeam?.name || 'Club'} Chairman`,
         metadata: { link: '/game/retention' }
       });
       setEventAnnouncement({
@@ -710,7 +706,7 @@ const Header = () => {
           type: 'transfer',
           subject: '🔓 Transfer Window Now Open',
           body: 'The off-season transfer window is now open for 5 weeks. Browse available players in the Transfer Market, list your own players for sale, or pick up free agents. Listings expire after 14 days — highest bid is automatically accepted.',
-          sender: 'League Office',
+          sender: 'WPL League Office',
           metadata: { link: '/game/transfers' }
         });
         setEventAnnouncement({

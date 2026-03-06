@@ -627,7 +627,7 @@ class SimulationEngine {
           type: 'transfer',
           subject: '🔓 Transfer Window Now Open',
           body: 'The off-season transfer window is now open for 5 weeks. Browse available players in the Transfer Market, list your own players for sale, or pick up free agents. Listings expire after 14 days — highest bid is automatically accepted.',
-          sender: 'League Office',
+          sender: 'WPL League Office',
           metadata: { link: '/game/transfers' }
         });
       }

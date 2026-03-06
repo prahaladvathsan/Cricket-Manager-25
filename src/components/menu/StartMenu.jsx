@@ -64,9 +64,9 @@ const StartMenu = () => {
     },
     {
       id: 'club-editor',
-      label: 'Customize Club',
+      label: 'Customize Teams',
       icon: Palette,
-      description: 'Customize team badge and colors for any WPL club',
+      description: 'Rename teams, change colors, upload badges — make the league yours',
       action: () => navigate('/club-editor')
     },
     {
@@ -170,7 +170,7 @@ const StartMenu = () => {
           >
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-cricket-accent animate-pulse" />
-              <span className="text-cricket-accent font-semibold">v1.2.1</span>
+              <span className="text-cricket-accent font-semibold">v1.2.2</span>
               <span className="text-cricket-text-tertiary text-[10px]">NEW!</span>
             </div>
             {/* Tooltip */}
