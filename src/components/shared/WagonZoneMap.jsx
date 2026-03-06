@@ -6,33 +6,22 @@
 
 import React, { useMemo } from 'react';
 
-const ZONES = [
-  { key: 'cover',    label: 'Cover',     path: 'M200,200 L200,20  A180,180,0,0,1,340,110 Z', textX: 285, textY: 75  },
-  { key: 'point',    label: 'Point',     path: 'M200,200 L340,110 A180,180,0,0,1,380,200 Z', textX: 360, textY: 160 },
-  { key: 'fineLeg',  label: 'Fine Leg',  path: 'M200,200 L380,200 A180,180,0,0,1,340,290 Z', textX: 360, textY: 250 },
-  { key: 'midWicket',label: 'Mid Wkt',   path: 'M200,200 L340,290 A180,180,0,0,1,200,380 Z', textX: 295, textY: 330 },
-  { key: 'midOn',    label: 'Mid On',    path: 'M200,200 L200,380 A180,180,0,0,1,60,290  Z', textX: 100, textY: 330 },
-  { key: 'midOff',   label: 'Mid Off',   path: 'M200,200 L60,290  A180,180,0,0,1,20,200  Z', textX: 30,  textY: 250 },
-];
-
-// Second arc segment from 180° to 360° (cover + midOff)
-// We split the semicircle into 6 equal sectors ~60° each
-// Re-using a clean layout:
-// Zones clockwise from top (0° = 12 o'clock):
-// Batter faces top (toward bowler). Leg side = left. Off side = right.
-// Fine Leg: upper-left (behind square leg)
-// Point:    upper-right (behind square off)
-// Cover:    right
-// Mid Off:  lower-right (straight off)
-// Mid On:   lower-left (straight on/leg)
-// Mid Wkt:  left (square leg)
+// Coordinate system: deg=0 → TOP (WK end), deg=90 → RIGHT (LEG side),
+// deg=180 → BOTTOM (Bowler end), deg=270 → LEFT (OFF side).
+// Equal 60° sectors clockwise from WK-top:
+//   fineLeg:   0°–60°   upper-right (leg side near WK)
+//   midWicket: 60°–120° right (square leg)
+//   midOn:     120°–180° lower-right (straight leg)
+//   midOff:    180°–240° lower-left (straight off)
+//   cover:     240°–300° left (forward off)
+//   point:     300°–360° upper-left (behind square off)
 const ZONE_SECTORS = [
-  { key: 'fineLeg',   startDeg: -60,  endDeg: 0   }, // upper-left
-  { key: 'point',     startDeg: 0,    endDeg: 60  }, // upper-right
-  { key: 'cover',     startDeg: 60,   endDeg: 120 }, // right
-  { key: 'midOff',    startDeg: 120,  endDeg: 180 }, // lower-right
-  { key: 'midOn',     startDeg: 180,  endDeg: 240 }, // lower-left
-  { key: 'midWicket', startDeg: 240,  endDeg: 300 }, // left
+  { key: 'fineLeg',   startDeg: 0,   endDeg: 60  },
+  { key: 'midWicket', startDeg: 60,  endDeg: 120 },
+  { key: 'midOn',     startDeg: 120, endDeg: 180 },
+  { key: 'midOff',    startDeg: 180, endDeg: 240 },
+  { key: 'cover',     startDeg: 240, endDeg: 300 },
+  { key: 'point',     startDeg: 300, endDeg: 360 },
 ];
 
 const ZONE_LABELS = {
@@ -162,8 +151,8 @@ const WagonZoneMap = ({ data = [], onZoneClick, selectedZone }) => {
         {/* Orientation labels */}
         <text x={CX} y={18} textAnchor="middle" fill="#6b7280" fontSize="9" fontWeight="500">▼ WK</text>
         <text x={CX} y={394} textAnchor="middle" fill="#6b7280" fontSize="9" fontWeight="500">▲ BOWLER</text>
-        <text x={10} y={CY + 3} textAnchor="start" fill="#6b7280" fontSize="9" fontWeight="500">LEG</text>
-        <text x={390} y={CY + 3} textAnchor="end" fill="#6b7280" fontSize="9" fontWeight="500">OFF</text>
+        <text x={390} y={CY + 3} textAnchor="end" fill="#6b7280" fontSize="9" fontWeight="500">LEG</text>
+        <text x={10} y={CY + 3} textAnchor="start" fill="#6b7280" fontSize="9" fontWeight="500">OFF</text>
       </svg>
 
       {/* Zone summary table */}

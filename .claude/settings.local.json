@@ -59,7 +59,18 @@
       "Bash(npm cache clean:*)",
       "Bash(npm --version:*)",
       "Bash(npx eslint:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(do echo:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "Bash(npx tailwindcss:*)",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "Bash(python3:*)",
+      "Bash(grep -n \"select\\\\|Select\\\\|dropdown\\\\|Dropdown\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/tabs/FieldVisualEditor.jsx 2>/dev/null | head -5\ngrep -n \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/TacticsPage.jsx 2>/dev/null | head -5\ngrep -rn \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/squad 2>/dev/null | head -5\ngrep -rn \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/team/Squad.jsx 2>/dev/null | head -5)",
+      "Bash(grep -rn \"<select\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/match/matchday/\" 2>/dev/null | head -5\ngrep -rn \"className.*select\\\\|select.*className\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/\" 2>/dev/null | grep -v \".jsx:.*select\\\\b\" | head -5\ngrep -n \"bg-bg-secondary\\\\|bg-bg-tertiary\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/TacticsPage.jsx\" | head -5)",
+      "Bash(git worktree:*)"
     ],
     "deny": []
   }
