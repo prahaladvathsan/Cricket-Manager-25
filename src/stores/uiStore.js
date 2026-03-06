@@ -48,6 +48,16 @@ const useUIStore = create(
         canGoForward: false
       },
 
+      // Notification system
+      notificationQueue: [],
+      notificationPreferences: {
+        match: true,
+        injury: true,
+        finance: true,
+        board: true,
+        tutorial: false
+      },
+
       // Tactics validation state (for navigation blocking)
       hasInvalidTactics: false,
       tacticsErrors: [],
@@ -159,12 +169,42 @@ const useUIStore = create(
       })),
 
       /**
-       * Add notification to queue
+       * Enqueue a notification toast
+       * @param {Object} notification - { id, type, subject, sender, link? }
+       */
+      enqueueNotification: (notification) => set((state) => {
+        const prefs = state.notificationPreferences;
+        const category = notification.category;
+        if (category && !prefs[category]) return state; // Suppressed by preferences
+
+        const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        return {
+          notificationQueue: [...state.notificationQueue, { ...notification, id }]
+        };
+      }),
+
+      /**
+       * Dismiss a notification from the queue
+       * @param {string} notificationId - Notification ID to dismiss
+       */
+      dismissNotification: (notificationId) => set((state) => ({
+        notificationQueue: state.notificationQueue.filter(n => n.id !== notificationId)
+      })),
+
+      /**
+       * Update notification preferences
+       * @param {Object} updates - Partial preference updates
+       */
+      updateNotificationPreferences: (updates) => set((state) => ({
+        notificationPreferences: { ...state.notificationPreferences, ...updates }
+      })),
+
+      /**
+       * Add notification to queue (legacy stub kept for compatibility)
        * @param {Object} notification - Notification object
        */
       addNotification: (notification) => {
-        // TODO: Implement notification system
-        console.log('Notification:', notification);
+        get().enqueueNotification(notification);
       }
     }),
     {
@@ -172,7 +212,8 @@ const useUIStore = create(
       version: 1,
       // Only persist preferences, not transient navigation/modal state
       partialize: (state) => ({
-        preferences: state.preferences
+        preferences: state.preferences,
+        notificationPreferences: state.notificationPreferences
       })
     }
   )

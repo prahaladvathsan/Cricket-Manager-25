@@ -72,7 +72,8 @@ Good luck,
       metadata: {
         team: team.id,
         season,
-        objective: expectation
+        objective: expectation,
+        link: '/game/board'
       }
     };
   }
@@ -197,7 +198,7 @@ Set your tactics before the match begins!`,
         matchId: fixture.matchId,
         opponent: opponent.id,
         venue: fixture.venue,
-        link: '/game/squad' // Link to tactics
+        link: '/game/tactics'
       }
     };
   }
