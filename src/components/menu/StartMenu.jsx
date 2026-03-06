@@ -14,7 +14,8 @@ import {
   BookOpen,
   Info,
   Globe,
-  Sparkles
+  Sparkles,
+  Palette
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
@@ -60,6 +61,13 @@ const StartMenu = () => {
       description: 'Compete with 10 players in turn-based league mode',
       action: () => navigate('/multiplayer'),
       badge: 'Coming Soon'
+    },
+    {
+      id: 'club-editor',
+      label: 'Customize Teams',
+      icon: Palette,
+      description: 'Rename teams, change colors, upload badges — make the league yours',
+      action: () => navigate('/club-editor')
     },
     {
       id: 'player-browser',
@@ -162,7 +170,7 @@ const StartMenu = () => {
           >
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-cricket-accent animate-pulse" />
-              <span className="text-cricket-accent font-semibold">v1.2.0</span>
+              <span className="text-cricket-accent font-semibold">v1.2.2</span>
               <span className="text-cricket-text-tertiary text-[10px]">NEW!</span>
             </div>
             {/* Tooltip */}

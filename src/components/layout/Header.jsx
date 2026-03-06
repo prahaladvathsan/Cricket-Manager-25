@@ -21,7 +21,7 @@ import CricketBallSpinner from '../shared/CricketBallSpinner';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
 import MessageGenerator from '../../utils/MessageGenerator';
-import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
+import { updateObjectivesAfterMatch, updateTransferObjectives } from '../../utils/ObjectiveTracker';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PrizeDistributor from '../../core/offseason/PrizeDistributor';
 import SeasonSummaryView from '../OffSeason/SeasonSummaryView';
@@ -349,7 +349,7 @@ const Header = () => {
       }
 
       // Update objectives tracking after user match
-      updateObjectivesAfterMatch(result, fixture, userTeam.id, useGameStore, useLeagueStore, useTeamStore);
+      updateObjectivesAfterMatch(result, fixture, userTeam.id, useGameStore, useLeagueStore, useTeamStore, usePlayerStore);
 
       // Process match financials (revenue and performance tracking)
       processMatchFinancials(result, standings);
@@ -359,8 +359,9 @@ const Header = () => {
       // Show result modal using hook
       showResult(fullScorecard);
 
-      // Autosave after quick-sim user match
+      // Send match result inbox message
       const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeamId, opponentTeam.name));
       const userWon = result.winner === userTeamId;
       const score = `${result.innings1.totalScore}/${result.innings1.wickets} vs ${result.innings2.totalScore}/${result.innings2.wickets}`;
 
@@ -556,7 +557,7 @@ const Header = () => {
 
           advanceToNextMatch();
 
-          // Show result modal using hook
+          // Show result modal (AI vs AI — no inbox message sent to user)
           showResult(fullScorecard);
 
           // Don't advance day yet - wait for user to close modal
@@ -599,7 +600,7 @@ const Header = () => {
         type: 'board',
         subject: '🏏 Retention Phase Begins',
         body: `Season ${event.data.season} is approaching. Before the auction, you can retain key players from your squad at a negotiated salary. Head to the Retention screen to decide who to keep and at what price.`,
-        sender: 'Board of Directors',
+        sender: `${userTeam?.name || 'Club'} Chairman`,
         metadata: { link: '/game/retention' }
       });
       setEventAnnouncement({
@@ -705,7 +706,7 @@ const Header = () => {
           type: 'transfer',
           subject: '🔓 Transfer Window Now Open',
           body: 'The off-season transfer window is now open for 5 weeks. Browse available players in the Transfer Market, list your own players for sale, or pick up free agents. Listings expire after 14 days — highest bid is automatically accepted.',
-          sender: 'League Office',
+          sender: 'WPL League Office',
           metadata: { link: '/game/transfers' }
         });
         setEventAnnouncement({
@@ -728,13 +729,34 @@ const Header = () => {
 
         // Capture summary BEFORE calling closeTransferWindow (it clears activeListings)
         const tStore = useTransferStore.getState();
+        const completedTransfersCopy = [...tStore.completedTransfers];
         tStore.setTransferWindowSummary({
-          completedTransfers: [...tStore.completedTransfers],
+          completedTransfers: completedTransfersCopy,
           totalListings: tStore.activeListings.length,
           freeAgents: [...tStore.freeAgents]
         });
         useTransferStore.getState().closeTransferWindow();
         console.log('🔒 Transfer window closed and summary saved');
+
+        // Update transfer-related board objectives
+        if (userTeam) {
+          completedTransfersCopy.forEach(ct => {
+            // Sale: user sold a player (user was the seller)
+            if (ct.fromTeamId === userTeam.id) {
+              updateTransferObjectives(
+                { type: 'sale', playerId: ct.playerId, price: ct.newPrice, soldPrice: ct.oldPrice },
+                userTeam.id, useGameStore, usePlayerStore
+              );
+            }
+            // Signing: user bought a player (user was the buyer)
+            if (ct.toTeamId === userTeam.id) {
+              updateTransferObjectives(
+                { type: 'signing', playerId: ct.playerId, price: ct.newPrice },
+                userTeam.id, useGameStore, usePlayerStore
+              );
+            }
+          });
+        }
       }
       advanceDay();
     } else if (event && event.type === 'season_end') {
@@ -847,17 +869,46 @@ const Header = () => {
         const isUserMatch = fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id;
 
         if (isUserMatch) {
-          // Generate match reminder message
           const homeTeam = getClub(fixture.homeTeam);
           const awayTeam = getClub(fixture.awayTeam);
           const isUserHome = fixture.homeTeam === userTeam.id;
 
           if (homeTeam && awayTeam) {
+            // Gather squad intelligence for the reminder
+            const players = usePlayerStore.getState().players;
+            const tactics = useTeamStore.getState().getTeamTactics(userTeam.id);
+            const squadIds = useTeamStore.getState().squadLists[userTeam.id] || [];
+
+            // Full squad injury counts
+            const allSquadInjured = squadIds.filter(id => players[id]?.condition?.injury);
+            const unavailableCount = allSquadInjured.length;
+
+            // XI-specific alerts
+            const xi = tactics?.squadSelection || [];
+            const xiInjured = xi.filter(id => players[id]?.condition?.injury).map(id => ({
+              name: players[id]?.name || id,
+              days: players[id]?.condition?.injuryDuration || '?'
+            }));
+            const hasXI = xi.length === 11;
+            const hasWK = !!tactics?.wicketKeeper;
+            const bowlerCount = xi.filter(id => {
+              const p = players[id];
+              return p && (p.role === 'bowler' || p.role === 'all-rounder');
+            }).length + (tactics?.partTimers?.length || 0);
+            const hasBowlers = bowlerCount >= 5;
+
+            const squadAlerts = [];
+            if (!hasXI) squadAlerts.push(`Playing XI not set (${xi.length}/11 players selected)`);
+            if (!hasWK) squadAlerts.push('No wicket-keeper selected');
+            if (!hasBowlers) squadAlerts.push(`Only ${bowlerCount} bowling options (need 5+)`);
+            if (xiInjured.length > 0) squadAlerts.push(...xiInjured.map(p => `${p.name} is injured (${p.days}d) but still in XI`));
+
             addMessage(MessageGenerator.generateMatchReminderMessage(
               fixture,
               homeTeam,
               awayTeam,
-              isUserHome
+              isUserHome,
+              { unavailableCount, xiInjured, squadAlerts, squadSize: squadIds.length }
             ));
           }
         }

@@ -494,7 +494,11 @@ const useGameStore = create(
             userBestBowlerName: null,
             userBestBowlerRank: null,
             userBestBowlerWickets: 0,
-            topBowlerWickets: 0
+            topBowlerWickets: 0,
+            // Transfer objective tracking
+            transferSellProfit: 0,
+            signedFromRegion: false,
+            signedRegionTarget: null
           }
         };
       }),
@@ -617,6 +621,10 @@ const useGameStore = create(
         const state = get();
         const objectives = generateSeasonObjectives(state.currentSeason, rivalTeamName);
 
+        // Extract region target from sign_from_region objective if present
+        const regionObj = objectives.find(o => o.id === 'sign_from_region');
+        const signedRegionTarget = regionObj?.signedRegionTarget || null;
+
         console.log(`📋 Generated ${objectives.length} objectives for Season ${state.currentSeason}`);
 
         set({
@@ -639,7 +647,11 @@ const useGameStore = create(
             userBestBowlerName: null,
             userBestBowlerRank: null,
             userBestBowlerWickets: 0,
-            topBowlerWickets: 0
+            topBowlerWickets: 0,
+            // Transfer objective tracking
+            transferSellProfit: 0,
+            signedFromRegion: false,
+            signedRegionTarget
           }
         });
 

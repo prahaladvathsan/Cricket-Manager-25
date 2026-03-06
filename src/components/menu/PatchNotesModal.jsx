@@ -4,14 +4,48 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.0';
+const CURRENT_VERSION = '1.2.2';
 const RELEASE_DATE = 'March 2026';
-const RELEASE_TAGLINE = 'The Seasonal Loop Update';
+const RELEASE_TAGLINE = 'Club Customizer Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Palette,
+    title: 'v1.2.2 Club Customizer',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    items: [
+      '🎨 **Club Customizer** — The World Premier League is fictional. Your teams should look like it. Redesign any of the 10 WPL clubs from the main menu.',
+      '🖌️ **Primary & Secondary Colors** — Giant clickable swatches, live kit preview updates as you pick. Diagonal split banner so you can actually see how the colors interact.',
+      '🦅 **Custom Badge Upload** — Drop in your own PNG, JPG, or SVG. Max 500KB. The badge is yours now.',
+      '✏️ **Rename Everything** — Team name, 3-letter short code, coach name, home venue. Chennai Cobras? Never heard of her.',
+      '🗂️ **Persists Across All Saves** — Customizations live outside your save files so they survive across new games, loaded saves, and the heat death of your season.',
+      '🃏 **Live Kit Card Preview** — See your changes on a full team card in real time — badge, colors, name, venue, perk chip and all.',
+    ],
+    note: 'The WPL is fictional. Your imagination isn\'t. Rename Mumbai Lions to your local pub team. Make Kabul Kites neon pink. Give your club a coach called "Big Dave". Zero notes, full support. 🎨'
+  },
+  {
+    icon: Sparkles,
+    title: 'v1.2.1 Actionable Intelligence Update',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+    items: [
+      '📊 **Stats Hub** — The Matches page is now a full Stats Hub with Fixtures, Results, Season Statistics, and Match Analysis tabs.',
+      '📈 **Match Analysis** — Drill into any match or aggregate across all played matches. Phase breakdown, batting, bowling, and fielding wagon wheel all in one place.',
+      '🎯 **Wagon Zone Map** — 6-zone fielding heatmap showing where opponents scored against your bowling. Colour-coded by runs, filterable by phase.',
+      '⚡ **Phase Breakdown** — Manhattan bar chart showing RPO (not total runs) across all 4 phases: Powerplay, Early Middle, Late Middle, Death.',
+      '🏏 **Ball-level tagging** — Every simulated ball is now tagged with phase, hit zone, batter tier, and bowling plan for deep analytics.',
+      '💡 **Tactical Insights** — Automatic insight cards surface high-impact patterns from your match data (wagon zone leaks, economy trends, SR vs spin).',
+      '🗂️ **Full-width tab menus** — All tab bars across the game now span the full card width with equal button sizing.',
+      '🔧 **4-Phase engine fix** — Match engine now correctly uses 4 phases (earlyMiddle 7–12, lateMiddle 13–16) instead of the old 3-phase system.',
+    ],
+    note: 'Data nerds, this one\'s for you. Every ball your team plays is now tracked and sliced by phase, playstyle, and tier. Your opponents have nowhere to hide. 📊'
+  },
   {
     icon: Sparkles,
     title: 'v1.2.0 The Seasonal Loop Update',

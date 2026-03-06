@@ -346,28 +346,27 @@ class SimpleBallSimulator {
 
   /**
    * Compute hit zone from shot direction angle.
-   *
-   * Direction system (same as FieldingCalculator2D theta / BallTrajectoryPhysics):
-   *   0°   = +x = leg side (right for right-handed batter)
-   *   90°  = +y = toward fine leg (behind batter, leg side)
-   *   180° = -x = off side (left for right-handed batter)
-   *   270° = -y = toward bowler / straight (mid-on / mid-off region)
-   *
-   * Boundaries derived from actual fielding-positions-complete.json coordinates
-   * (midpoints between adjacent fielder angles):
-   *   midWicket 319.5° | fineLeg 63.0° | point 181.9° | cover 216.4° | midOff 249.5° | midOn 291.2°
-   *
+   * 6 equal 60° sectors. Direction: 0°=leg(+x), 90°=fine leg(+y), 180°=off, 270°=bowler(up).
+   * Zone centres: fineLeg=90°, point=150°, cover=210°, midOff=270°, midOn=330°, midWicket=30°
    * @param {number} direction - Shot direction in degrees
    * @returns {string} fineLeg | point | cover | midOff | midOn | midWicket
    */
   computeHitZone(direction) {
+    // Direction: 0°=leg(+x), 90°=toward WK(+y), 180°=off(-x), 270°=toward bowler(-y)
+    // Zones match WagonZoneMap equal 60° sectors (SVG_deg = 90 - ball_angle):
+    //   fineLeg   SVG [0°,60°]   → ball [30°,90°)
+    //   point     SVG [300°,360°]→ ball [90°,150°)
+    //   cover     SVG [240°,300°]→ ball [150°,210°)
+    //   midOff    SVG [180°,240°]→ ball [210°,270°)
+    //   midOn     SVG [120°,180°]→ ball [270°,330°)
+    //   midWicket SVG [60°,120°] → ball [330°,30°) wrapping
     const d = ((direction % 360) + 360) % 360;
-    if (d >= 11 && d < 122)  return 'fineLeg';   // ~63°  centre: leg side behind square
-    if (d >= 122 && d < 199) return 'point';      // ~182° centre: off side behind square
-    if (d >= 199 && d < 233) return 'cover';      // ~216° centre: off side forward of square
-    if (d >= 233 && d < 270) return 'midOff';     // ~250° centre: straight off (toward bowler)
-    if (d >= 270 && d < 305) return 'midOn';      // ~291° centre: straight on (toward bowler)
-    return 'midWicket';                           // ~320° centre: leg side square (305-360 and 0-11)
+    if (d >= 30  && d < 90)  return 'fineLeg';
+    if (d >= 90  && d < 150) return 'point';
+    if (d >= 150 && d < 210) return 'cover';
+    if (d >= 210 && d < 270) return 'midOff';
+    if (d >= 270 && d < 330) return 'midOn';
+    return 'midWicket'; // 330°–360° and 0°–30°
   }
 
   /**

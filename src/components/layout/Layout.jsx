@@ -9,6 +9,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import AutosaveIndicator from '../shared/AutosaveIndicator';
 import ProcessingOverlay from '../shared/ProcessingOverlay';
+import NotificationToast from '../shared/NotificationToast';
 import useUIStore from '../../stores/uiStore';
 import useGameStore from '../../stores/gameStore';
 import useNavigationStore from '../../stores/navigationStore';
@@ -47,6 +48,9 @@ const Layout = ({ children }) => {
 
       {/* Processing overlay during advanceDay */}
       <ProcessingOverlay isVisible={isProcessingTurn} />
+
+      {/* Notification toasts */}
+      <NotificationToast />
     </div>
   );
 };

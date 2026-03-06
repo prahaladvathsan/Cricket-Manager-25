@@ -30,7 +30,6 @@ import PlayerCardModal from '../shared/PlayerCardModal';
 import { TutorialSpotlight, useTacticsTutorial, tacticsTutorialSteps } from '../tutorial';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
 import { validateFieldingSetup } from '../../core/match-engine/validation/FieldingRulesValidator';
-import TacticsRecommendations from './TacticsRecommendations';
 import SaveGameManager from '../../utils/SaveGameManager';
 import useGameStore from '../../stores/gameStore';
 import useLeagueStore from '../../stores/leagueStore';
@@ -384,7 +383,7 @@ const TacticsPage = () => {
 
       {/* Tabs */}
       <div className="border-b border-border-primary">
-        <nav className="tactics-tab-nav flex gap-2">
+        <nav className="tactics-tab-nav flex">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
@@ -395,16 +394,14 @@ const TacticsPage = () => {
                   setValidationErrors([]); // Clear errors when switching tabs
                   setShowSuccess(false);
                 }}
-                className={`tactics-tab-${tab.id} px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+                className={`tactics-tab-${tab.id} flex-1 flex items-center justify-center gap-2 py-2 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-cricket-accent text-cricket-accent'
                     : 'border-transparent text-text-secondary hover:text-text-primary'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </div>
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
@@ -414,10 +411,7 @@ const TacticsPage = () => {
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-2 bg-bg-primary">
         {activeTab === 'overview' && (
-          <div className="space-y-3">
-            <TacticsRecommendations teamId={teamId} />
-            <OverviewTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
-          </div>
+          <OverviewTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />
         )}
         {activeTab === 'squad' && (
           <SquadPlaystyleTab teamId={teamId} teamPlayers={teamPlayers} onPlayerClick={handlePlayerClick} />

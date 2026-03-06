@@ -121,3 +121,4 @@ misc/
 
 # Ignore system files
 nul
+.worktrees/

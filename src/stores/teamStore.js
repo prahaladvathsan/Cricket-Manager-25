@@ -102,6 +102,36 @@ const useTeamStore = create(
       }),
 
       /**
+       * Apply custom club cosmetics (colors/badge) to team objects in the store.
+       * Call this after initializeTeams when custom club data has been loaded.
+       * @param {Record<string, {primaryColor, secondaryColor, badgeDataUrl}>} customClubs
+       */
+      applyCustomOverlays: (customClubs) => set((state) => {
+        if (!customClubs || Object.keys(customClubs).length === 0) return state;
+
+        const updatedTeams = { ...state.teams };
+        Object.entries(customClubs).forEach(([teamId, custom]) => {
+          if (!updatedTeams[teamId]) return;
+          updatedTeams[teamId] = {
+            ...updatedTeams[teamId],
+            colors: {
+              ...(updatedTeams[teamId].colors || {}),
+              primary: custom.primaryColor || updatedTeams[teamId].colors?.primary,
+              secondary: custom.secondaryColor || updatedTeams[teamId].colors?.secondary
+            },
+            customBadgeDataUrl: custom.badgeDataUrl || null,
+            ...(custom.teamName && { name: custom.teamName }),
+            ...(custom.shortName && { shortName: custom.shortName }),
+            ...(custom.coachName && { coachName: custom.coachName }),
+            ...(custom.homeVenue && { homeVenue: custom.homeVenue }),
+            hasCustomization: true
+          };
+        });
+
+        return { teams: updatedTeams };
+      }),
+
+      /**
        * Set the user's team
        * @param {string} teamId - ID of team to control
        */

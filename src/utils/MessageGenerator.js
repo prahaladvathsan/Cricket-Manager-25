@@ -14,7 +14,7 @@ class MessageGenerator {
     return {
       type: 'welcome',
       subject: `Welcome to ${team.name}!`,
-      sender: 'Board of Directors',
+      sender: `${team.name} Board`,
       body: `Dear Manager,
 
 On behalf of the entire ${team.name} organization, we are thrilled to welcome you as our new head coach for Season ${season} of the World Premier League!
@@ -51,7 +51,7 @@ Best regards,
     return {
       type: 'expectations',
       subject: `Season ${season} Objectives`,
-      sender: 'Chairman',
+      sender: `${team.name} Chairman`,
       body: `Manager,
 
 The board has set the following objectives for Season ${season}:
@@ -72,7 +72,8 @@ Good luck,
       metadata: {
         team: team.id,
         season,
-        objective: expectation
+        objective: expectation,
+        link: '/game/board'
       }
     };
   }
@@ -85,7 +86,7 @@ Good luck,
     return {
       type: 'tutorial',
       subject: 'Getting Started - Game Manual',
-      sender: 'Game Support',
+      sender: 'WPL Game Guide',
       body: `Welcome to Cricket Manager 25!
 
 Here's a quick guide to get you started:
@@ -131,7 +132,7 @@ Enjoy the game!`,
     return {
       type: 'auction_summary',
       subject: 'Auction Complete - Squad Summary',
-      sender: 'Auction Commissioner',
+      sender: 'WPL Auction Commissioner',
       body: `Manager,
 
 The auction has concluded, and your squad is now finalized for the season.
@@ -165,74 +166,123 @@ View your complete squad in the Squad section.`,
    * @param {Object} homeTeam - Home team
    * @param {Object} awayTeam - Away team
    * @param {boolean} isUserHome - Whether user is home team
+   * @param {Object} squadIntel - { unavailableCount, xiInjured, squadAlerts, squadSize }
    * @returns {Object} Message data
    */
-  static generateMatchReminderMessage(fixture, homeTeam, awayTeam, isUserHome) {
+  static generateMatchReminderMessage(fixture, homeTeam, awayTeam, isUserHome, squadIntel = {}) {
     const opponent = isUserHome ? awayTeam : homeTeam;
     const venue = isUserHome ? 'at home' : 'away';
+    const { unavailableCount = 0, xiInjured = [], squadAlerts = [], squadSize = 0 } = squadIntel;
+
+    // Build alerts section
+    let alertsSection = '';
+    if (squadAlerts.length > 0) {
+      const alertLines = squadAlerts.map(a => `⚠️ ${a}`).join('\n');
+      alertsSection = `\n**Action Required:**\n${alertLines}\n`;
+    }
+
+    // Build injury summary
+    let injurySection = '';
+    if (unavailableCount > 0) {
+      injurySection = `\n**Squad Availability:** ${squadSize - unavailableCount} of ${squadSize} players available (${unavailableCount} unavailable due to injury)\n`;
+    }
+
+    const allClear = squadAlerts.length === 0 && unavailableCount === 0;
 
     return {
       type: 'match_reminder',
-      subject: `Match Tomorrow: vs ${opponent.name}`,
-      sender: 'Team Analyst',
+      subject: `Match Tomorrow: vs ${opponent.name}${squadAlerts.length > 0 ? ' ⚠️' : ''}`,
+      sender: 'Head Coach',
       body: `Manager,
 
 We have an important match tomorrow against **${opponent.name}** ${venue}.
 
 **Match Details:**
 - **Opponent:** ${opponent.name}
-- **Venue:** ${fixture.venue}
-- **Match Day:** ${fixture.matchday}
-
+- **Venue:** ${fixture.venue || 'Home Ground'}
+- **Match Day:** ${fixture.matchday || 'Tomorrow'}
+${injurySection}${alertsSection}
 **Pre-Match Checklist:**
-- [ ] Review and set tactics
-- [ ] Confirm playing XI
-- [ ] Check player fitness and form
-- [ ] Study opposition strengths
+- [ ] Confirm playing XI and batting order
+- [ ] Check field placement settings
+- [ ] Review opposition strengths${unavailableCount > 0 ? '\n- [ ] Replace injured players in the XI' : ''}
 
-The opposition has been performing ${Math.random() > 0.5 ? 'well' : 'inconsistently'} this season. Make sure your tactics are optimized for this matchup.
-
-Set your tactics before the match begins!`,
+${allClear
+  ? 'Your squad looks fit and ready. Head to Tactics to finalise your XI before the match begins.'
+  : 'Address the alerts above before the match starts to avoid automatic substitutions.'}`,
       metadata: {
         matchId: fixture.matchId,
         opponent: opponent.id,
         venue: fixture.venue,
-        link: '/game/squad' // Link to tactics
+        link: '/game/tactics',
+        squadAlerts,
+        unavailableCount
       }
     };
   }
 
   /**
-   * Generate match result summary message
-   * @param {Object} result - Match result
-   * @param {boolean} won - Whether user won
+   * Generate match result summary message from a fullScorecard object
+   * @param {Object} scorecard - fullScorecard shape from Header.jsx
+   * @param {string} userTeamId - User's team ID
+   * @param {string} opponentName - Opponent team name
    * @returns {Object} Message data
    */
-  static generateMatchResultMessage(result, won) {
+  static generateMatchResultMessage(scorecard, userTeamId, opponentName) {
+    const won = scorecard.winner === userTeamId;
+    const inn1 = scorecard.innings1Data;
+    const inn2 = scorecard.innings2Data;
+    const bat1 = scorecard.firstBattingTeam;
+    const bat2 = scorecard.secondBattingTeam;
+    const pom = scorecard.playerOfMatch;
+
+    // Format top performers for each innings
+    const formatBatsmen = (batsmen = []) =>
+      batsmen.slice(0, 2).map(b => `  • ${b.name}: ${b.runs} (${b.balls}b)`).join('\n') || '  • No data';
+    const formatBowlers = (bowlers = []) =>
+      bowlers.slice(0, 2).map(b => `  • ${b.name}: ${b.wickets}/${b.runs}`).join('\n') || '  • No data';
+
+    const resultLine = won
+      ? `✅ **VICTORY** — Won by ${scorecard.margin}`
+      : `❌ **DEFEAT** — Lost by ${scorecard.margin}`;
+
+    const superOverNote = scorecard.superOver
+      ? `\n⚡ **Super Over decided this match!**\n` : '';
+
     return {
       type: 'match_result',
-      subject: won ? `Victory! Match Won` : `Match Lost`,
-      sender: 'Match Commissioner',
+      subject: won ? `Victory vs ${opponentName}` : `Defeat vs ${opponentName}`,
+      sender: 'Head Coach',
       body: `Manager,
 
-**Match Result:**
-${result.homeTeam.name} vs ${result.awayTeam.name}
+${resultLine}${superOverNote}
 
-**Winner:** ${result.winner === result.homeTeam.id ? result.homeTeam.name : result.awayTeam.name}
+**Scorecard:**
+${bat1.name}: **${inn1.totalScore}/${inn1.wickets}** (${inn1.overs}.${inn1.balls || 0} ov)
+${bat2.name}: **${inn2.totalScore}/${inn2.wickets}** (${inn2.overs}.${inn2.balls || 0} ov)
 
-${won ?
-  'Congratulations on the victory! The team executed the game plan perfectly.' :
-  'Unfortunately, we came up short today. Review the tactics and make adjustments for the next match.'}
+**${bat1.name} — Top Batsmen:**
+${formatBatsmen(inn1.topBatsmen)}
 
-**Key Stats:**
-- Runs Scored: ${result.homeTeam.runs}/${result.homeTeam.wickets} vs ${result.awayTeam.runs}/${result.awayTeam.wickets}
-- Player of the Match: ${result.playerOfTheMatch?.name || 'TBD'}
+**${bat1.name} — Top Bowlers (Opposition):**
+${formatBowlers(inn1.topBowlers)}
 
-${won ? 'Keep up the momentum!' : 'Learn from this and come back stronger.'}`,
+**${bat2.name} — Top Batsmen:**
+${formatBatsmen(inn2.topBatsmen)}
+
+**${bat2.name} — Top Bowlers (Opposition):**
+${formatBowlers(inn2.topBowlers)}
+
+**Player of the Match:** ${pom?.name || 'TBD'}${pom ? ` — ${pom.performance || pom.contribution || ''}` : ''}
+
+${won
+  ? 'Excellent performance. Keep the momentum going into the next match.'
+  : 'Review the scorecard and adjust your tactics for the next fixture.'}`,
       metadata: {
-        matchId: result.id,
         won,
-        link: `/game/match/${result.id}`
+        opponent: opponentName,
+        link: '/game/league',
+        won
       }
     };
   }
@@ -277,7 +327,7 @@ ${won ? 'Keep up the momentum!' : 'Learn from this and come back stronger.'}`,
     return {
       type: 'season_summary',
       subject: `Season ${season} Complete - Final Report`,
-      sender: 'Chairman',
+      sender: `${userTeam.name} Chairman`,
       body: `Manager,
 
 Season ${season} of the World Premier League has concluded.
@@ -364,7 +414,7 @@ Best regards,
     return {
       type: 'injury',
       subject: `${severityEmoji[severity]} ${player.name} - ${severityText[severity]}`,
-      sender: 'Medical Staff',
+      sender: 'Club Physio',
       body: `Manager,
 
 We regret to inform you that **${player.name}** has sustained ${injuryDescriptions[severity]} during the recent match.
@@ -405,7 +455,7 @@ Best regards,
     return {
       type: 'recovery',
       subject: `✅ ${player.name} - Fit and Available`,
-      sender: 'Medical Staff',
+      sender: 'Club Physio',
       body: `Manager,
 
 Good news! **${player.name}** has successfully completed their recovery and is now fully fit for selection.
@@ -450,7 +500,7 @@ Best regards,
     return {
       type: 'board_objectives',
       subject: `Season ${season} Board Objectives - ${teamName}`,
-      sender: 'Board of Directors',
+      sender: `${teamName} Board`,
       body: `Manager,
 
 Welcome to Season ${season}! The Board of Directors has established your performance objectives for this season.
