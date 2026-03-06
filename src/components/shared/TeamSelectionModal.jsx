@@ -21,6 +21,7 @@ import MessageGenerator from '../../utils/MessageGenerator';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
 import LoadingScreen from './LoadingScreen';
+import { getCustomClubs } from '../../utils/CustomClubManager';
 
 // Focus category labels
 const FOCUS_LABELS = {
@@ -35,7 +36,8 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const { teams, initializeTeams, setUserTeam, resetAllTactics } = useTeamStore();
+  const [customClubs, setCustomClubs] = useState({});
+  const { teams, initializeTeams, setUserTeam, resetAllTactics, applyCustomOverlays } = useTeamStore();
   const { resetForNewGame, scheduleEvent } = useGameStore();
   const gameState = useGameStore();
   const { clearHistory } = useNavigationStore();
@@ -78,6 +80,19 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
       initializeTeams(wplTeamsData);
     }
   }, [teams, initializeTeams]);
+
+  // Load custom club cosmetics from IndexedDB on mount
+  useEffect(() => {
+    getCustomClubs().then(clubs => {
+      setCustomClubs(clubs);
+      // Apply to team store so custom colors show in standings/header during game
+      if (Object.keys(clubs).length > 0) {
+        applyCustomOverlays(clubs);
+      }
+    }).catch(() => {
+      // Non-critical — fall back to defaults silently
+    });
+  }, [applyCustomOverlays]);
 
   // Preload images once teams are available
   useEffect(() => {
@@ -149,6 +164,11 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     // Re-initialize teams with fresh data from JSON (resets squadLists)
     initializeTeams(wplTeamsData);
 
+    // Re-apply custom club cosmetics after re-initialization
+    if (Object.keys(customClubs).length > 0) {
+      applyCustomOverlays(customClubs);
+    }
+
     // Initialize finances for all teams at game start
     const teamsForFinances = Object.values(teams).map(team => ({
       id: team.id,
@@ -217,6 +237,13 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
         <div className="flex-1 grid grid-cols-5 grid-rows-2 gap-4 max-h-[calc(100vh-120px)]">
           {teamsList.map(team => {
             const isSelected = selectedTeamId === team.id;
+            // Apply custom cosmetics if available
+            const custom = customClubs[team.id];
+            const displayColors = {
+              primary: custom?.primaryColor || team.colors?.primary || '#333',
+              secondary: custom?.secondaryColor || team.colors?.secondary || '#666'
+            };
+            const displayBadgeSrc = custom?.badgeDataUrl || getTeamBadge(team.id);
             return (
             <div
               key={team.id}
@@ -226,7 +253,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
                   : 'border-gray-700 hover:border-cricket-accent'
               }`}
               style={{
-                backgroundColor: isSelected ? `${team.colors?.secondary || '#1a1a2e'}` : '#1a1a2e'
+                backgroundColor: isSelected ? `${displayColors.secondary}` : '#1a1a2e'
               }}
               onClick={() => handleTeamSelect(team.id)}
             >
@@ -241,7 +268,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
                 <div
                   className="absolute inset-x-0 bottom-0 h-1/2"
                   style={{
-                    background: `linear-gradient(to top, ${isSelected ? team.colors?.secondary || '#1a1a2e' : '#1a1a2e'}, transparent)`
+                    background: `linear-gradient(to top, ${isSelected ? displayColors.secondary : '#1a1a2e'}, transparent)`
                   }}
                 />
               </div>
@@ -254,9 +281,10 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
                 {/* Logo - overlapping banner */}
                 <div className="flex justify-center mb-1">
                   <img
-                    src={getTeamBadge(team.id)}
+                    src={displayBadgeSrc}
                     alt={team.name}
-                    className="w-11 h-11 drop-shadow-lg"
+                    className="w-11 h-11 drop-shadow-lg object-cover rounded-full"
+                    onError={(e) => { e.target.src = getTeamBadge(team.id); }}
                   />
                 </div>
 
@@ -287,11 +315,11 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
                 <div className="flex gap-1 mt-auto pt-2 justify-center">
                   <div
                     className="w-6 h-2 rounded-sm"
-                    style={{ backgroundColor: team.colors?.primary || '#333' }}
+                    style={{ backgroundColor: displayColors.primary }}
                   />
                   <div
                     className="w-6 h-2 rounded-sm border border-gray-600"
-                    style={{ backgroundColor: team.colors?.secondary || '#666' }}
+                    style={{ backgroundColor: displayColors.secondary }}
                   />
                 </div>
               </div>
