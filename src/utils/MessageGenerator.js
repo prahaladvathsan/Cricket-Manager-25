@@ -222,36 +222,67 @@ ${allClear
   }
 
   /**
-   * Generate match result summary message
-   * @param {Object} result - Match result
-   * @param {boolean} won - Whether user won
+   * Generate match result summary message from a fullScorecard object
+   * @param {Object} scorecard - fullScorecard shape from Header.jsx
+   * @param {string} userTeamId - User's team ID
+   * @param {string} opponentName - Opponent team name
    * @returns {Object} Message data
    */
-  static generateMatchResultMessage(result, won) {
+  static generateMatchResultMessage(scorecard, userTeamId, opponentName) {
+    const won = scorecard.winner === userTeamId;
+    const inn1 = scorecard.innings1Data;
+    const inn2 = scorecard.innings2Data;
+    const bat1 = scorecard.firstBattingTeam;
+    const bat2 = scorecard.secondBattingTeam;
+    const pom = scorecard.playerOfMatch;
+
+    // Format top performers for each innings
+    const formatBatsmen = (batsmen = []) =>
+      batsmen.slice(0, 2).map(b => `  • ${b.name}: ${b.runs} (${b.balls}b)`).join('\n') || '  • No data';
+    const formatBowlers = (bowlers = []) =>
+      bowlers.slice(0, 2).map(b => `  • ${b.name}: ${b.wickets}/${b.runs}`).join('\n') || '  • No data';
+
+    const resultLine = won
+      ? `✅ **VICTORY** — Won by ${scorecard.margin}`
+      : `❌ **DEFEAT** — Lost by ${scorecard.margin}`;
+
+    const superOverNote = scorecard.superOver
+      ? `\n⚡ **Super Over decided this match!**\n` : '';
+
     return {
       type: 'match_result',
-      subject: won ? `Victory! Match Won` : `Match Lost`,
+      subject: won ? `Victory vs ${opponentName}` : `Defeat vs ${opponentName}`,
       sender: 'Match Commissioner',
       body: `Manager,
 
-**Match Result:**
-${result.homeTeam.name} vs ${result.awayTeam.name}
+${resultLine}${superOverNote}
 
-**Winner:** ${result.winner === result.homeTeam.id ? result.homeTeam.name : result.awayTeam.name}
+**Scorecard:**
+${bat1.name}: **${inn1.totalScore}/${inn1.wickets}** (${inn1.overs}.${inn1.balls || 0} ov)
+${bat2.name}: **${inn2.totalScore}/${inn2.wickets}** (${inn2.overs}.${inn2.balls || 0} ov)
 
-${won ?
-  'Congratulations on the victory! The team executed the game plan perfectly.' :
-  'Unfortunately, we came up short today. Review the tactics and make adjustments for the next match.'}
+**${bat1.name} — Top Batsmen:**
+${formatBatsmen(inn1.topBatsmen)}
 
-**Key Stats:**
-- Runs Scored: ${result.homeTeam.runs}/${result.homeTeam.wickets} vs ${result.awayTeam.runs}/${result.awayTeam.wickets}
-- Player of the Match: ${result.playerOfTheMatch?.name || 'TBD'}
+**${bat1.name} — Top Bowlers (Opposition):**
+${formatBowlers(inn1.topBowlers)}
 
-${won ? 'Keep up the momentum!' : 'Learn from this and come back stronger.'}`,
+**${bat2.name} — Top Batsmen:**
+${formatBatsmen(inn2.topBatsmen)}
+
+**${bat2.name} — Top Bowlers (Opposition):**
+${formatBowlers(inn2.topBowlers)}
+
+**Player of the Match:** ${pom?.name || 'TBD'}${pom ? ` — ${pom.performance || pom.contribution || ''}` : ''}
+
+${won
+  ? 'Excellent performance. Keep the momentum going into the next match.'
+  : 'Review the scorecard and adjust your tactics for the next fixture.'}`,
       metadata: {
-        matchId: result.id,
         won,
-        link: `/game/match/${result.id}`
+        opponent: opponentName,
+        link: '/game/league',
+        won
       }
     };
   }

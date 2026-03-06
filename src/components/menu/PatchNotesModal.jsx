@@ -7,11 +7,48 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.1.4';
-const RELEASE_DATE = 'February 2026';
-const RELEASE_TAGLINE = 'Identity Crisis Hotfix';
+const CURRENT_VERSION = '1.2.1';
+const RELEASE_DATE = 'March 2026';
+const RELEASE_TAGLINE = 'Actionable Intelligence Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Sparkles,
+    title: 'v1.2.1 Actionable Intelligence Update',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+    items: [
+      '📊 **Stats Hub** — The Matches page is now a full Stats Hub with Fixtures, Results, Season Statistics, and Match Analysis tabs.',
+      '📈 **Match Analysis** — Drill into any match or aggregate across all played matches. Phase breakdown, batting, bowling, and fielding wagon wheel all in one place.',
+      '🎯 **Wagon Zone Map** — 6-zone fielding heatmap showing where opponents scored against your bowling. Colour-coded by runs, filterable by phase.',
+      '⚡ **Phase Breakdown** — Manhattan bar chart showing RPO (not total runs) across all 4 phases: Powerplay, Early Middle, Late Middle, Death.',
+      '🏏 **Ball-level tagging** — Every simulated ball is now tagged with phase, hit zone, batter tier, and bowling plan for deep analytics.',
+      '💡 **Tactical Insights** — Automatic insight cards surface high-impact patterns from your match data (wagon zone leaks, economy trends, SR vs spin).',
+      '🗂️ **Full-width tab menus** — All tab bars across the game now span the full card width with equal button sizing.',
+      '🔧 **4-Phase engine fix** — Match engine now correctly uses 4 phases (earlyMiddle 7–12, lateMiddle 13–16) instead of the old 3-phase system.',
+    ],
+    note: 'Data nerds, this one\'s for you. Every ball your team plays is now tracked and sliced by phase, playstyle, and tier. Your opponents have nowhere to hide. 📊'
+  },
+  {
+    icon: Sparkles,
+    title: 'v1.2.0 The Seasonal Loop Update',
+    color: 'text-trophy-gold',
+    bgColor: 'bg-yellow-500/10',
+    borderColor: 'border-yellow-500/30',
+    items: [
+      '🔄 **Full Seasonal Loop** - Play through multiple seasons! League → Playoffs → Off-Season → Transfers → New Season. The game actually continues now.',
+      '🏏 **Pre-Auction Retention** - Retain up to 5 players before each auction (Season 3+). Negotiate salaries, manage tier caps, keep your stars.',
+      '🏆 **Playoff Bug Fix** - "Can\'t proceed after Qualifier 1" is gone. Q2 no longer tries to start before the Eliminator finishes.',
+      '💰 **Transfer Market** - Off-season transfer window with AI-driven listings, bidding, and free agency.',
+      '📅 **Retention Day on Calendar** - Pre-auction retention now shows as a calendar event so you know when it\'s coming.',
+      '📊 **Season History** - Track champions, standings, and your position across multiple seasons.',
+      '🎨 **Modal Legibility Fix** - All modals now use solid backgrounds instead of transparent ones. You can actually read things now.',
+      '💾 **Save/Load Overhaul** - Retention data now properly saves and loads. No more lost progress mid-retention phase.',
+      '🛡️ **Safeguards** - Off-season and new season events can no longer fire while playoffs are still running.'
+    ],
+    note: 'The biggest update yet. You can now play forever — or until your star player threatens to leave to go captain his original team unless you give him more money. Welcome to Cricket Manager hell. 🔥'
+  },
   {
     icon: Wrench,
     title: 'v1.1.4 Identity Crisis Hotfix',

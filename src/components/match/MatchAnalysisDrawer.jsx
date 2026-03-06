@@ -306,6 +306,48 @@ const TABS = [
   { id: 'wagon',    label: 'Wagon',    Icon: Map },
 ];
 
+/**
+ * MatchAnalysisContent — inline (non-portal) version of the 4-tab analysis UI.
+ * Used on the Stats page Analysis tab.
+ */
+export const MatchAnalysisContent = ({ analytics, result, onPlayerClick }) => {
+  const [activeTab, setActiveTab] = useState('phases');
+
+  if (!analytics) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-text-secondary text-sm">No analytics data for this match.</p>
+        <p className="text-text-tertiary text-xs mt-1">Analytics are generated for matches played after this feature was added.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex border-b border-border-primary mb-3">
+        {TABS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs border-b-2 transition-colors flex-1 justify-center ${
+              activeTab === id
+                ? 'border-cricket-accent text-text-primary font-semibold'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+      {activeTab === 'phases'  && <PhasesTab  analytics={analytics} result={result} />}
+      {activeTab === 'batting' && <BattingTab analytics={analytics} result={result} onPlayerClick={onPlayerClick} />}
+      {activeTab === 'bowling' && <BowlingTab analytics={analytics} result={result} onPlayerClick={onPlayerClick} />}
+      {activeTab === 'wagon'   && <WagonZoneTab analytics={analytics} />}
+    </div>
+  );
+};
+
 const MatchAnalysisDrawer = ({ isOpen, onClose, result, onPlayerClick }) => {
   const [activeTab, setActiveTab] = useState('phases');
 

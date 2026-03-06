@@ -38,6 +38,7 @@ import { TutorialSpotlight } from '../../tutorial';
 import useMatchdayTutorial from '../../tutorial/useMatchdayTutorial';
 import SaveGameManager from '../../../utils/SaveGameManager';
 import useInboxStore from '../../../stores/inboxStore';
+import MessageGenerator from '../../../utils/MessageGenerator';
 import useAuctionStore from '../../../stores/auctionStore';
 import useTransferStore from '../../../stores/transferStore';
 import AutosaveIndicator from '../../shared/AutosaveIndicator';
@@ -1260,9 +1261,33 @@ export default function MatchdayUI() {
 
       console.log('✅ Match result processed successfully');
 
+      // Send match result inbox message — resolve player names first
+      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      const allPlayers = usePlayerStore.getState().players;
+      const resolveName = (id) => allPlayers[id]?.name || id;
+      const scorecardWithNames = {
+        ...fullScorecard,
+        innings1Data: {
+          ...fullScorecard.innings1Data,
+          topBatsmen: (fullScorecard.innings1Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
+          topBowlers: (fullScorecard.innings1Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
+        },
+        innings2Data: {
+          ...fullScorecard.innings2Data,
+          topBatsmen: (fullScorecard.innings2Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
+          topBowlers: (fullScorecard.innings2Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
+        },
+        playerOfMatch: fullScorecard.playerOfMatch ? {
+          ...fullScorecard.playerOfMatch,
+          name: resolveName(fullScorecard.playerOfMatch.id)
+        } : null
+      };
+      useInboxStore.getState().addMessage(
+        MessageGenerator.generateMatchResultMessage(scorecardWithNames, userTeamId, opponentTeam.name)
+      );
+
       // Autosave after user match completion
       const userTeam = userTeamId === homeTeam.id ? homeTeam : awayTeam;
-      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
       const userWon = winner === userTeamId;
       const score = `${innings1.totalScore}/${innings1.wickets} vs ${innings2.totalScore}/${innings2.wickets}`;
 

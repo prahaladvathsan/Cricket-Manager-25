@@ -354,8 +354,9 @@ const Header = () => {
       // Show result modal using hook
       showResult(fullScorecard);
 
-      // Autosave after quick-sim user match
+      // Send match result inbox message
       const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeamId, opponentTeam.name));
       const userWon = result.winner === userTeamId;
       const score = `${result.innings1.totalScore}/${result.innings1.wickets} vs ${result.innings2.totalScore}/${result.innings2.wickets}`;
 
@@ -553,6 +554,10 @@ const Header = () => {
 
           // Show result modal using hook
           showResult(fullScorecard);
+
+          // Send match result inbox message
+          const opponent2 = fixture.homeTeam === userTeam?.id ? awayTeam : homeTeam;
+          addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeam?.id, opponent2.name));
 
           // Don't advance day yet - wait for user to close modal
         } catch (error) {
