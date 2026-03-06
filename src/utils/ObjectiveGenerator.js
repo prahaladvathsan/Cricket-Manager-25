@@ -3,7 +3,16 @@
  * @description Generates board objectives for each season with weighted scoring
  */
 
-import { Target, Trophy, Award, TrendingUp, Home, Zap, Medal, Users, Flame, BarChart, Star, Crosshair } from 'lucide-react';
+import { Target, Trophy, Award, TrendingUp, Home, Zap, Medal, Users, Flame, BarChart, Star, Crosshair, DollarSign, MapPin, PiggyBank } from 'lucide-react';
+
+// Region labels for sign_from_region objective display
+const REGION_LABELS = {
+  AU: 'Australian',
+  ENG: 'English',
+  IND: 'Indian',
+  SA: 'South African',
+  WI: 'West Indian'
+};
 
 // Icon mapping (can't store components in Zustand persist, so we store strings)
 export const ICON_MAP = {
@@ -18,7 +27,10 @@ export const ICON_MAP = {
   flame: Flame,
   barChart: BarChart,
   star: Star,
-  crosshair: Crosshair
+  crosshair: Crosshair,
+  dollarSign: DollarSign,
+  mapPin: MapPin,
+  piggyBank: PiggyBank
 };
 
 /**
@@ -41,6 +53,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 30, // 30% of board score
     icon: 'target',
     isMandatory: true,
+    difficultyTier: 'hard',
     calculateProgress: (gameData) => {
       const { userPosition, played, totalMatches, stage } = gameData;
 
@@ -89,6 +102,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 25, // 25% of board score
     icon: 'trophy',
     isMandatory: false,
+    difficultyTier: 'hard',
     calculateProgress: (gameData) => {
       const { userPosition, stage, champion, userTeamId } = gameData;
 
@@ -133,6 +147,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 12,
     icon: 'award',
     isMandatory: false,
+    difficultyTier: 'hard',
     calculateProgress: (gameData) => {
       const { userPosition, played, totalMatches } = gameData;
 
@@ -173,6 +188,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 10,
     icon: 'trendingUp',
     isMandatory: false,
+    difficultyTier: 'easy',
     calculateProgress: (gameData) => {
       const { userStanding } = gameData;
       const nrr = userStanding?.nrr || 0;
@@ -205,6 +221,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 8,
     icon: 'home',
     isMandatory: false,
+    difficultyTier: 'medium',
     calculateProgress: (gameData) => {
       const { homeWins = 0 } = gameData;
       const target = 7;
@@ -236,6 +253,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 10,
     icon: 'zap',
     isMandatory: false,
+    difficultyTier: 'easy',
     calculateProgress: (gameData) => {
       const { winsInFirst3 = 0 } = gameData;
 
@@ -267,6 +285,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 12,
     icon: 'star',
     isMandatory: false,
+    difficultyTier: 'hard',
     calculateProgress: (gameData) => {
       const { userBestBatsmanRank = null, userBestBatsmanRuns = 0, topScorerRuns = 1 } = gameData;
 
@@ -308,6 +327,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 12,
     icon: 'crosshair',
     isMandatory: false,
+    difficultyTier: 'hard',
     calculateProgress: (gameData) => {
       const { userBestBowlerRank = null, userBestBowlerWickets = 0, topBowlerWickets = 1 } = gameData;
 
@@ -349,6 +369,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 8,
     icon: 'users',
     isMandatory: false,
+    difficultyTier: 'medium',
     calculateProgress: (gameData) => {
       const { rivalWins = 0, rivalMatchesPlayed = 0 } = gameData;
       const target = 2;
@@ -379,6 +400,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 10,
     icon: 'flame',
     isMandatory: false,
+    difficultyTier: 'medium',
     calculateProgress: (gameData) => {
       const { longestWinStreak = 0 } = gameData;
       const target = 4;
@@ -410,6 +432,7 @@ const OBJECTIVE_TEMPLATES = [
     weight: 8,
     icon: 'barChart',
     isMandatory: false,
+    difficultyTier: 'easy',
     calculateProgress: (gameData) => {
       const { highestScore = 0 } = gameData;
       const target = 200;
@@ -433,6 +456,88 @@ const OBJECTIVE_TEMPLATES = [
       if (highestScore > 0) return `Best so far: ${highestScore} runs`;
       return 'No matches played yet';
     }
+  },
+
+  {
+    id: 'keep_under_cap',
+    title: 'Stay Under Budget',
+    description: 'Keep total squad salary at or below 80% of the cap at season end',
+    weight: 8,
+    icon: 'piggyBank',
+    isMandatory: false,
+    difficultyTier: 'easy',
+    calculateProgress: (gameData) => {
+      const { squadSalaryRatio = null } = gameData;
+      if (squadSalaryRatio === null) return 50; // Unknown — in progress
+      if (squadSalaryRatio <= 0.8) return 100;
+      if (squadSalaryRatio <= 0.9) return 70;
+      if (squadSalaryRatio <= 1.0) return 40;
+      return 0;
+    },
+    calculateStatus: (gameData) => {
+      const { squadSalaryRatio = null } = gameData;
+      if (squadSalaryRatio === null) return 'pending';
+      if (squadSalaryRatio <= 0.8) return 'on_track';
+      if (squadSalaryRatio <= 1.0) return 'in_progress';
+      return 'at_risk';
+    },
+    getDetails: (gameData) => {
+      const { squadSalaryRatio = null } = gameData;
+      if (squadSalaryRatio === null) return 'Season not started';
+      const pct = Math.round(squadSalaryRatio * 100);
+      return `Squad salary at ${pct}% of cap (target: ≤80%)`;
+    }
+  },
+
+  {
+    id: 'sell_for_profit',
+    title: 'Sell High',
+    description: 'Sell at least 1 player for more than their original auction price',
+    weight: 10,
+    icon: 'dollarSign',
+    isMandatory: false,
+    difficultyTier: 'medium',
+    calculateProgress: (gameData) => {
+      const { transferSellProfit = 0 } = gameData;
+      if (transferSellProfit > 0) return 100;
+      return 0;
+    },
+    calculateStatus: (gameData) => {
+      const { transferSellProfit = 0 } = gameData;
+      if (transferSellProfit > 0) return 'completed';
+      return 'pending';
+    },
+    getDetails: (gameData) => {
+      const { transferSellProfit = 0 } = gameData;
+      if (transferSellProfit > 0) {
+        return `Sold a player for $${(transferSellProfit / 1000000).toFixed(2)}M profit!`;
+      }
+      return 'Sell a player above their auction price during the transfer window';
+    }
+  },
+
+  {
+    id: 'sign_from_region',
+    title: 'Regional Scout',
+    description: 'Sign a player from a designated region during the transfer window',
+    weight: 10,
+    icon: 'mapPin',
+    isMandatory: false,
+    difficultyTier: 'medium',
+    calculateProgress: (gameData) => {
+      const { signedFromRegion = false } = gameData;
+      return signedFromRegion ? 100 : 0;
+    },
+    calculateStatus: (gameData) => {
+      const { signedFromRegion = false } = gameData;
+      return signedFromRegion ? 'completed' : 'pending';
+    },
+    getDetails: (gameData) => {
+      const { signedFromRegion = false, signedRegionTarget = null } = gameData;
+      const regionLabel = signedRegionTarget ? REGION_LABELS[signedRegionTarget] || signedRegionTarget : 'a target region';
+      if (signedFromRegion) return `Signed an ${regionLabel} player!`;
+      return `Sign a player from ${regionLabel} during the transfer window`;
+    }
   }
 ];
 
@@ -440,24 +545,38 @@ const OBJECTIVE_TEMPLATES = [
  * Generate objectives for a new season
  * @param {number} season - Season number
  * @param {string} rivalTeamName - Name of the designated rival team
- * @returns {Array} Array of 5 selected objectives (1 mandatory + 4 random)
+ * @param {string} signedRegionTarget - Region code for sign_from_region objective (AU/ENG/IND/SA/WI)
+ * @returns {Array} Array of 5 selected objectives (1 mandatory + 1 hard + 2 medium + 1 easy)
  */
-export function generateSeasonObjectives(season, rivalTeamName = 'Sydney Sharks') {
+export function generateSeasonObjectives(season, rivalTeamName = 'Sydney Sharks', signedRegionTarget = null) {
   // Always include the mandatory objective (playoffs)
   const mandatory = OBJECTIVE_TEMPLATES.find(obj => obj.isMandatory);
 
-  // Get all non-mandatory objectives
+  // Get all non-mandatory objectives grouped by tier
   const optional = OBJECTIVE_TEMPLATES.filter(obj => !obj.isMandatory);
+  const hardPool = optional.filter(obj => obj.difficultyTier === 'hard');
+  const mediumPool = optional.filter(obj => obj.difficultyTier === 'medium');
+  const easyPool = optional.filter(obj => obj.difficultyTier === 'easy');
 
-  // Shuffle and pick 4 random objectives
-  const shuffled = [...optional].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, 4);
+  const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+
+  // Pick 1 hard + 2 medium + 1 easy
+  const selectedHard = shuffle(hardPool).slice(0, 1);
+  const selectedMedium = shuffle(mediumPool).slice(0, 2);
+  const selectedEasy = shuffle(easyPool).slice(0, 1);
+
+  const selected = [...selectedHard, ...selectedMedium, ...selectedEasy];
+
+  // Assign a random region target at season start for sign_from_region
+  const regions = ['AU', 'ENG', 'IND', 'SA', 'WI'];
+  const regionTarget = signedRegionTarget || regions[Math.floor(Math.random() * regions.length)];
 
   // Combine mandatory + selected objectives
   const objectives = [mandatory, ...selected].map(template => ({
     ...template,
     season,
     rivalTeamName, // Store rival name for beat_rival objective
+    signedRegionTarget: template.id === 'sign_from_region' ? regionTarget : undefined,
     progress: 0,
     status: 'pending',
     details: template.getDetails({
@@ -465,7 +584,8 @@ export function generateSeasonObjectives(season, rivalTeamName = 'Sydney Sharks'
       played: 0,
       totalMatches: 18,
       stage: 'league',
-      userStanding: { nrr: 0 }
+      userStanding: { nrr: 0 },
+      signedRegionTarget: regionTarget
     })
   }));
 

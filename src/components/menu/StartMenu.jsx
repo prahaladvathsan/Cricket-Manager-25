@@ -14,7 +14,8 @@ import {
   BookOpen,
   Info,
   Globe,
-  Sparkles
+  Sparkles,
+  Palette
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
@@ -60,6 +61,13 @@ const StartMenu = () => {
       description: 'Compete with 10 players in turn-based league mode',
       action: () => navigate('/multiplayer'),
       badge: 'Coming Soon'
+    },
+    {
+      id: 'club-editor',
+      label: 'Customize Club',
+      icon: Palette,
+      description: 'Customize team badge and colors for any WPL club',
+      action: () => navigate('/club-editor')
     },
     {
       id: 'player-browser',

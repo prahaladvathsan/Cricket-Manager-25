@@ -21,7 +21,7 @@ import CricketBallSpinner from '../shared/CricketBallSpinner';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
 import aiTacticsManager from '../../core/ai/AITacticsManager';
 import MessageGenerator from '../../utils/MessageGenerator';
-import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
+import { updateObjectivesAfterMatch, updateTransferObjectives } from '../../utils/ObjectiveTracker';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PrizeDistributor from '../../core/offseason/PrizeDistributor';
 import SeasonSummaryView from '../OffSeason/SeasonSummaryView';
@@ -349,7 +349,7 @@ const Header = () => {
       }
 
       // Update objectives tracking after user match
-      updateObjectivesAfterMatch(result, fixture, userTeam.id, useGameStore, useLeagueStore, useTeamStore);
+      updateObjectivesAfterMatch(result, fixture, userTeam.id, useGameStore, useLeagueStore, useTeamStore, usePlayerStore);
 
       // Process match financials (revenue and performance tracking)
       processMatchFinancials(result, standings);
@@ -733,13 +733,34 @@ const Header = () => {
 
         // Capture summary BEFORE calling closeTransferWindow (it clears activeListings)
         const tStore = useTransferStore.getState();
+        const completedTransfersCopy = [...tStore.completedTransfers];
         tStore.setTransferWindowSummary({
-          completedTransfers: [...tStore.completedTransfers],
+          completedTransfers: completedTransfersCopy,
           totalListings: tStore.activeListings.length,
           freeAgents: [...tStore.freeAgents]
         });
         useTransferStore.getState().closeTransferWindow();
         console.log('🔒 Transfer window closed and summary saved');
+
+        // Update transfer-related board objectives
+        if (userTeam) {
+          completedTransfersCopy.forEach(ct => {
+            // Sale: user sold a player (user was the seller)
+            if (ct.fromTeamId === userTeam.id) {
+              updateTransferObjectives(
+                { type: 'sale', playerId: ct.playerId, price: ct.newPrice, soldPrice: ct.oldPrice },
+                userTeam.id, useGameStore, usePlayerStore
+              );
+            }
+            // Signing: user bought a player (user was the buyer)
+            if (ct.toTeamId === userTeam.id) {
+              updateTransferObjectives(
+                { type: 'signing', playerId: ct.playerId, price: ct.newPrice },
+                userTeam.id, useGameStore, usePlayerStore
+              );
+            }
+          });
+        }
       }
       advanceDay();
     } else if (event && event.type === 'season_end') {
