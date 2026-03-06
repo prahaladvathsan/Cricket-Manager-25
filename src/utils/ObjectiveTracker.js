@@ -3,6 +3,8 @@
  * @description Helper functions to track objective progress after each match
  */
 
+import LeaderboardsCalculator from '../core/league/LeaderboardsCalculator.js';
+
 /**
  * Update objective tracking after a user team match
  * @param {Object} matchResult - Match result object
@@ -11,8 +13,9 @@
  * @param {Object} gameStore - Game store instance
  * @param {Object} leagueStore - League store instance
  * @param {Object} teamStore - Team store instance
+ * @param {Object} playerStore - Player store instance (optional, for leaderboard names)
  */
-export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gameStore, leagueStore, teamStore) {
+export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gameStore, leagueStore, teamStore, playerStore = null) {
   const { objectiveTracking } = gameStore.getState();
   const { standings } = leagueStore.getState();
   const userStanding = standings.find(s => s.clubId === userTeamId);
@@ -59,7 +62,6 @@ export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gam
   updates.highestScore = Math.max(objectiveTracking.highestScore || 0, userScore);
 
   // 5. Track rival wins (need to check if this match was against rival)
-  // Get rival team from objectives
   const { seasonObjectives } = gameStore.getState();
   const beatRivalObjective = seasonObjectives?.find(obj => obj.id === 'beat_rival');
 
@@ -74,6 +76,59 @@ export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gam
         updates.rivalWins = (objectiveTracking.rivalWins || 0) + 1;
       }
     }
+  }
+
+  // 6. Track best batsman/bowler leaderboard positions
+  try {
+    const leaderboards = new LeaderboardsCalculator(teamStore, playerStore, leagueStore);
+
+    // Best batsman
+    const topScorers = leaderboards.getTopScorers(20);
+    if (topScorers.length > 0) {
+      updates.topScorerRuns = topScorers[0].runs;
+
+      // Find the user's best-ranked batsman
+      const userBatsmen = topScorers.filter(p => {
+        // Check if the player belongs to the user's current squad
+        const squadList = teamStore.getState().squadLists?.[userTeamId] || [];
+        return squadList.some(s => s.id === p.playerId);
+      });
+
+      if (userBatsmen.length > 0) {
+        const best = userBatsmen[0]; // already ranked, so first is best
+        updates.userBestBatsmanRank = best.rank;
+        updates.userBestBatsmanRuns = best.runs;
+        updates.userBestBatsmanName = best.playerName;
+      } else {
+        updates.userBestBatsmanRank = null;
+        updates.userBestBatsmanRuns = 0;
+        updates.userBestBatsmanName = null;
+      }
+    }
+
+    // Best bowler
+    const topBowlers = leaderboards.getTopWicketTakers(20);
+    if (topBowlers.length > 0) {
+      updates.topBowlerWickets = topBowlers[0].wickets;
+
+      const userBowlers = topBowlers.filter(p => {
+        const squadList = teamStore.getState().squadLists?.[userTeamId] || [];
+        return squadList.some(s => s.id === p.playerId);
+      });
+
+      if (userBowlers.length > 0) {
+        const best = userBowlers[0];
+        updates.userBestBowlerRank = best.rank;
+        updates.userBestBowlerWickets = best.wickets;
+        updates.userBestBowlerName = best.playerName;
+      } else {
+        updates.userBestBowlerRank = null;
+        updates.userBestBowlerWickets = 0;
+        updates.userBestBowlerName = null;
+      }
+    }
+  } catch (err) {
+    console.warn('Leaderboard tracking failed:', err);
   }
 
   // Apply updates
@@ -96,6 +151,70 @@ export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gam
   console.log('📊 Objectives updated after match:', updates);
 }
 
+/**
+ * Update transfer-related objective tracking when a player sale/signing occurs
+ * @param {Object} transferData - { type: 'sale'|'signing', playerId, price, soldPrice, nationality }
+ * @param {string} userTeamId - User's team ID
+ * @param {Object} gameStore - Game store instance
+ * @param {Object} playerStore - Player store instance
+ */
+export function updateTransferObjectives(transferData, userTeamId, gameStore, playerStore) {
+  const { objectiveTracking } = gameStore.getState();
+  const updates = {};
+
+  if (transferData.type === 'sale') {
+    // sell_for_profit: sold for more than their original auction price
+    const profit = (transferData.price || 0) - (transferData.soldPrice || 0);
+    if (profit > 0) {
+      updates.transferSellProfit = Math.max(objectiveTracking.transferSellProfit || 0, profit);
+    }
+  }
+
+  if (transferData.type === 'signing') {
+    // sign_from_region: check if player nationality matches target region
+    const targetRegion = objectiveTracking.signedRegionTarget;
+    if (targetRegion && !objectiveTracking.signedFromRegion) {
+      const player = playerStore?.getState().getPlayer(transferData.playerId);
+      const nationality = player?.nationality || transferData.nationality || '';
+      if (REGION_NATIONALITIES[targetRegion]?.includes(nationality)) {
+        updates.signedFromRegion = true;
+      }
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    gameStore.getState().updateObjectiveTracking(updates);
+    // Re-run objective progress update
+    const gameState = gameStore.getState();
+    const leaderboardData = {
+      ...gameState.objectiveTracking,
+      ...updates
+    };
+    gameStore.getState().updateObjectiveProgress(leaderboardData);
+    console.log('💰 Transfer objectives updated:', updates);
+  }
+}
+
+// Region → nationality mapping (ISO codes used in player data)
+export const REGION_NATIONALITIES = {
+  AU: ['AUS'],
+  ENG: ['ENG'],
+  IND: ['IND'],
+  SA: ['ZAF', 'RSA', 'SA'],
+  WI: ['WI', 'JAM', 'TTO', 'BRB', 'GUY', 'LCA', 'VCT', 'ATG', 'KNA']
+};
+
+export const REGION_LABELS = {
+  AU: 'Australian',
+  ENG: 'English',
+  IND: 'Indian',
+  SA: 'South African',
+  WI: 'West Indian'
+};
+
 export default {
-  updateObjectivesAfterMatch
+  updateObjectivesAfterMatch,
+  updateTransferObjectives,
+  REGION_NATIONALITIES,
+  REGION_LABELS
 };

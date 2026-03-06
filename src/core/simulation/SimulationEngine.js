@@ -12,7 +12,7 @@ import PlayoffGenerator from '../league/PlayoffGenerator';
 import MessageGenerator from '../../utils/MessageGenerator';
 import PrizeDistributor from '../offseason/PrizeDistributor';
 import { initializeLeague as sharedInitializeLeague } from '../../utils/LeagueInitializer';
-import { updateObjectivesAfterMatch } from '../../utils/ObjectiveTracker';
+import { updateObjectivesAfterMatch, updateTransferObjectives } from '../../utils/ObjectiveTracker';
 import aiTacticsManager from '../ai/AITacticsManager';
 import SaveGameManager from '../../utils/SaveGameManager';
 import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '../finance/transferManagerSingleton';
@@ -643,13 +643,33 @@ class SimulationEngine {
 
         const useTransferStore = (await import('../../stores/transferStore')).default;
         const tStore = useTransferStore.getState();
+        const completedTransfersCopy = [...tStore.completedTransfers];
         tStore.setTransferWindowSummary({
-          completedTransfers: [...tStore.completedTransfers],
+          completedTransfers: completedTransfersCopy,
           totalListings: tStore.activeListings.length,
           freeAgents: [...tStore.freeAgents]
         });
         useTransferStore.getState().closeTransferWindow();
         console.log('🔒 Transfer window closed and summary saved');
+
+        // Update transfer-related board objectives
+        const userTeamId = this.teamStore.getState().userTeamId;
+        if (userTeamId) {
+          completedTransfersCopy.forEach(ct => {
+            if (ct.fromTeamId === userTeamId) {
+              updateTransferObjectives(
+                { type: 'sale', playerId: ct.playerId, price: ct.newPrice, soldPrice: ct.oldPrice },
+                userTeamId, this.gameStore, this.playerStore
+              );
+            }
+            if (ct.toTeamId === userTeamId) {
+              updateTransferObjectives(
+                { type: 'signing', playerId: ct.playerId, price: ct.newPrice },
+                userTeamId, this.gameStore, this.playerStore
+              );
+            }
+          });
+        }
       }
       summary.eventsProcessed++;
     } else if (event && event.type === 'season_end') {
@@ -1061,7 +1081,7 @@ class SimulationEngine {
       // Update objectives tracking if this match involved the user team
       const isUserMatch = userTeamId && (fixture.homeTeam === userTeamId || fixture.awayTeam === userTeamId);
       if (isUserMatch) {
-        updateObjectivesAfterMatch(result, fixture, userTeamId, this.gameStore, this.leagueStore, this.teamStore);
+        updateObjectivesAfterMatch(result, fixture, userTeamId, this.gameStore, this.leagueStore, this.teamStore, this.playerStore);
       }
 
       // Process match financials (revenue and performance tracking) - matches Normal UI behavior
