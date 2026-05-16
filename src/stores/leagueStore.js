@@ -24,6 +24,37 @@ import { markHydrated } from '../utils/storeHydration.js';
  * @property {Object} clubs - Club data indexed by ID
  */
 
+// Pure helper: given current fixtures + calendar events + clubs + a playoff result,
+// returns the updated fixtures and calendar events. No side effects — caller applies them.
+// This is the single source of truth for playoff bracket progression.
+function computePlayoffBracketUpdate(currentFixtures, currentCalendarEvents, clubs, result) {
+  const playoffGenerator = new PlayoffGenerator();
+  const playoffFixtures = currentFixtures.filter(f => f.type === 'playoff');
+  const updatedPlayoffFixtures = playoffGenerator.updatePlayoffFixtures(
+    playoffFixtures,
+    result,
+    clubs
+  );
+
+  const updatedById = new Map(updatedPlayoffFixtures.map(f => [f.matchId, f]));
+
+  const updatedFixtures = currentFixtures.map(f =>
+    f.type === 'playoff' ? (updatedById.get(f.matchId) || f) : f
+  );
+
+  const updatedCalendarEvents = currentCalendarEvents.map(event => {
+    if (event.type === 'match' && event.data && event.data.type === 'playoff') {
+      const updatedFixture = updatedById.get(event.data.matchId);
+      if (updatedFixture) {
+        return { ...event, data: { ...event.data, ...updatedFixture } };
+      }
+    }
+    return event;
+  });
+
+  return { fixtures: updatedFixtures, calendarEvents: updatedCalendarEvents };
+}
+
 const useLeagueStore = create(
   persist(
     (set, get) => ({
@@ -164,38 +195,48 @@ const useLeagueStore = create(
 
     // Update playoff results if in playoff stage
     let updatedPlayoffResults = state.playoffResults;
+    let updatedFixtures = state.fixtures;
+    let extraStateUpdate = {};
 
-    // Check if this is a playoff match (either by result.type or by matchId prefix)
     const isPlayoffMatch = state.stage === 'playoffs' &&
       (result.type === 'playoff' || result.matchId?.startsWith('playoff_'));
 
     if (isPlayoffMatch) {
       console.log(`🏆 Recording playoff result for ${result.matchId}`);
-
-      // Add to playoff results array
       updatedPlayoffResults = [...state.playoffResults, result];
 
-      // CRITICAL: If this is the Final match, set champion and trigger season-end flow
-      if (result.matchId === 'playoff_final') {
-        console.log('🏆 FINAL MATCH COMPLETED - Setting champion and scheduling season end...');
+      // Atomic bracket update: callers no longer need to invoke a separate helper.
+      // This is the architectural fix for the recurring "Final shows TBD" bug —
+      // previously MatchdayUI.jsx (interactive play-through) recorded the result
+      // but never advanced the bracket, leaving Q2/Final unpopulated.
+      const gameStore = useGameStore.getState();
+      const bracketUpdate = computePlayoffBracketUpdate(
+        state.fixtures,
+        gameStore.calendarEvents,
+        state.clubs,
+        result
+      );
+      updatedFixtures = bracketUpdate.fixtures;
+      useGameStore.setState({ calendarEvents: bracketUpdate.calendarEvents });
 
-        // Determine champion and runner-up
+      const q2After = bracketUpdate.fixtures.find(f => f.matchId === 'playoff_q2');
+      const finalAfter = bracketUpdate.fixtures.find(f => f.matchId === 'playoff_final');
+      console.log(`   Q2:    ${q2After?.homeTeamName} vs ${q2After?.awayTeamName} — ${q2After?.status}`);
+      console.log(`   Final: ${finalAfter?.homeTeamName} vs ${finalAfter?.awayTeamName} — ${finalAfter?.status}`);
+
+      // If this is the Final match, crown the champion and dynamically schedule season_end.
+      // season_end is NEVER pre-scheduled (see CLAUDE.md) — it's set one day after the Final.
+      if (result.matchId === 'playoff_final') {
+        console.log('🏆 FINAL MATCH COMPLETED — Setting champion and scheduling season end...');
         const championId = result.winner;
         const runnerUpId = result.winner === result.homeTeam ? result.awayTeam : result.homeTeam;
-
-        // Get team names from clubs
         const championTeam = state.clubs[championId];
         const runnerUpTeam = state.clubs[runnerUpId];
 
-        // Calculate victory margin
         let margin = '';
-        if (result.winByRuns) {
-          margin = `${result.margin} runs`;
-        } else if (result.winByWickets) {
-          margin = `${result.margin} wickets`;
-        }
+        if (result.winByRuns) margin = `${result.margin} runs`;
+        else if (result.winByWickets) margin = `${result.margin} wickets`;
 
-        // Create champion info object
         const championInfo = {
           championId,
           runnerUpId,
@@ -205,37 +246,34 @@ const useLeagueStore = create(
           finalResult: result
         };
 
-        // Set the champion in store
-        get().setChampion(championInfo);
-        console.log(`✅ Champion set: ${championInfo.championName} defeated ${championInfo.runnerUpName}`);
-
-        // Schedule season_end event for the next day
-        const gameStore = useGameStore.getState();
-        const nextDay = gameStore.currentDay + 1;
+        const nextDay = gameStore.gameDay + 1;
         gameStore.scheduleEvent(nextDay, 'season_end', {
           season: gameStore.currentSeason,
           championId,
           finalMatchId: result.matchId
         });
-        console.log(`📅 Season end event scheduled for day ${nextDay}`);
+        console.log(`📅 Season end scheduled for day ${nextDay}`);
+        console.log(`✅ Champion: ${championInfo.championName} defeated ${championInfo.runnerUpName}`);
 
-        // Set league stage to completed
-        set({ stage: 'completed' });
-        console.log('🏁 League stage set to completed');
+        extraStateUpdate = { stage: 'completed', champion: championInfo };
       }
     }
 
     return {
       results: newResults,
       stats: newStats,
-      playoffResults: updatedPlayoffResults
+      playoffResults: updatedPlayoffResults,
+      fixtures: updatedFixtures,
+      ...extraStateUpdate
     };
   }),
 
   /**
-   * CRITICAL: Unified method to update playoff fixtures after a result
-   * Called by both Normal UI mode and Sim-to-Date mode for consistency
-   * Updates both fixtures array and calendar events
+   * Legacy API kept for backward compatibility with existing call sites in
+   * Header.jsx and SimulationEngine.js. The bracket update is now performed
+   * atomically inside recordResult(), making this call redundant but idempotent:
+   * re-running PlayoffGenerator.updatePlayoffFixtures on already-updated fixtures
+   * yields the same fixtures.
    * @param {Object} result - Playoff match result
    */
   updatePlayoffFixturesAfterResult: (result) => set((state) => {
@@ -243,59 +281,49 @@ const useLeagueStore = create(
       console.warn('updatePlayoffFixturesAfterResult called with non-playoff match');
       return state;
     }
-
-    console.log(`🔄 Unified playoff update for ${result.matchId}`);
-
-    const playoffGenerator = new PlayoffGenerator();
-    const playoffFixtures = state.fixtures.filter(f => f.type === 'playoff');
-
-    // Update playoff fixtures with winner/loser info
-    const updatedPlayoffFixtures = playoffGenerator.updatePlayoffFixtures(
-      playoffFixtures,
-      result,
-      state.clubs
-    );
-
-    // Merge updated playoff fixtures back into main fixtures array
-    const updatedFixtures = state.fixtures.map(fixture => {
-      if (fixture.type === 'playoff') {
-        const updated = updatedPlayoffFixtures.find(pf => pf.matchId === fixture.matchId);
-        return updated || fixture;
-      }
-      return fixture;
-    });
-
-    // Update calendar events with new team info
     const gameStore = useGameStore.getState();
-    const updatedEvents = gameStore.calendarEvents.map(event => {
-      if (event.type === 'match' && event.data && event.data.type === 'playoff') {
-        const updatedFixture = updatedPlayoffFixtures.find(f => f.matchId === event.data.matchId);
-        if (updatedFixture) {
-          return {
-            ...event,
-            data: {
-              ...event.data,
-              ...updatedFixture
-            }
-          };
-        }
-      }
-      return event;
-    });
+    const bracketUpdate = computePlayoffBracketUpdate(
+      state.fixtures,
+      gameStore.calendarEvents,
+      state.clubs,
+      result
+    );
+    useGameStore.setState({ calendarEvents: bracketUpdate.calendarEvents });
+    return { fixtures: bracketUpdate.fixtures };
+  }),
 
-    // Update calendar events in gameStore
-    gameStore.clearEvents();
-    gameStore.scheduleEvents(updatedEvents);
+  /**
+   * Self-healing: rebuilds playoff bracket state from completed results.
+   * Replays each playoff result against current fixtures in chronological order,
+   * populating any TBD slots. Idempotent — safe to call any number of times.
+   *
+   * Used at:
+   *   - app rehydration (fixes pre-existing broken save games)
+   *   - advanceToNextMatch (defensive guard before next fixture lookup)
+   */
+  reconcilePlayoffFixtures: () => set((state) => {
+    if (state.stage !== 'playoffs' && state.stage !== 'completed') {
+      return state;
+    }
+    const playoffResultsInOrder = state.results.filter(
+      r => r.matchId?.startsWith('playoff_')
+    );
+    if (playoffResultsInOrder.length === 0) {
+      return state;
+    }
 
-    // Log updated fixtures for debugging
-    const q2 = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_q2');
-    const final = updatedPlayoffFixtures.find(f => f.matchId === 'playoff_final');
-    console.log('   Q2:', q2?.homeTeamName, 'vs', q2?.awayTeamName, '- Status:', q2?.status);
-    console.log('   Final:', final?.homeTeamName, 'vs', final?.awayTeamName, '- Status:', final?.status);
+    let fixtures = state.fixtures;
+    const gameStore = useGameStore.getState();
+    let calendarEvents = gameStore.calendarEvents;
 
-    return {
-      fixtures: updatedFixtures
-    };
+    for (const result of playoffResultsInOrder) {
+      const update = computePlayoffBracketUpdate(fixtures, calendarEvents, state.clubs, result);
+      fixtures = update.fixtures;
+      calendarEvents = update.calendarEvents;
+    }
+
+    useGameStore.setState({ calendarEvents });
+    return { fixtures };
   }),
 
   /**
@@ -764,8 +792,17 @@ const useLeagueStore = create(
       currentMatchday: state.currentMatchday + 1
     }));
 
-    // Check if we just completed the last group stage match
     const state = get();
+
+    // Defensive self-heal: if in playoffs, ensure bracket reflects all recorded
+    // results before the next fixture lookup. Cheap and idempotent — protects
+    // against any current or future code path that records a playoff result
+    // without going through the recordResult() bracket update.
+    if (state.stage === 'playoffs') {
+      get().reconcilePlayoffFixtures();
+    }
+
+    // Check if we just completed the last group stage match
     if (state.stage === 'league') {
       const groupStageFixtures = state.fixtures.filter(f => !f.type || f.type === 'league');
       const groupStageResults = state.results.filter(r => {
@@ -782,24 +819,6 @@ const useLeagueStore = create(
     }
 
     return get().getNextFixture();
-  },
-
-  /**
-   * Record a match as completed and advance
-   * @param {string} matchId - Match ID
-   * @param {Object} result - Match result
-   */
-  recordMatchComplete: (matchId, result) => {
-    const state = get();
-
-    // Record the result
-    state.recordResult(result);
-
-    // Update standings
-    state.updateStandings(result);
-
-    // Advance to next match
-    return state.advanceToNextMatch();
   },
 
   /**
@@ -975,6 +994,19 @@ const useLeagueStore = create(
           console.error('Failed to rehydrate leagueStore:', error);
         }
         markHydrated('league');
+
+        // Self-heal save games stuck mid-playoffs (pre-fix saves where Q2/Final
+        // were left as TBD). Deferred to let gameStore finish rehydrating its
+        // calendarEvents before we read them.
+        if (state && (state.stage === 'playoffs' || state.stage === 'completed')) {
+          setTimeout(() => {
+            try {
+              useLeagueStore.getState().reconcilePlayoffFixtures();
+            } catch (e) {
+              console.error('reconcilePlayoffFixtures on rehydration failed:', e);
+            }
+          }, 100);
+        }
       }
     }
   )

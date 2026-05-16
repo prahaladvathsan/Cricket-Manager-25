@@ -7,11 +7,24 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.2';
-const RELEASE_DATE = 'March 2026';
-const RELEASE_TAGLINE = 'Club Customizer Update';
+const CURRENT_VERSION = '1.2.3';
+const RELEASE_DATE = 'May 2026';
+const RELEASE_TAGLINE = 'Playoff Progression Permafix';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.2.3 Playoff Progression Permafix',
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/30',
+    items: [
+      '🏆 **Final no longer stuck on TBD** — Win Qualifier 1 live and the Final immediately shows your team in the home slot. Previously the interactive play-through skipped the bracket update; that path is now wired through the same atomic store action every other code path uses.',
+      '⚙️ **One source of truth for playoff progression** — Recording a playoff result now updates fixtures and calendar events in the same transaction. No future code path can forget to advance the bracket.',
+      '🩹 **Self-healing on load** — Save files stuck mid-playoffs from older builds repair themselves on load. Just reload your save and continue.',
+    ],
+    note: 'The recurring "no games scheduled after the Eliminator" bug has been patched repeatedly. This time it\'s gone at the architecture level, not just the symptom level. 🛡️'
+  },
   {
     icon: Palette,
     title: 'v1.2.2 Club Customizer',
