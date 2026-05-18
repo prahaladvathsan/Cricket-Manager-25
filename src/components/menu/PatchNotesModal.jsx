@@ -7,76 +7,28 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.3';
+const CURRENT_VERSION = '1.1.5';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Playoff Progression Permafix';
+const RELEASE_TAGLINE = 'Stable Build — Stats Hub, Club Customizer, Notifications';
 
 const PATCH_NOTES = [
   {
-    icon: Wrench,
-    title: 'v1.2.3 Playoff Progression Permafix',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/30',
-    items: [
-      '🏆 **Final no longer stuck on TBD** — Win Qualifier 1 live and the Final immediately shows your team in the home slot. Previously the interactive play-through skipped the bracket update; that path is now wired through the same atomic store action every other code path uses.',
-      '⚙️ **One source of truth for playoff progression** — Recording a playoff result now updates fixtures and calendar events in the same transaction. No future code path can forget to advance the bracket.',
-      '🩹 **Self-healing on load** — Save files stuck mid-playoffs from older builds repair themselves on load. Just reload your save and continue.',
-    ],
-    note: 'The recurring "no games scheduled after the Eliminator" bug has been patched repeatedly. This time it\'s gone at the architecture level, not just the symptom level. 🛡️'
-  },
-  {
-    icon: Palette,
-    title: 'v1.2.2 Club Customizer',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
-    items: [
-      '🎨 **Club Customizer** — The World Premier League is fictional. Your teams should look like it. Redesign any of the 10 WPL clubs from the main menu.',
-      '🖌️ **Primary & Secondary Colors** — Giant clickable swatches, live kit preview updates as you pick. Diagonal split banner so you can actually see how the colors interact.',
-      '🦅 **Custom Badge Upload** — Drop in your own PNG, JPG, or SVG. Max 500KB. The badge is yours now.',
-      '✏️ **Rename Everything** — Team name, 3-letter short code, coach name, home venue. Chennai Cobras? Never heard of her.',
-      '🗂️ **Persists Across All Saves** — Customizations live outside your save files so they survive across new games, loaded saves, and the heat death of your season.',
-      '🃏 **Live Kit Card Preview** — See your changes on a full team card in real time — badge, colors, name, venue, perk chip and all.',
-    ],
-    note: 'The WPL is fictional. Your imagination isn\'t. Rename Mumbai Lions to your local pub team. Make Kabul Kites neon pink. Give your club a coach called "Big Dave". Zero notes, full support. 🎨'
-  },
-  {
     icon: Sparkles,
-    title: 'v1.2.1 Actionable Intelligence Update',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
-    items: [
-      '📊 **Stats Hub** — The Matches page is now a full Stats Hub with Fixtures, Results, Season Statistics, and Match Analysis tabs.',
-      '📈 **Match Analysis** — Drill into any match or aggregate across all played matches. Phase breakdown, batting, bowling, and fielding wagon wheel all in one place.',
-      '🎯 **Wagon Zone Map** — 6-zone fielding heatmap showing where opponents scored against your bowling. Colour-coded by runs, filterable by phase.',
-      '⚡ **Phase Breakdown** — Manhattan bar chart showing RPO (not total runs) across all 4 phases: Powerplay, Early Middle, Late Middle, Death.',
-      '🏏 **Ball-level tagging** — Every simulated ball is now tagged with phase, hit zone, batter tier, and bowling plan for deep analytics.',
-      '💡 **Tactical Insights** — Automatic insight cards surface high-impact patterns from your match data (wagon zone leaks, economy trends, SR vs spin).',
-      '🗂️ **Full-width tab menus** — All tab bars across the game now span the full card width with equal button sizing.',
-      '🔧 **4-Phase engine fix** — Match engine now correctly uses 4 phases (earlyMiddle 7–12, lateMiddle 13–16) instead of the old 3-phase system.',
-    ],
-    note: 'Data nerds, this one\'s for you. Every ball your team plays is now tracked and sliced by phase, playstyle, and tier. Your opponents have nowhere to hide. 📊'
-  },
-  {
-    icon: Sparkles,
-    title: 'v1.2.0 The Seasonal Loop Update',
+    title: 'v1.1.5 Stability + Polish',
     color: 'text-trophy-gold',
     bgColor: 'bg-yellow-500/10',
     borderColor: 'border-yellow-500/30',
     items: [
-      '🔄 **Full Seasonal Loop** - Play through multiple seasons! League → Playoffs → Off-Season → Transfers → New Season. The game actually continues now.',
-      '🏏 **Pre-Auction Retention** - Retain up to 5 players before each auction (Season 3+). Negotiate salaries, manage tier caps, keep your stars.',
-      '🏆 **Playoff Bug Fix** - "Can\'t proceed after Qualifier 1" is gone. Q2 no longer tries to start before the Eliminator finishes.',
-      '💰 **Transfer Market** - Off-season transfer window with AI-driven listings, bidding, and free agency.',
-      '📅 **Retention Day on Calendar** - Pre-auction retention now shows as a calendar event so you know when it\'s coming.',
-      '📊 **Season History** - Track champions, standings, and your position across multiple seasons.',
-      '🎨 **Modal Legibility Fix** - All modals now use solid backgrounds instead of transparent ones. You can actually read things now.',
-      '💾 **Save/Load Overhaul** - Retention data now properly saves and loads. No more lost progress mid-retention phase.',
-      '🛡️ **Safeguards** - Off-season and new season events can no longer fire while playoffs are still running.'
+      '📊 **Stats Hub** — The Matches page is now a full Stats Hub with Fixtures, Results, Season Statistics, and Match Analysis tabs. Drill into any match or aggregate across the season.',
+      '🎯 **Wagon Zone Map & Phase Breakdown** — 6-zone fielding heatmap showing where opponents scored. Manhattan bar chart for RPO across all 4 phases (Powerplay / Early Middle / Late Middle / Death).',
+      '🏏 **Ball-level tagging** — Every simulated ball is tagged with phase, hit zone, batter tier, and bowling plan for deep analytics.',
+      '🎨 **Club Customizer** — Redesign any of the 10 WPL clubs from the main menu. Rename team, short code, coach, home venue. Upload a custom badge (PNG/JPG/SVG, ≤500KB). Pick primary + secondary colors with live kit preview.',
+      '📬 **Inbox + Notifications** — Phone-style notification toasts (top-center, 5s auto-dismiss). Match result messages with full scorecard summary. Match reminders now include real injury and tactics intel.',
+      '🏆 **Playoff Progression Permafix** — Final no longer stuck on TBD. Recording a playoff result now updates fixtures + calendar events in one atomic transaction. Self-healing on load — save files stuck mid-playoffs from older builds repair themselves.',
+      '🌑 **Translucent panels** — Card backgrounds restored to the dark translucent black look against the stadium wallpaper.',
+      '💾 **Preparing Match Fix** — Loading a save mid-match no longer leaves you stuck on the "Preparing Match" screen.',
     ],
-    note: 'The biggest update yet. You can now play forever — or until your star player threatens to leave to go captain his original team unless you give him more money. Welcome to Cricket Manager hell. 🔥'
+    note: 'Pulled back from the seasonal-loop / retention rework because of progression bugs. This build is v1.1.4 with the Stats Hub, Club Customizer, Inbox/Notifications, and the playoff permafix bolted on. Stable, playable, and forward-compatible. 🛡️'
   },
   {
     icon: Wrench,
