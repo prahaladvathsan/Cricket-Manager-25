@@ -174,14 +174,24 @@ export default class UserTransferHandler {
     // One-shot recovery if in-memory Map is stale (post-reload desync with persisted store)
     let listing = this.transferMarket.getListing(listingId);
     if (!listing) {
-      const storeListing = (this.transferStore.getState().activeListings || [])
-        .find((l) => l.id === listingId);
+      const storeListings = this.transferStore.getState().activeListings || [];
+      const storeListing = storeListings.find((l) => l.id === listingId);
+      const mapSize = this.transferMarket.listings.size;
+      console.warn(`[placeBid] Listing ${listingId} not in Map (size=${mapSize}). Store has ${storeListings.length} listings. Match in store: ${!!storeListing}`);
       if (storeListing) {
-        try { getTransferManager().restoreFromStore(); }
-        catch (err) { console.error('TransferManager re-restore failed:', err); }
+        try {
+          getTransferManager().restoreFromStore();
+          console.log(`[placeBid] After restoreFromStore: Map size=${this.transferMarket.listings.size}`);
+        } catch (err) {
+          console.error('[placeBid] TransferManager re-restore failed:', err);
+        }
         listing = this.transferMarket.getListing(listingId);
       }
-      if (!listing) return { success: false, error: 'Listing not found' };
+      if (!listing) {
+        console.error(`[placeBid] Listing ${listingId} still not found after recovery. Store IDs: ${storeListings.map(l => l.id).join(', ')}`);
+        return { success: false, error: 'Listing not found' };
+      }
+      console.log(`[placeBid] Recovery succeeded for listing ${listingId}`);
     }
 
     // Check if user owns this player

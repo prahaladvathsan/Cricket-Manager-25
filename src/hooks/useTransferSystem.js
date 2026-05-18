@@ -13,6 +13,7 @@ import useTransferStore from '../stores/transferStore';
 import usePlayerStore from '../stores/playerStore';
 import { getTransferManager } from '../core/finance/transferManagerSingleton';
 import UserTransferHandler from '../core/transfers/UserTransferHandler';
+import { isHydrated } from '../utils/storeHydration';
 
 // Singleton handler shared across all components
 let globalTransferHandler = null;
@@ -50,17 +51,33 @@ export const useTransferSystem = () => {
     };
   }, [financeStore, teamStore, transferStore, playerStore]);
 
-  // Sync transferStore with transfer market state
+  // Sync transferStore with transfer market state.
+  // Guarded by hydration: if the transfer store hasn't rehydrated yet, the in-memory
+  // Map will be empty and syncing would wipe the persisted listings before
+  // restoreFromStore has a chance to rebuild the Map. Also skip the wipe if Map is
+  // empty but store has listings — that's the symptom of a desync we don't want to
+  // make permanent by overwriting the store.
   useEffect(() => {
     if (!transferMarket) return;
 
     const syncInterval = setInterval(() => {
+      if (!isHydrated('transfer')) {
+        console.log('[useTransferSystem] sync skipped — transferStore not hydrated yet');
+        return;
+      }
       const activeListings = transferMarket.getActiveListings();
+      const storeListings = transferStore.getState().activeListings || [];
+      if (activeListings.length === 0 && storeListings.length > 0) {
+        console.warn(`[useTransferSystem] sync skipped — Map empty but store has ${storeListings.length} listings; calling restoreFromStore to recover`);
+        try { transferManager.restoreFromStore(); }
+        catch (err) { console.error('[useTransferSystem] restoreFromStore during sync failed:', err); }
+        return;
+      }
       transferStore.getState().setActiveListings(activeListings);
-    }, 1000); // Sync every second
+    }, 1000);
 
     return () => clearInterval(syncInterval);
-  }, [transferMarket, transferStore]);
+  }, [transferMarket, transferStore, transferManager]);
 
   const isReady = !!(transferMarket && transferHandler);
 
