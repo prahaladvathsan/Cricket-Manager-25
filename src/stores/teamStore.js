@@ -198,12 +198,18 @@ const useTeamStore = create(
        * @param {string} teamId - Team ID
        * @param {string} playerId - Player ID
        */
-      addPlayerToSquad: (teamId, playerId) => set((state) => ({
-        squadLists: {
-          ...state.squadLists,
-          [teamId]: [...(state.squadLists[teamId] || []), playerId]
+      addPlayerToSquad: (teamId, playerId) => set((state) => {
+        const current = state.squadLists[teamId] || [];
+        if (current.includes(playerId)) {
+          return state; // idempotent — auction restore re-runs this for every sold player
         }
-      })),
+        return {
+          squadLists: {
+            ...state.squadLists,
+            [teamId]: [...current, playerId]
+          }
+        };
+      }),
 
       /**
        * Remove player from team squad
@@ -1354,6 +1360,22 @@ const useTeamStore = create(
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.error('Failed to rehydrate teamStore:', error);
+        }
+        // One-shot dedupe of squadLists for saves affected by the auction-restore
+        // duplication bug (Transfers.jsx mount-restore re-added every soldPlayer).
+        if (state?.squadLists) {
+          let totalRemoved = 0;
+          for (const teamId of Object.keys(state.squadLists)) {
+            const arr = state.squadLists[teamId] || [];
+            const deduped = [...new Set(arr)];
+            if (deduped.length !== arr.length) {
+              totalRemoved += arr.length - deduped.length;
+              state.squadLists[teamId] = deduped;
+            }
+          }
+          if (totalRemoved > 0) {
+            console.log(`🧹 [teamStore] Deduped ${totalRemoved} duplicate squad entries on rehydration`);
+          }
         }
         markHydrated('team');
       }

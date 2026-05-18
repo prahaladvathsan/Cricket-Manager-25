@@ -6,7 +6,7 @@
  * all operate on the same transfer state.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useEffect } from 'react';
 import useFinanceStore from '../stores/financeStore';
 import useTeamStore from '../stores/teamStore';
 import useTransferStore from '../stores/transferStore';
@@ -28,28 +28,21 @@ export const useTransferSystem = () => {
   const transferStore = useTransferStore;
   const playerStore = usePlayerStore;
 
-  // Get the shared TransferManager singleton and its inner TransferMarket
-  const { transferMarket, transferHandler, transferManager } = useMemo(() => {
-    const manager = getTransferManager();
-    const market = manager.transferMarket;
-
-    if (!globalTransferHandler) {
-      console.log('🔧 Creating singleton UserTransferHandler instance');
-      globalTransferHandler = new UserTransferHandler(
-        market,
-        financeStore,
-        teamStore,
-        transferStore,
-        playerStore
-      );
-    }
-
-    return {
-      transferMarket: market,
-      transferHandler: globalTransferHandler,
-      transferManager: manager
-    };
-  }, [financeStore, teamStore, transferStore, playerStore]);
+  // Compute on every render — cheap, and ensures we never serve a stale handler
+  // after resetTransferManager() creates a new singleton mid-session (save load / new game).
+  const transferManager = getTransferManager();
+  const transferMarket = transferManager.transferMarket;
+  if (!globalTransferHandler || globalTransferHandler.transferMarket !== transferMarket) {
+    console.log(`🔧 [useTransferSystem] (Re)creating UserTransferHandler (stale? ${!!globalTransferHandler})`);
+    globalTransferHandler = new UserTransferHandler(
+      transferMarket,
+      financeStore,
+      teamStore,
+      transferStore,
+      playerStore
+    );
+  }
+  const transferHandler = globalTransferHandler;
 
   // Sync transferStore with transfer market state.
   // Guarded by hydration: if the transfer store hasn't rehydrated yet, the in-memory
