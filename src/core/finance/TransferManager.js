@@ -43,9 +43,9 @@ export default class TransferManager {
    */
   restoreFromStore() {
     const transferState = useTransferStore.getState();
-
-    // Restore active listings into TransferMarket's in-memory Map
     const activeListings = transferState.activeListings || [];
+    const prevMapSize = this.transferMarket.listings.size;
+
     this.transferMarket.listings.clear();
     for (const listing of activeListings) {
       if (listing.id) {
@@ -53,7 +53,6 @@ export default class TransferManager {
       }
     }
 
-    // Restore window state
     const windowState = transferState.transferWindow;
     if (windowState && windowState.isOpen) {
       this.transferMarket.windowOpen = true;
@@ -67,14 +66,11 @@ export default class TransferManager {
       };
     }
 
-    // Restore current week from game state
     const gameState = useGameStore.getState();
     this.currentWeek = gameState.currentWeek || 0;
     this.transferMarket.currentWeek = this.currentWeek;
 
-    if (activeListings.length > 0 || windowState?.isOpen) {
-      console.log(`🔧 TransferManager restored: ${activeListings.length} listings, window ${windowState?.isOpen ? 'OPEN' : 'CLOSED'}`);
-    }
+    console.log(`🔧 [TransferManager.restoreFromStore] Map ${prevMapSize} -> ${this.transferMarket.listings.size}, window=${windowState?.isOpen ? 'OPEN' : 'CLOSED'}, storeListings=${activeListings.length}`);
   }
 
   /**

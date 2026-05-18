@@ -47,6 +47,15 @@ export function isAllHydrated() {
 }
 
 /**
+ * Check whether a specific store has finished hydrating from IndexedDB.
+ * @param {string} storeName
+ * @returns {boolean}
+ */
+export function isHydrated(storeName) {
+  return !!hydrationStatus[storeName];
+}
+
+/**
  * Get current hydration status
  * @returns {Object}
  */

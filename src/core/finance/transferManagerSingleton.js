@@ -18,13 +18,12 @@ let hasRunPreReleases = false;
  */
 export function getTransferManager() {
   if (!sharedInstance) {
-    console.log('🔧 Creating shared TransferManager singleton');
+    console.log('🔧 [transferManagerSingleton] Creating singleton + initial restoreFromStore');
     sharedInstance = new TransferManager(
       useFinanceStore,
       useTeamStore,
       usePlayerStore
     );
-    // Restore in-memory state from persisted transferStore (handles save load)
     sharedInstance.restoreFromStore();
   }
   return sharedInstance;
