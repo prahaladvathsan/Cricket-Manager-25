@@ -471,18 +471,31 @@ const Home = () => {
         const transferWindowStartDay = Math.ceil((transferWindowStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
         const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
-        // Next season auction (first day after transfer window closes)
-        const nextSeasonStartDate = new Date(transferWindowEndDate);
-        nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
-        const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        // Next season transition (matches LeagueInitializer scheduling).
+        const nextSeason = currentSeason + 1;
+        const nextSeasonHasRetention = nextSeason % 2 === 1 && nextSeason >= 3;
 
-        // NOTE: season_end is NOT pre-scheduled here — it's dynamically scheduled by
-        // leagueStore.recordResult() after the Final completes (more reliable than a fixed day)
+        let retentionStartDay = null;
+        let nextSeasonStartDay;
+        if (nextSeasonHasRetention) {
+          const auctionYear = leagueStartDate.getFullYear() + 1;
+          const retentionDate = new Date(auctionYear, 0, 6);
+          const auctionDate = new Date(auctionYear, 0, 7);
+          retentionStartDay = Math.ceil((retentionDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+          nextSeasonStartDay = Math.ceil((auctionDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        } else {
+          const d = new Date(transferWindowEndDate);
+          d.setDate(d.getDate() + 1);
+          nextSeasonStartDay = Math.ceil((d - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        // season_end is dynamically scheduled by recordResult() after the Final.
         const additionalEvents = [
           { day: offseasonStartDay, type: 'offseason_start' },
           { day: transferWindowStartDay, type: 'transfer_window_open' },
           { day: transferWindowEndDay, type: 'transfer_window_close' },
-          { day: nextSeasonStartDay, type: 'auction', data: { season: currentSeason + 1 } }
+          ...(nextSeasonHasRetention ? [{ day: retentionStartDay, type: 'retention_start', data: { season: nextSeason } }] : []),
+          { day: nextSeasonStartDay, type: 'new_season_start', data: { season: nextSeason } }
         ];
 
         scheduleEvents(additionalEvents);

@@ -432,6 +432,10 @@ const useTransferStore = create(
           console.error('Failed to rehydrate transferStore:', error);
         }
         markHydrated('transfer');
+        // Rebuild TransferManager's in-memory listings Map (dynamic import avoids circular dep).
+        import('../core/finance/transferManagerSingleton.js')
+          .then(({ getTransferManager }) => getTransferManager().restoreFromStore())
+          .catch((err) => console.error('Post-rehydrate TransferManager restore failed:', err));
       }
     }
   )

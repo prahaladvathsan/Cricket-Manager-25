@@ -7,6 +7,7 @@
 
 import useInboxStore from '../../stores/inboxStore';
 import useGameStore from '../../stores/gameStore';
+import { getTransferManager } from '../finance/transferManagerSingleton.js';
 
 export default class UserTransferHandler {
   constructor(transferMarket, financeStore, teamStore, transferStore, playerStore) {
@@ -170,13 +171,17 @@ export default class UserTransferHandler {
       };
     }
 
-    // Get listing
-    const listing = this.transferMarket.getListing(listingId);
+    // One-shot recovery if in-memory Map is stale (post-reload desync with persisted store)
+    let listing = this.transferMarket.getListing(listingId);
     if (!listing) {
-      return {
-        success: false,
-        error: 'Listing not found'
-      };
+      const storeListing = (this.transferStore.getState().activeListings || [])
+        .find((l) => l.id === listingId);
+      if (storeListing) {
+        try { getTransferManager().restoreFromStore(); }
+        catch (err) { console.error('TransferManager re-restore failed:', err); }
+        listing = this.transferMarket.getListing(listingId);
+      }
+      if (!listing) return { success: false, error: 'Listing not found' };
     }
 
     // Check if user owns this player
@@ -565,15 +570,8 @@ export default class UserTransferHandler {
       ? listing.currentBid + this.MIN_BID_INCREMENT
       : listing.listingPrice;
 
-    const suggestedBid = minBid + 20000; // +$20K over minimum
-    const maxBid = listing.listingPrice * 1.5; // 150% of listing price
-
-    return {
-      minBid,
-      suggestedBid,
-      maxBid,
-      currentBid: listing.currentBid
-    };
+    const suggestedBid = minBid + 20000;
+    return { minBid, suggestedBid, currentBid: listing.currentBid };
   }
 
   /**

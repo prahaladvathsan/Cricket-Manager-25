@@ -7,11 +7,29 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.3';
+const CURRENT_VERSION = '1.2.4';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Playoff Progression Permafix';
+const RELEASE_TAGLINE = 'Seasonal Loop & Transfer Fixes';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.2.4 Seasonal Loop & Transfer Fixes',
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/30',
+    items: [
+      '🏏 **Auction now triggered by the calendar** — Odd-season auctions (S3, S5, …) fire on Jan 7 via the `new_season_start` event. The Continue button reads "Start Auction" on that day and the auction can no longer be skipped.',
+      '📅 **Retention day fixed** — Retention is anchored to Jan 6 before odd seasons ≥ 3. RetentionView no longer routes you to /game/transfers when you finish — you go back to the dashboard and Continue advances to the auction day.',
+      '🔁 **Season 3+ auction unblock** — Previous build inherited `auctionState=\'completed\'` from S1 and the auto-start watcher refused to fire. Watcher now triggers as long as no auction is in progress; handleStartAuction resets the store cleanly.',
+      '🧯 **Stale auto-start flag cleared** — `pendingAutoStart` was being persisted to IndexedDB. If an earlier bugged run left it `true`, the next navigation to /game/transfers would unexpectedly start an auction. The flag is now in-memory only and force-cleared on rehydration.',
+      '💰 **"Listing not found" fixed** — Bidding right after a page reload no longer errors. TransferManager rebuilds its in-memory listings from the persisted store after rehydration, with a one-shot recovery in placeBid as a backstop.',
+      '🪙 **1.5× max-bid cap removed** — You can now bid up to your full budget (half-price economics still applies). The Budget quick-bid button replaces the old Max button.',
+      '🧮 **Player Performance crash fixed** — Opening a freshly-bought player\'s profile before the season starts no longer crashes with "Something went wrong". Stats reads are now fully optional-chained.',
+      '🗓️ **`resetForNewSeason` year math** — Season transitions no longer skip an extra year when the auction lands in early January.',
+    ],
+    note: 'Cleanup pass on v1.2.0\'s seasonal loop. The chain Season End → Offseason → Transfer Window → Retention (Jan 6) → Auction (Jan 7) → New Season now holds together. 🛠️'
+  },
   {
     icon: Wrench,
     title: 'v1.2.3 Playoff Progression Permafix',

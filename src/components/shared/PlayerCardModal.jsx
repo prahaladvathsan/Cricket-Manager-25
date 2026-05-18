@@ -452,7 +452,7 @@ const PlayerCardModal = ({ isOpen, onClose, playerId, initialTab }) => {
   const computed = player ? computePlayerRatings(player) : null;
   const topPlaystyles = computed?.topPlaystyles || player?.topPlaystyles;
   const primaryPlaystyle = computed?.primaryPlaystyle || player?.primaryPlaystyle;
-  const seasonStats = careerStats[playerId]?.seasons[currentSeasonId] || null;
+  const seasonStats = careerStats[playerId]?.seasons?.[currentSeasonId] || null;
   const customizationStatus = isPlayerCustomized ? isPlayerCustomized(playerId) : { isModified: false, isCustom: false };
 
   if (!player) {

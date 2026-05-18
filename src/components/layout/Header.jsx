@@ -570,7 +570,11 @@ const Header = () => {
         }
       }
     } else if (event && event.type === 'retention_start') {
-      // RETENTION PHASE — runs before new_season_start for odd seasons >= 3
+      // Idempotency: re-clicking Continue after retention completes advances the day.
+      if (useGameStore.getState().retentionState === 'completed') {
+        advanceDay();
+        return;
+      }
       console.log(`🏏 Retention Start - Season ${event.data.season}`);
 
       const retentionEngine = new RetentionEngine();
@@ -639,9 +643,9 @@ const Header = () => {
       const isNewSeasonOdd = newSeason % 2 === 1;
 
       if (isNewSeasonOdd) {
-        // Season 1: Straight to auction (no prior squads)
-        // Season 3+: retention_start event already handled retention, go to auction
-        console.log(`🏏 Season ${newSeason} is ODD - Navigating to auction...`);
+        // Auto-start auction on the Transfers page (mirrors SimulationEngine.runAuction).
+        console.log(`🏏 Season ${newSeason} is ODD - Triggering auction...`);
+        useAuctionStore.getState().setPendingAutoStart(true);
         navigate('/game/transfers');
       } else {
         // Even season (2, 4, 6...): Initialize league with existing squads
@@ -661,6 +665,7 @@ const Header = () => {
         advanceDay();
       } else {
         console.log('➡️ Navigating to auction');
+        useAuctionStore.getState().setPendingAutoStart(true);
         navigate('/game/transfers');
       }
     } else if (event && event.type === 'offseason_start') {
@@ -932,6 +937,11 @@ const Header = () => {
         return 'Continue';
       }
       return 'Auction';
+    } else if (event && event.type === 'new_season_start') {
+      const isOdd = event.data?.season && event.data.season % 2 === 1;
+      return (isOdd && auctionState !== 'completed') ? 'Start Auction' : 'Continue';
+    } else if (event && event.type === 'retention_start') {
+      return useGameStore.getState().retentionState === 'completed' ? 'Continue' : 'Retention';
     } else {
       return 'Continue';
     }
@@ -1032,6 +1042,11 @@ const Header = () => {
                       return <ChevronRight className="w-4 h-4" />;
                     }
                     return <Users className="w-4 h-4" />;
+                  } else if (event && event.type === 'new_season_start') {
+                    const isOdd = event.data?.season && event.data.season % 2 === 1;
+                    return (isOdd && auctionState !== 'completed') ? <Users className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />;
+                  } else if (event && event.type === 'retention_start') {
+                    return useGameStore.getState().retentionState === 'completed' ? <ChevronRight className="w-4 h-4" /> : <Shield className="w-4 h-4" />;
                   } else {
                     return <ChevronRight className="w-4 h-4" />;
                   }

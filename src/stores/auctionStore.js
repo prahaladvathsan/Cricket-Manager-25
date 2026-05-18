@@ -21,6 +21,7 @@ const useAuctionStore = create(
       userMaxBid: null, // User's max bid for current player (null = not set)
       userMaxBidPlayerId: null, // Player ID for which max bid is set
       userAutoBidEnabled: true, // Control whether AI bids for user during skip operations (default ON)
+      pendingAutoStart: false, // Transient (not persisted — see partialize); Header -> Transfers auto-start signal
 
       // Actions
       /**
@@ -86,7 +87,8 @@ const useAuctionStore = create(
         soldPlayers: [],
         userMaxBid: null,
         userMaxBidPlayerId: null,
-        userAutoBidEnabled: true // Reset to default (ON)
+        userAutoBidEnabled: true, // Reset to default (ON)
+        pendingAutoStart: false
       }),
 
       /**
@@ -118,6 +120,8 @@ const useAuctionStore = create(
       setAutoBid: (enabled) => set({
         userAutoBidEnabled: enabled
       }),
+
+      setPendingAutoStart: (enabled) => set({ pendingAutoStart: enabled }),
 
       /**
        * Get user's max bid for current player
@@ -152,10 +156,15 @@ const useAuctionStore = create(
       name: 'cm25-auction-store',
       version: 1,
       storage: createJSONStorage(() => indexedDBStorage),
+      partialize: (state) => {
+        const { pendingAutoStart, ...rest } = state;
+        return rest;
+      },
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.error('Failed to rehydrate auctionStore:', error);
         }
+        if (state) state.pendingAutoStart = false; // Clear stale flag from pre-partialize saves.
         markHydrated('auction');
       }
     }

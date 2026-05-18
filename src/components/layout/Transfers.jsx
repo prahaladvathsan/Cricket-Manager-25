@@ -256,6 +256,17 @@ const Transfers = () => {
     }
   }, []);
 
+  // Auto-start auction when Header sets pendingAutoStart (new_season_start odd / Season 1 auction event).
+  // Runs after the mount-restore so an in-progress auction isn't clobbered. We skip 'in_progress' only —
+  // handleStartAuction calls resetAuction() at the top so 'completed' (Season 3+) is safe to start over.
+  useEffect(() => {
+    if (savedAuction.pendingAutoStart && savedAuction.auctionState !== 'in_progress') {
+      useAuctionStore.getState().setPendingAutoStart(false);
+      handleStartAuction();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedAuction.pendingAutoStart, savedAuction.auctionState]);
+
   // Initialize auction
   const handleStartAuction = () => {
     try {
