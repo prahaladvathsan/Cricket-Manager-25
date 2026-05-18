@@ -11,7 +11,11 @@ import PlayerName from '../shared/PlayerName';
 import SortableTable from '../shared/SortableTable';
 
 const MyListingsView = ({ userTeamId, transferHandler }) => {
-  const { getPlayersByTeam, careerStats, currentSeasonId } = usePlayerStore();
+  const { careerStats, currentSeasonId } = usePlayerStore();
+  // Subscribe reactively to players map so the squad re-derives whenever a player
+  // is released, signed, or has their currentTeam changed. The previous useMemo
+  // captured the stable getPlayersByTeam reference and never recomputed.
+  const players = usePlayerStore(state => state.players);
   const activeListings = useTransferStore(state => state.activeListings);
 
   // Listing modal state
@@ -19,7 +23,10 @@ const MyListingsView = ({ userTeamId, transferHandler }) => {
   const [selectedPlayerForListing, setSelectedPlayerForListing] = useState(null);
   const [listingPrice, setListingPrice] = useState('');
 
-  const squadPlayers = useMemo(() => getPlayersByTeam(userTeamId), [userTeamId, getPlayersByTeam]);
+  const squadPlayers = useMemo(
+    () => Object.values(players).filter(p => p.currentTeam === userTeamId),
+    [players, userTeamId]
+  );
 
   const listedPlayerIds = useMemo(() => {
     return new Set(

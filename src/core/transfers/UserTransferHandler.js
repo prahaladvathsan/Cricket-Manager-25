@@ -204,6 +204,7 @@ export default class UserTransferHandler {
 
     // Check squad size limit
     const squad = this.teamStore.getState().squadLists[userTeamId] || [];
+    console.log(`[placeBid] Squad check: userTeamId=${userTeamId}, squad.length=${squad.length}, MAX=${this.MAX_SQUAD_SIZE}, squadIds=`, squad);
     if (squad.length >= this.MAX_SQUAD_SIZE) {
       return {
         success: false,
@@ -480,9 +481,11 @@ export default class UserTransferHandler {
     // Process financial recoup (30% of half-year salary)
     this.financeStore.getState().processPlayerRelease(userTeamId, player);
 
-    // Remove from team
+    const squadBefore = this.teamStore.getState().squadLists[userTeamId]?.length ?? 0;
     this.playerStore.getState().releasePlayer(playerId);
     this.teamStore.getState().removePlayerFromSquad(userTeamId, playerId);
+    const squadAfter = this.teamStore.getState().squadLists[userTeamId]?.length ?? 0;
+    console.log(`[releasePlayer] ${player.name} (${playerId}): squad ${squadBefore} -> ${squadAfter}`);
 
     // Add to free agency
     const askingPrice = player.soldPrice || 200000;

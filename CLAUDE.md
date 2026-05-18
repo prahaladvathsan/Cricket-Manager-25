@@ -280,6 +280,7 @@ git checkout testing  # Switch back to testing
 - Merge to main without user approval
 - Work directly on main branch
 - Push directly to main
+- **Push (to any branch) without explicit approval for THAT push** — a prior "commit and push" instruction authorizes that one push only, not subsequent ones. Commit locally and then ask before every push.
 
 **Production Deployment**: main branch auto-deploys to cricket-manager.com via GitHub Actions.
 

@@ -1137,11 +1137,23 @@ class SaveGameManager {
       isSimulating: false
     });
 
-    // Team Store
+    // Team Store — dedupe squadLists in case the save was written before
+    // addPlayerToSquad became idempotent (older saves can have duplicates).
+    const rawSquadLists = saveData.teamState.squadLists || {};
+    const dedupedSquadLists = {};
+    let dupesRemoved = 0;
+    for (const [teamId, ids] of Object.entries(rawSquadLists)) {
+      const unique = [...new Set(ids || [])];
+      dupesRemoved += (ids?.length || 0) - unique.length;
+      dedupedSquadLists[teamId] = unique;
+    }
+    if (dupesRemoved > 0) {
+      console.log(`🧹 [SaveGameManager] Deduped ${dupesRemoved} duplicate squad entries on load`);
+    }
     stores.teamStore.setState({
       teams: saveData.teamState.teams,
       userTeamId: saveData.teamState.userTeamId,
-      squadLists: saveData.teamState.squadLists,
+      squadLists: dedupedSquadLists,
       teamTactics: saveData.teamState.teamTactics || {},
       playerStats: saveData.teamState.playerStats,
       teamStats: saveData.teamState.teamStats,
