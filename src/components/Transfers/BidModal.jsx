@@ -22,21 +22,17 @@ const BidModal = ({ listing, onClose, onConfirm, userBudget }) => {
   }, [listing.currentBid, listing.listingPrice]);
 
   const suggestedBid = minBid + 20000;
-  const maxBid = listing.listingPrice * 1.5;
+  // Half-price economics: full-bid ceiling is 2x current budget
+  const maxAffordableBid = userBudget * 2;
 
-  // Convert K input to full dollars
   const bidAmountFull = (parseFloat(bidAmountK) || 0) * 1000;
 
-  // Validate bid amount (in full dollars)
   const validateBid = (amount) => {
     if (isNaN(amount) || amount <= 0) {
       return 'Please enter a valid amount';
     }
     if (amount < minBid) {
       return `Minimum bid is $${(minBid / 1000).toFixed(0)}K`;
-    }
-    if (amount > maxBid) {
-      return `Maximum bid is $${(maxBid / 1000).toFixed(0)}K`;
     }
     // Half-price economics: actual cost is half the bid
     const actualCost = Math.round(amount / 2);
@@ -165,10 +161,10 @@ const BidModal = ({ listing, onClose, onConfirm, userBudget }) => {
               ${(suggestedBid / 1000).toFixed(0)}K
             </button>
             <button
-              onClick={() => handleQuickBid(maxBid)}
+              onClick={() => handleQuickBid(maxAffordableBid)}
               className="card bg-bg-tertiary hover:bg-border-primary text-text-primary py-1.5 rounded text-xs transition-colors"
             >
-              Max: ${(maxBid / 1000).toFixed(0)}K
+              Budget: ${(maxAffordableBid / 1000).toFixed(0)}K
             </button>
           </div>
 

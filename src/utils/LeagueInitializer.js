@@ -208,29 +208,34 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   transferWindowEndDate.setDate(transferWindowEndDate.getDate() + 30);
   const transferWindowEndDay = Math.ceil((transferWindowEndDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Next season start (day after transfer window closes)
-  const nextSeasonStartDate = new Date(transferWindowEndDate);
-  nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
-  const nextSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-  console.log(`📅 Dynamic season schedule:`);
-  console.log(`   Final match: ${finalMatchDate.toDateString()}`);
-  console.log(`   Season end: ${seasonEndDate.toDateString()} (Day ${seasonEndDay})`);
-  console.log(`   Offseason start: ${offseasonStartDate.toDateString()} (Day ${offseasonStartDay})`);
-  console.log(`   Transfer window: ${transferWindowStartDate.toDateString()} - ${transferWindowEndDate.toDateString()}`);
-  console.log(`   Next season start: ${nextSeasonStartDate.toDateString()} (Day ${nextSeasonStartDay})`);
-
   const nextSeason = currentSeason + 1;
   const nextSeasonHasRetention = nextSeason % 2 === 1 && nextSeason >= 3;
+
+  // Odd-season transitions: retention Jan 6, auction (new_season_start) Jan 7 of next league year.
+  // Even-season transitions: new_season_start day after transfer window close.
+  let retentionStartDay = null;
+  let newSeasonStartDay;
+  if (nextSeasonHasRetention) {
+    const auctionYear = leagueStartDate.getFullYear() + 1;
+    const retentionDate = new Date(auctionYear, 0, 6);
+    const auctionDate = new Date(auctionYear, 0, 7);
+    retentionStartDay = Math.ceil((retentionDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+    newSeasonStartDay = Math.ceil((auctionDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+  } else {
+    const nextSeasonStartDate = new Date(transferWindowEndDate);
+    nextSeasonStartDate.setDate(nextSeasonStartDate.getDate() + 1);
+    newSeasonStartDay = Math.ceil((nextSeasonStartDate - gameStartDate) / (1000 * 60 * 60 * 24)) + 1;
+  }
+
+  console.log(`📅 Season ${currentSeason} schedule: offseason ${offseasonStartDate.toDateString()}, window ${transferWindowStartDate.toDateString()} - ${transferWindowEndDate.toDateString()}, new season day ${newSeasonStartDay}${nextSeasonHasRetention ? ` (retention day ${retentionStartDay})` : ''}`);
+
+  // season_end is dynamically scheduled by recordResult() after the Final.
   const additionalEvents = [
-    // NOTE: season_end is NOT pre-scheduled here — it's dynamically scheduled by
-    // recordResult() after the Final completes, which is more reliable than a fixed day
     { day: offseasonStartDay, type: 'offseason_start' },
     { day: transferWindowStartDay, type: 'transfer_window_open' },
     { day: transferWindowEndDay, type: 'transfer_window_close' },
-    // Show retention day on calendar for odd seasons >= 3
-    ...(nextSeasonHasRetention ? [{ day: nextSeasonStartDay, type: 'retention_start', data: { season: nextSeason } }] : []),
-    { day: nextSeasonStartDay + (nextSeasonHasRetention ? 1 : 0), type: 'new_season_start', data: { season: nextSeason } }
+    ...(nextSeasonHasRetention ? [{ day: retentionStartDay, type: 'retention_start', data: { season: nextSeason } }] : []),
+    { day: newSeasonStartDay, type: 'new_season_start', data: { season: nextSeason } }
   ];
 
   // Schedule all events

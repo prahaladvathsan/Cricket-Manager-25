@@ -448,18 +448,20 @@ const useGameStore = create(
         const newSeason = state.currentSeason + 1;
         const currentDateObj = new Date(state.currentDate);
 
-        // Determine new season start date based on season parity
-        // Odd seasons (1,3,5...): Start Jan 1, end June 30
-        // Even seasons (2,4,6...): Start July 1, end Dec 31
+        // Odd seasons land on Jan 7 (auction day, league starts Jan 13).
+        // Even seasons land on Jul 1 (league starts Jul 6).
+        // If we're already in the target half-year, stay; else advance to next year.
         const isNewSeasonOdd = newSeason % 2 === 1;
+        const currentYear = currentDateObj.getFullYear();
+        const currentMonth = currentDateObj.getMonth();
         let newSeasonStartDate;
 
         if (isNewSeasonOdd) {
-          // Odd season starts January 1 (year increments)
-          newSeasonStartDate = new Date(currentDateObj.getFullYear() + 1, 0, 1); // Jan 1 next year
+          const targetYear = currentMonth <= 1 ? currentYear : currentYear + 1;
+          newSeasonStartDate = new Date(targetYear, 0, 7);
         } else {
-          // Even season starts July 1 (same year as previous season end)
-          newSeasonStartDate = new Date(currentDateObj.getFullYear(), 6, 1); // July 1 same year
+          const targetYear = (currentMonth >= 3 && currentMonth <= 6) ? currentYear : currentYear + 1;
+          newSeasonStartDate = new Date(targetYear, 6, 1);
         }
 
         console.log(`🗓️ New season ${newSeason} starts: ${newSeasonStartDate.toISOString()}`);

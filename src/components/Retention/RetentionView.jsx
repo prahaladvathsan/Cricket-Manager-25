@@ -140,8 +140,8 @@ const RetentionView = () => {
     completeRetentionPhase();
     setConfirmAction(null);
 
-    // Navigate to auction
-    navigate('/game/transfers');
+    // Return to dashboard — auction is triggered by new_season_start, not by navigation here.
+    navigate('/game/home');
   };
 
   const openNegotiation = (player) => {

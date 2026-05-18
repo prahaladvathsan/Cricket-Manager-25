@@ -120,7 +120,7 @@ const PhasesPanel = ({ phases, teamName }) => {
   if (!hasBatting && !hasBowling) return <p className="text-text-tertiary text-sm py-6 text-center">No phase data yet</p>;
 
   const PhaseTable = ({ data, title }) => {
-    const maxRPO = Math.max(1, ...PHASES.map(p => data[p]?.balls > 0 ? (data[p].runs / data[p].balls * 6) : 0));
+    const maxRPO = Math.max(1, ...PHASES.map(p => data[p]?.balls > 0 ? ((data[p].runs ?? 0) / data[p].balls * 6) : 0));
     return (
       <div>
         <p className="text-xs text-text-tertiary uppercase tracking-wider mb-2">{title}</p>
@@ -128,11 +128,11 @@ const PhasesPanel = ({ phases, teamName }) => {
         <div className="flex items-end gap-px mb-1 h-12">
           {PHASES.map(ph => {
             const d = data[ph];
-            const rpo = d?.balls > 0 ? (d.runs / d.balls * 6) : 0;
+            const rpo = d?.balls > 0 ? ((d.runs ?? 0) / d.balls * 6) : 0;
             const pct = (rpo / maxRPO) * 100;
             return (
               <div key={ph} className="flex-1 flex flex-col items-center gap-0.5">
-                <span className="text-[10px] text-trophy-gold font-mono leading-none">{d?.balls > 0 ? (d.runs / d.balls * 6).toFixed(1) : '—'}</span>
+                <span className="text-[10px] text-trophy-gold font-mono leading-none">{d?.balls > 0 ? ((d.runs ?? 0) / d.balls * 6).toFixed(1) : '—'}</span>
                 <div className="w-full rounded-sm" style={{ height: `${Math.max(3, pct * 0.34)}px`, background: '#D4AF37', opacity: 0.75 }} />
               </div>
             );
