@@ -20,7 +20,7 @@ import usePlayerStore from '../../../stores/playerStore';
 import useLeagueStore from '../../../stores/leagueStore';
 import useFinanceStore from '../../../stores/financeStore';
 import useGameStore from '../../../stores/gameStore';
-import { ArrowLeft, Play, Pause, FastForward, ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Play, Pause, FastForward, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, TrendingUp, BarChart3, Users2 } from 'lucide-react';
 import TeamName from '../../shared/TeamName';
 import PlayerName from '../../shared/PlayerName';
 import ConditionBar from '../../shared/ConditionBar';
@@ -29,6 +29,9 @@ import ModifierBreakdownPanel from './ModifierBreakdownPanel';
 import TacticsHub from './TacticsHub/TacticsHub';
 import PitchVisualization from './PitchVisualization/PitchVisualization';
 import StatsHub from './StatsHub/StatsHub';
+import RunRateWorm from './StatsHub/RunRateWorm';
+import ManhattanChart from './StatsHub/ManhattanChart';
+import PartnershipsPanel from './StatsHub/PartnershipsPanel';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
 import { useMatchResultModal } from '../../../hooks/useMatchResultModal';
@@ -157,16 +160,39 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     };
   }, [nonStrikerId, ballByBall]);
 
-  // Current bowler
+  // Current bowler (live, from engine)
   const bowlerId = innings?.bowler;
+  const currentInningsNumber = innings?.number || 1;
 
-  // Track previous bowler to detect changes
-  const prevBowlerRef = React.useRef(bowlerId);
+  // Displayed bowler: holds the previous bowler at end-of-over until the new bowler
+  // actually delivers their first ball. This gives users a beat to see the 6th-ball
+  // outcome before the over strip swaps over.
+  const [displayedBowlerId, setDisplayedBowlerId] = useState(bowlerId);
+  const [displayedInnings, setDisplayedInnings] = useState(currentInningsNumber);
 
-  // Calculate bowler stats from ballByBall
+  React.useEffect(() => {
+    if (!bowlerId) return;
+    // First time we see a bowler, or innings changed — adopt immediately.
+    if (!displayedBowlerId || displayedInnings !== currentInningsNumber) {
+      setDisplayedBowlerId(bowlerId);
+      setDisplayedInnings(currentInningsNumber);
+      return;
+    }
+    if (bowlerId === displayedBowlerId) return;
+    // Bowler changed — wait until the new bowler has at least one recorded ball
+    // in the current innings before swapping. Until then, keep showing the prior bowler.
+    const newBowlerHasDelivered = ballByBall?.some(
+      b => b.innings === currentInningsNumber && b.bowlerId === bowlerId
+    );
+    if (newBowlerHasDelivered) {
+      setDisplayedBowlerId(bowlerId);
+    }
+  }, [bowlerId, ballByBall, currentInningsNumber, displayedBowlerId, displayedInnings]);
+
+  // Calculate bowler stats from ballByBall (for the *displayed* bowler)
   const bowlerStats = React.useMemo(() => {
-    if (!bowlerId || !ballByBall || ballByBall.length === 0) return { overs: '0', maidens: 0, runs: 0, wickets: 0 };
-    const bowlerBalls = ballByBall.filter(b => b.bowlerId === bowlerId);
+    if (!displayedBowlerId || !ballByBall || ballByBall.length === 0) return { overs: '0', maidens: 0, runs: 0, wickets: 0 };
+    const bowlerBalls = ballByBall.filter(b => b.bowlerId === displayedBowlerId);
     const legalBalls = bowlerBalls.filter(b => b.isLegal !== false).length;
     const overs = Math.floor(legalBalls / 6);
     const balls = legalBalls % 6;
@@ -176,63 +202,33 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
       runs: bowlerBalls.reduce((sum, b) => sum + (b.runs || 0), 0),
       wickets: bowlerBalls.filter(b => b.isWicket).length
     };
-  }, [bowlerId, ballByBall]);
+  }, [displayedBowlerId, ballByBall]);
 
-  // Get current over's ball outcomes (persist until bowler changes)
+  // Get the over to display: the most recent over bowled by the displayed bowler.
+  // This naturally holds the previous over after ball 6 — once we swap displayedBowlerId
+  // to the new bowler, this picks up their freshly-started over.
   const currentOverBalls = React.useMemo(() => {
-    if (!ballByBall || ballByBall.length === 0) return [];
+    if (!ballByBall || ballByBall.length === 0 || !displayedBowlerId) return [];
 
-    const currentOver = currentBall?.over || 0;
-    const currentInnings = innings?.number || 1;
-
-    // Detect if bowler changed
-    const bowlerChanged = prevBowlerRef.current !== bowlerId;
-    if (bowlerChanged) {
-      prevBowlerRef.current = bowlerId;
-    }
-
-    // Find which over to display
-    let displayOver = currentOver;
-
-    // If bowler didn't change, check if current over is empty (just started)
-    // If so, show the previous over's balls
-    if (!bowlerChanged && bowlerId) {
-      const currentOverBallsCount = ballByBall.filter(b =>
-        b.innings === currentInnings && b.over === currentOver && b.bowlerId === bowlerId
-      ).length;
-
-      // If current over has no balls yet, show the last completed over by this bowler
-      if (currentOverBallsCount === 0 && currentOver > 0) {
-        // Find the most recent over bowled by this bowler
-        const bowlerOvers = ballByBall
-          .filter(b => b.innings === currentInnings && b.bowlerId === bowlerId)
-          .map(b => b.over);
-
-        if (bowlerOvers.length > 0) {
-          displayOver = Math.max(...bowlerOvers);
-        }
-      }
-    }
-
-    // Filter balls from the display over
-    const overBalls = ballByBall.filter(b =>
-      b.innings === currentInnings && b.over === displayOver && b.bowlerId === bowlerId
+    const bowlerBalls = ballByBall.filter(
+      b => b.innings === currentInningsNumber && b.bowlerId === displayedBowlerId
     );
+    if (bowlerBalls.length === 0) return [];
 
-    // Map to display format
+    const displayOver = Math.max(...bowlerBalls.map(b => b.over));
+    const overBalls = bowlerBalls.filter(b => b.over === displayOver);
+
     return overBalls.map(b => {
       if (b.isWicket) return 'W';
       if (!b.isLegal) {
-        // Wide or No ball
         if (b.extras?.wides > 0) return 'Wd';
         if (b.extras?.noBalls > 0) return 'Nb';
         return 'X';
       }
-      // Regular delivery - show runs
-      if (b.runs === 0) return '•'; // Dot ball
+      if (b.runs === 0) return '•';
       return b.runs.toString();
     });
-  }, [ballByBall, currentBall, innings, bowlerId]);
+  }, [ballByBall, currentInningsNumber, displayedBowlerId]);
 
   // Calculate run rates
   const totalBalls = (overs * 6) + balls;
@@ -483,11 +479,11 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
               // Bowler column component
               const BowlerColumn = ({ alignRight = false }) => (
                 <div className={`w-52 flex flex-col gap-0.5 flex-shrink-0 ${alignRight ? 'items-end' : ''}`}>
-                  {bowlerId && bowlerStats ? (
+                  {displayedBowlerId && bowlerStats ? (
                     <>
                       {/* Row 1: Bowler name + stats */}
                       <div className={`flex items-center gap-2 h-7 ${alignRight ? 'flex-row-reverse' : ''}`}>
-                        <PlayerName playerId={bowlerId} className={`font-semibold text-white text-xs truncate flex-1 ${alignRight ? 'text-right' : ''}`} style={textShadowStyle} />
+                        <PlayerName playerId={displayedBowlerId} className={`font-semibold text-white text-xs truncate flex-1 ${alignRight ? 'text-right' : ''}`} style={textShadowStyle} />
                         <span className="font-mono text-xs text-white/90 whitespace-nowrap" style={textShadowStyle}>
                           {bowlerStats.overs}-{bowlerStats.maidens}-{bowlerStats.runs}-{bowlerStats.wickets}
                         </span>
@@ -736,6 +732,536 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
 /**
  * MatchdayUI - Main container component
  */
+/**
+ * Cycleable list of stats hub panels rendered in the innings-break modal's right column.
+ * Append new entries to extend — each entry just needs a label, an icon, and a component.
+ */
+const INNINGS_BREAK_STAT_PANELS = [
+  { id: 'worm', label: 'Run Rate Worm', icon: TrendingUp, Component: RunRateWorm },
+  { id: 'manhattan', label: 'Manhattan', icon: BarChart3, Component: ManhattanChart },
+  { id: 'partnerships', label: 'Partnerships', icon: Users2, Component: PartnershipsPanel },
+];
+
+/**
+ * Compact dismissal label for the innings-break scorecard — patterned on
+ * ScorecardModal.formatDismissal but resolves player names inline.
+ */
+const formatDismissalShort = (dismissal, getPlayer) => {
+  if (!dismissal || dismissal.type === 'not out') return 'not out';
+  const bowlerName = dismissal.bowler ? (getPlayer(dismissal.bowler)?.name?.split(' ').slice(-1)[0] || '') : '';
+  const fielderName = dismissal.fielder ? (getPlayer(dismissal.fielder)?.name?.split(' ').slice(-1)[0] || '') : '';
+  switch (dismissal.type) {
+    case 'bowled': return `b ${bowlerName}`;
+    case 'caught': return `c ${fielderName} b ${bowlerName}`;
+    case 'lbw': return `lbw b ${bowlerName}`;
+    case 'run out': return `run out (${fielderName})`;
+    case 'stumped': return `st ${fielderName} b ${bowlerName}`;
+    case 'hit wicket': return `hit wicket b ${bowlerName}`;
+    default: return dismissal.type;
+  }
+};
+
+/**
+ * Compact innings-break scorecard. Derives batting + bowling stats from ballByBall for
+ * innings 1, drops boundary-count columns (4s/6s/0s) the user said aren't useful here,
+ * and shows dismissals under each batsman name (ScorecardModal pattern).
+ */
+const InningsBreakScorecard = () => {
+  const ballByBall = useMatchStore(state => state.ballByBall);
+  const getPlayer = usePlayerStore(state => state.getPlayer);
+
+  const innings1Balls = React.useMemo(
+    () => (ballByBall || []).filter(b => b.innings === 1),
+    [ballByBall]
+  );
+
+  const battingRows = React.useMemo(() => {
+    const stats = {};
+    const order = [];
+    innings1Balls.forEach(ball => {
+      const sid = ball.striker;
+      if (!sid) return;
+      if (!stats[sid]) {
+        stats[sid] = { id: sid, runs: 0, balls: 0, dismissal: null };
+        order.push(sid);
+      }
+      stats[sid].runs += ball.runs || 0;
+      if (ball.isLegal !== false && !ball.isWide) stats[sid].balls += 1;
+      if (ball.isWicket && ball.dismissedPlayer === sid) {
+        stats[sid].dismissal = {
+          type: ball.dismissalType?.type || ball.dismissalType || 'out',
+          bowler: ball.bowler,
+          fielder: ball.fielderId
+        };
+      }
+    });
+    return order.map(id => stats[id]);
+  }, [innings1Balls]);
+
+  const bowlingRows = React.useMemo(() => {
+    const stats = {};
+    const order = [];
+    innings1Balls.forEach(ball => {
+      const bid = ball.bowler;
+      if (!bid) return;
+      if (!stats[bid]) {
+        stats[bid] = { id: bid, runs: 0, wickets: 0, balls: 0, maidens: 0 };
+        order.push(bid);
+      }
+      stats[bid].runs += ball.runs || 0;
+      if (ball.isWicket) stats[bid].wickets += 1;
+      if (ball.isLegal !== false) stats[bid].balls += 1;
+    });
+    return order.map(id => stats[id]);
+  }, [innings1Balls]);
+
+  const sr = (runs, balls) => balls === 0 ? '0.0' : ((runs / balls) * 100).toFixed(1);
+  const econ = (runs, balls) => balls === 0 ? '0.00' : ((runs / balls) * 6).toFixed(2);
+  const oversFmt = (balls) => {
+    const o = Math.floor(balls / 6);
+    const r = balls % 6;
+    return r > 0 ? `${o}.${r}` : `${o}`;
+  };
+
+  return (
+    <div className="text-xs">
+      {/* Batting */}
+      <div className="mb-3">
+        <div className="text-[10px] uppercase tracking-wide text-trophy-gold font-bold mb-1.5">Batting</div>
+        <table className="w-full">
+          <thead>
+            <tr className="text-text-secondary text-[10px] border-b border-border-primary">
+              <th className="text-left py-1 font-medium">Batsman</th>
+              <th className="text-right py-1 font-medium w-10">R</th>
+              <th className="text-right py-1 font-medium w-10">B</th>
+              <th className="text-right py-1 font-medium w-12">SR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {battingRows.length === 0 ? (
+              <tr><td colSpan={4} className="text-center py-2 text-text-secondary">No batting data</td></tr>
+            ) : battingRows.map(b => (
+              <tr key={b.id} className="border-b border-border-secondary/50">
+                <td className="py-0.5">
+                  <span className="inline-flex items-baseline gap-1.5 max-w-full">
+                    <PlayerName playerId={b.id} className="text-text-primary text-xs" />
+                    <span className="text-[9px] text-text-secondary italic truncate">
+                      {formatDismissalShort(b.dismissal, getPlayer)}
+                    </span>
+                  </span>
+                </td>
+                <td className="text-right py-0.5 font-mono text-text-primary font-semibold">{b.runs}</td>
+                <td className="text-right py-0.5 font-mono text-text-secondary">{b.balls}</td>
+                <td className="text-right py-0.5 font-mono text-text-secondary">{sr(b.runs, b.balls)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bowling */}
+      <div>
+        <div className="text-[10px] uppercase tracking-wide text-trophy-gold font-bold mb-1.5">Bowling</div>
+        <table className="w-full">
+          <thead>
+            <tr className="text-text-secondary text-[10px] border-b border-border-primary">
+              <th className="text-left py-1 font-medium">Bowler</th>
+              <th className="text-right py-1 font-medium w-10">O</th>
+              <th className="text-right py-1 font-medium w-8">M</th>
+              <th className="text-right py-1 font-medium w-10">R</th>
+              <th className="text-right py-1 font-medium w-8">W</th>
+              <th className="text-right py-1 font-medium w-12">Econ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bowlingRows.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-2 text-text-secondary">No bowling data</td></tr>
+            ) : bowlingRows.map(b => (
+              <tr key={b.id} className="border-b border-border-secondary/50">
+                <td className="py-0.5">
+                  <PlayerName playerId={b.id} className="text-text-primary text-xs" />
+                </td>
+                <td className="text-right py-0.5 font-mono text-text-primary">{oversFmt(b.balls)}</td>
+                <td className="text-right py-0.5 font-mono text-text-secondary">{b.maidens}</td>
+                <td className="text-right py-0.5 font-mono text-text-primary">{b.runs}</td>
+                <td className="text-right py-0.5 font-mono text-text-positive font-semibold">{b.wickets}</td>
+                <td className="text-right py-0.5 font-mono text-text-secondary">{econ(b.runs, b.balls)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Modal shown between innings — pauses the engine so the user can set bowling tactics
+ * before the bowling innings begins. Visible whenever matchStore.status === 'innings_break'.
+ *
+ * 3-column layout: left = full scorecard (batting top, bowling bottom), center = innings
+ * summary + target/RRR + win prediction (gradient pattern reused from MetricsColumn),
+ * right = cycleable Stats Hub panels (worm / manhattan / partnerships / ...).
+ */
+const InningsBreakModal = ({ matchEngine }) => {
+  const status = useMatchStore(state => state.status);
+  const teams = useMatchStore(state => state.teams);
+  const currentBall = useMatchStore(state => state.currentBall);
+  const ballByBall = useMatchStore(state => state.ballByBall);
+  const clubs = useLeagueStore(state => state.clubs);
+  const getPlayer = usePlayerStore(state => state.getPlayer);
+  const userTeamId = useTeamStore(state => state.userTeamId);
+  const [isResuming, setIsResuming] = useState(false);
+
+  // Top performers from the just-completed first innings — derived from ballByBall so
+  // we don't depend on results[] (which isn't populated until match end).
+  const innings1Stats = React.useMemo(() => {
+    if (!ballByBall || ballByBall.length === 0) return { topBatsman: null, topBowler: null };
+    const balls1 = ballByBall.filter(b => b.innings === 1);
+
+    const batters = new Map();
+    const bowlers = new Map();
+    balls1.forEach(b => {
+      if (b.batsmanId) {
+        const cur = batters.get(b.batsmanId) || { runs: 0, balls: 0 };
+        cur.runs += b.runs || 0;
+        if (b.isLegal !== false) cur.balls += 1;
+        batters.set(b.batsmanId, cur);
+      }
+      if (b.bowlerId) {
+        const cur = bowlers.get(b.bowlerId) || { runs: 0, wickets: 0, balls: 0 };
+        cur.runs += b.runs || 0;
+        if (b.isWicket) cur.wickets += 1;
+        if (b.isLegal !== false) cur.balls += 1;
+        bowlers.set(b.bowlerId, cur);
+      }
+    });
+
+    let topBatsman = null;
+    batters.forEach((v, id) => {
+      if (!topBatsman || v.runs > topBatsman.runs) topBatsman = { id, ...v };
+    });
+    let topBowler = null;
+    bowlers.forEach((v, id) => {
+      // Rank by wickets, then by economy (lower runs better)
+      if (!topBowler ||
+          v.wickets > topBowler.wickets ||
+          (v.wickets === topBowler.wickets && v.runs < topBowler.runs)) {
+        topBowler = { id, ...v };
+      }
+    });
+    return { topBatsman, topBowler };
+  }, [ballByBall]);
+
+  if (status !== 'innings_break' || !matchEngine) return null;
+
+  const battedTeam = teams?.batting;
+  const bowledTeam = teams?.bowling;
+  const score = battedTeam?.totalScore ?? 0;
+  const wickets = battedTeam?.wickets ?? 0;
+  const overs = currentBall?.over ?? 0;
+  const balls = currentBall?.ball ?? 0;
+  const target = score + 1;
+  const battedClub = clubs?.[battedTeam?.id];
+  const bowledClub = clubs?.[bowledTeam?.id];
+  const battedTeamName = battedClub?.name || battedTeam?.name || 'First innings team';
+  const bowledTeamName = bowledClub?.name || bowledTeam?.name || 'Second innings team';
+  const battedColor = battedClub?.colors?.primary || '#2D5F3F';
+  const bowledColor = bowledClub?.colors?.primary || '#2D5F3F';
+
+  // Required run rate over a full 2nd innings
+  const requiredRR = target / 20;
+
+  // Simple chase-difficulty win prediction: par RRR ~ 8.0. Each rpo above par drops the
+  // chasing team's chance by ~10%. Clamp to [10, 90] so we never imply certainty.
+  const PAR_RR = 8.0;
+  const rawChasingWinProb = 50 + (PAR_RR - requiredRR) * 10;
+  const chasingWinProb = Math.max(10, Math.min(90, Math.round(rawChasingWinProb)));
+  const battedWinProb = 100 - chasingWinProb;
+
+  // Gradient: batted team on the left, chasing team on the right. Transition center
+  // shifts based on the chasing team's win probability (higher = bar tilts to chasing color).
+  const transitionCenter = 100 - chasingWinProb;
+  const winProbGradient = {
+    background: `linear-gradient(to right,
+      ${battedColor} ${Math.max(0, transitionCenter - 15)}%,
+      ${bowledColor} ${Math.min(100, transitionCenter + 15)}%)`
+  };
+
+  // Label the continue button based on whether the user is the chasing team
+  const userIsChasing = userTeamId && bowledTeam?.id === userTeamId;
+  const userIsBatted = userTeamId && battedTeam?.id === userTeamId;
+  const continueLabel = userIsChasing
+    ? 'Start Batting Innings'
+    : userIsBatted
+      ? 'Start Bowling Innings'
+      : 'Start Second Innings';
+
+  const handleContinue = async () => {
+    if (isResuming) return;
+    setIsResuming(true);
+    try {
+      await matchEngine.resumeAfterInningsBreak();
+    } catch (err) {
+      console.error('Failed to resume after innings break:', err);
+      setIsResuming(false);
+    }
+  };
+
+  const TeamBadge = ({ teamId, size = 64 }) => (
+    <img
+      src={getTeamIcon(teamId)}
+      alt=""
+      style={{ width: size, height: size }}
+      className="object-contain drop-shadow-lg"
+      onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+    />
+  );
+
+  const topBatsmanPlayer = innings1Stats.topBatsman ? getPlayer(innings1Stats.topBatsman.id) : null;
+  const topBowlerPlayer = innings1Stats.topBowler ? getPlayer(innings1Stats.topBowler.id) : null;
+
+  return <InningsBreakModalLayout
+    battedTeam={battedTeam}
+    bowledTeam={bowledTeam}
+    battedTeamName={battedTeamName}
+    bowledTeamName={bowledTeamName}
+    battedColor={battedColor}
+    bowledColor={bowledColor}
+    score={score}
+    wickets={wickets}
+    overs={overs}
+    balls={balls}
+    target={target}
+    requiredRR={requiredRR}
+    battedWinProb={battedWinProb}
+    chasingWinProb={chasingWinProb}
+    winProbGradient={winProbGradient}
+    topBatsmanPlayer={topBatsmanPlayer}
+    topBowlerPlayer={topBowlerPlayer}
+    topBatsmanStats={innings1Stats.topBatsman}
+    topBowlerStats={innings1Stats.topBowler}
+    continueLabel={continueLabel}
+    isResuming={isResuming}
+    onContinue={handleContinue}
+    TeamBadge={TeamBadge}
+  />;
+};
+
+/**
+ * Pure layout component for the innings-break modal. Split out so the data hook above
+ * stays focused on data derivation and the layout/markup stays readable.
+ */
+const InningsBreakModalLayout = ({
+  battedTeam, bowledTeam, battedTeamName, bowledTeamName, battedColor, bowledColor,
+  score, wickets, overs, balls, target, requiredRR,
+  battedWinProb, chasingWinProb, winProbGradient,
+  topBatsmanPlayer, topBowlerPlayer, topBatsmanStats, topBowlerStats,
+  continueLabel, isResuming, onContinue, TeamBadge
+}) => {
+  // Right-column cycleable stats — index into INNINGS_BREAK_STAT_PANELS
+  const [statIndex, setStatIndex] = useState(0);
+  const totalPanels = INNINGS_BREAK_STAT_PANELS.length;
+  const currentPanel = INNINGS_BREAK_STAT_PANELS[statIndex];
+  const CurrentPanelComponent = currentPanel?.Component;
+  const CurrentPanelIcon = currentPanel?.icon;
+  const cyclePrev = () => setStatIndex((statIndex - 1 + totalPanels) % totalPanels);
+  const cycleNext = () => setStatIndex((statIndex + 1) % totalPanels);
+
+  const innings1RR = (score / Math.max(1, ((overs * 6 + balls) / 6))).toFixed(2);
+
+  return (
+    <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4">
+      <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg w-[95vw] max-w-7xl h-[92vh] shadow-2xl overflow-hidden flex flex-col">
+        {/* Top banner: gradient with both team badges */}
+        <div
+          className="px-6 py-4 border-b border-border-primary flex-shrink-0"
+          style={{
+            background: `linear-gradient(to right, ${battedColor}cc 0%, #1a1a1a 50%, ${bowledColor}cc 100%)`
+          }}
+        >
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <TeamBadge teamId={battedTeam?.id} size={56} />
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">First Innings</div>
+                <div className="text-sm font-bold text-white truncate" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                  {battedTeamName}
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">Innings Break</div>
+              <h3 className="text-xl font-bold text-trophy-gold mt-0.5" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                End of First Innings
+              </h3>
+            </div>
+            <div className="flex items-center gap-3 min-w-0 flex-row-reverse">
+              <TeamBadge teamId={bowledTeam?.id} size={56} />
+              <div className="min-w-0 text-right">
+                <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">Chasing</div>
+                <div className="text-sm font-bold text-white truncate" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                  {bowledTeamName}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body: left (scorecard, full height) | right side (split into top + bottom) */}
+        <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          {/* LEFT — Compact scorecard, batting + bowling stacked, full height (37%) */}
+          <div className="basis-[37%] flex-shrink-0 border-r border-border-primary flex flex-col min-h-0">
+            <div className="px-4 py-2 border-b border-border-primary flex-shrink-0">
+              <div className="text-[10px] uppercase tracking-widest text-text-secondary font-semibold">Scorecard</div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              <InningsBreakScorecard />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE WRAPPER — split into top (summary + stats) and bottom (win pred + button) */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Top: summary (center, 26%) + stats hub (right, 37%) — flex-grow ratios divide the 63% available */}
+            <div className="flex-1 flex flex-row min-h-0">
+              {/* CENTER — Summary, top performers, target, RRR */}
+              <div className="flex-[26] border-r border-border-primary flex flex-col min-h-0 overflow-y-auto">
+                {/* Score */}
+                <div className="px-5 py-4 text-center border-b border-border-primary">
+                  <div className="text-xs uppercase tracking-wide text-text-secondary mb-1">{battedTeamName}</div>
+                  <div className="text-5xl font-bold text-text-primary font-mono">
+                    {score}<span className="text-3xl text-text-secondary">/{wickets}</span>
+                  </div>
+                  <div className="text-xs text-text-secondary mt-1">
+                    ({overs}.{balls} overs · {innings1RR} RR)
+                  </div>
+                </div>
+
+                {/* Top performers */}
+                {(topBatsmanPlayer || topBowlerPlayer) && (
+                  <div className="px-5 py-3 border-b border-border-primary grid grid-cols-2 gap-3 text-xs">
+                    {topBatsmanPlayer && (
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-text-secondary mb-0.5">Top Batter</div>
+                        <div className="font-semibold text-text-primary truncate">{topBatsmanPlayer.name}</div>
+                        <div className="font-mono text-cricket-accent">
+                          {topBatsmanStats.runs} <span className="text-text-secondary">({topBatsmanStats.balls})</span>
+                        </div>
+                      </div>
+                    )}
+                    {topBowlerPlayer && (
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase tracking-wide text-text-secondary mb-0.5">Top Bowler</div>
+                        <div className="font-semibold text-text-primary truncate">{topBowlerPlayer.name}</div>
+                        <div className="font-mono text-cricket-accent">
+                          {topBowlerStats.wickets}/{topBowlerStats.runs}
+                          <span className="text-text-secondary"> ({(topBowlerStats.balls / 6).toFixed(1)} ov)</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Target + RRR */}
+                <div className="px-5 py-4 text-center flex-1 flex flex-col justify-center">
+                  <div className="text-xs uppercase tracking-wide text-text-secondary mb-2">
+                    Target for {bowledTeamName}
+                  </div>
+                  <div className="flex items-center justify-center gap-5">
+                    <div>
+                      <div className="text-4xl font-bold text-trophy-gold font-mono leading-none">{target}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-text-secondary mt-1">runs to win</div>
+                    </div>
+                    <div className="w-px h-12 bg-border-primary" />
+                    <div>
+                      <div className="text-4xl font-bold text-cricket-accent font-mono leading-none">{requiredRR.toFixed(2)}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-text-secondary mt-1">required RR</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT — Cycleable stats panels */}
+              <div className="flex-[37] flex flex-col min-h-0">
+                <div className="px-3 py-2 border-b border-border-primary flex-shrink-0 flex items-center justify-between gap-2">
+                  <button
+                    onClick={cyclePrev}
+                    className="p-1 rounded hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
+                    aria-label="Previous stat"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+                    {CurrentPanelIcon && <CurrentPanelIcon className="w-3.5 h-3.5 text-cricket-accent" />}
+                    <span>{currentPanel?.label}</span>
+                  </div>
+                  <button
+                    onClick={cycleNext}
+                    className="p-1 rounded hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
+                    aria-label="Next stat"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 [&_.bg-bg-tertiary]:!bg-transparent [&_.bg-bg-tertiary]:!p-0">
+                  {CurrentPanelComponent && <CurrentPanelComponent />}
+                </div>
+                {/* Pagination dots */}
+                <div className="px-3 py-2 border-t border-border-primary flex items-center justify-center gap-1.5 flex-shrink-0">
+                  {INNINGS_BREAK_STAT_PANELS.map((p, idx) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setStatIndex(idx)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        idx === statIndex ? 'w-6 bg-cricket-accent' : 'w-1.5 bg-text-secondary/40 hover:bg-text-secondary'
+                      }`}
+                      aria-label={`Show ${p.label}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: Win prediction + Continue button — spans both center & stats columns */}
+            <div className="border-t border-border-primary flex-shrink-0 px-5 py-4 flex items-center gap-5">
+              {/* Win prediction (takes the available width on the left) */}
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-text-secondary mb-1.5 font-semibold flex items-center justify-between">
+                  <span>Win Prediction</span>
+                </div>
+                <div
+                  className="h-8 rounded border border-white/20 flex items-center justify-between px-3"
+                  style={winProbGradient}
+                >
+                  <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}>
+                    {battedWinProb}%
+                  </span>
+                  <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}>
+                    {chasingWinProb}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[10px] text-text-secondary">
+                  <span className="truncate max-w-[45%]">{battedTeamName}</span>
+                  <span className="truncate max-w-[45%] text-right">{bowledTeamName}</span>
+                </div>
+              </div>
+
+              {/* Continue button (fixed width on the right) */}
+              <button
+                onClick={onContinue}
+                disabled={isResuming}
+                className="w-64 flex-shrink-0 px-6 py-3 bg-cricket-primary hover:bg-cricket-primary/80 disabled:bg-cricket-primary/40 disabled:cursor-not-allowed text-white font-bold rounded transition-colors text-base"
+              >
+                {isResuming ? 'Starting...' : continueLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function MatchdayUI() {
   const { matchId } = useParams();
   const navigate = useNavigate();
@@ -863,11 +1389,13 @@ export default function MatchdayUI() {
         };
 
         // Create MatchEngine instance with correct parameters
+        // interactive: true → engine pauses at the innings break for the modal flow.
+        // Quick-sim, sim-to-date, and MatchOrchestrator omit this and get auto-progression.
         const engine = new MatchEngine(
           useMatchStore,
           usePlayerStore,
           useTeamStore,
-          { silent: false }
+          { silent: false, interactive: true }
         );
 
         // Configure for ball-by-ball interactive mode with delays
@@ -1598,7 +2126,7 @@ export default function MatchdayUI() {
   }
 
   // Check if match is in the right state
-  if (status !== 'live' && status !== 'completed') {
+  if (status !== 'live' && status !== 'completed' && status !== 'innings_break') {
     return (
       <div className="h-screen flex items-center justify-center bg-bg-primary">
         <div className="text-center">
@@ -1658,6 +2186,9 @@ export default function MatchdayUI() {
 
       {/* Match Result Modal */}
       {MatchResultModalComponent}
+
+      {/* Innings Break Modal */}
+      <InningsBreakModal matchEngine={matchEngine} />
 
       {/* Super Over Selection Modal */}
       {showSuperOverModal && tieData && (

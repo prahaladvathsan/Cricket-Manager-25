@@ -38,12 +38,13 @@ const DEBUG_MATCH_ENGINE = false;
 
 class MatchEngine {
   constructor(matchStore, playerStore, teamStore, options = {}) {
-    const { silent = false } = options;
+    const { silent = false, interactive = false } = options;
 
     this.matchStore = matchStore;
     this.playerStore = playerStore;
     this.teamStore = teamStore;
     this.silent = silent; // Store for optimization checks
+    this.interactive = interactive; // When true, pause at the innings break for a UI modal
     this.ballSimulator = new SimpleBallSimulator({ silent });
 
     // Field formations for testing - will be randomly assigned
@@ -474,6 +475,16 @@ class MatchEngine {
     const overTargets = parTargetCalculator.calculateOverTargets(parScore, wicketsInHand);
     const targetRunRate = parScore / 20;
 
+    // Load batting team's per-player acceleration tiers so the openers honor pre-match settings
+    // instead of defaulting to 'Rotate' with mode 'auto'. Mode always starts as 'manual'
+    // so the user's pre-set tiers are respected by default — they can flip to auto in-match.
+    const battingTeamId = matchState.innings.battingTeam;
+    const teamTactics = this.teamStore.getState().getTacticsForMatch(battingTeamId);
+    const strikerId = matchState.innings.striker;
+    const nonStrikerId = matchState.innings.nonStriker;
+    const strikerTier = teamTactics?.accelerationTiers?.[strikerId] || 'Rotate';
+    const nonStrikerTier = teamTactics?.accelerationTiers?.[nonStrikerId] || 'Rotate';
+
     // Update tactics state using Zustand action
     const updateTacticsState = this.matchStore.getState().updateTacticsState;
     if (updateTacticsState) {
@@ -481,10 +492,10 @@ class MatchEngine {
         battingParScore: parScore,
         targetRunRate: targetRunRate,
         overTargets: overTargets,
-        accelerationMode: 'auto', // Can be changed to 'manual' by user
+        accelerationMode: 'manual',
         currentAcceleration: {
-          striker: 'Rotate',
-          nonStriker: 'Rotate'
+          striker: strikerTier,
+          nonStriker: nonStrikerTier
         },
         // NOTE: bowlingPlans should already be loaded from team tactics, don't reset them here
         pressureIndex: {
@@ -1177,13 +1188,27 @@ class MatchEngine {
     }
 
     // Update striker/non-striker based on who got out
-    if (ballResult.dismissedPlayer === innings.striker) {
+    const dismissedSlot = ballResult.dismissedPlayer === innings.striker ? 'striker' : 'nonStriker';
+    if (dismissedSlot === 'striker') {
       // console.log('[MatchEngine handleWicket] Striker got out, replacing striker with new batsman');
       matchState.setOpeningBatsmen(newBatsmanId, innings.nonStriker);
     } else {
       // console.log('[MatchEngine handleWicket] Non-striker got out, replacing non-striker with new batsman');
       matchState.setOpeningBatsmen(innings.striker, newBatsmanId);
     }
+
+    // Load the new batter's pre-match acceleration tier from team tactics so they don't
+    // inherit the dismissed batter's style (bug: dismissed batter's style transferring).
+    const battingTeamId = teams.batting.id;
+    const teamTactics = this.teamStore.getState().getTacticsForMatch(battingTeamId);
+    const newBatsmanTier = teamTactics?.accelerationTiers?.[newBatsmanId] || 'Rotate';
+    const updatedTacticsState = this.matchStore.getState().tacticsState;
+    matchState.updateTacticsState({
+      currentAcceleration: {
+        ...updatedTacticsState.currentAcceleration,
+        [dismissedSlot]: newBatsmanTier
+      }
+    });
 
     // Verify update
     const newState = this.matchStore.getState();
@@ -1540,63 +1565,95 @@ class MatchEngine {
   }
 
   /**
-   * Start second innings
+   * Start second innings. Default (non-interactive) behavior: flip teams, load bowling
+   * tactics, set up openers, and continue simulation — used by quick-sim, sim-to-date,
+   * and any non-UI caller.
+   *
+   * When `this.interactive === true` (set by MatchdayUI), pause at the break instead:
+   * status flips to 'innings_break' and the UI shows a modal. The UI then drives
+   * resumeAfterInningsBreak() when the user clicks Continue.
    * @returns {Promise<void>}
    */
   async startSecondInnings() {
+    if (this.interactive) {
+      // Pause for the UI modal — must go through Zustand setState so React re-renders.
+      this.matchStore.setState({ status: 'innings_break' });
+      this.isSimulating = false;
+      return;
+    }
+
+    // Non-interactive path: original auto-progression flow.
     const matchState = this.matchStore.getState();
-
-    // Start innings break
     matchState.status = 'innings_break';
-
-    // Brief delay for innings break
     await this.delay(100);
 
-    // Start second innings
+    // Flip teams / reset innings state (also sets status to 'live')
     matchState.startSecondInnings();
+    this._loadBowlingTactics();
 
-    // Load bowling plans and rotation from team tactics for the new bowling team (second innings)
-    const updatedMatchState = this.matchStore.getState();
-    const bowlingTeamId = updatedMatchState.teams.bowling.id;
-    const teamTactics = this.teamStore.getState().getTacticsForMatch(bowlingTeamId);
+    // Set up opening players and continue simulation
+    await this.setupOpeningPlayers();
+    return this.simulateInnings();
+  }
 
-    if (teamTactics) {
-      const tacticsUpdate = {};
-
-      // Load bowling plans
-      if (teamTactics.bowlingPlans) {
-        tacticsUpdate.bowlingPlans = teamTactics.bowlingPlans;
-      }
-
-      // Load over assignments - prefer explicit overAssignments over bowlingRotation
-      // overAssignments is the authoritative source set by Tactics page
-      if (teamTactics.overAssignments && Object.keys(teamTactics.overAssignments).length > 0) {
-        // Use explicit over assignments directly
-        tacticsUpdate.overAssignments = teamTactics.overAssignments;
-      } else if (teamTactics.bowlingRotation && teamTactics.bowlingRotation.length > 0) {
-        // Fallback: Convert bowling rotation array to overAssignments object
-        // bowlingRotation is an array where index = over number (0-19)
-        // overAssignments is an object where key = over number (1-20), value = bowler ID
-        const overAssignments = {};
-        teamTactics.bowlingRotation.forEach((bowlerId, index) => {
-          if (bowlerId) {
-            overAssignments[index + 1] = bowlerId; // Convert from 0-indexed to 1-indexed
-          }
-        });
-        tacticsUpdate.overAssignments = overAssignments;
-      }
-
-      // Update matchStore with tactics for the new bowling team
-      if (Object.keys(tacticsUpdate).length > 0) {
-        this.matchStore.getState().updateTacticsState(tacticsUpdate);
-      }
+  /**
+   * Resume after the innings break — flips teams to the 2nd innings, loads bowling
+   * tactics for the new bowling team, and sets up opening players. The user then clicks
+   * Play to begin bowling — by design we don't auto-start simulation here, so the user
+   * has a moment to verify openers / bowling plans before deliveries begin.
+   *
+   * Only used in interactive mode.
+   * @returns {Promise<void>}
+   */
+  async resumeAfterInningsBreak() {
+    const matchState = this.matchStore.getState();
+    if (matchState.status !== 'innings_break') {
+      return; // Defensive: only meaningful at the break
     }
+
+    // Flip teams / reset innings state for the bowling innings (also sets status to 'live')
+    matchState.startSecondInnings();
+    this._loadBowlingTactics();
 
     // Set up opening players for second innings
     await this.setupOpeningPlayers();
 
-    // Continue simulation
-    return this.simulateInnings();
+    // Pause so the user can verify openers / bowling plans before pressing Play
+    this.isPaused = true;
+  }
+
+  /**
+   * Shared helper: load bowling plans + over assignments from team tactics into the
+   * match store for the new bowling team. Used by both auto-progression and interactive
+   * resume paths.
+   */
+  _loadBowlingTactics() {
+    const updatedMatchState = this.matchStore.getState();
+    const bowlingTeamId = updatedMatchState.teams.bowling.id;
+    const teamTactics = this.teamStore.getState().getTacticsForMatch(bowlingTeamId);
+    if (!teamTactics) return;
+
+    const tacticsUpdate = {};
+
+    if (teamTactics.bowlingPlans) {
+      tacticsUpdate.bowlingPlans = teamTactics.bowlingPlans;
+    }
+
+    if (teamTactics.overAssignments && Object.keys(teamTactics.overAssignments).length > 0) {
+      tacticsUpdate.overAssignments = teamTactics.overAssignments;
+    } else if (teamTactics.bowlingRotation && teamTactics.bowlingRotation.length > 0) {
+      const overAssignments = {};
+      teamTactics.bowlingRotation.forEach((bowlerId, index) => {
+        if (bowlerId) {
+          overAssignments[index + 1] = bowlerId;
+        }
+      });
+      tacticsUpdate.overAssignments = overAssignments;
+    }
+
+    if (Object.keys(tacticsUpdate).length > 0) {
+      this.matchStore.getState().updateTacticsState(tacticsUpdate);
+    }
   }
 
   /**

@@ -7,11 +7,24 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.4';
+const CURRENT_VERSION = '1.2.5';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Seasonal Loop & Transfer Fixes';
+const RELEASE_TAGLINE = 'Matchday Polish & Bug Fixes';
 
 const PATCH_NOTES = [
+  {
+    icon: Sparkles,
+    title: 'v1.2.5 Matchday Polish & Bug Fixes',
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/10',
+    borderColor: 'border-cyan-500/30',
+    items: [
+      '⏸️ **Innings break view** — A proper pause between innings with scorecard, target/required RR, win prediction, and cycleable charts (worm, manhattan, partnerships). No more bowlers starting before you can blink.',
+      '🎯 **Tactics now stick** — Pre-set per-player batting tiers are respected at innings start and survive wickets, so the incoming batter no longer inherits the dismissed player\'s style.',
+      '🧹 **Big bug-fix sweep** — Playoff results no longer pollute the league table, board objectives correctly detect NRR / top batter / top bowler, INR currency works in auctions and retention, and the bowler name + last-ball outcome now hold through end-of-over.',
+    ],
+    note: 'Mostly correctness fixes across matchday, league, and economy. Play, watch the break, set your bowling plans, click Continue. 🏏'
+  },
   {
     icon: Wrench,
     title: 'v1.2.4 Seasonal Loop & Transfer Fixes',

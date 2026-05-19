@@ -1053,8 +1053,12 @@ class SimulationEngine {
 
       // Record result with full scorecard for clickable results
       this.leagueStore.getState().recordResult(result, fullScorecard);
-      // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-      this.leagueStore.getState().updateStandingsForMatch(result);
+      // Standings reflect the regular season only — playoff results must not pollute the table
+      const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
+      if (!isPlayoffMatch) {
+        // Use incremental standings update (O(1)) instead of full recalculation (O(n))
+        this.leagueStore.getState().updateStandingsForMatch(result);
+      }
 
       // Emit match event for live feed
       this.emitEvent('match', {

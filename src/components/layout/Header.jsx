@@ -339,12 +339,16 @@ const Header = () => {
 
       // Record result with full scorecard for clickable results
       recordResult(result, fullScorecard);
-      // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-      updateStandingsForMatch(result);
+      // Standings reflect the regular season only — playoff results must not pollute the table
+      const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
+      if (!isPlayoffMatch) {
+        // Use incremental standings update (O(1)) instead of full recalculation (O(n))
+        updateStandingsForMatch(result);
+      }
 
       // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
       // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
-      if (result.type === 'playoff' || result.matchId?.startsWith('playoff_')) {
+      if (isPlayoffMatch) {
         useLeagueStore.getState().updatePlayoffFixturesAfterResult(result);
       }
 
@@ -546,12 +550,16 @@ const Header = () => {
 
           // Record result with full scorecard for clickable results
           recordResult(result, fullScorecard);
-          // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-          updateStandingsForMatch(result);
+          // Standings reflect the regular season only — playoff results must not pollute the table
+          const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
+          if (!isPlayoffMatch) {
+            // Use incremental standings update (O(1)) instead of full recalculation (O(n))
+            updateStandingsForMatch(result);
+          }
 
           // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
           // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
-          if (result.type === 'playoff' || result.matchId?.startsWith('playoff_')) {
+          if (isPlayoffMatch) {
             useLeagueStore.getState().updatePlayoffFixturesAfterResult(result);
           }
 

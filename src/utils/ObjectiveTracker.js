@@ -91,7 +91,7 @@ export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gam
       const userBatsmen = topScorers.filter(p => {
         // Check if the player belongs to the user's current squad
         const squadList = teamStore.getState().squadLists?.[userTeamId] || [];
-        return squadList.some(s => s.id === p.playerId);
+        return squadList.includes(p.playerId);
       });
 
       if (userBatsmen.length > 0) {
@@ -113,7 +113,7 @@ export function updateObjectivesAfterMatch(matchResult, fixture, userTeamId, gam
 
       const userBowlers = topBowlers.filter(p => {
         const squadList = teamStore.getState().squadLists?.[userTeamId] || [];
-        return squadList.some(s => s.id === p.playerId);
+        return squadList.includes(p.playerId);
       });
 
       if (userBowlers.length > 0) {

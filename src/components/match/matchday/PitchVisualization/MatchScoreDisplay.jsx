@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import useMatchStore from '../../../../stores/matchStore';
 import usePlayerStore from '../../../../stores/playerStore';
 import PlayerName from '../../../shared/PlayerName';
@@ -27,6 +27,7 @@ const MatchScoreDisplay = () => {
   const currentBall = useMatchStore(state => state.currentBall);
   const innings = useMatchStore(state => state.innings);
   const matchInfo = useMatchStore(state => state.matchInfo);
+  const ballByBall = useMatchStore(state => state.ballByBall);
 
   // Batting team info
   const battingTeam = teams?.batting;
@@ -45,13 +46,36 @@ const MatchScoreDisplay = () => {
   const strikerStats = battingTeam?.battingStats?.find(b => b.playerId === strikerId);
   const nonStrikerStats = battingTeam?.battingStats?.find(b => b.playerId === nonStrikerId);
 
-  // Current bowler
+  // Current bowler (live, from engine)
   const bowlerId = innings?.bowler;
-  const bowler = bowlerId ? getPlayer(bowlerId) : null;
+  const currentInningsNumber = innings?.number || 1;
 
-  // Find bowler stats
+  // Hold the displayed bowler at end-of-over until the new bowler delivers their first
+  // ball — keeps the bowler name + figures in sync with the BowlerColumn in the header.
+  const [displayedBowlerId, setDisplayedBowlerId] = useState(bowlerId);
+  const [displayedInnings, setDisplayedInnings] = useState(currentInningsNumber);
+
+  useEffect(() => {
+    if (!bowlerId) return;
+    if (!displayedBowlerId || displayedInnings !== currentInningsNumber) {
+      setDisplayedBowlerId(bowlerId);
+      setDisplayedInnings(currentInningsNumber);
+      return;
+    }
+    if (bowlerId === displayedBowlerId) return;
+    const newBowlerHasDelivered = ballByBall?.some(
+      b => b.innings === currentInningsNumber && b.bowlerId === bowlerId
+    );
+    if (newBowlerHasDelivered) {
+      setDisplayedBowlerId(bowlerId);
+    }
+  }, [bowlerId, ballByBall, currentInningsNumber, displayedBowlerId, displayedInnings]);
+
+  const bowler = displayedBowlerId ? getPlayer(displayedBowlerId) : null;
+
+  // Find bowler stats (for the displayed bowler, not the live one)
   const bowlingTeam = teams?.bowling;
-  const bowlerStats = bowlingTeam?.bowlingStats?.find(b => b.playerId === bowlerId);
+  const bowlerStats = bowlingTeam?.bowlingStats?.find(b => b.playerId === displayedBowlerId);
 
   // Calculate run rates
   const totalBalls = (overs * 6) + balls;
@@ -125,7 +149,7 @@ const MatchScoreDisplay = () => {
         {/* Right: Current Bowler */}
         {bowler && bowlerStats && (
           <div className="flex items-center gap-1">
-            <PlayerName playerId={bowlerId} className="font-medium" />
+            <PlayerName playerId={displayedBowlerId} className="font-medium" />
             <span className="font-mono text-text-secondary">
               ({bowlerStats.overs || 0}-{bowlerStats.runs || 0}-{bowlerStats.wickets || 0})
             </span>

@@ -29,7 +29,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gradient-to-b from-bg-secondary to-bg-primary border border-border-primary rounded-lg shadow-2xl w-full max-w-3xl my-auto">
+      <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg shadow-2xl w-full max-w-3xl my-auto">
         {/* Compact Header */}
         <div className="relative p-3 border-b border-border-primary">
           <button

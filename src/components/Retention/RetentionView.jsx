@@ -18,13 +18,14 @@ import RetentionAI from '../../core/retention/RetentionAI';
 import { evaluateOffer } from '../../core/retention/PlayerAcceptance';
 import retentionConfig from '../../data/config/retentionConfig.json';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
+import { getCurrencySymbol } from '../../utils/currencyFormatter';
 
 const retentionEngine = new RetentionEngine();
 const retentionAI = new RetentionAI();
 
-const formatMoney = (val) => {
-  if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`;
-  return `$${(val / 1000).toFixed(0)}K`;
+const formatMoneyWithSymbol = (val, symbol) => {
+  if (val >= 1000000) return `${symbol}${(val / 1000000).toFixed(2)}M`;
+  return `${symbol}${(val / 1000).toFixed(0)}K`;
 };
 
 const RetentionView = () => {
@@ -44,6 +45,9 @@ const RetentionView = () => {
   const completeRetentionPhase = useGameStore(s => s.completeRetentionPhase);
   const players = usePlayerStore(s => s.players);
   const currentSeason = useGameStore(s => s.currentSeason);
+  const currency = useGameStore(s => s.settings?.currency) || 'USD';
+  const currencySymbol = getCurrencySymbol(currency);
+  const formatMoney = (val) => formatMoneyWithSymbol(val, currencySymbol);
 
   // Get user team's squad and retention state
   const userSquadIds = squadLists[userTeamId] || [];
@@ -301,7 +305,7 @@ const RetentionView = () => {
               <span className="text-trophy-gold font-bold">{formatMoney(userRetention.auctionPurse)}</span>
             </div>
             <p className="text-xs text-text-secondary mt-1">
-              ${formatMoney(retentionConfig.auctionPurse.base)} base - {formatMoney(userRetention.totalSalary)} retained
+              {formatMoney(retentionConfig.auctionPurse.base)} base - {formatMoney(userRetention.totalSalary)} retained
             </p>
           </div>
 
@@ -326,7 +330,7 @@ const RetentionView = () => {
       {/* Confirmation Modal */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50">
-          <div className="bg-bg-tertiary border border-border-primary rounded-lg w-full max-w-sm shadow-xl p-5">
+          <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg w-full max-w-sm shadow-xl p-5">
             <h3 className="text-lg font-bold text-text-primary mb-3">
               {confirmAction.type === 'release' ? 'Release Player' : 'Complete Retentions'}
             </h3>
