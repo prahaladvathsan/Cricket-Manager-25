@@ -88,7 +88,7 @@ const SuperOverSelectionModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-      <div className="bg-bg-secondary rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-cricket-accent p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

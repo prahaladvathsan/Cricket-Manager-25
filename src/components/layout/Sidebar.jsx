@@ -196,7 +196,7 @@ const Sidebar = ({ currentPath }) => {
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-secondary border border-border-primary rounded-lg p-6 max-w-md w-full">
+          <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-bold text-text-primary mb-3">Return to Start Menu?</h3>
             <p className="text-sm text-text-secondary mb-6">
               Are you sure you want to return to the start menu? Make sure you've saved your game progress.

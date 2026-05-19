@@ -191,7 +191,7 @@ const OBJECTIVE_TEMPLATES = [
     difficultyTier: 'easy',
     calculateProgress: (gameData) => {
       const { userStanding } = gameData;
-      const nrr = userStanding?.nrr || 0;
+      const nrr = userStanding?.netRunRate || 0;
 
       if (nrr > 0) return 100;
       if (nrr === 0) return 50;
@@ -199,7 +199,7 @@ const OBJECTIVE_TEMPLATES = [
     },
     calculateStatus: (gameData) => {
       const { userStanding } = gameData;
-      const nrr = userStanding?.nrr || 0;
+      const nrr = userStanding?.netRunRate || 0;
 
       if (nrr > 0.5) return 'completed';
       if (nrr > 0) return 'on_track';
@@ -208,7 +208,7 @@ const OBJECTIVE_TEMPLATES = [
     },
     getDetails: (gameData) => {
       const { userStanding } = gameData;
-      const nrr = userStanding?.nrr || 0;
+      const nrr = userStanding?.netRunRate || 0;
 
       return `Current NRR: ${nrr.toFixed(3)}`;
     }

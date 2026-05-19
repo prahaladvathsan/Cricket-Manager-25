@@ -5,6 +5,7 @@
 
 import aiConfig from '../../data/config/ai-config.json';
 import auctionConfig from '../../data/config/auctionConfig.json';
+import { getCurrencySymbol } from '../../utils/currencyFormatter';
 
 class AICore {
   constructor() {
@@ -191,15 +192,17 @@ class AICore {
   /**
    * Format price for display
    * @param {number} price - Price in dollars
+   * @param {string} [currency='USD'] - Currency code (USD, EUR, GBP, INR)
    * @returns {string} Formatted price
    */
-  formatPrice(price) {
+  formatPrice(price, currency = 'USD') {
+    const symbol = getCurrencySymbol(currency);
     if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(1)}M`;
+      return `${symbol}${(price / 1000000).toFixed(1)}M`;
     } else if (price >= 1000) {
-      return `$${(price / 1000).toFixed(0)}K`;
+      return `${symbol}${(price / 1000).toFixed(0)}K`;
     }
-    return `$${price}`;
+    return `${symbol}${price}`;
   }
 
   /**

@@ -33,7 +33,9 @@ import useMatchStore from '../../stores/matchStore';
 const Transfers = () => {
   const { teams, userTeamId, getUserTeam, addPlayerToSquad, initializeAllTeamsTactics } = useTeamStore();
   const { players, assignPlayerToTeam, setPlayerSoldPrice } = usePlayerStore();
-  const { currentSeason, currentDate, gameDay, scheduleEvents, advancePhase, clearEvents, currentWeek, currentPhase } = useGameStore();
+  const { currentSeason, currentDate, gameDay, scheduleEvents, advancePhase, clearEvents, currentWeek, currentPhase, settings } = useGameStore();
+  const currency = settings?.currency || 'USD';
+  const formatPrice = (value) => aiCore.formatPrice(value, currency);
   const { initializeSeason } = useLeagueStore();
   const { initializeSeason: initializeFinances, processAuctionSpending } = useFinanceStore();
   const { addMessage } = useInboxStore();
@@ -338,7 +340,7 @@ const Transfers = () => {
     secondsRef.current = 0;
     bidFloor.current = player.basePrice;
 
-    addToLog(`Now auctioning: ${player.name} (${player.role}) - Base Price: ${aiCore.formatPrice(player.basePrice)}`, 'player');
+    addToLog(`Now auctioning: ${player.name} (${player.role}) - Base Price: ${formatPrice(player.basePrice)}`, 'player');
 
     const totalPlayers = rounds.reduce((sum, round) => sum + round.length, 0);
     const playersAuctioned = (roundIndex * (rounds[0]?.length || 10)) + playerIndex;
@@ -434,7 +436,7 @@ const Transfers = () => {
     secondsRef.current = 0;
     bidFloor.current = validAmount;
 
-    addToLog(`${team.name} bids ${aiCore.formatPrice(validAmount)}`, 'bid');
+    addToLog(`${team.name} bids ${formatPrice(validAmount)}`, 'bid');
 
     if (timerRef.current) clearTimeout(timerRef.current);
     if (engine && player && auctionProgress !== undefined) {
@@ -454,7 +456,7 @@ const Transfers = () => {
     const nextBid = price + increment;
 
     if (nextBid > userTeamData.budgetRemaining) {
-      addToLog(`Insufficient funds! Budget remaining: ${aiCore.formatPrice(userTeamData.budgetRemaining)}`, 'error');
+      addToLog(`Insufficient funds! Budget remaining: ${formatPrice(userTeamData.budgetRemaining)}`, 'error');
       return;
     }
 
@@ -515,7 +517,7 @@ const Transfers = () => {
         setHighestBidder(result.team);
         highestBidderRef.current = result.team;
 
-        addToLog(`Fast auction: ${result.team.name} wins at ${aiCore.formatPrice(result.paidPrice)} (2nd-price)`, 'bid');
+        addToLog(`Fast auction: ${result.team.name} wins at ${formatPrice(result.paidPrice)} (2nd-price)`, 'bid');
       }
     }
 
@@ -540,17 +542,17 @@ const Transfers = () => {
 
     const minBid = currentPriceRef.current + getValidIncrement(currentPriceRef.current);
     if (maxBidAmount < minBid) {
-      addToLog(`Max bid must be at least ${aiCore.formatPrice(minBid)} (${(minBid / 1000).toFixed(0)}K)`, 'error');
+      addToLog(`Max bid must be at least ${formatPrice(minBid)} (${(minBid / 1000).toFixed(0)}K)`, 'error');
       return;
     }
 
     if (maxBidAmount > userTeamData.budgetRemaining) {
-      addToLog(`Max bid exceeds budget! Budget: ${aiCore.formatPrice(userTeamData.budgetRemaining)} (${(userTeamData.budgetRemaining / 1000).toFixed(0)}K)`, 'error');
+      addToLog(`Max bid exceeds budget! Budget: ${formatPrice(userTeamData.budgetRemaining)} (${(userTeamData.budgetRemaining / 1000).toFixed(0)}K)`, 'error');
       return;
     }
 
     setUserMaxBid(currentPlayer.id, maxBidAmount);
-    addToLog(`Max bid set to ${aiCore.formatPrice(maxBidAmount)} for ${currentPlayer.name}`, 'info');
+    addToLog(`Max bid set to ${formatPrice(maxBidAmount)} for ${currentPlayer.name}`, 'info');
     setMaxBidInput('');
   };
 
@@ -630,7 +632,7 @@ const Transfers = () => {
             assignPlayerToTeam(player.id, result.team.id);
             setPlayerSoldPrice(player.id, result.paidPrice);
           }
-          addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)})`, 'sold');
+          addToLog(`${player.name} → ${result.team.name} (${formatPrice(result.paidPrice)})`, 'sold');
         }
       } else {
         auctionEngine.unsoldPlayers.push(player);
@@ -733,7 +735,7 @@ const Transfers = () => {
             }
 
             if (processed % 5 === 0) {
-              addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)})`, 'sold');
+              addToLog(`${player.name} → ${result.team.name} (${formatPrice(result.paidPrice)})`, 'sold');
             }
           }
         } else {
@@ -815,7 +817,7 @@ const Transfers = () => {
                 setPlayerSoldPrice(player.id, result.paidPrice);
               }
 
-              addToLog(`${player.name} → ${result.team.name} (${aiCore.formatPrice(result.paidPrice)}) [UNSOLD ROUND]`, 'sold');
+              addToLog(`${player.name} → ${result.team.name} (${formatPrice(result.paidPrice)}) [UNSOLD ROUND]`, 'sold');
             }
           } else {
             auctionEngine.permanentlyUnsold.push(player);
@@ -922,7 +924,7 @@ const Transfers = () => {
       team.totalSpent += finalPrice;
       team.budgetRemaining -= finalPrice;
 
-      addToLog(`SOLD! ${player.name} to ${winner.name} for ${aiCore.formatPrice(finalPrice)}`, 'sold');
+      addToLog(`SOLD! ${player.name} to ${winner.name} for ${formatPrice(finalPrice)}`, 'sold');
 
       if (player.id) {
         addPlayerToSquad(team.id, player.id);
@@ -1175,7 +1177,7 @@ const Transfers = () => {
             <div>
               <div className="text-xxs text-cricket-text-secondary">Your Budget</div>
               <div className="text-base font-bold text-cricket-accent">
-                {aiCore.formatPrice(userTeamData?.budgetRemaining || 0)}
+                {formatPrice(userTeamData?.budgetRemaining || 0)}
               </div>
             </div>
             <div>
@@ -1411,7 +1413,7 @@ const Transfers = () => {
                               <div className="text-xs text-text-secondary">{sale.team}</div>
                             </div>
                             <div className="text-lg font-bold text-cricket-accent">
-                              {aiCore.formatPrice(sale.price)}
+                              {formatPrice(sale.price)}
                             </div>
                           </div>
                         ))}
@@ -1431,7 +1433,7 @@ const Transfers = () => {
                           <div className="p-3 bg-bg-secondary rounded">
                             <div className="text-xs text-text-secondary mb-1">Average Price</div>
                             <div className="text-2xl font-bold text-cricket-accent">
-                              {aiCore.formatPrice(avgPrice)}
+                              {formatPrice(avgPrice)}
                             </div>
                           </div>
                         </div>
@@ -1451,19 +1453,19 @@ const Transfers = () => {
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Total Spent</div>
                               <div className="text-2xl font-bold text-text-primary">
-                                {aiCore.formatPrice(userTeamSummary.totalSpent)}
+                                {formatPrice(userTeamSummary.totalSpent)}
                               </div>
                             </div>
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Budget Remaining</div>
                               <div className="text-2xl font-bold text-green-500">
-                                {aiCore.formatPrice(userTeamSummary.budgetRemaining)}
+                                {formatPrice(userTeamSummary.budgetRemaining)}
                               </div>
                             </div>
                             <div>
                               <div className="text-xs text-text-secondary mb-1">Avg. Price/Player</div>
                               <div className="text-2xl font-bold text-text-primary">
-                                {aiCore.formatPrice(userTeamSummary.squad.length > 0 ? userTeamSummary.totalSpent / userTeamSummary.squad.length : 0)}
+                                {formatPrice(userTeamSummary.squad.length > 0 ? userTeamSummary.totalSpent / userTeamSummary.squad.length : 0)}
                               </div>
                             </div>
                           </div>
@@ -1495,13 +1497,13 @@ const Transfers = () => {
                                 </td>
                                 <td className="text-right py-2 px-3 text-text-primary">{team.players}</td>
                                 <td className="text-right py-2 px-3 font-mono text-cricket-accent">
-                                  {aiCore.formatPrice(team.spent)}
+                                  {formatPrice(team.spent)}
                                 </td>
                                 <td className="text-right py-2 px-3 font-mono text-text-primary">
-                                  {aiCore.formatPrice(team.remaining)}
+                                  {formatPrice(team.remaining)}
                                 </td>
                                 <td className="text-right py-2 px-3 font-mono text-text-secondary">
-                                  {aiCore.formatPrice(team.players > 0 ? team.spent / team.players : 0)}
+                                  {formatPrice(team.players > 0 ? team.spent / team.players : 0)}
                                 </td>
                               </tr>
                             ))}
@@ -1554,7 +1556,7 @@ const Transfers = () => {
                     <div className="p-4 bg-cricket-secondary rounded-lg border-2 border-green-500">
                       <div className="text-xs text-cricket-text-secondary mb-1">Final Price</div>
                       <div className="text-3xl font-bold text-green-500">
-                        {aiCore.formatPrice(soldDetails.price)}
+                        {formatPrice(soldDetails.price)}
                       </div>
                     </div>
                   </div>
@@ -1628,7 +1630,7 @@ const Transfers = () => {
                     <div className="text-center mb-2">
                       <div className="text-xxs text-text-secondary mb-0.5">Current Bid</div>
                       <div className="text-3xl font-bold text-cricket-accent">
-                        {aiCore.formatPrice(currentPrice)}
+                        {formatPrice(currentPrice)}
                       </div>
                       {highestBidder && (
                         <div className="text-xs text-text-secondary mt-0.5">
@@ -1641,7 +1643,7 @@ const Transfers = () => {
                     <div className="text-center mb-2 pb-2 border-b border-border-primary">
                       <div className="text-xxs text-text-secondary">Base Price</div>
                       <div className="text-sm font-semibold text-text-primary">
-                        {aiCore.formatPrice(currentPlayer.basePrice)}
+                        {formatPrice(currentPlayer.basePrice)}
                       </div>
                     </div>
 
@@ -1702,7 +1704,7 @@ const Transfers = () => {
                             className="btn-primary flex-1 text-base py-3"
                           >
                             <Gavel className="w-5 h-5 inline mr-2" />
-                            Bid {aiCore.formatPrice(currentPrice + getValidIncrement(currentPrice))}
+                            Bid {formatPrice(currentPrice + getValidIncrement(currentPrice))}
                           </button>
 
                           <span className="text-sm text-text-tertiary px-2">or</span>
@@ -1777,7 +1779,7 @@ const Transfers = () => {
                           <div className="p-2 bg-green-900/20 border border-green-700/30 rounded flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                               <DollarSign className="w-4 h-4 text-green-400" />
-                              <span className="text-xs text-green-400">Auto-bid active: {aiCore.formatPrice(userMaxBid)}</span>
+                              <span className="text-xs text-green-400">Auto-bid active: {formatPrice(userMaxBid)}</span>
                             </div>
                             <button
                               onClick={handleClearMaxBid}
@@ -1869,7 +1871,7 @@ const Transfers = () => {
                         <div className="flex items-center justify-between mt-3">
                           <span className="text-xs text-text-tertiary">{player.teamName}</span>
                           <span className="text-lg font-bold text-cricket-accent">
-                            {aiCore.formatPrice(player.soldPrice)}
+                            {formatPrice(player.soldPrice)}
                           </span>
                         </div>
                       </div>
@@ -1908,7 +1910,7 @@ const Transfers = () => {
                             team.budgetRemaining < 500000 ? 'text-red-400' :
                             team.budgetRemaining < 1000000 ? 'text-yellow-400' : 'text-green-400'
                           }`}>
-                            {aiCore.formatPrice(team.budgetRemaining)}
+                            {formatPrice(team.budgetRemaining)}
                           </div>
                         </div>
                       </div>
@@ -1922,20 +1924,20 @@ const Transfers = () => {
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Total Spent</div>
                           <div className="text-sm font-bold text-text-primary">
-                            {aiCore.formatPrice(team.totalSpent)}
+                            {formatPrice(team.totalSpent)}
                           </div>
                         </div>
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Avg Price</div>
                           <div className="text-sm font-bold text-text-primary">
-                            {aiCore.formatPrice(team.squad.length > 0 ? team.totalSpent / team.squad.length : 0)}
+                            {formatPrice(team.squad.length > 0 ? team.totalSpent / team.squad.length : 0)}
                           </div>
                         </div>
                         <div className="p-2 bg-bg-secondary rounded">
                           <div className="text-xs text-text-secondary">Top Buy</div>
                           <div className="text-sm font-bold text-text-primary">
                             {team.squad.length > 0
-                              ? aiCore.formatPrice(Math.max(...team.squad.map(p => p.soldPrice)))
+                              ? formatPrice(Math.max(...team.squad.map(p => p.soldPrice)))
                               : '$0'}
                           </div>
                         </div>
@@ -1980,7 +1982,7 @@ const Transfers = () => {
                   </h3>
                   <div className="text-sm">
                     <span className="text-cricket-text-secondary">Budget: </span>
-                    <span className="font-bold">{aiCore.formatPrice(team.budgetRemaining)}</span>
+                    <span className="font-bold">{formatPrice(team.budgetRemaining)}</span>
                     <span className="text-cricket-text-secondary ml-3">Squad: </span>
                     <span className="font-bold">{team.squad.length}/25</span>
                   </div>
@@ -2027,7 +2029,7 @@ const Transfers = () => {
                                   )}
                                 </div>
                                 <div className="text-xs text-cricket-accent font-bold mt-1">
-                                  {aiCore.formatPrice(player.soldPrice)}
+                                  {formatPrice(player.soldPrice)}
                                 </div>
                               </div>
                             ))}

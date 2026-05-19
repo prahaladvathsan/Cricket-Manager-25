@@ -10,8 +10,10 @@ import useMatchStore from '../../../../stores/matchStore';
 import usePlayerStore from '../../../../stores/playerStore';
 import PlayerName from '../../../shared/PlayerName';
 
-const LiveScorecard = () => {
-  const [activeTab, setActiveTab] = useState('batting');
+const LiveScorecard = ({ viewTab, hideTabs = false }) => {
+  const [internalTab, setInternalTab] = useState('batting');
+  const activeTab = viewTab || internalTab;
+  const setActiveTab = setInternalTab;
 
   // Subscribe to matchStore
   const teams = useMatchStore(state => state.teams);
@@ -398,29 +400,31 @@ const LiveScorecard = () => {
 
   return (
     <div className="space-y-3">
-      {/* Tab Toggle */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setActiveTab('batting')}
-          className={`px-3 py-1 text-xs rounded transition-colors ${
-            activeTab === 'batting'
-              ? 'bg-cricket-accent text-white'
-              : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Batting
-        </button>
-        <button
-          onClick={() => setActiveTab('bowling')}
-          className={`px-3 py-1 text-xs rounded transition-colors ${
-            activeTab === 'bowling'
-              ? 'bg-cricket-accent text-white'
-              : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Bowling
-        </button>
-      </div>
+      {/* Tab Toggle (hidden when caller forces a view) */}
+      {!hideTabs && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('batting')}
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              activeTab === 'batting'
+                ? 'bg-cricket-accent text-white'
+                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Batting
+          </button>
+          <button
+            onClick={() => setActiveTab('bowling')}
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              activeTab === 'bowling'
+                ? 'bg-cricket-accent text-white'
+                : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Bowling
+          </button>
+        </div>
+      )}
 
       {/* Scorecard Content */}
       {activeTab === 'batting' ? <BattingScorecard /> : <BowlingScorecard />}

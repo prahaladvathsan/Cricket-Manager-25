@@ -58,7 +58,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-bg-secondary border border-border-primary w-full max-w-lg rounded-xl shadow-2xl transition-all">
+            <div className="bg-black/85 backdrop-blur-md border border-border-primary w-full max-w-lg rounded-xl shadow-2xl transition-all">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border-primary bg-bg-tertiary/50 rounded-t-xl">
                     <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">

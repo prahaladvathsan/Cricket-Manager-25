@@ -8,19 +8,24 @@ import { X, UserCheck, UserX, ChevronRight } from 'lucide-react';
 import PlayerName from '../shared/PlayerName';
 import PlaystyleBadge from '../shared/PlaystyleBadge';
 import retentionConfig from '../../data/config/retentionConfig.json';
+import useGameStore from '../../stores/gameStore';
+import { getCurrencySymbol } from '../../utils/currencyFormatter';
 
 const RetentionNegotiationModal = ({ player, marketValue, attemptNumber, playerResponse, onPropose, onAcceptCounter, onRelease, onClose }) => {
   const [offeredSalary, setOfferedSalary] = useState(
     playerResponse?.counterOffer || Math.round(marketValue * 0.8)
   );
 
+  const currency = useGameStore(s => s.settings?.currency) || 'USD';
+  const symbol = getCurrencySymbol(currency);
+
   const maxAttempts = retentionConfig.negotiation.maxAttemptsPerPlayer;
   const minSalary = Math.round(marketValue * 0.5);
   const maxSalary = Math.round(marketValue * 1.2);
 
   const formatMoney = (val) => {
-    if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`;
-    return `$${(val / 1000).toFixed(0)}K`;
+    if (val >= 1000000) return `${symbol}${(val / 1000000).toFixed(2)}M`;
+    return `${symbol}${(val / 1000).toFixed(0)}K`;
   };
 
   // Slider percentage for custom track fill
@@ -28,7 +33,7 @@ const RetentionNegotiationModal = ({ player, marketValue, attemptNumber, playerR
 
   return (
     <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50">
-      <div className="bg-bg-tertiary border border-border-primary rounded-lg w-full max-w-md shadow-xl">
+      <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg w-full max-w-md shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">
           <h3 className="text-base font-bold text-text-primary">Retention Negotiation</h3>
