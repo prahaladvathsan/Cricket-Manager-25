@@ -13,6 +13,7 @@ import FieldPositioningSystem from '../physics/FieldPositioningSystem.js';
 import FielderMovementCalculator from '../physics/FielderMovementCalculator.js';
 import ProbabilityEngine from '../systems/ProbabilityEngine.js';
 import tacticsModifierSystem from '../../tactics/TacticsModifierSystem.js';
+import { generateCommentary } from '../commentary/index.js';
 
 // DEBUG: Set to true to enable ball simulation debugging
 const DEBUG_BALL_SIM = false;
@@ -138,9 +139,6 @@ class SimpleBallSimulator {
       // Determine final outcome based on trajectory and fielding
       const finalOutcome = this.determineFinalOutcome(trajectoryResult, fieldingResult);
 
-      // Generate commentary
-      const commentary = this.generateCommentary(finalOutcome, ballContext);
-
       // Analytics tags — always attached (used by matchAnalytics.js)
       const phase = matchSituation.phase || this.determinePhase(matchSituation.over || 1);
       const hitZone = trajectoryResult?.direction != null
@@ -161,7 +159,7 @@ class SimpleBallSimulator {
       // These are only needed for the live match viewer UI
       const result = {
         ...finalOutcome,
-        commentary,
+        commentary: '',
         conditionUpdates: finalOutcome.conditionUpdates || {},
         phase,
         hitZone,
@@ -185,6 +183,14 @@ class SimpleBallSimulator {
           },
           timestamp: Date.now()
         };
+
+        // Generate commentary only in live mode. matchStore regenerates it
+        // for 2nd-innings balls once chaseContext is available.
+        result.commentary = generateCommentary(result, {
+          strikerName: ballContext.striker?.name,
+          bowlerName: ballContext.bowler?.name,
+          nonStrikerName: ballContext.nonStriker?.name
+        });
       }
 
       return result;
@@ -263,36 +269,6 @@ class SimpleBallSimulator {
       dismissedPlayer: null,
       conditionUpdates: {}
     };
-  }
-
-  /**
-   * Generate ball commentary
-   * @param {Object} outcome - Ball outcome
-   * @param {Object} context - Ball context
-   * @returns {string} Commentary
-   */
-  generateCommentary(outcome, context) {
-    const striker = context.striker?.name || 'Batsman';
-    const bowler = context.bowler?.name || 'Bowler';
-
-    switch (outcome.outcome) {
-      case 'DOT':
-        return `${striker} defends solidly`;
-      case 'RUNS':
-        return `${striker} picks up ${outcome.runs} run${outcome.runs !== 1 ? 's' : ''}`;
-      case 'FOUR':
-        return `${striker} finds the boundary! Four runs`;
-      case 'SIX':
-        return `${striker} launches it over the boundary! Six runs`;
-      case 'CAUGHT':
-        return `${striker} is caught! ${bowler} strikes`;
-      case 'BOWLED':
-        return `${striker} is bowled! ${bowler} crashes through the defenses`;
-      case 'LBW':
-        return `${striker} is trapped LBW! ${bowler} gets the wicket`;
-      default:
-        return `${striker} plays the ball`;
-    }
   }
 
   /**
