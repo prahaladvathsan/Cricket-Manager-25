@@ -1,0 +1,73 @@
+{
+  "match.result": [
+    {
+      "when": { "isPlayoff": true },
+      "headline": "${winner.name} march on — ${loser.name} undone by ${margin}",
+      "subhead": "${stageLabel} clash decided as ${winner.name} chase the title",
+      "body": [
+        "${winner.name} have advanced in the WPL playoffs after dispatching ${loser.name} by ${margin} in the ${stageLabel}.",
+        "${winner.name} posted ${winner.score}, while ${loser.name} could only manage ${loser.score} in reply.",
+        "${potmLine}"
+      ],
+      "inboxSubject": "${winner.name} win ${stageLabel}",
+      "inboxType": "match_result",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "match", "${stageTag}"]
+    },
+    {
+      "when": { "isHighScoring": true },
+      "headline": "Run-fest: ${winner.name} edge ${loser.name} in ${totalRuns}-run thriller",
+      "subhead": "${venue} witnesses fireworks as ${winner.name} prevail by ${margin}",
+      "body": [
+        "Batters dominated at ${venue} as ${winner.name} outgunned ${loser.name} by ${margin} in a high-scoring T20 spectacle.",
+        "${winner.name} put up ${winner.score}, ${loser.name} responding with ${loser.score} — ${totalRuns} runs scored across both innings.",
+        "${potmLine}"
+      ],
+      "inboxSubject": "Run-fest: ${winner.name} beat ${loser.name}",
+      "inboxType": "match_result",
+      "sender": "WPL Newsdesk",
+      "tags": ["match", "high_scoring"]
+    },
+    {
+      "when": { "isCloseFinish": true },
+      "headline": "Photo finish: ${winner.name} sneak past ${loser.name} by ${margin}",
+      "subhead": "Nail-biter at ${venue} as ${winner.name} hold their nerve",
+      "body": [
+        "${winner.name} held on by the slimmest of margins to beat ${loser.name} by ${margin} in a tense T20 finish at ${venue}.",
+        "${winner.name} reached ${winner.score}, ${loser.name} falling agonisingly short at ${loser.score}.",
+        "${potmLine}"
+      ],
+      "inboxSubject": "Thriller: ${winner.name} edge ${loser.name}",
+      "inboxType": "match_result",
+      "sender": "WPL Newsdesk",
+      "tags": ["match", "close_finish"]
+    },
+    {
+      "when": { "isOneSided": true },
+      "headline": "${winner.name} crush ${loser.name} by ${margin}",
+      "subhead": "Dominant display at ${venue}",
+      "body": [
+        "${winner.name} produced a clinical performance to dismantle ${loser.name} by ${margin} at ${venue}.",
+        "${winner.name} posted ${winner.score}; ${loser.name} were never in the contest at ${loser.score}.",
+        "${potmLine}"
+      ],
+      "inboxSubject": "${winner.name} thrash ${loser.name}",
+      "inboxType": "match_result",
+      "sender": "WPL Newsdesk",
+      "tags": ["match", "one_sided"]
+    },
+    {
+      "headline": "${winner.name} beat ${loser.name} by ${margin}",
+      "subhead": "WPL Matchday ${matchday} report from ${venue}",
+      "body": [
+        "${winner.name} secured a ${margin} win over ${loser.name} at ${venue} on Matchday ${matchday}.",
+        "${winner.name} scored ${winner.score}, ${loser.name} replying with ${loser.score}.",
+        "${potmLine}"
+      ],
+      "inboxSubject": "${winner.name} beat ${loser.name}",
+      "inboxType": "match_result",
+      "sender": "WPL Newsdesk",
+      "tags": ["match"]
+    }
+  ]
+}

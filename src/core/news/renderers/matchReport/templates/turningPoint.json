@@ -1,0 +1,24 @@
+[
+  {
+    "when": { "turning.wickets": 2 },
+    "body": [
+      "The over that bent the match was the ${turning.overLabel}th of the ${turning.inningsLabel}: ${turning.wickets} wickets and ${turning.runs} runs off ${turning.bowlerLinked}'s set. The scorecard didn't quite recover after that."
+    ]
+  },
+  {
+    "when": { "turning.wickets": 3 },
+    "body": [
+      "Three wickets in the ${turning.overLabel}th. Whatever momentum had been building, ${turning.bowlerLinked} stripped it back in six balls and handed the match's reins to the bowling side."
+    ]
+  },
+  {
+    "body": [
+      "The turning point arrived in the ${turning.overLabel}th over of the ${turning.inningsLabel} — ${turning.runs} runs and ${turning.wickets} wickets off ${turning.bowlerLinked}'s spell. After that, the chase math felt different."
+    ]
+  },
+  {
+    "body": [
+      "Match's spine bent in the ${turning.overLabel}th. ${turning.runs} off the over, ${turning.wickets} wickets alongside — the kind of single over that quietly rewrites a contest without ever calling attention to itself."
+    ]
+  }
+]

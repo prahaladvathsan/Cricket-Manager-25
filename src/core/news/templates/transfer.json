@@ -1,0 +1,86 @@
+{
+  "transfer.listed": [
+    {
+      "headline": "${player.name} placed on transfer list",
+      "subhead": "${fromTeam.name} ask ${listing.listingPrice} for ${player.primaryRole}",
+      "body": [
+        "${fromTeam.name} have listed ${player.name} for transfer with an asking price of ${listing.listingPrice}.",
+        "The ${player.primaryRole} becomes available to rival franchises with the listing open until day ${listing.expiresDay}."
+      ],
+      "inboxSubject": "Transfer listing: ${player.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Transfer Desk",
+      "tags": ["transfer", "listing"]
+    }
+  ],
+  "transfer.bid_placed": [
+    {
+      "headline": "${toTeam.name} table bid for ${player.name}",
+      "subhead": "${bid.amount} offer lodged with ${fromTeam.name}",
+      "body": [
+        "${toTeam.name} have submitted a bid of ${bid.amount} for ${fromTeam.name}'s ${player.name}.",
+        "Total bids received on the listing now stand at ${listing.totalBids}. The window closes on day ${listing.expiresDay}."
+      ],
+      "inboxSubject": "Bid placed: ${player.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Transfer Desk",
+      "tags": ["transfer", "bid"]
+    }
+  ],
+  "transfer.completed": [
+    {
+      "when": { "isMarquee": true },
+      "headline": "BLOCKBUSTER: ${player.name} joins ${toTeam.name}",
+      "subhead": "${transferFee} deal sees ${player.primaryRole} switch franchises",
+      "body": [
+        "${toTeam.name} have completed the marquee signing of ${player.name} from ${fromTeam.name} in a ${transferFee} deal.",
+        "The ${player.primaryRole} ends a spell at ${fromTeam.name} and immediately strengthens ${toTeam.name}'s push for honours this season.",
+        "The transfer was settled after ${totalBids} competing bids on the listing."
+      ],
+      "inboxSubject": "TRANSFER: ${player.name} → ${toTeam.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["transfer", "marquee"]
+    },
+    {
+      "headline": "${player.name} signs for ${toTeam.name}",
+      "subhead": "${transferFee} fee paid to ${fromTeam.name}",
+      "body": [
+        "${player.name} has completed a transfer from ${fromTeam.name} to ${toTeam.name} for ${transferFee}.",
+        "The ${player.primaryRole} joins his new franchise immediately and is available for selection in upcoming fixtures."
+      ],
+      "inboxSubject": "Transfer: ${player.name} → ${toTeam.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["transfer"]
+    }
+  ],
+  "transfer.window_opened": [
+    {
+      "headline": "Transfer window opens",
+      "subhead": "Season ${season} off-season trading begins",
+      "body": [
+        "The off-season transfer window is now open. All ten WPL franchises can list players and submit bids for available talent.",
+        "Listings will remain active for ${windowDurationDays} days. Plan early — once the window closes, no further movement is permitted until next off-season."
+      ],
+      "inboxSubject": "Transfer window opens",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["window", "open"]
+    }
+  ],
+  "transfer.window_closed": [
+    {
+      "headline": "Transfer window closes",
+      "subhead": "${totalTransfers} deals completed across the league",
+      "body": [
+        "The off-season transfer window has now officially closed. A total of ${totalTransfers} player movements were finalised across the WPL.",
+        "Squads are now locked until the next off-season trading period."
+      ],
+      "inboxSubject": "Transfer window closes",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["window", "closed"]
+    }
+  ]
+}

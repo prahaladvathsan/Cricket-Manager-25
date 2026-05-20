@@ -1,0 +1,44 @@
+{
+  "retention.player_retained": [
+    {
+      "when": { "contract.retentionTier": "marquee" },
+      "headline": "${team.name} retain marquee star ${player.name}",
+      "subhead": "Franchise commits ${contract.salary} to keep ${player.primaryRole} ahead of auction",
+      "body": [
+        "${team.name} have confirmed the retention of ${player.name} on a ${contract.retentionTier}-tier contract worth ${contract.salary}.",
+        "The deal represents a ${contract.salaryDelta} change on the player's previous compensation and leaves the franchise with ${teamRetentionSummary.auctionPurseRemaining} of auction purse remaining.",
+        "${team.name} have retained ${teamRetentionSummary.totalRetained} players in total this off-season, releasing ${teamRetentionSummary.totalReleased} from their squad."
+      ],
+      "inboxSubject": "Marquee retention: ${player.name} stays at ${team.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["retention", "marquee"]
+    },
+    {
+      "headline": "${player.name} retained by ${team.name}",
+      "subhead": "${contract.retentionTier} contract secured at ${contract.salary}",
+      "body": [
+        "${team.name} have used a retention slot to keep ${player.name} ahead of the upcoming auction.",
+        "The ${player.primaryRole} signs on a ${contract.retentionTier}-tier deal worth ${contract.salary}, leaving the franchise with ${teamRetentionSummary.auctionPurseRemaining} of auction budget."
+      ],
+      "inboxSubject": "Retention: ${player.name} stays at ${team.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["retention"]
+    }
+  ],
+  "retention.player_released": [
+    {
+      "headline": "${team.name} release ${player.name}",
+      "subhead": "${player.primaryRole} heads to auction pool",
+      "body": [
+        "${team.name} have opted not to retain ${player.name}, who will now enter the auction pool as a free agent.",
+        "The decision is part of ${team.name}'s wider squad restructure — ${teamRetentionSummary.totalReleased} players have been released this off-season."
+      ],
+      "inboxSubject": "${player.name} released by ${team.name}",
+      "inboxType": "transfer",
+      "sender": "WPL Newsdesk",
+      "tags": ["release"]
+    }
+  ]
+}

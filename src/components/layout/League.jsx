@@ -24,6 +24,7 @@ import SortableTable from '../shared/SortableTable';
 import { useMatchResultModal } from '../../hooks/useMatchResultModal';
 import PlayoffView from '../Playoffs/PlayoffView';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
+import { computeRecentForm } from '../../utils/recentForm';
 
 const League = () => {
   const navigate = useNavigate();
@@ -254,12 +255,14 @@ const League = () => {
                   <th className="text-center py-2 px-2 font-medium">L</th>
                   <th className="text-center py-2 px-2 font-medium">NRR</th>
                   <th className="text-center py-2 px-2 font-medium">Pts</th>
+                  <th className="text-right py-2 px-2 pl-3 font-medium">Form</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedStandings.map((team, idx) => {
                   const isPlayoffSpot = idx < 4;
                   const isUserTeam = team.clubId === userTeam?.id;
+                  const teamForm = computeRecentForm(results, team.clubId, 5);
                   return (
                     <tr
                       key={team.clubId}
@@ -291,6 +294,23 @@ const League = () => {
                       </td>
                       <td className="py-2 px-2 text-center text-cricket-accent font-bold font-mono">
                         {team.points}
+                      </td>
+                      <td className="py-2 px-2 pl-3 text-right">
+                        {teamForm.length > 0 ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            {teamForm.map((res, ri) => (
+                              <span
+                                key={ri}
+                                className={`inline-flex items-center justify-center w-4 h-4 rounded-sm text-[9px] font-bold text-white ${res === 'W' ? 'bg-status-win' : 'bg-status-loss'}`}
+                                title={res === 'W' ? 'Win' : 'Loss'}
+                              >
+                                {res}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span className="text-text-tertiary/50 text-xs">—</span>
+                        )}
                       </td>
                     </tr>
                   );

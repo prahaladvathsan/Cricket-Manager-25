@@ -302,6 +302,37 @@ import PlayerCardModal from '../shared/PlayerCardModal';
 
 ---
 
+### HomeNewsCarousel
+
+**Location:** `src/components/news/HomeNewsCarousel.jsx`
+
+Rotating news card that sits in the top-left col-span-2 slot of the Home dashboard. Reads from `inboxStore.messages` filtered to `type === 'league_news'`.
+
+#### Layout / behaviour
+
+- Fixed card height (`CARD_HEIGHT = 'h-[260px]'`); must be bumped in lockstep with the standings card's natural height
+- Auto-rotates every 10s, pauses while the cursor hovers the card AND while the article modal is open
+- Sort: `effective = importance + (isUserTeam ? 25 : 0)` desc, then date desc. Top 8 articles
+- Prev/next chevrons sit inside the bottom pagination pill (no floating overlay buttons)
+- Hero team badge floats into the body content (newspaper-style wrap); falls back to no badge when no team id is in the payload
+- Click opens `NewsArticleModal`
+
+See `docs/core-systems/news-system.md` for the news pipeline.
+
+### NewsArticleModal
+
+**Location:** `src/components/news/NewsArticleModal.jsx`
+
+Full-screen broadsheet-style modal that opens when a news card is clicked. Cream paper background, double-rule masthead, drop-cap on the first paragraph, em-dash pull-quote citations, tag pills at the foot.
+
+#### Inline entity rendering
+
+The modal body parses `[[PLAYER:id|name]]` and `[[TEAM:id|name]]` sentinel tokens (see `src/core/news/entityHelpers.js`) into `<PlayerName>` / `<TeamName>` components — both with `inline` set. Templates that want clickable players inside prose emit these via `.linked` keys on payload objects (see news-system.md).
+
+Pull-quote paragraphs (prefixed with `> ` by the `postMatchQuotes` block) render as `<blockquote>` with the attribution split off as a right-aligned `<footer>` below the quote text.
+
+---
+
 ## Playstyle Display System
 
 ### Abbreviation Mapping
@@ -426,7 +457,8 @@ import PlayerName from '../shared/PlayerName';
 - Clickable by default → opens PlayerCardModal
 - Automatically fetches player from store if not provided
 - Handles missing players gracefully
-- Consistent styling across all views
+- Default colour is `text-cricket-accent` (gold) — do NOT override unless you have a reason; the dashboard treats gold as "this is a player link" universally
+- `inline` defaults to **`true`** → renders as `<span>` by default
 
 ---
 
@@ -450,7 +482,7 @@ import TeamName from '../shared/TeamName';
 // With custom team object
 <TeamName teamId={team.id} team={team} />
 
-// Inline variant
+// Inline variant — REQUIRED inside flowing prose
 <TeamName teamId={team.id} inline />
 
 // With click callback (e.g., to close parent modal)
@@ -460,6 +492,25 @@ import TeamName from '../shared/TeamName';
 #### Variants
 - `full` (default): Full team name
 - `short`: Abbreviated name
+
+#### ⚠️ Inline-default asymmetry (footgun)
+
+`<TeamName>` defaults to **`inline={false}`**, while `<PlayerName>` defaults to **`inline={true}`**. That means:
+
+- A bare `<TeamName teamId={...} />` renders as a `<div>` (block-level) and **forces a line break** before and after.
+- A bare `<PlayerName playerId={...} />` renders as a `<span>` and flows inline.
+
+This caused a real bug in `NewsArticleModal` where pull-quote attributions read as:
+
+```
+"...Onto the next one." — Romario Shepherd,
+Colombo Crocodiles
+captain.
+```
+
+instead of inline on one line. The fix was to pass `inline` to every `TeamName` inside body prose.
+
+**Always pass `inline` to `<TeamName>` when rendering inside paragraph text or any flex/inline container.** PlayerName doesn't need it (default is correct). The asymmetry is historical and may be unified in a future refactor; until then, treat `inline` as effectively required on `<TeamName>`.
 
 ---
 
@@ -697,6 +748,12 @@ const userTeam = useTeamStore(state => state.getUserTeam());
 ---
 
 ## Changelog
+
+### May 2026
+- **News components added** — HomeNewsCarousel (Home dashboard rotating news) + NewsArticleModal (broadsheet-style full read)
+- **PlayerName / TeamName inline-default asymmetry documented** — TeamName defaults to block-level, PlayerName to inline. Always pass `inline` to TeamName in flowing prose.
+- **Yellow discipline clarified** — `cricket-accent` (gold) is reserved for user-team data, news rails, and the default `<PlayerName>` colour. Don't apply it to generic chrome.
+- **Eyebrow style unified** — dashboard cards use a single eyebrow class (`text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary`)
 
 ### February 2026
 - **Added PlaystyleBadge component** - Abbreviation system with tooltips and prefix-based colors

@@ -15,6 +15,8 @@ import impactCalculator from '../../tactics/ImpactCalculator.js';
 import aiTacticsManager from '../../ai/AITacticsManager.js';
 import { buildFielderArray } from '../../../utils/fielderArrayBuilder.js';
 import { applyPlaystyleOverrides, restoreOriginalPlaystyles } from '../../TacticsLoader.js';
+import { getNewsDispatcher } from '../../news/newsDispatcherSingleton.js';
+import useGameStore from '../../../stores/gameStore.js';
 
 // DEBUG: Set to true to enable match engine debugging
 const DEBUG_MATCH_ENGINE = false;
@@ -1704,17 +1706,8 @@ class MatchEngine {
     Object.entries(energyUpdates).forEach(([playerId, updates]) => {
       const player = this.playerStore.getState().getPlayer(playerId);
       if (player && player.condition) {
-        // Calculate injury severity based on duration
-        let injurySeverity = null;
-        if (updates.injuryDuration) {
-          if (updates.injuryDuration <= 30) {
-            injurySeverity = 'minor';
-          } else if (updates.injuryDuration <= 60) {
-            injurySeverity = 'major';
-          } else {
-            injurySeverity = 'severe';
-          }
-        }
+        // Calculate injury severity based on duration (thresholds from energy-config.json)
+        const injurySeverity = energyManager.getInjurySeverity(updates.injuryDuration);
 
         // Use playerStore.updatePlayerCondition to properly persist all updates
         const conditionUpdates = {
@@ -1728,7 +1721,10 @@ class MatchEngine {
           conditionUpdates.fatigue = 0; // Reset fatigue to 0 when injured (player will rest during recovery)
           console.log(`⚠️ ${player.name} injured (${injurySeverity}) for ${updates.injuryDuration} days`);
 
-          // Send injury inbox message only for user's squad players
+          // Emit league-wide news event (covers all teams, fuels Home news carousel)
+          this.emitInjuryOnsetNews(player, updates.injuryDuration, injurySeverity);
+
+          // Send personal-inbox injury message only for user's squad players (legacy path)
           if (this.inboxStore && this.teamStore) {
             const userTeamId = this.teamStore.getState().userTeamId;
             const isUserPlayer = player.currentTeam === userTeamId;
@@ -1781,6 +1777,85 @@ class MatchEngine {
 
     if (this.config.showBallByBall) {
       console.log('Tactical state finalized: energy, fatigue, injuries, and morale updated');
+    }
+  }
+
+  /**
+   * Emit a league-wide `injury.onset` news event for a freshly-injured player.
+   * @private
+   */
+  emitInjuryOnsetNews(player, durationDays, severity) {
+    try {
+      const teamStoreState = this.teamStore?.getState();
+      const userTeamId = teamStoreState?.userTeamId;
+      const team = teamStoreState?.teams?.[player.currentTeam];
+      // Roughly: 1 match every ~5 days during regular season
+      const missesMatches = Math.max(1, Math.floor(durationDays / 5));
+
+      // Crude injury-type guess based on duration buckets (template uses this for flavour text).
+      const injuryType =
+        severity === 'severe' ? 'serious soft-tissue' :
+        severity === 'major'  ? 'muscular' :
+                                'knock';
+
+      const gs = useGameStore.getState();
+      const gameDay = gs.gameDay || 0;
+      const season = gs.currentSeason || 0;
+      const isoDate = gs.currentDate || new Date().toISOString();
+
+      // Compute the human-readable calendar date the player is expected back
+      // on, so news templates can render "expected back on Wed, 12 Feb 2025"
+      // instead of the meaningless "day 247". Falls back to an empty string if
+      // the current date isn't parseable.
+      let nextAvailableDate = '';
+      try {
+        const back = new Date(isoDate);
+        back.setDate(back.getDate() + durationDays);
+        nextAvailableDate = back.toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      } catch {
+        nextAvailableDate = '';
+      }
+
+      getNewsDispatcher().emit({
+        type: 'injury.onset',
+        season,
+        gameDay,
+        date: isoDate,
+        payload: {
+          player: {
+            id: player.id,
+            name: player.name,
+            primaryRole: player.primaryRole || player.role || 'Player',
+            teamId: player.currentTeam
+          },
+          team: {
+            id: player.currentTeam,
+            name: team?.name || player.currentTeam
+          },
+          injury: {
+            severity,
+            durationDays,
+            type: injuryType,
+            context: 'match'
+          },
+          match: {
+            matchId: this.matchId || 'current_match'
+          },
+          impact: {
+            missesMatches,
+            nextAvailableDay: gameDay + durationDays,
+            nextAvailableDate
+          },
+          isUserTeam: userTeamId && player.currentTeam === userTeamId
+        }
+      });
+    } catch (err) {
+      console.error('[MatchEngine] Failed to emit injury.onset news:', err);
     }
   }
 

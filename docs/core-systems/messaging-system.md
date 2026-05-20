@@ -40,6 +40,45 @@ In-game inbox for notifications, tutorials, and event summaries. Messages appear
 | `auction_summary` | `generateAuctionSummaryMessage()` | Transfers.jsx:post-auction | Auction results |
 | `match_reminder` | `generateMatchReminderMessage()` | Header.jsx:day-before-match | Pre-match checklist |
 | `match_result` | `generateMatchResultMessage()` | (Future) | Post-match summary |
+| `league_news` | `core/news/subscribers/inboxSubscriber` | News Dispatcher (all event types) | League-wide news feed — match reports, transfers, injuries, etc. |
+
+### News Dispatcher integration
+
+The `league_news` message type is special — it isn't authored by `MessageGenerator`. It's written by the News Dispatcher's `inboxSubscriber`, which sits in front of `inboxStore.addMessage()` and bridges the pub/sub news pipeline (`src/core/news/`) into the inbox.
+
+Each `league_news` message carries a richer `metadata` shape than the legacy types:
+
+```js
+{
+  type: 'league_news',
+  subject, body, sender,
+  date, read: false,
+  metadata: {
+    newsEventType,      // e.g. 'match.result'
+    newsCategory,       // template's inboxType
+    headline, subhead,  // typography-aware fields used by the article modal
+    bodyParagraphs,     // structured array, may contain [[PLAYER:id|name]] sentinels
+    tags,               // for filtering + colour rail
+    season, gameDay,
+    importance,         // 0-100, used by the Home carousel sort
+    isUserTeam,         // boost flag for the carousel sort
+    reporterId,         // selected from the persona pool (Bhogle, Kimber, etc.)
+    reporterTagline,    // one-line bio shown under the byline
+    payload             // raw event.payload for downstream consumers
+  }
+}
+```
+
+This is why the Home dashboard's news carousel filters on `type === 'league_news'` and reads `metadata.headline` / `metadata.bodyParagraphs` rather than the flat `subject` / `body` fields.
+
+**Full news pipeline reference**: `docs/core-systems/news-system.md`.
+
+Two paths coexist:
+
+1. **Legacy generators** (`MessageGenerator.generateInjuryMessage`, `generateRecoveryMessage`, etc.) — still fire for personal-team UX so the user's own players get inbox notifications routed under existing categories (`injury`, `transfer`).
+2. **News Dispatcher** — fires league-wide for the same events plus many more, written under the `league_news` umbrella so the home carousel + article modal can render them.
+
+Migration from path 1 → path 2 is gradual. The dispatcher's payload already carries `isUserTeam: true` so when the migration completes you'd route on that flag.
 
 ## Message Generation
 

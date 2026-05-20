@@ -1,0 +1,104 @@
+[
+  {
+    "when": { "flag.kind": "milestoneHeartbreak", "flag.target": 100 },
+    "body": [
+      "${flag.player.linked} will replay this one a long time. ${flag.runs} (${flag.balls}) — a fraction short of a century, the kind of dismissal that lives rent-free in a batter's head until the next time the bowler runs in."
+    ]
+  },
+  {
+    "when": { "flag.kind": "milestoneHeartbreak", "flag.target": 100 },
+    "body": [
+      "${flag.player.linked}'s ${flag.runs} off ${flag.balls} for ${flag.team.linked} was the night's most painful number. A hundred sat right there, untouchable now."
+    ]
+  },
+  {
+    "when": { "flag.kind": "milestoneHeartbreak", "flag.target": 50 },
+    "body": [
+      "Cruelty came for ${flag.player.linked} — out on 49. ${flag.balls} balls, ${flag.runs} runs, and a half-century missed by the smallest margin the sport offers."
+    ]
+  },
+  {
+    "when": { "flag.kind": "loneWolf" },
+    "body": [
+      "${flag.player.linked} kept ${flag.team.linked} in it almost on their own — ${flag.runs} off ${flag.balls} balls, ${flag.sharePct}% of their team's ${flag.teamTotal}. A lone hand at one end, too many soft dismissals at the other."
+    ]
+  },
+  {
+    "when": { "flag.kind": "loneWolf" },
+    "body": [
+      "Pity ${flag.player.linked}. ${flag.runs} of ${flag.team.linked}'s ${flag.teamTotal} — ${flag.sharePct}% of the whole — and a defeat to take home anyway. The kind of innings the highlights underplay and the dressing room remembers."
+    ]
+  },
+  {
+    "when": { "flag.kind": "captainsInnings" },
+    "body": [
+      "${flag.player.linked} led from the front in every literal sense of the phrase — ${flag.runs} off ${flag.balls} balls in the chase, the captain's contribution that made the maths look easy from the dressing room."
+    ]
+  },
+  {
+    "when": { "flag.kind": "captainsInnings" },
+    "body": [
+      "A captain's knock. ${flag.player.linked} top-scored for ${flag.team.linked} in the run-chase with ${flag.runs} (${flag.balls}), and from the moment they walked out, the result rarely felt in doubt."
+    ]
+  },
+  {
+    "when": { "flag.kind": "unsungHero" },
+    "body": [
+      "On a night the bats dominated, ${flag.player.linked} of ${flag.team.linked} bowled an economy of ${flag.economy} — ${flag.wickets}-${flag.runs} in ${flag.overs}. The unsung shift in a run-fest, and the kind of spell statisticians love and broadcasters skip."
+    ]
+  },
+  {
+    "when": { "flag.kind": "unsungHero" },
+    "body": [
+      "Credit where it's due — ${flag.player.linked} (${flag.wickets}-${flag.runs} from ${flag.overs}, economy ${flag.economy}) was the bowler holding the wall in a high-scoring night. The result lands elsewhere; the analysts will be filing this spell anyway."
+    ]
+  },
+  {
+    "when": { "flag.kind": "youngsterBreakout", "flag.kindOf": "batting" },
+    "body": [
+      "Remember the name. ${flag.player.linked} — ${flag.player.age} years old, scouted as a project — produced ${flag.performance} for ${flag.team.linked}. The kind of breakout that re-prices a contract overnight."
+    ]
+  },
+  {
+    "when": { "flag.kind": "youngsterBreakout", "flag.kindOf": "bowling" },
+    "body": [
+      "${flag.player.linked} announced themselves. ${flag.performance} at ${flag.player.age} — a young bowler with a previously modest rating producing the kind of spell that turns a player from squad-filler to plan-A in one evening."
+    ]
+  },
+  {
+    "when": { "flag.kind": "veteranResurgence", "flag.kindOf": "batting" },
+    "body": [
+      "${flag.player.linked} reminded everyone watching that ${flag.player.age} is no age to be writing anyone off. ${flag.performance} — the classical lines that built a career, played the way they were always meant to be."
+    ]
+  },
+  {
+    "when": { "flag.kind": "veteranResurgence", "flag.kindOf": "bowling" },
+    "body": [
+      "${flag.player.linked}, ${flag.player.age} and supposedly past their best, returned ${flag.performance}. The captain trusts the older heads for a reason — and tonight the trust was repaid in full."
+    ]
+  },
+  {
+    "when": { "flag.kind": "cameoHero" },
+    "body": [
+      "The cameo of the night belonged to ${flag.player.linked} — ${flag.runs} off ${flag.balls} at a strike rate of ${flag.strikeRate}, the kind of lower-order burst that bends a finishing total into a winning one."
+    ]
+  },
+  {
+    "when": { "flag.kind": "powerplayWreck", "flag.isWinningSide": true },
+    "body": [
+      "${flag.team.linked} lost ${flag.wickets} in the powerplay (${flag.runs} runs in the first six) and still won the match. Cricket, ladies and gentlemen — the form guide is a suggestion, not a contract."
+    ]
+  },
+  {
+    "when": { "flag.kind": "powerplayWreck" },
+    "body": [
+      "${flag.team.linked}'s powerplay went wrong — ${flag.wickets} wickets down inside the first six overs for just ${flag.runs}. The middle order spent the rest of the innings firefighting, and the maths never quite came back."
+    ]
+  },
+  {
+    "when": { "flag.kind": "deathOversSpecialist" },
+    "body": [
+      "${flag.player.linked} held the death — ${flag.deathOversWickets} wickets for ${flag.deathOversRuns} between overs 16 and 20 at an economy of ${flag.deathOversEcon}. Cool head, slow ball, fielders set; the bit of cricket that requires the most nerve and rewards it the least."
+    ]
+  }
+]

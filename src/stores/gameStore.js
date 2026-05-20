@@ -11,6 +11,8 @@ import { generateSeasonObjectives, calculateBoardScore, updateAllObjectives } fr
 import { compressedStorageOptions } from '../utils/compression.js';
 import { indexedDBStorage } from '../utils/indexedDBStorage.js';
 import { markHydrated } from '../utils/storeHydration.js';
+import { getNewsDispatcher } from '../core/news/newsDispatcherSingleton.js';
+import energyConfig from '../data/config/energy-config.json';
 
 /**
  * @typedef {Object} GameState
@@ -33,7 +35,8 @@ const DEFAULT_SETTINGS = {
   currency: 'USD',          // Display currency (USD, EUR, GBP, INR)
   tutorialEnabled: true,    // Show tutorial messages for new games
   difficulty: 'normal',     // Placeholder for future difficulty system
-  autosave: true            // Auto-save game state
+  autosave: true,           // Auto-save game state
+  matchResultModalMode: 'user_only' // 'all' | 'user_only' | 'none' — when to pop the match result modal. Non-shown matches still appear in the Home news feed.
 };
 
 const useGameStore = create(
@@ -48,6 +51,10 @@ const useGameStore = create(
       calendarEvents: [],
       isSimulating: false,
       isProcessingTurn: false,
+
+      // Weekly news roundup tracker. Updated each time `weekly.roundup` fires
+      // so we don't double-emit within a 7-day window. Reset each new season.
+      lastRoundupGameDay: 0,
 
       // Season History (persisted across seasons)
       seasonHistory: [], // Array of { season, champion, runnerUp, standings, userPosition }
@@ -110,6 +117,61 @@ const useGameStore = create(
           currentDate: newDate.toISOString(),
           currentWeek: shouldAdvanceWeek ? state.currentWeek + 1 : state.currentWeek
         });
+
+        // Weekly news roundup — fires every 7 in-season days. Gated to
+        // currentPhase in ('league', 'playoffs') so we don't emit during
+        // offseason, auction, or retention windows (confirmed gating).
+        if (typeof window !== 'undefined' && (state.currentPhase === 'league' || state.currentPhase === 'playoffs')) {
+          const lastRoundup = state.lastRoundupGameDay || 0;
+          if (newGameDay - lastRoundup >= 7) {
+            (async () => {
+              try {
+                const [
+                  { default: leagueStoreMod },
+                  { default: teamStoreMod },
+                  { default: transferStoreMod },
+                  { default: playerStoreMod },
+                  { emitWeeklyRoundup }
+                ] = await Promise.all([
+                  import('./leagueStore'),
+                  import('./teamStore'),
+                  import('./transferStore'),
+                  import('./playerStore'),
+                  import('../core/news/emitters/weeklyRoundup.js')
+                ]);
+
+                // Snapshot prior leader BEFORE the roundup runs so the
+                // table-shakeup detector can compare against today's leader.
+                const priorStandings = leagueStoreMod.getState().standings || [];
+                const priorSorted = [...priorStandings].sort((a, b) => {
+                  if (b.points !== a.points) return b.points - a.points;
+                  return (b.netRunRate ?? 0) - (a.netRunRate ?? 0);
+                });
+                const priorLeaderId = priorSorted[0]?.clubId || null;
+
+                emitWeeklyRoundup(
+                  {
+                    gameStore: { getState: get },
+                    teamStore: teamStoreMod,
+                    leagueStore: leagueStoreMod,
+                    transferStore: transferStoreMod,
+                    playerStore: playerStoreMod
+                  },
+                  {
+                    newGameDay,
+                    newDateISO: newDate.toISOString(),
+                    priorLeaderId
+                  }
+                );
+              } catch (err) {
+                console.error('Failed to emit weekly.roundup news:', err);
+              }
+            })();
+
+            // Mark the roundup as emitted so the next one waits another 7 days.
+            set({ lastRoundupGameDay: newGameDay });
+          }
+        }
 
         // Process daily condition updates (injury countdown, fitness/fatigue recovery)
         // Runs after state update to properly track recovery
@@ -178,6 +240,32 @@ const useGameStore = create(
                       updates.injury = null;
                       updates.injuryDuration = null;
 
+                      // Emit league-wide recovery news (fires for every team, fuels Home news carousel)
+                      try {
+                        const teamObj = teamStore.getState().teams?.[player.currentTeam];
+                        getNewsDispatcher().emit({
+                          type: 'injury.recovery',
+                          season: get().currentSeason,
+                          gameDay: newGameDay,
+                          date: newDate.toISOString(),
+                          payload: {
+                            player: {
+                              id: playerId,
+                              name: player.name,
+                              primaryRole: player.primaryRole || player.role || 'Player',
+                              teamId: player.currentTeam
+                            },
+                            team: {
+                              id: player.currentTeam,
+                              name: teamObj?.name || player.currentTeam
+                            },
+                            isUserTeam: userTeamId && player.currentTeam === userTeamId
+                          }
+                        });
+                      } catch (newsErr) {
+                        console.error('Failed to emit injury.recovery news:', newsErr);
+                      }
+
                       const isUserPlayer = player.currentTeam === userTeamId;
                       if (isUserPlayer) {
                         inboxStore.getState().addMessage(MessageGenerator.generateRecoveryMessage(player));
@@ -197,26 +285,25 @@ const useGameStore = create(
                     const currentRestDays = player.condition?.consecutiveRestDays || 0;
                     updates.consecutiveRestDays = currentRestDays + 1;
 
-                    // --- FITNESS RECOVERY ---
+                    // --- FITNESS RECOVERY --- (config: energy-config.json fitness.recoveryCap)
                     const currentFitness = player.condition?.fitness ?? 100;
                     const endurance = player.attributes?.physical?.endurance ?? 10;
                     const maxFitness = player.attributes?.physical?.maxFitness ?? 10;
-                    const fitnessCap = Math.min(100, 50 + (maxFitness * 2.5));
-                    const recoveryAmount = endurance;
-                    const newFitness = Math.min(currentFitness + recoveryAmount, fitnessCap);
+                    const { base: capBase, multiplier: capMultiplier, maxValue: capMax } = energyConfig.fitness.cap;
+                    const fitnessCap = Math.min(capMax, capBase + (maxFitness * capMultiplier));
+                    const newFitness = Math.min(currentFitness + endurance, fitnessCap);
 
                     if (newFitness > currentFitness) {
                       updates.fitness = newFitness;
                     }
 
-                    // --- FATIGUE RECOVERY ---
+                    // --- FATIGUE RECOVERY --- (config: energy-config.json fatigueAndInjury.fatigueRecovery)
                     const currentFatigue = player.condition?.fatigue ?? 0;
                     if (currentFatigue > 0) {
                       const restDays = updates.consecutiveRestDays;
-                      // No recovery in first 10 days, 0.2 starting from day 11
-                      const baseRecovery = restDays > 10 ? 0.2 : 0;
-                      // Bonus +1 recovery every 7th rest day (14, 21...) ONLY after reaching 10 day threshold
-                      const bonusRecovery = (restDays > 10 && restDays % 7 === 0) ? 1 : 0;
+                      const { startDay, baseRecoveryPerDay, bonusInterval, bonusAmount } = energyConfig.fatigueAndInjury.fatigueRecovery;
+                      const baseRecovery = restDays >= startDay ? baseRecoveryPerDay : 0;
+                      const bonusRecovery = (restDays >= startDay && restDays % bonusInterval === 0) ? bonusAmount : 0;
                       const totalRecovery = baseRecovery + bonusRecovery;
 
                       if (totalRecovery > 0) {
@@ -475,6 +562,8 @@ const useGameStore = create(
           // NOTE: Don't clear calendarEvents here - let league initialization handle that
           // This allows scheduled events (auction, preseason_start) to still fire
           isSimulating: false,
+          // Re-arm the weekly roundup window for the new season
+          lastRoundupGameDay: 0,
           // NOTE: Don't clear retentionState here — auction needs it. Cleared by resetRetention() after auction.
           // Reset objectives for new season
           seasonObjectives: [],
@@ -516,6 +605,7 @@ const useGameStore = create(
         currentDate: new Date('2025-01-01').toISOString(),
         calendarEvents: [],
         isSimulating: false,
+        lastRoundupGameDay: 0,
         // Reset tutorial for new games so players see onboarding
         tutorialProgress: {
           onboardingComplete: false,

@@ -4,14 +4,30 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.5';
+const CURRENT_VERSION = '1.3.0';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Matchday Polish & Bug Fixes';
+const RELEASE_TAGLINE = 'The Press Box — WPL Times Launch';
 
 const PATCH_NOTES = [
+  {
+    icon: Newspaper,
+    title: 'v1.3.0 The Press Box — WPL Times Launch',
+    color: 'text-amber-300',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    items: [
+      '📰 **The WPL Times has launched** — Cricket Manager 25 finally has its own in-game newspaper. *Est. MMXXV. "All The Cricket That\'s Fit To Print."* Every match, transfer, injury, retention, playoff and season opener is now a full written-up article you can open and read.',
+      '🎙️ **A press box of 8 named journalists** — Harsha Bhogle, Jarrod Kimber, Sid Monga, Sanjay Manjrekar, Ian Bishop, Mark Nicholas, Richie Benaud, and WPL beat reporter Naya Singh. Each has their own beat: Ian Bishop turns up for finals, Sid Monga drills the tactics, Jarrod Kimber works the form guide, Mark Nicholas sets the scene on openers, Richie Benaud surfaces on the laconic blowouts. Bylines + reporter bios appear on every article.',
+      '🏏 **Match reports that read like cricket writing** — Reports are now block-assembled prose: headline hook, anchor performance, turning point, colour commentary, clutch finish, player of the match, post-match quotes, plus a legacy-echo block that weaves in attributed tributes from cricket\'s greatest voices. No more mail-merge mush.',
+      '🗞️ **Home dashboard news carousel** — The 8 biggest stories of the moment, sorted by importance with a boost for anything involving your club. Tap any card to read the full article in full newspaper layout. Auto-rotates every 10s; manual nav on hover.',
+      '🎤 **Ball-by-ball commentary engine** — Live match view now uses a template-driven commentary system that varies by outcome, phase, and tactical state. No more identical lines every over.',
+      '🛠️ **Energy / Fitness / Fatigue / Injury config consolidation** — Every tuning knob for the player-condition system now lives in one config file (`energy-config.json`). First balance change shipped with it: fatigue recovery now kicks in from rest day 6 instead of day 11.',
+    ],
+    note: 'The WPL finally has a press box. Open the Home dashboard and watch your league cover itself — eight journalists, one masthead, every match, every season. 🗞️'
+  },
   {
     icon: Sparkles,
     title: 'v1.2.5 Matchday Polish & Bug Fixes',

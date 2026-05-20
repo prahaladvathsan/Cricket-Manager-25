@@ -356,46 +356,31 @@ class TacticsModifierSystem {
           }
           break;
 
-        case 5: // Energy
+        case 5: { // Energy (bands sourced from energy-config.json via EnergyManager)
           const strikerEnergy = stage.strikerEnergy;
           const bowlerEnergy = stage.bowlerEnergy;
+          const strikerBand = energyManager.describeBand(strikerEnergy);
+          const bowlerBand = energyManager.describeBand(bowlerEnergy);
 
-          if (strikerEnergy < 80) {
-            const level = strikerEnergy >= 60 ? 'Slightly Tired' : strikerEnergy >= 40 ? 'Tired' : strikerEnergy >= 20 ? 'Exhausted' : 'Gassed';
-            const modifier = strikerEnergy >= 60 ? -1 : strikerEnergy >= 40 ? -2 : strikerEnergy >= 20 ? -1 : -2;
-            const scope = strikerEnergy >= 40 ? 'physical' : 'all';
-            let conditionStr = null;
-            if (strikerEnergy >= 60) conditionStr = 'energy >= 60 and < 80';
-            else if (strikerEnergy >= 40) conditionStr = 'energy >= 40 and < 60';
-            else if (strikerEnergy >= 20) conditionStr = 'energy >= 20 and < 40';
-            else conditionStr = 'energy < 20';
-
+          if (strikerBand) {
             strikerBreakdown.energyModifiers.push({
-              name: `${level}`,
-              value: modifier,
-              description: `${modifier} to ${scope} attributes`,
-              condition: conditionStr
+              name: strikerBand.name,
+              value: strikerBand.modifier,
+              description: `${strikerBand.modifier} to ${strikerBand.scope} attributes`,
+              condition: strikerBand.conditionStr
             });
           }
 
-          if (bowlerEnergy < 80) {
-            const level = bowlerEnergy >= 60 ? 'Slightly Tired' : bowlerEnergy >= 40 ? 'Tired' : bowlerEnergy >= 20 ? 'Exhausted' : 'Gassed';
-            const modifier = bowlerEnergy >= 60 ? -1 : bowlerEnergy >= 40 ? -2 : bowlerEnergy >= 20 ? -1 : -2;
-            const scope = bowlerEnergy >= 40 ? 'physical' : 'all';
-            let conditionStr = null;
-            if (bowlerEnergy >= 60) conditionStr = 'energy >= 60 and < 80';
-            else if (bowlerEnergy >= 40) conditionStr = 'energy >= 40 and < 60';
-            else if (bowlerEnergy >= 20) conditionStr = 'energy >= 20 and < 40';
-            else conditionStr = 'energy < 20';
-
+          if (bowlerBand) {
             bowlerBreakdown.energyModifiers.push({
-              name: `${level}`,
-              value: modifier,
-              description: `${modifier} to ${scope} attributes`,
-              condition: conditionStr
+              name: bowlerBand.name,
+              value: bowlerBand.modifier,
+              description: `${bowlerBand.modifier} to ${bowlerBand.scope} attributes`,
+              condition: bowlerBand.conditionStr
             });
           }
           break;
+        }
 
         case 6: // Pressure
           if (stage.strikerMetadata && stage.strikerMetadata.penaltyApplied > 0) {

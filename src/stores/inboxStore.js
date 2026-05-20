@@ -23,7 +23,8 @@ const TYPE_TO_CATEGORY = {
   expectations: 'board',
   season_summary: 'board',
   tutorial: 'tutorial',
-  welcome: 'tutorial'
+  welcome: 'tutorial',
+  league_news: 'news'
 };
 
 /**
@@ -229,7 +230,8 @@ const useInboxStore = create(
             finance: ['auction_summary', 'transfer'],
             board: ['expectations', 'season_summary', 'board_objectives'],
             transfer: ['transfer'],
-            tutorial: ['tutorial', 'welcome']
+            tutorial: ['tutorial', 'welcome'],
+            news: ['league_news']
           };
 
           const allowedTypes = filterTypeMap[state.currentFilter] || [];

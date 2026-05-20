@@ -1,0 +1,48 @@
+{
+  "weekly.roundup": [
+    {
+      "when": { "hasMarqueeTransfer": true },
+      "headline": "WPL Week ${weekNumber} — Marquee Move Headlines the Roundup",
+      "subhead": "${marqueeTransfer.player.name} to ${marqueeTransfer.toTeam.name} dominates the chatter",
+      "body": [
+        "The week's standout story arrived off the field, with ${marqueeTransfer.toTeam.name} confirming ${marqueeTransfer.player.name} for ${marqueeTransfer.fee}. ${marqueeTransfer.fromTeam.name} pocket the cheque; the rest of the league sharpens their planning.",
+        "On the field, ${matchesPlayed} matches were settled. ${topScoringMatchLine}",
+        "${standingsLeaderLine} ${userPositionLine}",
+        "Next week's slate has more fireworks lined up — pencil in ${nextMatchLine}."
+      ],
+      "inboxSubject": "Weekly Roundup — Marquee deal headlines the week",
+      "inboxType": "roundup",
+      "sender": "WPL Newsdesk",
+      "tags": ["roundup", "transfer", "marquee"]
+    },
+    {
+      "when": { "tableShakeup": true },
+      "headline": "Table Shake-Up — ${newLeader.name} Seize Top Spot",
+      "subhead": "Seven days that rewrote the standings",
+      "body": [
+        "What a week. ${newLeader.name} have taken over at the top of the WPL after ${matchesPlayed} matches across the round, with the lead changing hands at the summit.",
+        "${biggestWinLine} ${closestFinishLine}",
+        "${userPositionLine}",
+        "The chasers will fancy their chances of returning the favour next weekend — ${nextMatchLine}."
+      ],
+      "inboxSubject": "Weekly Roundup — ${newLeader.name} climb to the top",
+      "inboxType": "roundup",
+      "sender": "WPL Newsdesk",
+      "tags": ["roundup", "match"]
+    },
+    {
+      "headline": "WPL Weekly Roundup — Week ${weekNumber}",
+      "subhead": "${matchesPlayed} matches, the trends from the last seven days",
+      "body": [
+        "Another week, another seven days of T20 cricket. ${matchesPlayed} matches were completed across the round.",
+        "${biggestWinLine} ${closestFinishLine}",
+        "${standingsLeaderLine} ${userPositionLine}",
+        "Looking ahead, ${nextMatchLine} headlines the next slate."
+      ],
+      "inboxSubject": "WPL Weekly Roundup — Week ${weekNumber}",
+      "inboxType": "roundup",
+      "sender": "WPL Newsdesk",
+      "tags": ["roundup", "match"]
+    }
+  ]
+}

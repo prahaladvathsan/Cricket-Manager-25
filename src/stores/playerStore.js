@@ -10,6 +10,7 @@ import playstyleCalculator from '../utils/PlaystyleCalculator.js';
 import { compressedStorageOptions } from '../utils/compression.js';
 import { indexedDBStorage } from '../utils/indexedDBStorage.js';
 import { markHydrated } from '../utils/storeHydration.js';
+import energyConfig from '../data/config/energy-config.json';
 
 /**
  * @typedef {Object} PlayerStore
@@ -908,6 +909,8 @@ const usePlayerStore = create(
   initializeAllPlayerConditions: () => set((state) => {
     const newPlayers = { ...state.players };
 
+    const { base, multiplier, maxValue } = energyConfig.fitness.cap;
+
     Object.keys(newPlayers).forEach(id => {
       const player = newPlayers[id];
       const maxFitness = player.attributes?.physical?.maxFitness ?? 18;
@@ -915,7 +918,7 @@ const usePlayerStore = create(
       newPlayers[id] = {
         ...player,
         condition: {
-          fitness: Math.min(maxFitness * 5, 100), // Full fitness (maxFitness × 5, capped at 100)
+          fitness: Math.min(base + (maxFitness * multiplier), maxValue),
           fatigue: 0,
           injury: null,
           injuryDuration: null,

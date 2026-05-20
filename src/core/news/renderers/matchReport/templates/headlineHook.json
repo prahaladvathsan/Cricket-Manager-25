@@ -1,0 +1,232 @@
+[
+  {
+    "when": { "isPlayoff": true, "isCloseFinish": true },
+    "headline": "${stageLabel} Thriller — ${winner.name} Live to Fight Another Day",
+    "subhead": "Nerves of steel as ${winner.name} edge ${loser.name} by ${margin} at ${venue}",
+    "lede": [
+      "It went to the wire — exactly as a WPL ${stageLabel} ought to. ${winner.name} held their breath the longest and got home by ${margin} against ${loser.name} at ${venue}, ${winner.score} just enough to keep the season alive on their own terms."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true, "isCloseFinish": true },
+    "headline": "Heart in Mouth as ${winner.name} Edge ${loser.name} in ${stageLabel}",
+    "subhead": "Photo finish at ${venue} sends one side through and one home",
+    "lede": [
+      "Two sides traded blows for four hours and ${winner.name} found the better one last. The ${stageLabel} at ${venue} ended ${winner.name} ${winner.score}, ${loser.name} ${loser.score}, the gap a heart-attack-thin ${margin}. The bracket bends; the trophy moves a little closer for the winners."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true, "isCloseFinish": true },
+    "headline": "Photo Finish ${stageLabel} — ${winner.name} Hold On for Dear Life",
+    "subhead": "Last over decides who lives and who packs the kit bag",
+    "lede": [
+      "The last over of the ${stageLabel} arrived with the season hanging from it. ${winner.name} squeezed through, ${loser.name} fell short by ${margin} — and at ${venue}, a result that will be replayed in every dressing room debrief for the rest of the year."
+    ]
+  },
+
+  {
+    "when": { "isPlayoff": true, "isOneSided": true },
+    "headline": "Statement Night — ${winner.name} Crush ${loser.name} in ${stageLabel}",
+    "subhead": "No contest at ${venue}: ${winner.name} answer the big-stage question",
+    "lede": [
+      "On a night when the WPL ${stageLabel} invited a stumble, ${winner.name} made their loudest possible reply. ${winner.name} ${winner.score}, ${loser.name} ${loser.score}, a margin of ${margin} — comfortable for the winners, sobering for everyone else watching."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true },
+    "headline": "${winner.name} Punch Their Ticket; ${loser.name} Bow Out",
+    "subhead": "${stageLabel} settled at ${venue} as ${winner.name} march on",
+    "lede": [
+      "${winner.name} are through. ${loser.name} are not. The ${stageLabel} ended ${margin} apart at ${venue}, with ${winner.name} on ${winner.score} and ${loser.name} closing on ${loser.score} — a result that re-draws the bracket and ends one side's campaign in the same breath."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true },
+    "headline": "Knockout Blow: ${winner.name} End ${loser.name}'s Run",
+    "subhead": "${stageLabel} clinical at ${venue} as ${winner.name} prevail by ${margin}",
+    "lede": [
+      "Playoff cricket has its own gravity. ${winner.name} bent it their way at ${venue}, finishing ${winner.score} to ${loser.name}'s ${loser.score} in the ${stageLabel}. ${loser.name}'s season ends with the obvious lessons and a few less-obvious ones to chew on over the off-season."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true },
+    "headline": "Lights Out for ${loser.name} — ${winner.name} March On",
+    "subhead": "${stageLabel} won and lost at ${venue} in a margin of ${margin}",
+    "lede": [
+      "${winner.name} produced the kind of performance the WPL ${stageLabel} demands and the kind ${loser.name} could not match. ${winner.name} ${winner.score}, ${loser.name} ${loser.score}, the bracket dragged decisively the winners' way."
+    ]
+  },
+  {
+    "when": { "isPlayoff": true },
+    "headline": "${stageLabel} Joy for ${winner.name}; Season Over for ${loser.name}",
+    "subhead": "${venue} witnesses a clean exit — ${margin} the official margin",
+    "lede": [
+      "Two sides walked out at ${venue}, only one walked off with a future. ${winner.name} dispatched ${loser.name} by ${margin} in the ${stageLabel} — ${winner.score} plays ${loser.score} — and the season's running order shrinks by one."
+    ]
+  },
+
+  {
+    "when": { "isCloseFinish": true },
+    "headline": "Photo Finish at ${venue} — ${winner.name} Sneak Past ${loser.name}",
+    "subhead": "Two sides traded blows; one side held the bat last",
+    "lede": [
+      "What a finish at ${venue}. ${winner.name} got home by ${margin} against ${loser.name} in a Matchday ${matchday} contest that swung four times in the last six overs and only stopped swinging when there were no balls left. ${winner.score} plays ${loser.score}; the scoreboard tells half the story."
+    ]
+  },
+  {
+    "when": { "isCloseFinish": true },
+    "headline": "Down to the Wire: ${winner.name} Pip ${loser.name} by ${margin}",
+    "subhead": "Final-over heroics decide a Matchday ${matchday} cracker",
+    "lede": [
+      "Two captains, two strategies, one ball to settle it. ${winner.name} found the right answer at ${venue} and edged ${loser.name} by ${margin}. ${winner.score} v ${loser.score} — close enough that both dressing rooms will think they should have won."
+    ]
+  },
+  {
+    "when": { "isCloseFinish": true },
+    "headline": "Heartbreak for ${loser.name} as ${winner.name} Steal It Late",
+    "subhead": "${venue} crowd holds its breath; ${winner.name} hold their nerve",
+    "lede": [
+      "${loser.name} will replay the last six overs all week. ${winner.name} won by ${margin} at ${venue}, ${winner.score} to ${loser.score}, in a finish so tight the scorecard barely caught up with it. One side is on a high, one is licking wounds."
+    ]
+  },
+  {
+    "when": { "isCloseFinish": true },
+    "headline": "Stunner at ${venue}! ${winner.name} Snatch It from ${loser.name}",
+    "subhead": "Last-over drama settles a Matchday ${matchday} thriller",
+    "lede": [
+      "The crowd at ${venue} got their money back twice over. ${winner.name} broke through with the result on the very last balls, beating ${loser.name} by ${margin} — ${winner.score} to ${loser.score} — in a contest that will headline the highlights reel for a while."
+    ]
+  },
+  {
+    "when": { "isCloseFinish": true },
+    "headline": "Nail-Biter at ${venue}: ${winner.name} Edge Out ${loser.name}",
+    "subhead": "Final-over heroics tip a Matchday ${matchday} contest",
+    "lede": [
+      "Tense, tactical, and tighter than the bowlers would have liked. ${winner.name} got the better of ${loser.name} by ${margin} at ${venue}, ${winner.score} just clearing ${loser.score}. The kind of result that wins games and friendships."
+    ]
+  },
+
+  {
+    "when": { "isHighScoring": true },
+    "headline": "Boundary Festival — ${winner.name} Outshoot ${loser.name} in ${totalRuns}-Run Spectacle",
+    "subhead": "Bats ruled at ${venue}; bowlers had a long night",
+    "lede": [
+      "${totalRuns} runs across two innings. ${winner.score} v ${loser.score}. A Matchday ${matchday} ${venue} crowd that barely sat down. ${winner.name} bossed the run-rate when it mattered and beat ${loser.name} by ${margin} in a contest that ought to be in highlight reels for a while."
+    ]
+  },
+  {
+    "when": { "isHighScoring": true },
+    "headline": "Carnage at ${venue} — ${totalRuns} Runs in a T20 Slugfest",
+    "subhead": "${winner.name} outpace ${loser.name} in a run-rate shoot-out",
+    "lede": [
+      "On a flat deck and a quick outfield, ${totalRuns} runs felt almost inevitable — but two sides still had to chase one of them down. ${winner.name} did, by ${margin}, ${winner.score} just past ${loser.score}. A T20 night that did what T20 nights are supposed to do."
+    ]
+  },
+  {
+    "when": { "isHighScoring": true },
+    "headline": "Sixes Galore: ${winner.name} Survive the Shoot-Out at ${venue}",
+    "subhead": "Matchday ${matchday} delivers ${totalRuns} runs and one winner",
+    "lede": [
+      "There are nights when the bowlers earn their keep and nights when they earn sympathy. This was the second kind. ${totalRuns} runs flew across ${venue}; ${winner.name} ended up with one more than they needed and beat ${loser.name} by ${margin}."
+    ]
+  },
+  {
+    "when": { "isHighScoring": true },
+    "headline": "${totalRuns}-Run Run-Fest Goes ${winner.name}'s Way",
+    "subhead": "${venue} crowd treated to a boundary-laden Matchday ${matchday}",
+    "lede": [
+      "Bats dominated at ${venue}. ${winner.name} posted enough — ${winner.score} — and survived the ${loser.score} reply. The margin: ${margin}. The night: belongs to whoever swung the bat hardest, and that was the winners."
+    ]
+  },
+
+  {
+    "when": { "isOneSided": true },
+    "headline": "Total Mismatch — ${winner.name} Steamroll ${loser.name}",
+    "subhead": "Lop-sided night at ${venue}; ${winner.name} apply the squeeze early",
+    "lede": [
+      "Some nights the contest is implied rather than fought. ${winner.name} took ${loser.name} apart by ${margin} at ${venue} on Matchday ${matchday}, ${winner.score} to ${loser.score}, and the only question after the powerplay was how big the margin would be."
+    ]
+  },
+  {
+    "when": { "isOneSided": true },
+    "headline": "Embarrassing Night for ${loser.name}; ${winner.name} Cruise",
+    "subhead": "Powerplay punch sets up a ${margin} demolition",
+    "lede": [
+      "Comfortable. That's the word for ${winner.name}'s Matchday ${matchday} night at ${venue}. ${winner.score} on the board, ${loser.score} in reply — ${margin} between them — and a result that flattered ${loser.name} even at that. Some debriefs are uglier than others."
+    ]
+  },
+  {
+    "when": { "isOneSided": true },
+    "headline": "${winner.name} Demolish ${loser.name} by ${margin}",
+    "subhead": "${venue} witnesses a Matchday ${matchday} stroll for the winners",
+    "lede": [
+      "${winner.name} produced a clinical performance to dismantle ${loser.name} by ${margin} at ${venue}. ${winner.score} on the board; ${loser.name} were never in the contest at ${loser.score}. The kind of night where you stop watching the scoreboard and start watching the run-rate."
+    ]
+  },
+  {
+    "when": { "isOneSided": true },
+    "headline": "No Contest: ${winner.name} Wipe the Floor with ${loser.name}",
+    "subhead": "${loser.name}'s reply never gets out of first gear",
+    "lede": [
+      "Half a contest at ${venue}, half a procession. ${winner.name} dispatched ${loser.name} by ${margin} on Matchday ${matchday}, ${winner.score} dwarfing the ${loser.score} reply. Plenty of room in the highlights package for the winners; for the losers, a quiet bus ride home."
+    ]
+  },
+  {
+    "when": { "isOneSided": true },
+    "headline": "${loser.name} Capitulate; ${winner.name} Stroll to Victory",
+    "subhead": "Matchday ${matchday} ${margin} margin tells most of the story",
+    "lede": [
+      "Some defeats sting; this one stung and then carried on stinging. ${winner.name} put up ${winner.score} at ${venue}; ${loser.name} folded for ${loser.score}, ${margin} adrift, and the result was settled long before the last over arrived."
+    ]
+  },
+
+  {
+    "headline": "${winner.name} See Off ${loser.name} by ${margin}",
+    "subhead": "Matchday ${matchday} settled at ${venue} as ${winner.name} bank the points",
+    "lede": [
+      "${winner.name} closed out a ${margin} win over ${loser.name} at ${venue} on Matchday ${matchday}. The night's headline numbers: ${winner.score} chasing or defending, ${loser.score} from the other side, and a result that nudges the standings in a familiar direction."
+    ]
+  },
+  {
+    "headline": "${winner.name}'s Day at ${venue} — ${loser.name} Lose by ${margin}",
+    "subhead": "Routine Matchday ${matchday} business for the winners",
+    "lede": [
+      "${winner.name} got the job done at ${venue}. ${winner.score} plays ${loser.score}, ${margin} the official margin, and a sensible afternoon's cricket from start to finish. Not flashy, not dramatic — just the kind of result that fills out a points table over a season."
+    ]
+  },
+  {
+    "headline": "Job Done: ${winner.name} Take the Spoils Against ${loser.name}",
+    "subhead": "Matchday ${matchday} ${venue} fixture goes to the winners by ${margin}",
+    "lede": [
+      "${winner.name} held their shape, picked their moments, and beat ${loser.name} by ${margin} on Matchday ${matchday}. ${winner.score} v ${loser.score} — the kind of professional performance that doesn't make a poster but does shape a season."
+    ]
+  },
+  {
+    "headline": "${winner.name} Edge Out ${loser.name} at ${venue}",
+    "subhead": "Matchday ${matchday} clash decided by a ${margin} margin",
+    "lede": [
+      "${winner.name} got home in front of a ${venue} crowd, beating ${loser.name} by ${margin} in a Matchday ${matchday} contest that had its moments without ever quite catching fire. ${winner.score} just enough to fend off ${loser.score} from the other side."
+    ]
+  },
+  {
+    "headline": "${winner.name} Get the Better of ${loser.name}",
+    "subhead": "Matchday ${matchday} report from ${venue} — ${winner.name} win by ${margin}",
+    "lede": [
+      "Two sides, ninety days into a long season, both with reasons to chase the win. ${winner.name} found them. ${margin} the gap, ${winner.score} to ${loser.score} the scorecard, ${venue} the setting — Matchday ${matchday} filed away."
+    ]
+  },
+  {
+    "headline": "Late Charge Sees ${winner.name} Past ${loser.name}",
+    "subhead": "${venue} crowd treated to a Matchday ${matchday} thriller of sorts",
+    "lede": [
+      "It looked tight, it looked unsettled, and then ${winner.name} closed it. ${margin} the margin, ${winner.score} the headline number, ${loser.name}'s ${loser.score} the reply that fell just shy. Matchday ${matchday} done."
+    ]
+  },
+  {
+    "headline": "${winner.name} Make It Count Against ${loser.name}",
+    "subhead": "Solid Matchday ${matchday} shift at ${venue} earns ${winner.name} the win",
+    "lede": [
+      "${winner.name} found enough at ${venue}. ${winner.score} v ${loser.score}, the margin a ${margin} — Matchday ${matchday} added to the won column and another night of cricket filed away as won, lost, and analysed."
+    ]
+  }
+]

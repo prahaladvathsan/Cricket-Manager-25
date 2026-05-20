@@ -33,6 +33,7 @@ import useAuctionStore from '../../stores/auctionStore';
 import useInboxStore from '../../stores/inboxStore';
 import useTransferStore from '../../stores/transferStore';
 import quickSimMatch from '../../core/match-engine/utils/QuickSimMatch';
+import { emitSeasonOpener } from '../../core/news/emitters/seasonOpener.js';
 import { getPlayerRating } from '../../utils/ratingHelper';
 import TeamName from '../shared/TeamName';
 import PlayerName from '../shared/PlayerName';
@@ -43,6 +44,8 @@ import FinancialSummary from '../board/FinancialSummary';
 import MessageGenerator from '../../utils/MessageGenerator';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
 import CalendarListView from '../calendar/CalendarListView';
+import HomeNewsCarousel from '../news/HomeNewsCarousel';
+import { computeRecentForm } from '../../utils/recentForm';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -118,9 +121,20 @@ const Home = () => {
   // Get current event (could be today's match or upcoming)
   const todayEvent = getCurrentEvent();
 
-  // Find next match for user team specifically
+  // Find next match for user team specifically.
+  //
+  // NOTE: `recordResult` doesn't mutate `fixture.status` for league matches —
+  // only playoff bracket updates flip statuses. So we can't rely on
+  // `status === 'scheduled'` to identify upcoming matches (it stays 'scheduled'
+  // forever for league fixtures). Instead we cross-reference against the
+  // `results` array — any fixture whose matchId isn't in results is upcoming.
+  const completedMatchIds = useMemo(
+    () => new Set((results || []).map(r => r.matchId)),
+    [results]
+  );
   const nextUserFixture = fixtures.find(fixture =>
-    fixture.status === 'scheduled' &&
+    !completedMatchIds.has(fixture.matchId) &&
+    fixture.status !== 'completed' &&
     userTeam &&
     (fixture.homeTeam === userTeam.id || fixture.awayTeam === userTeam.id)
   );
@@ -244,10 +258,11 @@ const Home = () => {
       }
     });
 
-    // Sort by date and take first 5
+    // Sort by date and take first 10 (the Upcoming card now spans two grid
+    // rows, so it has the vertical room for a longer list).
     return events
       .sort((a, b) => a.date - b.date)
-      .slice(0, 5);
+      .slice(0, 10);
   }, [fixtures, calendarEvents, currentDate, gameDay]);
 
   // Determine whether to show transfer activity or auction buys
@@ -521,6 +536,10 @@ const Home = () => {
         // Advance phase to league
         advancePhase('league');
 
+        // Emit the season opener news article. Mirrored in LeagueInitializer.js
+        // (Season 2+) so both code paths produce the same opener.
+        emitSeasonOpener({ gameStore: useGameStore, teamStore: useTeamStore, leagueStore: useLeagueStore });
+
         console.log('✅ League initialization complete!');
       } catch (error) {
         console.error('Error initializing league:', error);
@@ -585,216 +604,19 @@ const Home = () => {
         {userTeam && (
           <>
             <h1 className="sr-only">Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {/* Next Match Card - Compact Match Preview - Spans 2 columns */}
-          <div
-            className="card-interactive p-2 md:col-span-2"
-            onClick={() => nextFixture && navigate(`/game/match/${nextFixture.matchId}/preview`)}
-          >
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <Calendar className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Next Match
-              </h3>
-              {nextFixture?.matchday && (
-                <span className="text-xs font-mono text-text-tertiary px-1.5 py-0.5 bg-bg-tertiary rounded ml-auto">
-                  MD {nextFixture.matchday}
-                </span>
-              )}
-              <ChevronRight className="w-4 h-4 text-text-tertiary" />
-            </div>
-            {nextFixture && homeTeam && awayTeam ? (
-              <div className="space-y-3">
-                {/* Teams Header - Side by side with venue under VS */}
-                <div className="flex items-center justify-between">
-                  {/* Home Team */}
-                  <div className={`flex-1 flex items-center justify-center gap-3 ${homeTeam.id === userTeam?.id ? '' : 'opacity-80'}`}>
-                    <img
-                      src={getTeamBadge(homeTeam.id)}
-                      alt={homeTeam.name}
-                      className={`w-12 h-12 ${homeTeam.id === userTeam?.id ? 'ring-2 ring-trophy-gold rounded-full' : ''}`}
-                    />
-                    <div>
-                      <div className="text-sm font-bold">
-                        <TeamName teamId={homeTeam.id} inline={true} />
-                      </div>
-                      <div className="text-xxs text-text-tertiary">Home</div>
-                    </div>
-                  </div>
-
-                  {/* VS + Venue */}
-                  <div className="flex flex-col items-center px-3">
-                    <div className="text-xl font-bold text-text-tertiary">VS</div>
-                    <div className="flex items-center gap-1 text-xxs text-text-secondary mt-0.5">
-                      <MapPin className="w-3 h-3" />
-                      <span>{nextFixture.venue || homeTeam.homeGround}</span>
-                    </div>
-                  </div>
-
-                  {/* Away Team */}
-                  <div className={`flex-1 flex items-center justify-center gap-3 ${awayTeam.id === userTeam?.id ? '' : 'opacity-80'}`}>
-                    <div className="text-right">
-                      <div className="text-sm font-bold">
-                        <TeamName teamId={awayTeam.id} inline={true} />
-                      </div>
-                      <div className="text-xxs text-text-tertiary">Away</div>
-                    </div>
-                    <img
-                      src={getTeamBadge(awayTeam.id)}
-                      alt={awayTeam.name}
-                      className={`w-12 h-12 ${awayTeam.id === userTeam?.id ? 'ring-2 ring-trophy-gold rounded-full' : ''}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Best Performers - 4 Tables side by side */}
-                <div className="pt-2 border-t border-border-primary">
-                  <div className="flex gap-2">
-                    {/* Home Batters Table */}
-                    <div className="flex-1">
-                      <div className="text-xxs text-text-secondary mb-1">{homeTeam.shortName} Batters</div>
-                      {homePerformers.topBatters.length > 0 ? (
-                        <table className="w-full text-xxs">
-                          <thead>
-                            <tr className="border-b border-border-primary text-text-tertiary">
-                              <th className="text-left py-0.5 w-3">#</th>
-                              <th className="text-left py-0.5">Name</th>
-                              <th className="text-right py-0.5">Runs</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {homePerformers.topBatters.map((player, idx) => (
-                              <tr key={player.id} className="border-b border-border-secondary">
-                                <td className="py-0.5 text-text-tertiary">{idx + 1}</td>
-                                <td className="py-0.5">
-                                  <PlayerName playerId={player.id} className="text-text-primary truncate" />
-                                </td>
-                                <td className="py-0.5 text-right font-mono text-cricket-accent">
-                                  {player.seasonStats.runs}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="text-xxs text-text-tertiary italic">No stats</div>
-                      )}
-                    </div>
-
-                    {/* Home Bowlers Table */}
-                    <div className="flex-1">
-                      <div className="text-xxs text-text-secondary mb-1">{homeTeam.shortName} Bowlers</div>
-                      {homePerformers.topBowlers.length > 0 ? (
-                        <table className="w-full text-xxs">
-                          <thead>
-                            <tr className="border-b border-border-primary text-text-tertiary">
-                              <th className="text-left py-0.5 w-3">#</th>
-                              <th className="text-left py-0.5">Name</th>
-                              <th className="text-right py-0.5">Wkts</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {homePerformers.topBowlers.map((player, idx) => (
-                              <tr key={player.id} className="border-b border-border-secondary">
-                                <td className="py-0.5 text-text-tertiary">{idx + 1}</td>
-                                <td className="py-0.5">
-                                  <PlayerName playerId={player.id} className="text-text-primary truncate" />
-                                </td>
-                                <td className="py-0.5 text-right font-mono text-cricket-accent">
-                                  {player.seasonStats.wickets}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="text-xxs text-text-tertiary italic">No stats</div>
-                      )}
-                    </div>
-
-                    {/* Away Batters Table */}
-                    <div className="flex-1">
-                      <div className="text-xxs text-text-secondary mb-1">{awayTeam.shortName} Batters</div>
-                      {awayPerformers.topBatters.length > 0 ? (
-                        <table className="w-full text-xxs">
-                          <thead>
-                            <tr className="border-b border-border-primary text-text-tertiary">
-                              <th className="text-left py-0.5 w-3">#</th>
-                              <th className="text-left py-0.5">Name</th>
-                              <th className="text-right py-0.5">Runs</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {awayPerformers.topBatters.map((player, idx) => (
-                              <tr key={player.id} className="border-b border-border-secondary">
-                                <td className="py-0.5 text-text-tertiary">{idx + 1}</td>
-                                <td className="py-0.5">
-                                  <PlayerName playerId={player.id} className="text-text-primary truncate" />
-                                </td>
-                                <td className="py-0.5 text-right font-mono text-cricket-accent">
-                                  {player.seasonStats.runs}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="text-xxs text-text-tertiary italic">No stats</div>
-                      )}
-                    </div>
-
-                    {/* Away Bowlers Table */}
-                    <div className="flex-1">
-                      <div className="text-xxs text-text-secondary mb-1">{awayTeam.shortName} Bowlers</div>
-                      {awayPerformers.topBowlers.length > 0 ? (
-                        <table className="w-full text-xxs">
-                          <thead>
-                            <tr className="border-b border-border-primary text-text-tertiary">
-                              <th className="text-left py-0.5 w-3">#</th>
-                              <th className="text-left py-0.5">Name</th>
-                              <th className="text-right py-0.5">Wkts</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {awayPerformers.topBowlers.map((player, idx) => (
-                              <tr key={player.id} className="border-b border-border-secondary">
-                                <td className="py-0.5 text-text-tertiary">{idx + 1}</td>
-                                <td className="py-0.5">
-                                  <PlayerName playerId={player.id} className="text-text-primary truncate" />
-                                </td>
-                                <td className="py-0.5 text-right font-mono text-cricket-accent">
-                                  {player.seasonStats.wickets}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="text-xxs text-text-tertiary italic">No stats</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-text-secondary text-center py-6 text-sm">
-                No upcoming matches scheduled
-              </p>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 items-start">
+          {/* News carousel — top of the col-span-2 column. The carousel itself
+              owns its fixed 240px height (CARD_HEIGHT in HomeNewsCarousel.jsx). */}
+          <div className="md:col-span-2">
+            <HomeNewsCarousel />
           </div>
 
-          {/* League Position - Compressed Standings Table */}
+          {/* League Position - Compressed Standings Table. Locked to the same
+              fixed height as the news carousel so the two always line up. */}
           <div
             className="card-interactive p-2"
             onClick={() => navigate('/game/league')}
           >
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <Trophy className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                League Standings
-              </h3>
-              <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
-            </div>
             {standings.length > 0 ? (() => {
               // Sort standings
               const sortedStandings = [...standings].sort((a, b) => {
@@ -804,32 +626,61 @@ const Home = () => {
 
               // Find user team position
               const userTeamIndex = sortedStandings.findIndex(t => t.clubId === userTeam?.id);
+              const userPosition = userTeamIndex >= 0 ? userTeamIndex + 1 : null;
+              const ordinal = (n) => {
+                if (n == null) return '';
+                const s = ['th', 'st', 'nd', 'rd'];
+                const v = n % 100;
+                return n + (s[(v - 20) % 10] || s[v] || s[0]);
+              };
+              const HOME_VISIBLE_ROWS = 7;
+              const HOME_FORM_COUNT = 3;
 
-              // Calculate which 5 rows to show (user team centered unless at edges)
+              // Calculate which rows to show — user team centered unless at the edges.
+              // For a 7-row window, that means 3 above + 3 below the user.
+              const halfWindow = Math.floor(HOME_VISIBLE_ROWS / 2);
               let startIndex = 0;
-              if (userTeamIndex <= 2) {
-                // User in top 3: show top 5
+              if (userTeamIndex < halfWindow) {
                 startIndex = 0;
-              } else if (userTeamIndex >= sortedStandings.length - 2) {
-                // User in bottom 2: show bottom 5
-                startIndex = Math.max(0, sortedStandings.length - 5);
+              } else if (userTeamIndex >= sortedStandings.length - halfWindow - 1) {
+                startIndex = Math.max(0, sortedStandings.length - HOME_VISIBLE_ROWS);
               } else {
-                // User in middle: center them
-                startIndex = userTeamIndex - 2;
+                startIndex = userTeamIndex - halfWindow;
               }
 
-              const visibleStandings = sortedStandings.slice(startIndex, startIndex + 5);
+              const visibleStandings = sortedStandings.slice(startIndex, startIndex + HOME_VISIBLE_ROWS);
 
               return (
                 <div className="overflow-x-auto">
+                  {/* Eyebrow + star metric: user team's position is the hero
+                      datum on this card. The table speaks for itself below. */}
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary">
+                      League Standings
+                    </span>
+                    {userPosition && (
+                      <span className="leading-none">
+                        <span
+                          className="text-[22px] font-bold text-text-primary"
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                        >
+                          {ordinal(userPosition)}
+                        </span>
+                        <span className="text-[11px] uppercase tracking-[0.14em] font-medium text-text-tertiary ml-1.5">
+                          of {sortedStandings.length}
+                        </span>
+                      </span>
+                    )}
+                  </div>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border-primary text-text-secondary">
                         <th className="text-left py-1 px-1 font-medium">#</th>
                         <th className="text-left py-1 px-1 font-medium">Team</th>
-                        <th className="text-center py-1 px-1 font-medium">W</th>
+                        <th className="text-center py-1 px-1 font-medium">P</th>
                         <th className="text-center py-1 px-1 font-medium">NRR</th>
                         <th className="text-center py-1 px-1 font-medium">Pts</th>
+                        <th className="text-right py-1 px-1 font-medium pl-2">Form</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -837,6 +688,7 @@ const Home = () => {
                         const actualIndex = startIndex + idx;
                         const isUserTeam = team.clubId === userTeam?.id;
                         const isPlayoffSpot = actualIndex < 4;
+                        const played = team.played ?? ((team.won ?? 0) + (team.lost ?? 0) + (team.tied ?? 0) + (team.noResult ?? 0));
                         return (
                           <tr
                             key={team.clubId}
@@ -854,14 +706,33 @@ const Home = () => {
                             <td className={`py-1 px-1 ${isUserTeam ? 'text-cricket-accent' : 'text-text-primary'}`}>
                               <TeamName teamId={team.clubId} variant="short" inline={true} className="text-xs" />
                             </td>
-                            <td className="py-1 px-1 text-center text-text-positive font-mono">
-                              {team.won}
+                            <td className="py-1 px-1 text-center font-mono text-text-primary">
+                              {played}
                             </td>
                             <td className={`py-1 px-1 text-center font-mono ${team.netRunRate >= 0 ? 'text-text-positive' : 'text-text-negative'}`}>
                               {team.netRunRate >= 0 ? '+' : ''}{team.netRunRate.toFixed(2)}
                             </td>
-                            <td className={`py-1 px-1 text-center font-bold font-mono ${isUserTeam ? 'text-cricket-accent' : 'text-cricket-accent'}`}>
+                            <td className={`py-1 px-1 text-center font-bold font-mono ${isUserTeam ? 'text-cricket-accent' : 'text-text-primary'}`}>
                               {team.points}
+                            </td>
+                            <td className="py-1 px-1 pl-2 text-right">
+                              {(() => {
+                                const teamForm = computeRecentForm(results, team.clubId, HOME_FORM_COUNT);
+                                if (teamForm.length === 0) {
+                                  return <span className="text-text-tertiary/50">—</span>;
+                                }
+                                return (
+                                  <span className="inline-flex items-center gap-0.5">
+                                    {teamForm.map((res, ri) => (
+                                      <span
+                                        key={ri}
+                                        className={`inline-block w-2 h-2 rounded-sm ${res === 'W' ? 'bg-status-win' : 'bg-status-loss'}`}
+                                        title={res === 'W' ? 'Win' : 'Loss'}
+                                      />
+                                    ))}
+                                  </span>
+                                );
+                              })()}
                             </td>
                           </tr>
                         );
@@ -877,286 +748,402 @@ const Home = () => {
             )}
           </div>
 
-          {/* Squad Status - Compact Condition Table */}
+          {/* Upcoming Calendar Events — taller, spans the next two grid rows
+              on the left edge of the dashboard so the schedule reads as a
+              full vertical column. Declared first in this band so grid
+              auto-flow places it at col 1, then Next Match/Objectives fall
+              into cols 2-3 of row 1, and Squad Status/Top Buys take cols 2-3
+              of row 2 (col 1 of row 2 is occupied by this card's row-span). */}
           <div
-            className="card-interactive p-2"
-            onClick={() => navigate('/game/squad?tab=condition')}
+            className="card-interactive p-2 row-span-2 h-full flex flex-col"
+            onClick={() => navigate('/game/calendar')}
           >
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <Users className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Squad Status
-              </h3>
-              <span className="text-xs text-text-tertiary ml-auto">{squad.length}/25</span>
-              <ChevronRight className="w-4 h-4 text-text-tertiary" />
+            <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary mb-1.5">
+              Upcoming
             </div>
+            <div className="flex-1 min-h-0">
+              <CalendarListView
+                events={upcomingEvents}
+                clubs={clubs}
+                currentDate={currentDate}
+                userTeamId={userTeamId}
+                compact={true}
+              />
+            </div>
+          </div>
+
+          {/* ───────── Next Match ─────────
+              Compact "vs opponent" card. Shows: opponent (user team implied),
+              date, venue, plus the top batter and bowler of each team in a
+              tight two-column grid. Marquee treatment (2px green top rail)
+              keeps it visually distinct from the secondary cards.
+
+              The earlier full-width Next Match block (badges + 4 best-performer
+              tables) was retired in favour of this thinner version — see git
+              history if you want to bring back the larger layout.  */}
+          {nextFixture && homeTeam && awayTeam && (() => {
+            const isHomeUser = homeTeam.id === userTeam?.id;
+            const opponent = isHomeUser ? awayTeam : homeTeam;
+            const userSidePerformers = isHomeUser ? homePerformers : awayPerformers;
+            const oppoSidePerformers = isHomeUser ? awayPerformers : homePerformers;
+
+            const matchDate = nextFixture.dateObj
+              ? new Date(nextFixture.dateObj)
+              : (nextFixture.date ? new Date(nextFixture.date) : null);
+            const todayISO = new Date(currentDate || Date.now()).toDateString();
+            const matchISO = matchDate ? matchDate.toDateString() : '';
+            const isToday = matchDate && matchISO === todayISO;
+            const dateLabel = matchDate
+              ? (isToday
+                  ? 'Tonight'
+                  : matchDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }))
+              : '';
+            const venue = nextFixture.venue || homeTeam.homeGround || '';
+
+            // Team column = team-name header + top batter row + top bowler row.
+            // No "Batter"/"Bowler" sub-eyebrows — the unit suffix (runs/wickets)
+            // makes the role obvious.
+            const TeamColumn = ({ side, performers, isUser }) => {
+              const batter = performers?.topBatters?.[0];
+              const bowler = performers?.topBowlers?.[0];
+              return (
+                <div className={`min-w-0 ${isUser ? 'bg-cricket-accent/5 rounded px-1.5 py-1 -mx-1.5 -my-1' : ''}`}>
+                  <div className={`text-[11px] uppercase tracking-[0.14em] font-semibold pb-1 mb-1.5 border-b ${isUser ? 'text-cricket-accent border-cricket-accent/30' : 'text-text-secondary border-border-primary'}`}>
+                    {side.shortName}
+                  </div>
+                  <div className="space-y-1">
+                    {batter ? (
+                      <div className="flex items-baseline justify-between gap-1 min-w-0">
+                        <PlayerName playerId={batter.id} className="text-[12px] truncate" />
+                        <span className="text-[11px] text-text-secondary font-mono whitespace-nowrap shrink-0">
+                          {batter.seasonStats?.runs ?? 0} runs
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-text-tertiary italic">No batting stats</span>
+                    )}
+                    {bowler ? (
+                      <div className="flex items-baseline justify-between gap-1 min-w-0">
+                        <PlayerName playerId={bowler.id} className="text-[12px] truncate" />
+                        <span className="text-[11px] text-text-secondary font-mono whitespace-nowrap shrink-0">
+                          {bowler.seasonStats?.wickets ?? 0} wickets
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-text-tertiary italic">No bowling stats</span>
+                    )}
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <div
+                className="card-interactive p-2.5 border-t-2 border-t-cricket-primary self-stretch h-full"
+                onClick={() => navigate(`/game/match/${nextFixture.matchId}/preview`)}
+              >
+                {/* Eyebrow + matchday */}
+                <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary mb-1.5">
+                  Next Match{nextFixture?.matchday ? ` · MD ${nextFixture.matchday}` : ''}
+                </div>
+
+                {/* Opponent identity (left) with date + venue stacked on the right.
+                    User team is implied — only the opponent is named. */}
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border-primary min-w-0">
+                  <span className="text-text-tertiary uppercase tracking-[0.14em] font-semibold text-[11px] shrink-0">vs</span>
+                  <img
+                    src={getTeamBadge(opponent.id)}
+                    alt={opponent.name}
+                    className="w-7 h-7 shrink-0"
+                  />
+                  <span className="text-sm font-semibold text-text-primary truncate min-w-0 flex-1">
+                    <TeamName teamId={opponent.id} inline />
+                  </span>
+                  <div className="shrink-0 flex flex-col items-end gap-0.5 text-[11px] leading-tight">
+                    {dateLabel && (
+                      <span className={`uppercase tracking-[0.14em] font-semibold ${isToday ? 'text-cricket-accent' : 'text-text-secondary'}`}>
+                        {dateLabel}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 text-text-tertiary max-w-[150px]">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{venue}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Two team columns side-by-side: top batter + top bowler each. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <TeamColumn
+                    side={isHomeUser ? homeTeam : awayTeam}
+                    performers={userSidePerformers}
+                    isUser={true}
+                  />
+                  <TeamColumn
+                    side={opponent}
+                    performers={oppoSidePerformers}
+                    isUser={false}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Objectives — row 1 col 3. Two-column list: objective title (left,
+              truncated) + status pill (right). Status is derived from the
+              raw obj.status field which can be: completed | on_track |
+              in_progress | pending | at_risk | failed. Mapped here into the
+              four user-facing labels.
+              `self-stretch h-full` stretches the card to match the Next Match
+              height in the same row. */}
+          <div
+            className="card-interactive p-2 self-stretch h-full"
+            onClick={() => navigate('/game/board')}
+          >
             {(() => {
-              // Sort players: injured first (by duration desc), then by fatigue desc, then fitness asc
-              const sortedSquad = [...squad].sort((a, b) => {
-                const aCondition = a.condition || {};
-                const bCondition = b.condition || {};
-                const aInjured = aCondition.injury ? 1 : 0;
-                const bInjured = bCondition.injury ? 1 : 0;
+              const total = seasonObjectives?.length || 0;
+              const done = (seasonObjectives || []).filter(o => o.status === 'completed').length;
 
-                // Injured players first
-                if (aInjured !== bInjured) return bInjured - aInjured;
-
-                // Both injured - sort by duration desc
-                if (aInjured && bInjured) {
-                  return (bCondition.injuryDuration ?? 0) - (aCondition.injuryDuration ?? 0);
-                }
-
-                // Both not injured - sort by fatigue desc
-                const aFatigue = aCondition.fatigue ?? 0;
-                const bFatigue = bCondition.fatigue ?? 0;
-                if (aFatigue !== bFatigue) return bFatigue - aFatigue;
-
-                // Tiebreak by fitness asc (lower fitness = higher priority)
-                const aFitness = aCondition.fitness ?? 85;
-                const bFitness = bCondition.fitness ?? 85;
-                return aFitness - bFitness;
-              });
-              const displayPlayers = sortedSquad.slice(0, 3);
-              const injuredCount = squad.filter(p => p.condition?.injury).length;
-
-              // Helper for fitness bar color
-              const getFitnessColor = (fitness) => {
-                if (fitness >= 70) return 'bg-status-win';
-                if (fitness >= 40) return 'bg-yellow-500';
-                return 'bg-status-loss';
+              // Map raw status → display label + tone. `in_progress` and
+              // `pending` both read as "On Track" since the objective is still
+              // alive; only `at_risk` and `failed` flag trouble.
+              const STATUS_MAP = {
+                completed:   { label: 'Completed',     tone: 'text-status-win' },
+                on_track:    { label: 'On Track',      tone: 'text-status-upcoming' },
+                in_progress: { label: 'On Track',      tone: 'text-status-upcoming' },
+                pending:     { label: 'On Track',      tone: 'text-text-tertiary' },
+                at_risk:     { label: 'Falling Short', tone: 'text-status-tie' },
+                failed:      { label: 'Failed',        tone: 'text-status-loss' }
               };
 
               return (
                 <div>
-                  {/* Mini Condition Table - matches Transfers card row widths */}
-                  <table className="w-full text-xs table-fixed">
-                    <tbody>
-                      {displayPlayers.map((player) => {
-                        const condition = player.condition || {};
-                        const isInjured = !!condition.injury;
-                        const fitness = condition.fitness ?? 85;
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary">
+                      Objectives
+                    </span>
+                    {total > 0 && (
+                      <span
+                        className="text-[18px] font-bold leading-none text-text-primary"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {done}/{total}
+                      </span>
+                    )}
+                  </div>
+
+                  {seasonObjectives && seasonObjectives.length > 0 ? (
+                    <ul className="text-xs">
+                      {seasonObjectives.slice(0, 5).map((obj) => {
+                        const entry = STATUS_MAP[obj.status] || STATUS_MAP.pending;
                         return (
-                          <tr
-                            key={player.id}
-                            className={`border-b border-border-secondary/50 last:border-0 ${isInjured ? 'bg-status-loss/10' : ''}`}
+                          <li
+                            key={obj.id}
+                            className="flex items-center justify-between gap-2 py-0.5 border-b border-border-secondary/50 last:border-0"
                           >
-                            <td className="py-1 text-text-primary truncate max-w-[100px]">
-                              <span className={isInjured ? 'text-status-loss' : ''}>
-                                {player.name}
-                              </span>
-                            </td>
-                            <td className="py-1 px-1 w-12">
-                              <div className="w-10 h-1.5 bg-bg-tertiary rounded-full" title={`Fitness: ${fitness}`}>
-                                <div
-                                  className={`h-full rounded-full ${getFitnessColor(fitness)}`}
-                                  style={{ width: `${fitness}%` }}
-                                />
-                              </div>
-                            </td>
-                            <td className="py-1 px-1 w-12">
-                              <div className="w-10 h-1.5 bg-bg-tertiary rounded-full" title={`Fatigue: ${condition.fatigue ?? 0}`}>
-                                <div
-                                  className="h-full rounded-full bg-status-loss"
-                                  style={{ width: `${condition.fatigue ?? 0}%` }}
-                                />
-                              </div>
-                            </td>
-                            <td className="py-1 text-right truncate max-w-[60px]">
-                              <span className={`text-xxs font-medium ${
-                                isInjured ? 'text-status-loss' : 'text-status-win'
-                              }`}>
-                                {isInjured ? condition.injury : 'Fit'}
-                              </span>
-                            </td>
-                            <td className="py-1 text-right font-mono whitespace-nowrap">
-                              <span className={`text-xxs ${isInjured ? 'text-status-loss' : 'text-text-tertiary'}`}>
-                                {condition.injuryDuration ? `${condition.injuryDuration}d` : '-'}
-                              </span>
-                            </td>
-                          </tr>
+                            <span className="truncate flex-1 text-text-primary">{obj.title}</span>
+                            <span className={`text-[10px] uppercase tracking-[0.12em] font-semibold whitespace-nowrap ${entry.tone}`}>
+                              {entry.label}
+                            </span>
+                          </li>
                         );
                       })}
-                    </tbody>
-                  </table>
-
-                  {/* Summary footer - only show if there are injuries */}
-                  {injuredCount > 0 && (
-                    <div className="text-xxs pt-1 border-t border-border-primary">
-                      <span className="text-status-loss font-medium">{injuredCount} injured</span>
-                    </div>
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-text-tertiary italic">Objectives will be generated at season start</p>
                   )}
                 </div>
               );
             })()}
           </div>
 
-          {/* Recent Form */}
+          {/* Recent Form card removed — W/L badges live inline under the
+              League Standings table now. Code in git history.
+              Financial Summary temporarily hidden — uncomment to restore:
+                <FinancialSummary compact={true} onClick={() => navigate('/game/board?tab=finances')} />
+              Upcoming card moved up — see the row-span-2 version above. */}
+
+          {/* Squad Status — row 2 col 2. Three player rows with stacked
+              fitness/fatigue bar. Styled to match Top Buys (same row padding,
+              eyebrow + hero metric pattern). */}
           <div
             className="card-interactive p-2"
-            onClick={() => navigate('/game/matches?tab=results')}
+            onClick={() => navigate('/game/squad?tab=condition')}
           >
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <TrendingUp className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Recent Form
-              </h3>
-              <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
-            </div>
-            {recentResults.length > 0 ? (
-              <div className="space-y-2.5">
-                <div className="flex gap-1 justify-center py-1">
-                  {recentResults.map((result, idx) => {
-                    const won = result.winner === userTeam.id;
-                    return (
-                      <div
-                        key={idx}
-                        className={`w-7 h-7 rounded flex items-center justify-center text-white text-xs font-bold ${
-                          won ? 'bg-status-win' : 'bg-status-loss'
-                        }`}
-                      >
-                        {won ? 'W' : 'L'}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="text-center text-xs pt-2 border-t border-border-primary">
-                  <span className="text-text-secondary">Win Rate: </span>
-                  <span className="text-text-primary font-mono font-medium">
-                    {((recentResults.filter(r => r.winner === userTeam.id).length / recentResults.length) * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-text-secondary text-center py-6 text-sm">
-                No matches played
-              </p>
-            )}
-          </div>
+            {(() => {
+              const sortedSquad = [...squad].sort((a, b) => {
+                const aCondition = a.condition || {};
+                const bCondition = b.condition || {};
+                const aInjured = aCondition.injury ? 1 : 0;
+                const bInjured = bCondition.injury ? 1 : 0;
+                if (aInjured !== bInjured) return bInjured - aInjured;
+                if (aInjured && bInjured) {
+                  return (bCondition.injuryDuration ?? 0) - (aCondition.injuryDuration ?? 0);
+                }
+                const aFatigue = aCondition.fatigue ?? 0;
+                const bFatigue = bCondition.fatigue ?? 0;
+                if (aFatigue !== bFatigue) return bFatigue - aFatigue;
+                const aFitness = aCondition.fitness ?? 85;
+                const bFitness = bCondition.fitness ?? 85;
+                return aFitness - bFitness;
+              });
+              const displayPlayers = sortedSquad.slice(0, 5);
+              const injuredCount = squad.filter(p => p.condition?.injury).length;
 
-          {/* Financial Summary */}
-          <FinancialSummary
-            compact={true}
-            onClick={() => navigate('/game/board?tab=finances')}
-          />
+              const heroLabel = injuredCount > 0
+                ? `${injuredCount} Injured`
+                : `${squad.length}/25 Fit`;
+              const heroTone = injuredCount > 0 ? 'text-status-loss' : 'text-text-primary';
 
-          {/* Objectives */}
-          <div
-            className="card-interactive p-2"
-            onClick={() => navigate('/game/board')}
-          >
-            <div className="flex items-center gap-2 mb-2 border-b border-border-primary pb-1">
-              <Target className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Objectives
-              </h3>
-              <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
-            </div>
-            {seasonObjectives && seasonObjectives.length > 0 ? (
-              <ul className="space-y-1.5">
-                {seasonObjectives.slice(0, 5).map((obj) => (
-                  <li key={obj.id} className="flex items-center gap-2 text-xs">
-                    <span className={obj.status === 'completed' ? 'text-green-500' : 'text-text-tertiary'}>
-                      {obj.status === 'completed' ? '✓' : '□'}
+              return (
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary">
+                      Squad Status
                     </span>
-                    <span className={obj.status === 'completed' ? 'text-green-500 line-through' : 'text-text-secondary'}>
-                      {obj.title}
+                    <span
+                      className={`text-[18px] font-bold leading-none ${heroTone}`}
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {heroLabel}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-text-tertiary italic">Objectives will be generated at season start</p>
-            )}
+                  </div>
+
+                  <table className="w-full text-xs table-fixed">
+                    <tbody>
+                      {displayPlayers.map((player) => {
+                        const condition = player.condition || {};
+                        const isInjured = !!condition.injury;
+                        const fitness = condition.fitness ?? 85;
+                        const fatigue = condition.fatigue ?? 0;
+                        return (
+                          <tr
+                            key={player.id}
+                            className={`border-b border-border-secondary/50 last:border-0 ${isInjured ? 'bg-status-loss/10' : ''}`}
+                          >
+                            <td className="py-0.5 pr-2 truncate">
+                              <PlayerName playerId={player.id} className="text-xs" />
+                            </td>
+                            <td className="py-0.5 w-[90px]">
+                              <div className="relative h-1.5 bg-bg-tertiary rounded-full overflow-hidden" title={`Fitness ${Math.round(fitness)} · Fatigue ${Math.round(fatigue)}`}>
+                                <div
+                                  className="absolute inset-y-0 left-0 bg-status-win"
+                                  style={{ width: `${Math.max(0, fitness - fatigue)}%` }}
+                                />
+                                {fatigue > 0 && (
+                                  <div
+                                    className="absolute inset-y-0 bg-status-loss/70"
+                                    style={{ left: `${Math.max(0, fitness - fatigue)}%`, width: `${Math.min(fatigue, fitness)}%` }}
+                                  />
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-0.5 pl-2 text-right font-mono whitespace-nowrap w-10">
+                              {isInjured ? (
+                                <span className="text-xxs text-status-loss">
+                                  {condition.injuryDuration ? `${condition.injuryDuration}d` : 'OUT'}
+                                </span>
+                              ) : (
+                                <span className="text-xxs text-text-tertiary">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Upcoming Calendar Events */}
-          <div
-            className="card-interactive p-2"
-            onClick={() => navigate('/game/calendar')}
-          >
-            <div className="flex items-center gap-2 mb-1 border-b border-border-primary pb-1">
-              <Calendar className="w-4 h-4 text-cricket-accent" />
-              <h3 className="text-lg font-semibold text-text-primary">
-                Upcoming
-              </h3>
-              <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
-            </div>
-            <CalendarListView
-              events={upcomingEvents}
-              clubs={clubs}
-              currentDate={currentDate}
-              userTeamId={userTeamId}
-              compact={true}
-            />
-          </div>
-
-          {/* Top Auction Buys / Latest Transfers */}
+          {/* Top Auction Buys / Latest Transfers — row 2 col 3. Mirrors the
+              Squad Status card visually: eyebrow + hero metric (peak fee) on
+              the right, three rows of py-1.5 below. */}
           <div
             className="card-interactive p-2"
             onClick={() => navigate('/game/transfers')}
           >
-            <div className="flex items-center gap-2 mb-1 border-b border-border-primary pb-1">
-              {isTransferMode
-                ? <ArrowRightLeft className="w-4 h-4 text-cricket-accent" />
-                : <Gavel className="w-4 h-4 text-cricket-accent" />
-              }
-              <h3 className="text-lg font-semibold text-text-primary">
-                {isTransferMode ? 'Transfer Activity' : 'Top Buys'}
-              </h3>
-              <ChevronRight className="w-4 h-4 text-text-tertiary ml-auto" />
-            </div>
-            {latestTransfers.length > 0 ? (
-              <table className="w-full text-xs">
-                <tbody>
-                  {latestTransfers.map((transfer, idx) => (
-                    <tr key={`${transfer.playerId}-${idx}`} className="border-b border-border-secondary/50 last:border-0">
-                      <td className="py-1 text-text-primary truncate max-w-[100px]">
-                        <PlayerName playerId={transfer.playerId} className="text-xs" />
-                      </td>
-                      {isTransferMode ? (
-                        <>
-                          <td className="py-1 text-text-secondary truncate max-w-[60px]">
-                            {transfer.fromTeamId
-                              ? <TeamName teamId={transfer.fromTeamId} variant="short" inline className="text-xs" />
-                              : <span className="text-text-tertiary text-xs">FA</span>
-                            }
-                          </td>
-                          <td className="py-1 text-center px-0.5">
-                            <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
-                          </td>
-                          <td className="py-1 text-text-primary truncate max-w-[60px]">
-                            {transfer.toTeamId
-                              ? <TeamName teamId={transfer.toTeamId} variant="short" inline className="text-xs" />
-                              : <span className="text-text-tertiary text-xs">FA</span>
-                            }
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="py-1 text-center px-1">
-                            <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
-                          </td>
-                          <td className="py-1 text-text-secondary truncate max-w-[60px]">
-                            <TeamName teamId={transfer.teamId} variant="short" inline className="text-xs" />
-                          </td>
-                        </>
-                      )}
-                      <td className="py-1 text-right font-mono text-trophy-gold whitespace-nowrap">
-                        {transfer.price >= 1000000
-                          ? `$${(transfer.price / 1000000).toFixed(1)}M`
-                          : `$${(transfer.price / 1000).toFixed(0)}K`
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-xs text-text-tertiary italic text-center py-3">
-                {isTransferMode ? 'No transfer activity yet' : 'No auction data yet'}
-              </p>
-            )}
+            {(() => {
+              const displayTransfers = latestTransfers.slice(0, 5);
+              const peakPrice = displayTransfers.reduce((max, t) => Math.max(max, t.price || 0), 0);
+              const peakLabel = peakPrice >= 1_000_000
+                ? `$${(peakPrice / 1_000_000).toFixed(1)}M`
+                : peakPrice >= 1_000
+                  ? `$${Math.round(peakPrice / 1_000)}K`
+                  : '$0';
+              return (
+                <div>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary">
+                      {isTransferMode ? 'Transfer Activity' : 'Top Auction Buys'}
+                    </span>
+                    {displayTransfers.length > 0 && (
+                      <span
+                        className="text-[18px] font-bold leading-none text-text-primary"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {peakLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {displayTransfers.length > 0 ? (
+                    <table className="w-full text-xs table-fixed">
+                      <tbody>
+                        {displayTransfers.map((transfer, idx) => (
+                          <tr key={`${transfer.playerId}-${idx}`} className="border-b border-border-secondary/50 last:border-0">
+                            <td className="py-0.5 pr-2 text-text-primary truncate">
+                              <PlayerName playerId={transfer.playerId} className="text-xs" />
+                            </td>
+                            {isTransferMode ? (
+                              <>
+                                <td className="py-0.5 text-text-secondary truncate w-[40px]">
+                                  {transfer.fromTeamId
+                                    ? <TeamName teamId={transfer.fromTeamId} variant="short" inline className="text-xs" />
+                                    : <span className="text-text-tertiary text-xs">FA</span>
+                                  }
+                                </td>
+                                <td className="py-0.5 text-center px-0.5 w-4">
+                                  <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
+                                </td>
+                                <td className="py-0.5 text-text-primary truncate w-[40px]">
+                                  {transfer.toTeamId
+                                    ? <TeamName teamId={transfer.toTeamId} variant="short" inline className="text-xs" />
+                                    : <span className="text-text-tertiary text-xs">FA</span>
+                                  }
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="py-0.5 text-center px-1 w-4">
+                                  <ChevronRight className="w-3 h-3 text-text-tertiary inline" />
+                                </td>
+                                <td className="py-0.5 text-text-secondary truncate w-[60px]">
+                                  <TeamName teamId={transfer.teamId} variant="short" inline className="text-xs" />
+                                </td>
+                              </>
+                            )}
+                            <td className="py-0.5 pl-2 text-right font-mono text-text-primary font-semibold whitespace-nowrap w-14">
+                              {transfer.price >= 1000000
+                                ? `$${(transfer.price / 1000000).toFixed(1)}M`
+                                : `$${(transfer.price / 1000).toFixed(0)}K`
+                              }
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-xs text-text-tertiary italic text-center py-3">
+                      {isTransferMode ? 'No transfer activity yet' : 'No auction data yet'}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
+
         </div>
       </>
       )}

@@ -1,0 +1,45 @@
+{
+  "season.opener": [
+    {
+      "when": { "isDebutSeason": true },
+      "headline": "First Ball, First Light — WPL Season 1 Begins",
+      "subhead": "Ten clubs, ninety nights, one inaugural crown to chase",
+      "body": [
+        "The World Premier League's debut season opens with ${openingFixture.home.name} hosting ${openingFixture.away.name} at ${openingFixture.venue}.",
+        "${userTeam.name} arrive with their first squad assembled and a clean slate of expectations — the board has set the bar at ${userBoardExpectation}.",
+        "Across the league, fortunes will be made and unmade between now and the Final. The first ball is moments away."
+      ],
+      "inboxSubject": "WPL Season 1 begins",
+      "inboxType": "season_opener",
+      "sender": "WPL Newsdesk",
+      "tags": ["season", "opener"]
+    },
+    {
+      "when": { "defendingChampionIsUserTeam": true },
+      "headline": "Defending the Crown — ${userTeam.name} Open Season ${season}",
+      "subhead": "Champions return, every other side hunting them",
+      "body": [
+        "Back-to-back is the brief at ${userTeam.name} as the WPL's Season ${season} curtain rises with ${openingFixture.home.name} v ${openingFixture.away.name} at ${openingFixture.venue}.",
+        "The board's ask of the returning champions: ${userBoardExpectation}. The trophy sits in the cabinet; nine rivals would dearly like to dislodge it.",
+        "What a side they've assembled to defend. What a season it could be — if they hold their nerve through ninety nights of cricket."
+      ],
+      "inboxSubject": "Season ${season} opens — ${userTeam.name} defend the title",
+      "inboxType": "season_opener",
+      "sender": "WPL Newsdesk",
+      "tags": ["season", "opener", "champion"]
+    },
+    {
+      "headline": "Curtain Up on Season ${season} — ${defendingChampion.name} defend the crown",
+      "subhead": "${openingFixture.home.name} v ${openingFixture.away.name} gets the ninety-match grind underway",
+      "body": [
+        "WPL Season ${season} swings open at ${openingFixture.venue}, with ${openingFixture.home.name} hosting ${openingFixture.away.name} in the curtain-raiser.",
+        "${defendingChampion.name} return as defending champions; nine challengers — ${userTeam.name} among them — believe this is the year the title changes hands.",
+        "The board at ${userTeam.name} have set the brief: ${userBoardExpectation}. Ninety days of cricket will tell us whether the squad is up to it."
+      ],
+      "inboxSubject": "WPL Season ${season} begins",
+      "inboxType": "season_opener",
+      "sender": "WPL Newsdesk",
+      "tags": ["season", "opener"]
+    }
+  ]
+}

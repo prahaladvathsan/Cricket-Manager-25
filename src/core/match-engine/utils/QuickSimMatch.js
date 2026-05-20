@@ -399,7 +399,11 @@ export async function quickSimMatch(matchConfig, matchStore, playerStore, teamSt
       // Super over data (null if no super over occurred)
       superOver: superOverResult,
       // Analytics data (phase breakdown, wagon zones, per-player segments)
-      analytics
+      analytics,
+      // Raw ball-by-ball log (used by the news block assembler for turning-point
+      // and clutch-finish detection). Retained on the result object so it flows
+      // through to recordResult() in both Normal UI and Sim-to-Date paths.
+      ballByBall: ballByBall || []
     };
   } catch (error) {
     console.error('Error quick-simulating match:', error);

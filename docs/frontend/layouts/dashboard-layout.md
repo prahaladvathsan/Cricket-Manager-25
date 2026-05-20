@@ -1,607 +1,253 @@
-# Dashboard Layout
+# Dashboard Layout (Home page)
 
-## Overview
+The Home page is the central hub. It's the first screen a manager lands on after team selection / save load, and the FM-style data-density bar applies: stripped chrome, eyebrows instead of headers, one hero metric per card, marquee cards (news carousel, next match) visually lifted above secondary data cards.
 
-The **Dashboard** is the central hub of Cricket Manager, providing a comprehensive overview of the user's team, upcoming fixtures, league standing, and key metrics. Inspired by Football Manager's home screen, it presents critical information at a glance with actionable widgets.
-
----
-
-## Design Philosophy
-
-1. **Information Hierarchy**: Most important info (next match, league position) prominently displayed
-2. **Quick Actions**: One-click access to key areas (squad, tactics, transfers)
-3. **At-a-Glance Status**: All critical metrics visible without scrolling
-4. **Contextual Updates**: Dynamic content based on season phase and match schedule
-5. **Scannable Layout**: Card-based grid for easy scanning
+**Component**: `src/components/layout/Home.jsx` (~1200 lines, one file).
 
 ---
 
-## Layout Structure
+## Grid
 
-### Full Layout Grid (Desktop)
 ```
-+--------------------------------------------------------------------------+
-| SIDEBAR |  HEADER: Dashboard                                            |
-|         |  Season 1 • Week 12 • League Stage                           |
-+----------+---------------------------------------------------------------+
-| Home    | MAIN CONTENT AREA                                              |
-| Squad   | +---------------------------+  +-----------------------------+ |
-| Matches | | NEXT MATCH (Large Card)   |  | LEAGUE POSITION            | |
-| League  | |                           |  |                             | |
-| Tactics | | vs London Lions           |  | Standings Mini-Table        | |
-| Finance | | Stadium: Wankhede         |  |                             | |
-| Auction | | Date: 23 Jan • 19:30      |  | #3 Your Team                | |
-|         | |                           |  |    9P 6W 3L 12pts +0.45    | |
-|         | | [View Match] [Set XI]     |  |                             | |
-|         | +---------------------------+  +-----------------------------+ |
-|         |                                                                |
-|         | +---------------------------+  +-----------------------------+ |
-|         | | SQUAD STATUS              |  | RECENT FORM                 | |
-|         | |                           |  |                             | |
-|         | | Players: 23/25            |  | Last 5: W L W W L          | |
-|         | | Overseas: 6/8             |  | Form: GOOD                  | |
-|         | | Avg Age: 27.3             |  | Pts/Match: 1.33             | |
-|         | | Injuries: 2               |  |                             | |
-|         | | [View Squad]              |  | [View All Matches]          | |
-|         | +---------------------------+  +-----------------------------+ |
-|         |                                                                |
-|         | +---------------------------+  +-----------------------------+ |
-|         | | FINANCIAL SUMMARY         |  | TEAM MORALE                 | |
-|         | |                           |  |                             | |
-|         | | Budget: ₹12.5 Cr          |  | Overall: EXCELLENT          | |
-|         | | Wage Bill: ₹7.8 Cr/season |  | Confidence: 82%             | |
-|         | | Available: ₹4.7 Cr        |  | Energy: 75% avg             | |
-|         | |                           |  |                             | |
-|         | | [View Finances]           |  | [View Squad Details]        | |
-|         | +---------------------------+  +-----------------------------+ |
-|         |                                                                |
-|         | +----------------------------------------------------------+    |
-|         | | NEWS & NOTIFICATIONS FEED                                |    |
-|         | |                                                          |    |
-|         | | • Transfer window opens in 3 days                       |    |
-|         | | • V. Kohli recovered from injury, available for selection|    |
-|         | | • Mumbai Thunders won 3-0 against Karachi Kings          |    |
-|         | | • Your team moved up to 3rd place in standings           |    |
-|         | | [View All News]                                          |    |
-|         | +----------------------------------------------------------+    |
-|         |                                                                |
-|         | +---------------------------+  +-----------------------------+ |
-|         | | TOP PERFORMERS            |  | OBJECTIVES                  | |
-|         | |                           |  |                             | |
-|         | | Batting: R. Sharma        |  | □ Qualify for playoffs      | |
-|         | |   342 runs @ 45.6 avg     |  | ✓ Win 5 home matches        | |
-|         | | Bowling: J. Bumrah        |  | □ Maintain top 4 position   | |
-|         | |   18 wkts @ 15.2 avg      |  | □ Score 200+ in a match     | |
-|         | | [View Leaderboards]       |  |                             | |
-|         | +---------------------------+  +-----------------------------+ |
-+----------+---------------------------------------------------------------+
+grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 items-start
 ```
+
+`items-start` is the key choice: cards size to their natural content rather than stretching to match the tallest neighbour. Cells that *should* be equal height (Next Match + Objectives) override per-card with `self-stretch h-full`. Cells that span multiple rows (Upcoming) use `row-span-2`.
 
 ---
 
-## Component Breakdown
+## Final layout (lg breakpoint, 3 columns)
 
-### 1. Next Match Card (`NextMatchCard.jsx`)
-
-**Purpose**: Highlight upcoming fixture with quick actions
-
-**Layout**:
 ```
-+------------------------------------------------------------+
-| NEXT MATCH                                [Live Indicator] |
-+------------------------------------------------------------+
-|                        VS                                  |
-|  [Your Badge]              [Opponent Badge]                |
-|  Mumbai Thunders           London Lions                    |
-|                                                            |
-|  Venue: Wankhede Stadium, Mumbai                          |
-|  Date: 23 January 2024                                     |
-|  Time: 19:30 IST                                           |
-|  Competition: WPL League Stage                             |
-|                                                            |
-|  Form: [W][L][W][W][W]     Form: [L][W][W][L][W]         |
-|                                                            |
-|  [View Match Details] [Set Tactics] [Select Playing XI]   |
-+------------------------------------------------------------+
++---------------------------------+----------------+
+|  News Carousel (col-span-2)     |  League        |
+|  H = 260px                      |  Standings     |
+|                                 |  H = content   |
++----------------+----------------+----------------+
+|  Upcoming      |  Next Match    |  Objectives    |
+|  (row-span-2)  |  (thin)        |  (self-stretch)|
+|                +----------------+----------------+
+|                |  Squad Status  |  Top Buys      |
+|                |  5 rows        |  5 rows        |
++----------------+----------------+----------------+
 ```
 
-**Data Source**:
-```javascript
-const nextMatch = useLeagueStore(state => {
-  const now = new Date();
-  return state.fixtures
-    .filter(f => f.homeTeam === userTeamId || f.awayTeam === userTeamId)
-    .filter(f => new Date(f.date) > now)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-});
-```
+Card-declaration order in JSX matters because the grid auto-flows row-major:
 
-**Features**:
-- **Countdown timer**: "Kickoff in 2 days 5 hours"
-- **Live indicator**: Pulsing red dot if match is currently ongoing
-- **Form comparison**: Last 5 results for both teams
-- **Quick actions**: Jump to match, tactics, or squad selection
-- **Empty state**: "No upcoming matches scheduled" if none found
+1. News carousel (col-span-2)
+2. League Standings
+3. **Upcoming** (row-span-2 — occupies col 1 for two row tracks)
+4. Next Match (col 2 row 1)
+5. Objectives (col 3 row 1)
+6. Squad Status (col 2 row 2 — col 1 row 2 is taken by Upcoming)
+7. Top Buys (col 3 row 2)
 
-**Styling**:
-- Larger card: `col-span-2` on desktop grid
-- Team badges: 80x80px circular
-- Primary CTA button: `bg-cricket-primary`
-- If match is today: `border-2 border-cricket-accent` highlight
+If you add a card, place it according to where you want auto-flow to drop it.
 
 ---
 
-### 2. League Position Widget (`LeaguePositionWidget.jsx`)
+## Card patterns
 
-**Purpose**: Show current standings with user team highlighted
+Every card follows one of two structural patterns:
 
-**Layout**:
-```
-+------------------------------------+
-| LEAGUE POSITION          [View All] |
-+------------------------------------+
-| Pos Team             P  W  L  Pts  |
-| 1   Melbourne M.     9  8  1  16   |
-| 2   Cape Town C.     9  7  2  14   |
-| 3 → Mumbai T. (You)  9  6  3  12   |
-| 4   London Lions     9  6  3  12   |
-| 5   Karachi Kings    9  5  4  10   |
-| ... (showing top 5 + user)         |
-+------------------------------------+
-| Your NRR: +0.45                    |
-| Playoff cutoff: 4th (12 pts)       |
-+------------------------------------+
-```
+### A. Marquee card (news carousel, next match)
 
-**Data Source**:
-```javascript
-const standings = useLeagueStore(state => state.standings);
-const userTeam = useTeamStore(state => state.getUserTeam());
+- Fixed or near-fixed height (carousel is `h-[260px]` on the wrapper; next match uses `self-stretch h-full`)
+- 2px green top accent rail (`border-t-2 border-t-cricket-primary`)
+- Subtle internal hierarchy (serif headline, italic deck, smaller body)
+- News carousel additionally has a colour rail on the left (theme-keyed) and a hero team badge floated into the body
+- Designed to be the eye's first stop
 
-// Get top 5 and ensure user team is included
-const displayStandings = getTopStandingsWithUser(standings, userTeam.id, 5);
-```
+### B. Data card (standings, squad status, top buys, objectives, upcoming)
 
-**Features**:
-- **Compact table**: Top 5 teams + user team (if outside top 5)
-- **User team highlighted**: `bg-cricket-primary bg-opacity-20`
-- **Trend indicator**: ↑ ↓ → for position change from last week
-- **Playoff line**: Visual divider after 4th place
-- **Quick view button**: Opens full league standings
+- Eyebrow on top-left (`text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary`)
+- **Hero metric** on top-right when applicable (`text-[18px]` Georgia serif bold) — one stand-out number per card
+- 3-or-5 row data table below
+- No icon, no chevron, no header bar
 
-**Styling**:
-- Monospace font for numbers
-- Condensed spacing: `text-sm`
-- User row: Bold team name + background highlight
-- Playoff zone (top 4): Subtle green background tint
+The eyebrow style is unified across all data cards — change it in one place and rebase.
 
 ---
 
-### 3. Squad Status Card (`SquadStatusCard.jsx`)
+## Card-by-card breakdown
 
-**Purpose**: Overview of squad composition and health
+### News Carousel — `HomeNewsCarousel.jsx`
 
-**Layout**:
-```
-+------------------------------------+
-| SQUAD STATUS            [View Squad]|
-+------------------------------------+
-| Players:     23 / 25               |
-| ████████████████░░ 92%             |
-|                                    |
-| Overseas:    6 / 8                 |
-| ████████████░░░░░░ 75%             |
-|                                    |
-| Average Age: 27.3 years            |
-| Average Rating: 78.5               |
-|                                    |
-| Injuries: 2 players                |
-| ⚠ V. Kohli (hamstring, 1 week)    |
-| ⚠ S. Iyer (shoulder, 3 days)       |
-|                                    |
-| Form: GOOD (avg 75%)               |
-| Energy: 82% team average           |
-+------------------------------------+
-| [View Full Squad] [Set Playing XI] |
-+------------------------------------+
-```
+Spans 2 grid columns. Renders a rotating list of articles from `inboxStore.messages` filtered to `type === 'league_news'`.
 
-**Data Source**:
-```javascript
-const squad = usePlayerStore(state =>
-  state.getPlayersByTeam(userTeamId)
-);
+- **Card height**: `CARD_HEIGHT = 'h-[260px]'`. Bump it together with the standings card's natural height — they must line up.
+- **Sort**: by `effective = importance + (isUserTeam ? 25 : 0)` desc, then date desc. Top 8 messages render as slides.
+- **Auto-rotate**: 10s interval, paused while the modal is open AND while the cursor hovers the card.
+- **Nav**: prev/next chevrons live inside the bottom pagination pill alongside the dots — no floating overlay buttons over body text.
+- **Card body**: eyebrow + tag pill + byline on the top right, large serif headline on the left, italic subhead, then up to 6 paragraphs with a gradient fade and `… Read more →` cue at the bottom-right.
+- **Hero team badge**: 96–128px badge floated right inside the body (newspaper-style wrap). Falls back to no badge if the payload has no relevant team id.
+- **Click**: opens `NewsArticleModal`.
 
-const squadStats = {
-  total: squad.length,
-  overseas: squad.filter(p => p.isOverseas).length,
-  avgAge: squad.reduce((sum, p) => sum + p.age, 0) / squad.length,
-  avgRating: squad.reduce((sum, p) => sum + p.rating, 0) / squad.length,
-  injuries: squad.filter(p => p.injuryStatus !== 'fit')
-};
-```
+See `docs/core-systems/news-system.md` for the news pipeline that populates the carousel.
 
-**Features**:
-- **Progress bars**: Visual representation of squad fill percentage
-- **Status alerts**: Highlight injuries, suspensions, low morale
-- **Quick stats**: Age, rating, form, energy at a glance
-- **Action buttons**: Jump to squad management
+### League Standings (col 3 row 1)
 
-**Styling**:
-- Progress bars: Green fill with gray background
-- Injury alerts: `text-status-critical` with ⚠ icon
-- Good form: `text-status-good`, Poor form: `text-status-poor`
+- Eyebrow: `League Standings` + hero `2nd of 10` (the user team's ordinal position) in serif
+- Table: # · Team · P · NRR · Pts · **Form**
+- **7 visible rows**, centered around the user team (or clamped at edges)
+- The **Form** column shows 5 micro 2×2 W/L dots for every team (not just the user) — populated from `computeRecentForm(results, teamId, 5)` in `src/utils/recentForm.js`
+- The standalone "Recent Form" card that used to sit on the dashboard was deleted — the form column inside the standings replaces it
 
----
+### Upcoming Calendar Events (col 1, rows 1-2)
 
-### 4. Recent Form Widget (`RecentFormWidget.jsx`)
+- `row-span-2 h-full flex flex-col` so the inner `CalendarListView` stretches to fill the doubled height
+- Eyebrow: `Upcoming` (no hero metric — it's a list-driven card)
+- Shows up to **10 upcoming events** sorted by date (bumped from 5 when the card got taller). Source: `upcomingEvents` memo in Home.jsx
+- Click: navigates to `/game/calendar`
 
-**Purpose**: Visualize team's recent performance
+### Next Match (col 2 row 1, thin variant)
 
-**Layout**:
-```
-+------------------------------------+
-| RECENT FORM              [View All] |
-+------------------------------------+
-| Last 5 Matches:                    |
-|                                    |
-| [W] [L] [W] [W] [L]                |
-|                                    |
-| Form Rating: GOOD                  |
-| Points per match: 1.33             |
-| Win rate: 60%                      |
-|                                    |
-| Goals for: 42                      |
-| Goals against: 38                  |
-| Goal difference: +4                |
-|                                    |
-| Streak: 1 loss                     |
-+------------------------------------+
-```
+- `self-stretch h-full` so it matches Objectives' height in the same row
+- 2px green top rail (marquee treatment)
+- Eyebrow: `Next Match · MD 3`
+- Hero row: `vs [badge] [Opponent Name]` on the left; **date + venue stacked on the right** (date in cricket-accent gold when the match is today)
+- Body: two-column grid, one column per team. Each column shows top batter and top bowler with full `runs` / `wickets` labels (not `R` / `W`)
+- User-team column has `bg-cricket-accent/5` tint so the eye lands there first
+- The larger original Next Match block (badges + 4 best-performer tables) was retired in favour of this thinner version; see git history for the previous layout
 
-**Visual Form Indicators**:
-- **W (Win)**: Green circle with white "W"
-- **L (Loss)**: Red circle with white "L"
-- **T (Tie)**: Yellow circle with white "T"
-- Size: 40x40px, with hover tooltip showing match details
+### Objectives (col 3 row 1)
 
-**Data Source**:
-```javascript
-const recentMatches = useLeagueStore(state => {
-  return state.results
-    .filter(r => r.homeTeam === userTeamId || r.awayTeam === userTeamId)
-    .slice(-5);
-});
+- `self-stretch h-full` — same height as Next Match
+- Eyebrow: `Objectives` + hero `2/5` serif (completed / total)
+- 5 rows max, each: objective title (truncate) + **status pill** on the right
+- Status maps from raw `obj.status` to four user-facing labels:
 
-const formRating = calculateFormRating(recentMatches); // "EXCELLENT" | "GOOD" | "AVERAGE" | "POOR"
-```
+| Raw | Display | Tone |
+|---|---|---|
+| `completed` | COMPLETED | green (`status-win`) |
+| `on_track` / `in_progress` | ON TRACK | blue (`status-upcoming`) |
+| `pending` | ON TRACK | grey (`text-tertiary`) |
+| `at_risk` | FALLING SHORT | amber (`status-tie`) |
+| `failed` | FAILED | red (`status-loss`) |
 
-**Features**:
-- **Hover tooltips**: Show match details (opponent, score, date)
-- **Form rating**: Text description with color coding
-- **Trend analysis**: "3-match winning streak" or "2 losses in last 3"
+### Squad Status (col 2 row 2)
+
+- Eyebrow: `Squad Status` + hero `25/25 Fit` (or `X Injured` in red)
+- 5 player rows, each: `<PlayerName>` (gold default) + stacked condition bar + days-out badge
+- The **stacked condition bar** is a single ground rail: green fitness fill + red fatigue overlay. Cleaner than two parallel bars
+- Rows use `py-0.5` for maximum density
+- Injury row gets a faint red tint (`bg-status-loss/10`) and the days-out cell shows `Xd` or `OUT` in red
+
+### Top Buys / Transfer Activity (col 3 row 2)
+
+- Eyebrow: `Top Auction Buys` (preseason) or `Transfer Activity` (in-season window) + hero peak-fee `$1.1M` serif
+- 5 rows: player name + team code(s) + fee
+- Mirrors Squad Status's eyebrow + hero + 5-row pattern (visually paired cards)
+- Auction mode: `Player → Team $Fee`
+- Transfer mode: `Player FromTeam → ToTeam $Fee`
 
 ---
 
-### 5. Financial Summary Card (`FinancialSummaryCard.jsx`)
+## Hidden / removed cards
 
-**Purpose**: Budget and wage overview
-
-**Layout**:
-```
-+------------------------------------+
-| FINANCES                [View Full] |
-+------------------------------------+
-| Current Budget:                    |
-| ₹12.5 Cr                           |
-| +₹2.3 Cr this month                |
-|                                    |
-| Wage Bill: ₹7.8 Cr / season        |
-| Available: ₹4.7 Cr                 |
-|                                    |
-| Budget Health: HEALTHY             |
-| ████████████░░░░░░ 63%             |
-|                                    |
-| Next Payment: 15 days              |
-| Match Revenue: ₹450 L              |
-+------------------------------------+
-```
-
-**Data Source**:
-```javascript
-const finances = useFinanceStore(state =>
-  state.getTeamFinances(userTeamId)
-);
-```
-
-**Features**:
-- **Budget status**: Color-coded (Green: Healthy, Yellow: Caution, Red: Critical)
-- **Progress bar**: % of budget remaining
-- **Quick metrics**: Income, expenses, net change
-- **Alerts**: Warning if budget < 10% of initial
-
-**Styling**:
-- Currency: `font-mono font-bold text-2xl`
-- Positive changes: `text-status-good` with ↑
-- Negative changes: `text-status-loss` with ↓
+| Card | Status | Why |
+|---|---|---|
+| **Recent Form** (standalone) | Removed | W/L badges live inline as the Form column on the Standings table |
+| **Financial Summary** | Hidden | Code intact, JSX commented in Home.jsx. Re-enable by uncommenting `<FinancialSummary compact={true} onClick={...} />`. Reachable via Board → Finances |
+| **Team Morale / Top Performers** (legacy doc-only) | Never built | Older versions of this doc described them; they never existed in code |
 
 ---
 
-### 6. Team Morale Widget (`TeamMoraleWidget.jsx`)
+## Styling conventions
 
-**Purpose**: Squad confidence and energy levels
+### Eyebrow
 
-**Layout**:
-```
-+------------------------------------+
-| TEAM MORALE                         |
-+------------------------------------+
-| Overall Morale: EXCELLENT          |
-| ████████████████████░ 82%          |
-|                                    |
-| Confidence: 82% (team avg)         |
-| Energy: 75% (team avg)             |
-| Form: 78% (team avg)               |
-|                                    |
-| High Morale: 18 players            |
-| Low Morale: 2 players              |
-| ⚠ S. Gill (confidence: 35%)        |
-| ⚠ K. Yadav (energy: 42%)           |
-+------------------------------------+
+```jsx
+<span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-text-secondary">
+  Squad Status
+</span>
 ```
 
-**Data Source**:
-```javascript
-const morale = usePlayerStore(state => {
-  const players = state.getPlayersByTeam(userTeamId);
-  return {
-    avgConfidence: avg(players.map(p => p.condition.confidence)),
-    avgEnergy: avg(players.map(p => p.condition.energy)),
-    avgForm: avg(players.map(p => p.condition.form)),
-    lowMorale: players.filter(p => p.condition.confidence < 50)
-  };
-});
+Use this exact class string on every card's top label. Don't introduce variants.
+
+### Hero metric
+
+```jsx
+<span
+  className="text-[18px] font-bold leading-none text-text-primary"
+  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+>
+  25/25 Fit
+</span>
 ```
 
-**Features**:
-- **Morale rating**: EXCELLENT > GOOD > AVERAGE > POOR
-- **Three metrics**: Confidence, energy, form with progress bars
-- **Alert list**: Players with critically low stats
-- **Color coding**: Green (high), yellow (medium), red (low)
+Always 18px serif. Tone changes to `text-status-loss` when the metric represents trouble (`X Injured`). The injured-tone is the only conditional colour.
+
+### Player names
+
+Always `<PlayerName>` — never raw `player.name`. Default styling is gold (`text-cricket-accent`) and clickable. No local colour overrides.
+
+### Team names
+
+Always `<TeamName>` — never raw `team.name`. **Pass `inline` when rendering inside flowing prose**, because TeamName defaults to block-level (will force a line break otherwise). PlayerName's default is already inline.
+
+### Yellow discipline
+
+`cricket-accent` (gold) is reserved for:
+
+- User team highlights (user team's standings row, badge ring, points cell)
+- News carousel theme-rail and tag pill
+- `… Read more →` CTA inside the carousel card
+- The "Tonight" date label on the Next Match card when the match is today
+- `<PlayerName>` and the default `<TeamName>` colour
+- Card hero numbers that represent user-team data
+
+It is NOT used for:
+
+- Card eyebrows (use `text-text-secondary`)
+- Per-team stats (use `text-text-primary`)
+- Generic chrome / icons / chevrons
+
+The non-existent `trophy-gold` token was renamed to `cricket-accent` everywhere it appeared.
+
+### Spacing
+
+Card padding is `p-2` (sometimes `p-2.5` for marquee cards). Row padding inside tables is `py-0.5` for the densest reading (Squad Status, Top Buys) or `py-1` for slightly looser (legacy tables not yet bumped). Margin between eyebrow and table content is `mb-1`.
+
+### Card backgrounds
+
+`.card-interactive` (in `src/index.css`) is `background-color: rgba(0, 0, 0, 0.4)` + border + cursor:pointer + hover state. Don't override the bg in markup — the dashboard layers on top of a stadium background image, so the semi-transparent black is part of the visual identity.
 
 ---
 
-### 7. News & Notifications Feed (`NewsFeed.jsx`)
+## Equal-height rows
 
-**Purpose**: Recent events and updates
+The dashboard grid uses `items-start` so each card sizes to its own content. Two cards that need to be the same height override locally:
 
-**Layout**:
-```
-+------------------------------------------------------------+
-| NEWS & NOTIFICATIONS                          [Mark All Read]|
-+------------------------------------------------------------+
-| [!] Transfer window opens in 3 days                  2h ago |
-|                                                              |
-| [✓] V. Kohli recovered from injury, available        5h ago |
-|                                                              |
-| [⚽] Mumbai Thunders 165/7 def. Karachi Kings 158/8 1d ago |
-|                                                              |
-| [📈] Your team moved up to 3rd place              1d ago     |
-|                                                              |
-| [💰] Match revenue: ₹450 lakhs added to budget  2d ago      |
-|                                                              |
-| [View All News]                                              |
-+------------------------------------------------------------+
+```jsx
+<div className="card-interactive p-2 self-stretch h-full" ...>
 ```
 
-**News Types**:
-- **Alerts** [!]: Important notifications (transfer windows, deadlines)
-- **Match Results** [⚽]: Recent match outcomes
-- **Injuries** [✓]: Player fitness updates
-- **Standings** [📈]: League position changes
-- **Financial** [💰]: Budget updates
-
-**Data Source**:
-```javascript
-const news = useGameStore(state => state.newsItems);
-const unreadCount = news.filter(n => !n.isRead).length;
-```
-
-**Features**:
-- **Unread indicator**: Bold text for unread items
-- **Categorized icons**: Different icons for news types
-- **Relative timestamps**: "2h ago", "1d ago", etc.
-- **Click to expand**: Show full details in modal
-- **Filter/Sort**: By type, date, or importance
+`self-stretch` overrides the parent's `items-start`. `h-full` makes the content fill the resolved row-track height. Both Next Match and Objectives use this pattern so they line up regardless of which has more content.
 
 ---
 
-### 8. Top Performers Card (`TopPerformersCard.jsx`)
+## Marquee cards
 
-**Purpose**: Highlight best players this season
+The "marquee" treatment lifts cards above the surrounding data cards:
 
-**Layout**:
-```
-+------------------------------------+
-| TOP PERFORMERS     [Leaderboards]   |
-+------------------------------------+
-| BATTING                            |
-| R. Sharma                          |
-| 342 runs • Avg: 45.6 • SR: 148.2   |
-|                                    |
-| BOWLING                            |
-| J. Bumrah                          |
-| 18 wkts • Avg: 15.2 • Econ: 6.8    |
-|                                    |
-| FIELDING                           |
-| R. Jadeja                          |
-| 8 catches • 2 run outs             |
-+------------------------------------+
-```
+- `border-t-2 border-t-cricket-primary` — 2px green top rail
+- Internal hierarchy with serif headlines / italic decks (news carousel) or a vs+badge hero row (next match)
 
-**Data Source**:
-```javascript
-const topBatsman = usePlayerStore(state => {
-  const squad = state.getPlayersByTeam(userTeamId);
-  return squad.sort((a, b) => b.stats.runs - a.stats.runs)[0];
-});
-```
-
-**Features**:
-- **Three categories**: Batting, bowling, fielding
-- **Key stats**: Most relevant metrics for each
-- **Click to view**: Open player detail page
-- **Link to leaderboards**: Full league-wide stats
+This identifies the two top-of-page cells where the eye should land first.
 
 ---
 
-### 9. Objectives Widget (`ObjectivesWidget.jsx`)
+## Mobile / smaller breakpoints
 
-**Purpose**: Season goals and progress tracking
-
-**Layout**:
-```
-+------------------------------------+
-| OBJECTIVES                          |
-+------------------------------------+
-| Season Goals:                      |
-|                                    |
-| ✓ Win 5 home matches       (5/5)   |
-| ████████████████████ 100%          |
-|                                    |
-| □ Qualify for playoffs     (3rd)   |
-| ████████████░░░░░░░░ 67%           |
-|                                    |
-| □ Maintain top 4 position  (3rd)   |
-| ████████████████░░░░ 80%           |
-|                                    |
-| □ Score 200+ in a match    (0/1)   |
-| ░░░░░░░░░░░░░░░░░░░░ 0%            |
-+------------------------------------+
-```
-
-**Objective Types**:
-- **League position**: Finish in top X
-- **Match targets**: Win X matches, home/away records
-- **Scoring**: Reach score milestones
-- **Player development**: Individual player achievements
-
-**Data Source**:
-```javascript
-const objectives = useGameStore(state => state.seasonObjectives);
-const progress = calculateObjectiveProgress(objectives, currentStats);
-```
-
-**Features**:
-- **Checkboxes**: Visual completion status
-- **Progress bars**: % towards goal
-- **Rewards**: Show currency/benefits on completion
-- **Dynamic**: Updates automatically based on match results
+The grid collapses to `md:grid-cols-2` and `grid-cols-1`. On `md`, the col-span-2 cards (news carousel) take the full width and the col-span-3 cells stack. Most cards naturally fit single-column. The row-span-2 on Upcoming still applies but visually just means a taller card before stacking.
 
 ---
 
-## Responsive Design
+## Touchpoints when adding a new card
 
-### Desktop (> 1024px)
-- **4-column grid**: Large widgets span 2 columns
-- All widgets visible on first screen (with scroll for news)
-- Next Match card: 2 columns wide
-
-### Tablet (768px - 1024px)
-- **2-column grid**: Most widgets single column
-- Next Match card: Full width
-- League position & Recent form: Side by side
-
-### Mobile (< 768px)
-- **Single column**: All widgets stack
-- Condensed widgets: Fewer details, "View more" buttons
-- Next Match: Compact view with less spacing
-
----
-
-## State Management
-
-### Store Subscriptions
-```javascript
-function Dashboard() {
-  // Game state
-  const { currentSeason, currentWeek, currentPhase } = useGameStore();
-
-  // User team
-  const { getUserTeam } = useTeamStore();
-  const userTeam = getUserTeam();
-
-  // League data
-  const standings = useLeagueStore(state => state.standings);
-  const nextMatch = useLeagueStore(state => getNextMatch(state, userTeam.id));
-
-  // Squad data
-  const squad = usePlayerStore(state => state.getPlayersByTeam(userTeam.id));
-
-  // Finances
-  const finances = useFinanceStore(state => state.getTeamFinances(userTeam.id));
-
-  return (
-    <div className="dashboard-grid">
-      <NextMatchCard match={nextMatch} team={userTeam} />
-      <LeaguePositionWidget standings={standings} userTeam={userTeam} />
-      {/* ... other widgets */}
-    </div>
-  );
-}
-```
-
----
-
-## Empty States
-
-### No Team Selected
-```
-+------------------------------------------------------------+
-| WELCOME TO CRICKET MANAGER                                  |
-+------------------------------------------------------------+
-|                                                            |
-| Choose your team to begin your World Premier League       |
-| management journey.                                        |
-|                                                            |
-| [Select Team]                                              |
-|                                                            |
-+------------------------------------------------------------+
-```
-
-### Preseason (No Matches Scheduled)
-- Next Match Card: "Season starts in X days"
-- League Position: "Season not started"
-- Recent Form: "No matches played"
-
-### Mid-Season Break
-- Next Match Card: "Break week - Training in progress"
-- Show training/development activities instead
-
----
-
-## File Structure
-
-```
-src/components/dashboard/
-  Dashboard.jsx                      # Main container
-  NextMatchCard.jsx                  # Upcoming fixture
-  LeaguePositionWidget.jsx           # Standings mini-table
-  SquadStatusCard.jsx                # Squad overview
-  RecentFormWidget.jsx               # Form visualization
-  FinancialSummaryCard.jsx           # Budget summary
-  TeamMoraleWidget.jsx               # Morale/confidence
-  NewsFeed.jsx                       # News items
-  TopPerformersCard.jsx              # Player highlights
-  ObjectivesWidget.jsx               # Season goals
-```
-
----
-
-## Next Steps
-
-1. ✅ Dashboard layout documented
-2. **Implement grid layout** with responsive breakpoints
-3. **Build individual widgets** starting with NextMatchCard
-4. **Wire store subscriptions** for real-time updates
-5. **Test with sample data** before live integration
+1. Pick a row + column position — the JSX declaration order matters because Tailwind grid auto-flow places cells row-major.
+2. Use the eyebrow + hero pattern from § Styling conventions.
+3. If you need it to match the height of a sibling, use `self-stretch h-full` on both.
+4. If it should match the news carousel's height (the marquee row), reference `CARD_HEIGHT` in `HomeNewsCarousel.jsx`.
+5. Update this doc — the layout drifts fast and stale docs are worse than no docs.

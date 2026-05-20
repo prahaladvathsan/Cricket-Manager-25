@@ -9,6 +9,7 @@ import MatchWeekScheduleGenerator from '../core/league/MatchWeekScheduleGenerato
 import PlayoffGenerator from '../core/league/PlayoffGenerator';
 import MessageGenerator from './MessageGenerator';
 import aiTacticsManager from '../core/ai/AITacticsManager';
+import { emitSeasonOpener } from '../core/news/emitters/seasonOpener.js';
 
 /**
  * Initialize league season with fixtures, finances, and tactics
@@ -255,6 +256,11 @@ export function initializeLeague({ stores, isFirstSeasonInit = false }) {
   }
 
   console.log(`✅ League initialized: ${fixtures.length} group matches, ${playoffFixtures.length} playoff matches`);
+
+  // Emit the season opener news article. Runs after fixtures + standings are
+  // wired so the opener can reference the actual first fixture and defending
+  // champion. Mirrored in Home.jsx for the Season-1 path.
+  emitSeasonOpener({ gameStore, teamStore, leagueStore });
 
   return {
     fixturesScheduled: allFixtures.length,

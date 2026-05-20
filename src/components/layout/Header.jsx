@@ -76,7 +76,7 @@ const Header = () => {
     isProcessingTurn
   } = useGameStore();
   const { getUserTeam, teams } = useTeamStore();
-  const { getClub, recordResult, updateStandingsForMatch, advanceToNextMatch, standings, champion, initializeLeague: initializeLeagueStore } = useLeagueStore();
+  const { getClub, recordResult, advanceToNextMatch, standings, champion, initializeLeague: initializeLeagueStore } = useLeagueStore();
   const { processMatchFinancials } = useFinanceStore();
   const { goBack, canGoBack } = useNavigationStore();
   const { addMessage } = useInboxStore();
@@ -337,14 +337,11 @@ const Header = () => {
         ...(result.superOver && { superOver: result.superOver })
       };
 
-      // Record result with full scorecard for clickable results
+      // Record result with full scorecard for clickable results.
+      // Standings are now updated atomically inside recordResult() — no
+      // separate updateStandingsForMatch call needed.
       recordResult(result, fullScorecard);
-      // Standings reflect the regular season only — playoff results must not pollute the table
       const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
-      if (!isPlayoffMatch) {
-        // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-        updateStandingsForMatch(result);
-      }
 
       // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
       // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
@@ -360,8 +357,15 @@ const Header = () => {
 
       advanceToNextMatch();
 
-      // Show result modal using hook
-      showResult(fullScorecard);
+      // Show result modal using hook (respect user's matchResultModalMode setting:
+      // 'none' suppresses entirely — news feed covers it instead.)
+      const modalMode = useGameStore.getState().settings?.matchResultModalMode ?? 'user_only';
+      if (modalMode !== 'none') {
+        showResult(fullScorecard);
+      } else {
+        // No modal → advance day directly (modal's onClose normally does this)
+        advanceDay();
+      }
 
       // Send match result inbox message
       const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
@@ -548,14 +552,11 @@ const Header = () => {
             ...(result.superOver && { superOver: result.superOver })
           };
 
-          // Record result with full scorecard for clickable results
+          // Record result with full scorecard for clickable results.
+          // Standings are now updated atomically inside recordResult() — no
+          // separate updateStandingsForMatch call needed.
           recordResult(result, fullScorecard);
-          // Standings reflect the regular season only — playoff results must not pollute the table
           const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
-          if (!isPlayoffMatch) {
-            // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-            updateStandingsForMatch(result);
-          }
 
           // CRITICAL: If this was a playoff match, update subsequent playoff fixtures
           // This ensures Q2 and Final get populated with correct teams after Eliminator/Q1
@@ -565,10 +566,16 @@ const Header = () => {
 
           advanceToNextMatch();
 
-          // Show result modal (AI vs AI — no inbox message sent to user)
-          showResult(fullScorecard);
-
-          // Don't advance day yet - wait for user to close modal
+          // Show result modal for AI-vs-AI matches only if the user opted in.
+          // Default ('user_only') suppresses the flash — news feed covers it instead.
+          const modalMode = useGameStore.getState().settings?.matchResultModalMode ?? 'user_only';
+          if (modalMode === 'all') {
+            showResult(fullScorecard);
+            // Don't advance day yet - wait for user to close modal
+          } else {
+            // Muted: advance day immediately, no modal interruption.
+            advanceDay();
+          }
         } catch (error) {
           console.error('Error simulating match:', error);
           // Still advance day on error
