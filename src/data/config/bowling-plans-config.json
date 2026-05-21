@@ -12,6 +12,7 @@
           "neutral": 2,
           "defensive": 1
         },
+        "wicketBonus": 0.010,
         "attributeModifiers": {
           "bonuses": {
             "swing": 2
@@ -29,6 +30,7 @@
           "neutral": 4,
           "defensive": 5
         },
+        "wicketBonus": 0.000,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2
@@ -46,6 +48,7 @@
           "neutral": 3,
           "defensive": 4
         },
+        "wicketBonus": 0.005,
         "attributeModifiers": {
           "bonuses": {
             "bowlingSpeed": 2
@@ -63,6 +66,7 @@
           "neutral": 1,
           "defensive": 6
         },
+        "wicketBonus": 0.004,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2
@@ -82,6 +86,7 @@
           "neutral": 4,
           "defensive": 2
         },
+        "wicketBonus": 0.004,
         "attributeModifiers": {
           "bonuses": {
             "variations": 2
@@ -99,6 +104,7 @@
           "neutral": 3,
           "defensive": 1
         },
+        "wicketBonus": 0.008,
         "attributeModifiers": {
           "bonuses": {
             "swing": 2
@@ -116,6 +122,7 @@
           "neutral": 1,
           "defensive": 2
         },
+        "wicketBonus": 0.010,
         "attributeModifiers": {
           "bonuses": {
             "bowlingSpeed": 2
@@ -133,6 +140,7 @@
           "neutral": 5,
           "defensive": 4
         },
+        "wicketBonus": 0.000,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2
@@ -155,6 +163,7 @@
           "neutral": 2,
           "defensive": 4
         },
+        "wicketBonus": 0.005,
         "attributeModifiers": {
           "bonuses": {
             "flight": 2
@@ -172,6 +181,7 @@
           "neutral": 2,
           "defensive": 7
         },
+        "wicketBonus": 0.000,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2
@@ -189,6 +199,7 @@
           "neutral": 1,
           "defensive": 6
         },
+        "wicketBonus": 0.003,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2
@@ -206,6 +217,7 @@
           "neutral": 3,
           "defensive": 1
         },
+        "wicketBonus": 0.010,
         "attributeModifiers": {
           "bonuses": {
             "turn": 2
@@ -225,6 +237,7 @@
           "neutral": 2,
           "defensive": 1
         },
+        "wicketBonus": 0.010,
         "attributeModifiers": {
           "bonuses": {
             "variations": 2
@@ -242,6 +255,7 @@
           "neutral": 4,
           "defensive": 4
         },
+        "wicketBonus": 0.004,
         "attributeModifiers": {
           "bonuses": {
             "flight": 2
@@ -259,6 +273,7 @@
           "neutral": 3,
           "defensive": 6
         },
+        "wicketBonus": 0.002,
         "attributeModifiers": {
           "bonuses": {
             "variations": 2
@@ -276,6 +291,7 @@
           "neutral": 5,
           "defensive": 4
         },
+        "wicketBonus": 0.000,
         "attributeModifiers": {
           "bonuses": {
             "accuracy": 2

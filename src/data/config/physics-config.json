@@ -27,7 +27,7 @@
   },
 
   "fielderMovement": {
-    "baseSpeed": 8.0,
+    "baseSpeed": 7.0,
     "description": "Basic fielder movement speed (will use throw_speed attribute when available)"
   },
 

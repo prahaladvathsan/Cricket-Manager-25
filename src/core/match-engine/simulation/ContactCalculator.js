@@ -4,7 +4,6 @@
  * @module core/match-engine/ContactCalculator
  */
 
-import ProbabilityEngine from '../systems/ProbabilityEngine.js';
 import mentalityConfig from '../../../data/config/mentality-config.json';
 
 /**
@@ -24,9 +23,7 @@ import mentalityConfig from '../../../data/config/mentality-config.json';
  */
 
 class ContactCalculator {
-  constructor(probabilityEngine = null) {
-    this.probabilityEngine = probabilityEngine || new ProbabilityEngine();
-
+  constructor() {
     // Load configuration
     this.config = mentalityConfig.contactThresholds;
   }

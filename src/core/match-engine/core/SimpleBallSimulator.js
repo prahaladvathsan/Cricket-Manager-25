@@ -11,7 +11,6 @@ import FieldingCalculator2D from '../simulation/FieldingCalculator2D.js';
 import BallTrajectoryPhysics from '../physics/BallTrajectoryPhysics.js';
 import FieldPositioningSystem from '../physics/FieldPositioningSystem.js';
 import FielderMovementCalculator from '../physics/FielderMovementCalculator.js';
-import ProbabilityEngine from '../systems/ProbabilityEngine.js';
 import tacticsModifierSystem from '../../tactics/TacticsModifierSystem.js';
 import { generateCommentary } from '../commentary/index.js';
 
@@ -33,13 +32,13 @@ const DEBUG_BALL_SIM = false;
 
 class SimpleBallSimulator {
   constructor(options = {}) {
-    const { silent = false } = options;
+    const { silent = false, captureMetadata = false } = options;
     this.silent = silent;
+    this.captureMetadata = captureMetadata;
 
     // Initialize all calculators internally
-    this.probabilityEngine = new ProbabilityEngine();
     this.decisionCalculator = new DecisionCalculator();
-    this.contactCalculator = new ContactCalculator(this.probabilityEngine);
+    this.contactCalculator = new ContactCalculator();
     this.trajectoryCalculator = new TrajectoryCalculator();
 
     // Initialize 2D simulation components
@@ -108,6 +107,15 @@ class SimpleBallSimulator {
           hasFielderMovement: !!this.fielderMovement
         });
       }
+      // Resolve tier + plan + bowler type for tier-coupled wicket bonus on MISSED balls.
+      // Falls back gracefully if tacticsState isn't populated (e.g. test contexts).
+      const strikerTier = tacticsState?.currentAcceleration?.striker || tacticsState?.currentAcceleration?.[originalStriker?.id] || null;
+      const bowlerPlans = tacticsState?.bowlingPlans?.[originalBowler?.id] || null;
+      const bt = (originalBowler?.bowlingType || modifiedBowler?.bowlingType || '').toLowerCase();
+      const bowlerType = (bt === 'spin' || bt.includes('spin') || bt.includes('off') || bt.includes('leg') || bt.includes('orthodox') || bt.includes('chinaman'))
+        ? 'spin'
+        : 'pace';
+
       const trajectoryResult = this.trajectoryCalculator.calculateTrajectory({
         contactResult,
         striker: modifiedStriker,
@@ -117,7 +125,10 @@ class SimpleBallSimulator {
         wicketKeeper: ballContext.wicketKeeper || ballContext.bowler,
         fieldingTeam: ballContext.fieldingTeam,
         ballPhysics: this.ballPhysics,
-        fielderMovement: this.fielderMovement
+        fielderMovement: this.fielderMovement,
+        strikerTier,
+        bowlerPlans,
+        bowlerType
       });
 
       // Step 4: 2D Fielding Calculation
@@ -150,10 +161,9 @@ class SimpleBallSimulator {
       const bowlerPlaystyle = originalBowler?.primaryPlaystyle?.bowling
         || originalBowler?.primaryPlaystyle
         || null;
-      const strikerTier = tacticsState?.currentAcceleration?.[originalStriker?.id]
-        || tacticsState?.currentAcceleration?.striker
-        || null;
-      const bowlerPlan = tacticsState?.bowlingPlans?.[originalBowler?.id] || null;
+      // strikerTier / bowlerPlans already resolved earlier for the trajectory call;
+      // reuse them for the analytics tags.
+      const bowlerPlan = bowlerPlans;
 
       // In silent mode (quick-sim), omit heavyweight metadata and modifier breakdown
       // These are only needed for the live match viewer UI
@@ -169,8 +179,10 @@ class SimpleBallSimulator {
         bowlerPlan
       };
 
-      if (!this.silent) {
-        result.modifierBreakdown = modifierBreakdown;
+      // Metadata attachment: enabled in live mode OR when captureMetadata
+      // flag is set (e.g. testing suite running silent for perf but needing
+      // per-ball metric data).
+      if (!this.silent || this.captureMetadata) {
         result.metadata = {
           decisionResult,
           contactResult,
@@ -183,9 +195,12 @@ class SimpleBallSimulator {
           },
           timestamp: Date.now()
         };
+      }
 
-        // Generate commentary only in live mode. matchStore regenerates it
-        // for 2nd-innings balls once chaseContext is available.
+      // Modifier breakdown + commentary are UI-only — keep gated on !silent
+      // to avoid the commentary-generation cost in batch/quick-sim paths.
+      if (!this.silent) {
+        result.modifierBreakdown = modifierBreakdown;
         result.commentary = generateCommentary(result, {
           strikerName: ballContext.striker?.name,
           bowlerName: ballContext.bowler?.name,
@@ -377,7 +392,6 @@ class SimpleBallSimulator {
         fieldPositioning: 'FieldPositioningSystem',
         fielderMovement: 'FielderMovementCalculator'
       },
-      probabilityEngine: 'ProbabilityEngine',
       features: [
         'Integrated T20 Tactics System',
         'Dynamic confidence & energy management',

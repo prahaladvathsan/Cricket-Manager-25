@@ -1,0 +1,768 @@
+{
+  "ballsPerCell": 100000,
+  "generatedAt": "2026-05-21T13:10:24.788Z",
+  "tuningPass": 2,
+  "notes": "shot speed base 12 (was 9); fielder baseSpeed 7.0 (was 8.0); run-out errorProbabilityBase 0.032 (was 0.064)",
+  "cells": {
+    "E1.top-power-hitter": {
+      "striker": "Andre Russell",
+      "bowler": "Sompal Kami",
+      "SR": 175.596,
+      "econ": 10.53576,
+      "wicketProb": 0.06768,
+      "boundaryRate": 0.30136,
+      "cqMean": 6.12444,
+      "cqStd": 16.30879868924747,
+      "aerialRate": 0.5404363756228051,
+      "sixAmongAerialRate": 0.24155484657971288,
+      "groundedInterceptionRate": 0.8495130900162763,
+      "catchConversion": 0.7900952380952381,
+      "catchAttempts": 5250,
+      "contact": {
+        "middled": 68.467,
+        "edged": 12.513,
+        "missed": 19.02
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 34195,
+          "percentage": 34.195
+        },
+        "1": {
+          "count": 23344,
+          "percentage": 23.344
+        },
+        "2": {
+          "count": 5557,
+          "percentage": 5.557
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 19839,
+          "percentage": 19.839000000000002
+        },
+        "6": {
+          "count": 10297,
+          "percentage": 10.297
+        },
+        "W": {
+          "count": 6768,
+          "percentage": 6.768000000000001
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 4148,
+          "percentage": 61.28841607565012
+        },
+        "caught_behind": {
+          "count": 602,
+          "percentage": 8.894799054373523
+        },
+        "stumped": {
+          "count": 151,
+          "percentage": 2.2310874704491725
+        },
+        "lbw": {
+          "count": 406,
+          "percentage": 5.998817966903074
+        },
+        "bowled": {
+          "count": 903,
+          "percentage": 13.342198581560282
+        },
+        "run_out": {
+          "count": 558,
+          "percentage": 8.24468085106383
+        }
+      }
+    },
+    "E1.top-anchor": {
+      "striker": "Suryakumar Yadav",
+      "bowler": "Sompal Kami",
+      "SR": 194.65200000000002,
+      "econ": 11.67912,
+      "wicketProb": 0.03701,
+      "boundaryRate": 0.37116,
+      "cqMean": 10.02231,
+      "cqStd": 16.37081159453923,
+      "aerialRate": 0.31774062613974613,
+      "sixAmongAerialRate": 0.20853852704854298,
+      "groundedInterceptionRate": 0.5869977582341783,
+      "catchConversion": 0.8030672708260718,
+      "catchAttempts": 2869,
+      "contact": {
+        "middled": 75.576,
+        "edged": 10.71,
+        "missed": 13.714
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 30592,
+          "percentage": 30.592000000000002
+        },
+        "1": {
+          "count": 22277,
+          "percentage": 22.277
+        },
+        "2": {
+          "count": 6295,
+          "percentage": 6.295000000000001
+        },
+        "3": {
+          "count": 19,
+          "percentage": 0.019
+        },
+        "4": {
+          "count": 31484,
+          "percentage": 31.484
+        },
+        "6": {
+          "count": 5632,
+          "percentage": 5.632000000000001
+        },
+        "W": {
+          "count": 3701,
+          "percentage": 3.701
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 2304,
+          "percentage": 62.25344501486085
+        },
+        "bowled": {
+          "count": 567,
+          "percentage": 15.32018373412591
+        },
+        "lbw": {
+          "count": 293,
+          "percentage": 7.916779248851662
+        },
+        "caught_behind": {
+          "count": 349,
+          "percentage": 9.429883815185084
+        },
+        "stumped": {
+          "count": 79,
+          "percentage": 2.1345582275060795
+        },
+        "run_out": {
+          "count": 109,
+          "percentage": 2.9451499594704136
+        }
+      }
+    },
+    "E1.top-balanced": {
+      "striker": "Abhishek Sharma",
+      "bowler": "Sompal Kami",
+      "SR": 173.619,
+      "econ": 10.41714,
+      "wicketProb": 0.05075,
+      "boundaryRate": 0.31353,
+      "cqMean": 7.273599999991238,
+      "cqStd": 16.382913311667686,
+      "aerialRate": 0.4540009793704406,
+      "sixAmongAerialRate": 0.18477238785331046,
+      "groundedInterceptionRate": 0.6958951362538807,
+      "catchConversion": 0.8051253168121656,
+      "catchAttempts": 3551,
+      "contact": {
+        "middled": 69.074,
+        "edged": 12.574,
+        "missed": 18.352
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 35369,
+          "percentage": 35.369
+        },
+        "1": {
+          "count": 21566,
+          "percentage": 21.566
+        },
+        "2": {
+          "count": 6632,
+          "percentage": 6.632000000000001
+        },
+        "3": {
+          "count": 5,
+          "percentage": 0.005
+        },
+        "4": {
+          "count": 24672,
+          "percentage": 24.672
+        },
+        "6": {
+          "count": 6681,
+          "percentage": 6.680999999999999
+        },
+        "W": {
+          "count": 5075,
+          "percentage": 5.075
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 2859,
+          "percentage": 56.33497536945813
+        },
+        "bowled": {
+          "count": 843,
+          "percentage": 16.610837438423644
+        },
+        "lbw": {
+          "count": 371,
+          "percentage": 7.310344827586207
+        },
+        "run_out": {
+          "count": 342,
+          "percentage": 6.738916256157636
+        },
+        "caught_behind": {
+          "count": 531,
+          "percentage": 10.463054187192117
+        },
+        "stumped": {
+          "count": 129,
+          "percentage": 2.541871921182266
+        }
+      }
+    },
+    "E1.top-finisher": {
+      "striker": "Andre Russell",
+      "bowler": "Sompal Kami",
+      "SR": 161.717,
+      "econ": 9.703019999999999,
+      "wicketProb": 0.06227,
+      "boundaryRate": 0.27211,
+      "cqMean": 4.93369,
+      "cqStd": 16.328268523756584,
+      "aerialRate": 0.45120893695164255,
+      "sixAmongAerialRate": 0.19812333955118422,
+      "groundedInterceptionRate": 0.7929079332620719,
+      "catchConversion": 0.783283167399861,
+      "catchAttempts": 4319,
+      "contact": {
+        "middled": 67.997,
+        "edged": 12.717999999999998,
+        "missed": 19.285
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 34188,
+          "percentage": 34.188
+        },
+        "1": {
+          "count": 25897,
+          "percentage": 25.897
+        },
+        "2": {
+          "count": 6475,
+          "percentage": 6.4750000000000005
+        },
+        "3": {
+          "count": 2,
+          "percentage": 0.002
+        },
+        "4": {
+          "count": 20201,
+          "percentage": 20.201
+        },
+        "6": {
+          "count": 7010,
+          "percentage": 7.01
+        },
+        "W": {
+          "count": 6227,
+          "percentage": 6.227
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 3383,
+          "percentage": 54.327926770515504
+        },
+        "bowled": {
+          "count": 876,
+          "percentage": 14.067769391360205
+        },
+        "caught_behind": {
+          "count": 665,
+          "percentage": 10.679299823349927
+        },
+        "run_out": {
+          "count": 718,
+          "percentage": 11.530431989722176
+        },
+        "lbw": {
+          "count": 430,
+          "percentage": 6.905411915850329
+        },
+        "stumped": {
+          "count": 155,
+          "percentage": 2.4891601092018627
+        }
+      }
+    },
+    "E1.mid-balanced": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "SR": 99.785,
+      "econ": 5.9871,
+      "wicketProb": 0.09771,
+      "boundaryRate": 0.11342,
+      "cqMean": -6.08921,
+      "cqStd": 16.347216630848813,
+      "aerialRate": 0.374457029188487,
+      "sixAmongAerialRate": 0.06266261925411969,
+      "groundedInterceptionRate": 0.9666645034287321,
+      "catchConversion": 0.8064317587321126,
+      "catchAttempts": 6499,
+      "contact": {
+        "middled": 66.006,
+        "edged": 13.239,
+        "missed": 20.755000000000003
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 35084,
+          "percentage": 35.083999999999996
+        },
+        "1": {
+          "count": 36657,
+          "percentage": 36.657000000000004
+        },
+        "2": {
+          "count": 7146,
+          "percentage": 7.146
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 9608,
+          "percentage": 9.608
+        },
+        "6": {
+          "count": 1734,
+          "percentage": 1.7340000000000002
+        },
+        "W": {
+          "count": 9771,
+          "percentage": 9.771
+        }
+      },
+      "dismissals": {
+        "bowled": {
+          "count": 1320,
+          "percentage": 13.509364445809027
+        },
+        "caught": {
+          "count": 5241,
+          "percentage": 53.63831747006448
+        },
+        "run_out": {
+          "count": 822,
+          "percentage": 8.41264967761744
+        },
+        "lbw": {
+          "count": 652,
+          "percentage": 6.672807286869308
+        },
+        "caught_behind": {
+          "count": 1502,
+          "percentage": 15.37201924060997
+        },
+        "stumped": {
+          "count": 234,
+          "percentage": 2.394841879029782
+        }
+      }
+    },
+    "E1.mid-slogger": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "SR": 117.191,
+      "econ": 7.031459999999999,
+      "wicketProb": 0.10364,
+      "boundaryRate": 0.16611,
+      "cqMean": -2.91894,
+      "cqStd": 16.322440052773974,
+      "aerialRate": 0.4839033935559964,
+      "sixAmongAerialRate": 0.09328347874255644,
+      "groundedInterceptionRate": 0.9572804944555535,
+      "catchConversion": 0.8010056568196103,
+      "catchAttempts": 7955,
+      "contact": {
+        "middled": 65.575,
+        "edged": 13.394,
+        "missed": 21.031
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 35344,
+          "percentage": 35.343999999999994
+        },
+        "1": {
+          "count": 31351,
+          "percentage": 31.351000000000003
+        },
+        "2": {
+          "count": 6330,
+          "percentage": 6.329999999999999
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 13243,
+          "percentage": 13.242999999999999
+        },
+        "6": {
+          "count": 3368,
+          "percentage": 3.3680000000000003
+        },
+        "W": {
+          "count": 10364,
+          "percentage": 10.363999999999999
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 6372,
+          "percentage": 61.48205326128908
+        },
+        "bowled": {
+          "count": 1242,
+          "percentage": 11.98379004245465
+        },
+        "caught_behind": {
+          "count": 1224,
+          "percentage": 11.810111925897338
+        },
+        "lbw": {
+          "count": 612,
+          "percentage": 5.905055962948669
+        },
+        "run_out": {
+          "count": 701,
+          "percentage": 6.763797761482053
+        },
+        "stumped": {
+          "count": 213,
+          "percentage": 2.055191045928213
+        }
+      }
+    },
+    "E1.tail-biffer": {
+      "striker": "Moeen Ali",
+      "bowler": "Sompal Kami",
+      "SR": 81.132,
+      "econ": 4.86792,
+      "wicketProb": 0.16973,
+      "boundaryRate": 0.08976,
+      "cqMean": -33.94273,
+      "cqStd": 16.262231401228433,
+      "aerialRate": 0.487668700314291,
+      "sixAmongAerialRate": 0.0014405944347562363,
+      "groundedInterceptionRate": 0.9990617782909931,
+      "catchConversion": 0.8082290317939865,
+      "catchAttempts": 6951,
+      "contact": {
+        "middled": 52.72599999999999,
+        "edged": 16.570999999999998,
+        "missed": 30.703000000000003
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 37957,
+          "percentage": 37.957
+        },
+        "1": {
+          "count": 27036,
+          "percentage": 27.035999999999998
+        },
+        "2": {
+          "count": 9058,
+          "percentage": 9.058
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 8938,
+          "percentage": 8.938
+        },
+        "6": {
+          "count": 38,
+          "percentage": 0.038
+        },
+        "W": {
+          "count": 16973,
+          "percentage": 16.973
+        }
+      },
+      "dismissals": {
+        "caught_behind": {
+          "count": 4270,
+          "percentage": 25.15760325222412
+        },
+        "caught": {
+          "count": 5618,
+          "percentage": 33.0996288222471
+        },
+        "bowled": {
+          "count": 3583,
+          "percentage": 21.10999823248689
+        },
+        "run_out": {
+          "count": 1192,
+          "percentage": 7.022918753314087
+        },
+        "lbw": {
+          "count": 1728,
+          "percentage": 10.18087550816002
+        },
+        "stumped": {
+          "count": 582,
+          "percentage": 3.4289754315677845
+        }
+      }
+    },
+    "E1.weak-batter": {
+      "striker": "Akash Deep",
+      "bowler": "Sompal Kami",
+      "SR": 84.649,
+      "econ": 5.078939999999999,
+      "wicketProb": 0.14683,
+      "boundaryRate": 0.05437,
+      "cqMean": -33.99494,
+      "cqStd": 16.31241228011357,
+      "aerialRate": 0.3155550805187402,
+      "sixAmongAerialRate": 0.00016935757028339166,
+      "groundedInterceptionRate": 0.9994534381344021,
+      "catchConversion": 0.8463287110706978,
+      "catchAttempts": 4399,
+      "contact": {
+        "middled": 54.708,
+        "edged": 15.956000000000001,
+        "missed": 29.336000000000002
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 34849,
+          "percentage": 34.849000000000004
+        },
+        "1": {
+          "count": 27167,
+          "percentage": 27.167
+        },
+        "2": {
+          "count": 17864,
+          "percentage": 17.864
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 5434,
+          "percentage": 5.434
+        },
+        "6": {
+          "count": 3,
+          "percentage": 0.003
+        },
+        "W": {
+          "count": 14683,
+          "percentage": 14.682999999999998
+        }
+      },
+      "dismissals": {
+        "run_out": {
+          "count": 1224,
+          "percentage": 8.33617108220391
+        },
+        "caught_behind": {
+          "count": 4150,
+          "percentage": 28.26397875093646
+        },
+        "lbw": {
+          "count": 1664,
+          "percentage": 11.332833889532113
+        },
+        "bowled": {
+          "count": 3353,
+          "percentage": 22.83593271129878
+        },
+        "stumped": {
+          "count": 569,
+          "percentage": 3.8752298576585167
+        },
+        "caught": {
+          "count": 3723,
+          "percentage": 25.355853708370223
+        }
+      }
+    },
+    "E1.synthetic-maxed": {
+      "striker": "Abhishek Sharma",
+      "bowler": "Sompal Kami",
+      "SR": 250.549,
+      "econ": 15.032939999999998,
+      "wicketProb": 0.03487,
+      "boundaryRate": 0.4805,
+      "cqMean": 14.31371000002263,
+      "cqStd": 16.342612280026678,
+      "aerialRate": 0.5358036996167491,
+      "sixAmongAerialRate": 0.37449343401908897,
+      "groundedInterceptionRate": 0.5218547109043505,
+      "catchConversion": 0.7830919501515662,
+      "catchAttempts": 2969,
+      "contact": {
+        "middled": 73.771,
+        "edged": 11.381,
+        "missed": 14.848
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 28784,
+          "percentage": 28.784
+        },
+        "1": {
+          "count": 14833,
+          "percentage": 14.832999999999998
+        },
+        "2": {
+          "count": 4844,
+          "percentage": 4.843999999999999
+        },
+        "3": {
+          "count": 2,
+          "percentage": 0.002
+        },
+        "4": {
+          "count": 31139,
+          "percentage": 31.139
+        },
+        "6": {
+          "count": 16911,
+          "percentage": 16.911
+        },
+        "W": {
+          "count": 3487,
+          "percentage": 3.4869999999999997
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 2325,
+          "percentage": 66.67622598221968
+        },
+        "bowled": {
+          "count": 538,
+          "percentage": 15.428735302552338
+        },
+        "lbw": {
+          "count": 262,
+          "percentage": 7.513622024663034
+        },
+        "caught_behind": {
+          "count": 234,
+          "percentage": 6.710639518210495
+        },
+        "stumped": {
+          "count": 91,
+          "percentage": 2.6096931459707484
+        },
+        "run_out": {
+          "count": 37,
+          "percentage": 1.061084026383711
+        }
+      }
+    },
+    "E1.synthetic-floor": {
+      "striker": "Abhishek Sharma",
+      "bowler": "Sompal Kami",
+      "SR": 72.014,
+      "econ": 4.32084,
+      "wicketProb": 0.15319,
+      "boundaryRate": 0.03419,
+      "cqMean": -33.88185000005685,
+      "cqStd": 16.32847100117402,
+      "aerialRate": 0.3168782322519981,
+      "sixAmongAerialRate": 0.000057064597123944306,
+      "groundedInterceptionRate": 1,
+      "catchConversion": 0.8560499295349305,
+      "catchAttempts": 4967,
+      "contact": {
+        "middled": 53.969,
+        "edged": 16.368,
+        "missed": 29.663
+      },
+      "outcomeDistribution": {
+        "0": {
+          "count": 36718,
+          "percentage": 36.718
+        },
+        "1": {
+          "count": 30752,
+          "percentage": 30.752000000000002
+        },
+        "2": {
+          "count": 13792,
+          "percentage": 13.791999999999998
+        },
+        "3": {
+          "count": 0,
+          "percentage": 0
+        },
+        "4": {
+          "count": 3418,
+          "percentage": 3.418
+        },
+        "6": {
+          "count": 1,
+          "percentage": 0.001
+        },
+        "W": {
+          "count": 15319,
+          "percentage": 15.318999999999999
+        }
+      },
+      "dismissals": {
+        "caught": {
+          "count": 4252,
+          "percentage": 27.756380964814937
+        },
+        "bowled": {
+          "count": 3402,
+          "percentage": 22.20771590834911
+        },
+        "run_out": {
+          "count": 1254,
+          "percentage": 8.18591291859782
+        },
+        "caught_behind": {
+          "count": 4194,
+          "percentage": 27.37776617272668
+        },
+        "lbw": {
+          "count": 1674,
+          "percentage": 10.927606240616228
+        },
+        "stumped": {
+          "count": 543,
+          "percentage": 3.544617794895228
+        }
+      }
+    }
+  }
+}

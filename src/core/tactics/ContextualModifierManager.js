@@ -1,6 +1,11 @@
 /**
  * @file ContextualModifierManager.js
- * @description Manage contextual modifiers (left-right partnership, new ball boost)
+ * @description Manage contextual modifiers (left-right partnership, new ball boost,
+ * old-ball penalty, death-overs batter power) — Stage 7 of TacticsModifierSystem.
+ *
+ * Modifiers in this stage operate on the bowler and/or striker based on situational
+ * triggers (over number, partnership handedness) rather than player attributes.
+ *
  * @module core/tactics/ContextualModifierManager
  */
 
@@ -14,173 +19,204 @@ class ContextualModifierManager {
   constructor() {
     this.leftRightConfig = contextualConfig.leftRightPartnership;
     this.newBallConfig = contextualConfig.newBallBoost;
+    this.oldBallConfig = contextualConfig.oldBallPenalty;
+    this.deathPowerConfig = contextualConfig.deathOversBatterPower;
   }
+
+  // ============================================================
+  //                     Left-Right Partnership
+  // ============================================================
 
   /**
    * Check if left-right partnership is active
-   * @param {Object} striker - Striker batsman
-   * @param {Object} nonStriker - Non-striker batsman
-   * @returns {boolean} True if left-right combo
    */
   checkLeftRightCombo(striker, nonStriker) {
-    const strikerHand = striker.battingHand;
-    const nonStrikerHand = nonStriker.battingHand;
-
-    if (!strikerHand || !nonStrikerHand) {
-      console.warn(`Missing battingHand data - striker: ${strikerHand}, nonStriker: ${nonStrikerHand}`);
-      return false;
-    }
-
+    const strikerHand = striker?.battingHand;
+    const nonStrikerHand = nonStriker?.battingHand;
+    if (!strikerHand || !nonStrikerHand) return false;
     return (strikerHand === 'left' && nonStrikerHand === 'right') ||
            (strikerHand === 'right' && nonStrikerHand === 'left');
   }
 
   /**
-   * Apply left-right partnership penalty to bowler
-   * @param {Object} bowler - Bowler object
-   * @returns {Object} Modified bowler (copy)
+   * Apply left-right partnership penalty (−2 accuracy) to bowler.
+   * Mutates the bowler attributes in place.
    */
   applyLeftRightPenalty(bowler) {
-    // Deep clone bowler to avoid mutating original (must clone nested attribute objects)
-    const modifiedBowler = {
-      ...bowler,
-      attributes: {
-        ...bowler.attributes,
-        batting: { ...bowler.attributes?.batting },
-        bowling: { ...bowler.attributes?.bowling },
-        physical: { ...bowler.attributes?.physical },
-        mental: { ...bowler.attributes?.mental },
-        fielding: { ...bowler.attributes?.fielding }
-      },
-      condition: { ...bowler.condition }
-    };
-
-    // Apply accuracy penalty
-    const accuracyPenalty = this.leftRightConfig.effects.bowler.accuracy;
-
-    if (modifiedBowler.attributes?.bowling?.accuracy !== undefined) {
-      modifiedBowler.attributes.bowling.accuracy += accuracyPenalty;
-    } else {
-      console.warn(`Accuracy attribute not found for bowler ${bowler.name}`);
+    const penalty = this.leftRightConfig.effects.bowler.accuracy;
+    if (bowler.attributes?.bowling?.accuracy !== undefined) {
+      bowler.attributes.bowling.accuracy += penalty;
     }
-
-    return modifiedBowler;
   }
 
+  // ============================================================
+  //                       New Ball Boost (overs 1-6)
+  // ============================================================
+
   /**
-   * Check if new ball boost applies
-   * @param {number} over - Current over (1-20)
-   * @param {string} bowlerType - Bowler type (pace/spin/etc)
-   * @returns {boolean} True if new ball boost applies
+   * Check if new ball boost applies for this over + bowler type.
+   * The actual swing value is per-over (see swingByOver in config).
    */
   checkNewBallBoost(over, bowlerType) {
-    const oversRange = this.newBallConfig.trigger.oversRange;
+    const [start, end] = this.newBallConfig.trigger.oversRange;
     const requiredType = this.newBallConfig.trigger.bowlerType;
-
-    // Normalize bowler type to 'pace' or 'spin'
     const normalizedType = this.normalizeBowlerType(bowlerType);
-
-    return over >= oversRange[0] &&
-           over <= oversRange[1] &&
-           normalizedType === requiredType;
+    return over >= start && over <= end && normalizedType === requiredType;
   }
 
   /**
-   * Normalize bowler type to pace/spin
-   * @param {string} bowlerType - Raw bowler type
-   * @returns {string} 'pace' or 'spin'
+   * Apply per-over swing boost to pace bowler.
+   * Boost is config.swingByOver[over], default 0 if over not listed.
+   */
+  applyNewBallBoost(bowler, over) {
+    const boost = this.newBallConfig.swingByOver?.[String(over)] || 0;
+    if (boost === 0) return;
+    if (bowler.attributes?.bowling?.swing !== undefined) {
+      bowler.attributes.bowling.swing += boost;
+    }
+  }
+
+  // ============================================================
+  //                     Old Ball Penalty (overs 17-20)
+  // ============================================================
+
+  /**
+   * Check if old ball penalty applies for this over + bowler type.
+   */
+  checkOldBallPenalty(over, bowlerType) {
+    if (!this.oldBallConfig) return false;
+    const [start, end] = this.oldBallConfig.trigger.oversRange;
+    const requiredType = this.oldBallConfig.trigger.bowlerType;
+    const normalizedType = this.normalizeBowlerType(bowlerType);
+    return over >= start && over <= end && normalizedType === requiredType;
+  }
+
+  /**
+   * Apply per-over swing penalty to pace bowler in death overs.
+   * Penalty value is config.swingByOver[over] (negative or zero).
+   */
+  applyOldBallPenalty(bowler, over) {
+    const penalty = this.oldBallConfig?.swingByOver?.[String(over)] || 0;
+    if (penalty === 0) return;
+    if (bowler.attributes?.bowling?.swing !== undefined) {
+      bowler.attributes.bowling.swing += penalty;
+    }
+  }
+
+  // ============================================================
+  //                Death-Overs Batter Power (overs 17-20)
+  // ============================================================
+
+  /**
+   * Check if death-overs strength bonus applies.
+   * No bowler-type gate — applies to striker regardless of who's bowling.
+   */
+  checkDeathOversBatterPower(over) {
+    if (!this.deathPowerConfig) return false;
+    const [start, end] = this.deathPowerConfig.trigger.oversRange;
+    return over >= start && over <= end;
+  }
+
+  /**
+   * Apply per-over strength bonus to striker in death overs.
+   * Strength sits in player.attributes.physical.strength.
+   */
+  applyDeathOversBatterPower(striker, over) {
+    const bonus = this.deathPowerConfig?.strengthByOver?.[String(over)] || 0;
+    if (bonus === 0) return;
+    if (striker.attributes?.physical?.strength !== undefined) {
+      striker.attributes.physical.strength += bonus;
+    }
+  }
+
+  // ============================================================
+  //                              Shared
+  // ============================================================
+
+  /**
+   * Normalize bowler type to 'pace' or 'spin'.
    */
   normalizeBowlerType(bowlerType) {
     if (!bowlerType) return 'pace';
-
     const type = bowlerType.toLowerCase();
-
-    // Pace types
-    if (type.includes('fast') || type.includes('medium') || type.includes('pace') || type.includes('seam')) {
-      return 'pace';
-    }
-
-    // Spin types
-    if (type.includes('spin') || type.includes('leg') || type.includes('off')) {
-      return 'spin';
-    }
-
-    // Default to pace
+    if (type === 'spin' || type.includes('spin') || type.includes('off') || type.includes('leg') || type.includes('orthodox')) return 'spin';
     return 'pace';
   }
 
   /**
-   * Apply new ball boost to bowler
-   * @param {Object} bowler - Bowler object
-   * @returns {Object} Modified bowler (copy)
+   * Clone a player (deep enough that attribute mutations don't leak to original).
    */
-  applyNewBallBoost(bowler) {
-    // Deep clone bowler to avoid mutating original (must clone nested attribute objects)
-    const modifiedBowler = {
-      ...bowler,
+  clonePlayer(player) {
+    return {
+      ...player,
       attributes: {
-        ...bowler.attributes,
-        batting: { ...bowler.attributes?.batting },
-        bowling: { ...bowler.attributes?.bowling },
-        physical: { ...bowler.attributes?.physical },
-        mental: { ...bowler.attributes?.mental },
-        fielding: { ...bowler.attributes?.fielding }
+        ...player.attributes,
+        batting: { ...player.attributes?.batting },
+        bowling: { ...player.attributes?.bowling },
+        physical: { ...player.attributes?.physical },
+        mental: { ...player.attributes?.mental },
+        fielding: { ...player.attributes?.fielding }
       },
-      condition: { ...bowler.condition }
+      condition: { ...player.condition }
     };
-
-    // Apply swing boost
-    const swingBoost = this.newBallConfig.effects.bowler.swing;
-
-    if (modifiedBowler.attributes?.bowling?.swing !== undefined) {
-      modifiedBowler.attributes.bowling.swing += swingBoost;
-    } else {
-      console.warn(`Swing attribute not found for bowler ${bowler.name}`);
-    }
-
-    return modifiedBowler;
   }
 
   /**
-   * Apply all contextual modifiers to bowler
-   * @param {Object} bowler - Bowler object
-   * @param {Object} striker - Striker batsman
-   * @param {Object} nonStriker - Non-striker batsman
-   * @param {number} over - Current over
-   * @returns {Object} Modified bowler (copy)
+   * Apply all contextual modifiers. Returns BOTH the modified bowler and striker
+   * (since deathOversBatterPower targets the striker, the API now returns both).
+   *
+   * @param {Object} bowler
+   * @param {Object} striker
+   * @param {Object} nonStriker
+   * @param {number} over
+   * @returns {{bowler: Object, striker: Object, flags: Object}}
    */
   applyAllContextualModifiers(bowler, striker, nonStriker, over) {
-    let modifiedBowler = { ...bowler };
+    const modifiedBowler = this.clonePlayer(bowler);
+    const modifiedStriker = this.clonePlayer(striker);
 
-    // Check and apply left-right penalty
+    const flags = {
+      leftRightActive: false,
+      newBallActive: false,
+      oldBallActive: false,
+      deathPowerActive: false
+    };
+
     if (this.checkLeftRightCombo(striker, nonStriker)) {
-      modifiedBowler = this.applyLeftRightPenalty(modifiedBowler);
+      this.applyLeftRightPenalty(modifiedBowler);
+      flags.leftRightActive = true;
     }
 
-    // Check and apply new ball boost
     if (this.checkNewBallBoost(over, bowler.bowlingType)) {
-      modifiedBowler = this.applyNewBallBoost(modifiedBowler);
+      this.applyNewBallBoost(modifiedBowler, over);
+      flags.newBallActive = true;
     }
 
-    return modifiedBowler;
+    if (this.checkOldBallPenalty(over, bowler.bowlingType)) {
+      this.applyOldBallPenalty(modifiedBowler, over);
+      flags.oldBallActive = true;
+    }
+
+    if (this.checkDeathOversBatterPower(over)) {
+      this.applyDeathOversBatterPower(modifiedStriker, over);
+      flags.deathPowerActive = true;
+    }
+
+    return { bowler: modifiedBowler, striker: modifiedStriker, flags };
   }
 
   /**
    * Get info about manager
-   * @returns {Object} Manager info
    */
   getInfo() {
     return {
       name: 'ContextualModifierManager',
-      version: '1.0.0',
-      modifiers: ['Left-Right Partnership', 'New Ball Boost'],
-      description: 'Auto-applies contextual modifiers based on match situation',
-      methods: [
-        'checkLeftRightCombo(striker, nonStriker)',
-        'applyLeftRightPenalty(bowler)',
-        'checkNewBallBoost(over, bowlerType)',
-        'applyNewBallBoost(bowler)',
-        'applyAllContextualModifiers(bowler, striker, nonStriker, over)'
+      version: '1.1.0',
+      modifiers: [
+        'Left-Right Partnership',
+        'New Ball Boost (overs 1-6, graduated +5→0)',
+        'Old Ball Penalty (overs 17-20, graduated 0→-3)',
+        'Death-Overs Batter Power (overs 17-20, striker strength 0→+3)'
       ]
     };
   }

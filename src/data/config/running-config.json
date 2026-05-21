@@ -4,26 +4,22 @@
   "lastUpdated": "2024-01-01",
 
   "runningSpeed": {
-    "baseSpeed": 7.0,
+    "baseSpeed": 8.0,
     "speedMultiplier": 0.1,
-    "maxSpeed": 9.0,
+    "maxSpeed": 10.0,
     "wicketDistance": 20.12,
-    "turningPenalty": 0.5,
+    "turningPenalty": 0.75,
     "description": "Running speeds in meters per second (wicketDistance = 22 yards = 20.12 meters)"
   },
 
   "decisionFactors": {
-    "judgmentWeight": 1,
-    "errorProbabilityBase": 0.064,
+    "errorProbabilityBase": 0.032,
     "combinedJudgmentDivisor": 40,
-    "description": "Factors affecting running decisions. Formula: errorProbabilityBase * (1 - combinedJudgment/40). At combinedJudgment=30 (average), errorProbability=2.4%."
+    "description": "Factors affecting running decisions. Formula: errorProbabilityBase * (1 - combinedJudgment/40). At combinedJudgment=30 (average), errorProbability=1.2%."
   },
 
   "riskAssessment": {
     "safeMargin": 0.1,
-    "riskyMargin": 0.2,
-    "conservativeBonus": 0.3,
-    "aggressiveBonus": -0.2,
-    "description": "Time margins for different risk levels"
+    "description": "Time margin (seconds) used in maxSafeRuns calculation"
   }
 }

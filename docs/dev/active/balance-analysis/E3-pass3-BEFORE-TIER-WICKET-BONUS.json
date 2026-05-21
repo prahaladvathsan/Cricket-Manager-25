@@ -1,0 +1,907 @@
+{
+  "ballsPerCell": 100000,
+  "generatedAt": "2026-05-21T15:13:48.722Z",
+  "notes": "missed-wicket base 0.07 (was 0.08); catch prob = catching/20 (no speed bonus); run-out errorBase 0.025",
+  "cells": {
+    "E3.powerplay.Blockade": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blockade",
+      "phase": "powerplay",
+      "SR": 108.687,
+      "econ": 6.52122,
+      "wicketProb": 0.06908,
+      "boundaryRate": 0.1113,
+      "sixRate": 0.0172,
+      "fourRate": 0.0941,
+      "dotRate": 0.31445,
+      "aerialRate": 0.26015160057633274,
+      "sixAmongAerialRate": 0.08283567713350029,
+      "groundedInterceptionRate": 0.9490609811857547,
+      "catchConversion": 0.7482261879165771,
+      "catchAttempts": 4651,
+      "cqMean": -1.2113199999970743,
+      "contact": {
+        "middled": 72.36,
+        "edged": 10.8,
+        "missed": 16.84
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 425,
+          "percentage": 6.152287203242617
+        },
+        "caught": {
+          "count": 3480,
+          "percentage": 50.37637521713955
+        },
+        "caught_behind": {
+          "count": 1181,
+          "percentage": 17.096120440069484
+        },
+        "bowled": {
+          "count": 868,
+          "percentage": 12.565141864504922
+        },
+        "run_out": {
+          "count": 802,
+          "percentage": 11.609727851766067
+        },
+        "stumped": {
+          "count": 152,
+          "percentage": 2.200347423277359
+        }
+      }
+    },
+    "E3.powerplay.Build": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Build",
+      "phase": "powerplay",
+      "SR": 108.47800000000001,
+      "econ": 6.508679999999999,
+      "wicketProb": 0.07467,
+      "boundaryRate": 0.12028,
+      "sixRate": 0.021709999999999997,
+      "fourRate": 0.09857,
+      "dotRate": 0.33854,
+      "aerialRate": 0.3027605762750658,
+      "sixAmongAerialRate": 0.09118017639647207,
+      "groundedInterceptionRate": 0.9558659931063411,
+      "catchConversion": 0.7495688829277639,
+      "catchAttempts": 5219,
+      "cqMean": -2.300690000001624,
+      "contact": {
+        "middled": 71.34899999999999,
+        "edged": 10.89,
+        "missed": 17.761
+      },
+      "dismissals": {
+        "caught": {
+          "count": 3912,
+          "percentage": 52.39051828043391
+        },
+        "lbw": {
+          "count": 435,
+          "percentage": 5.825632784250703
+        },
+        "caught_behind": {
+          "count": 1264,
+          "percentage": 16.92781572251239
+        },
+        "stumped": {
+          "count": 146,
+          "percentage": 1.9552698540243738
+        },
+        "bowled": {
+          "count": 924,
+          "percentage": 12.374447569304941
+        },
+        "run_out": {
+          "count": 786,
+          "percentage": 10.526315789473683
+        }
+      }
+    },
+    "E3.powerplay.Rotate": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Rotate",
+      "phase": "powerplay",
+      "SR": 117.743,
+      "econ": 7.064579999999999,
+      "wicketProb": 0.08172,
+      "boundaryRate": 0.14187,
+      "sixRate": 0.02571,
+      "fourRate": 0.11616,
+      "dotRate": 0.31438,
+      "aerialRate": 0.3659313168069138,
+      "sixAmongAerialRate": 0.0887714936813756,
+      "groundedInterceptionRate": 0.9572971465008768,
+      "catchConversion": 0.7428838077461503,
+      "catchAttempts": 6429,
+      "cqMean": -1.2050699999971937,
+      "contact": {
+        "middled": 71.705,
+        "edged": 10.786,
+        "missed": 17.509
+      },
+      "dismissals": {
+        "caught_behind": {
+          "count": 1162,
+          "percentage": 14.219285364659815
+        },
+        "run_out": {
+          "count": 814,
+          "percentage": 9.96084189916789
+        },
+        "caught": {
+          "count": 4776,
+          "percentage": 58.44346549192364
+        },
+        "bowled": {
+          "count": 875,
+          "percentage": 10.70729319627998
+        },
+        "lbw": {
+          "count": 406,
+          "percentage": 4.968184043073911
+        },
+        "stumped": {
+          "count": 139,
+          "percentage": 1.7009300048947624
+        }
+      }
+    },
+    "E3.powerplay.Cruise": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Cruise",
+      "phase": "powerplay",
+      "SR": 136.389,
+      "econ": 8.18334,
+      "wicketProb": 0.0767,
+      "boundaryRate": 0.19538,
+      "sixRate": 0.03682,
+      "fourRate": 0.15856,
+      "dotRate": 0.31261,
+      "aerialRate": 0.42820551836072224,
+      "sixAmongAerialRate": 0.1090316849274504,
+      "groundedInterceptionRate": 0.9130704750077616,
+      "catchConversion": 0.7413793103448276,
+      "catchAttempts": 5858,
+      "cqMean": -0.29428000000043286,
+      "contact": {
+        "middled": 71.023,
+        "edged": 10.931000000000001,
+        "missed": 18.046
+      },
+      "dismissals": {
+        "bowled": {
+          "count": 897,
+          "percentage": 11.694915254237289
+        },
+        "caught": {
+          "count": 4343,
+          "percentage": 56.62320730117341
+        },
+        "caught_behind": {
+          "count": 1065,
+          "percentage": 13.885267275097785
+        },
+        "run_out": {
+          "count": 756,
+          "percentage": 9.856584093872229
+        },
+        "lbw": {
+          "count": 478,
+          "percentage": 6.232073011734029
+        },
+        "stumped": {
+          "count": 131,
+          "percentage": 1.7079530638852671
+        }
+      }
+    },
+    "E3.powerplay.Blitz": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blitz",
+      "phase": "powerplay",
+      "SR": 140.514,
+      "econ": 8.43084,
+      "wicketProb": 0.0859,
+      "boundaryRate": 0.20798,
+      "sixRate": 0.04936,
+      "fourRate": 0.15862,
+      "dotRate": 0.31424,
+      "aerialRate": 0.4763599326006589,
+      "sixAmongAerialRate": 0.13029591109468627,
+      "groundedInterceptionRate": 0.9470979516365295,
+      "catchConversion": 0.7366376423308775,
+      "catchAttempts": 7465,
+      "cqMean": 1.8127599999999442,
+      "contact": {
+        "middled": 71.38,
+        "edged": 10.804,
+        "missed": 17.816000000000003
+      },
+      "dismissals": {
+        "caught": {
+          "count": 5499,
+          "percentage": 64.0162980209546
+        },
+        "run_out": {
+          "count": 756,
+          "percentage": 8.800931315483119
+        },
+        "caught_behind": {
+          "count": 928,
+          "percentage": 10.80325960419092
+        },
+        "bowled": {
+          "count": 792,
+          "percentage": 9.220023282887079
+        },
+        "lbw": {
+          "count": 451,
+          "percentage": 5.250291036088475
+        },
+        "stumped": {
+          "count": 164,
+          "percentage": 1.909196740395809
+        }
+      }
+    },
+    "E3.powerplay.Hit Out/Get Out": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Hit Out/Get Out",
+      "phase": "powerplay",
+      "SR": 148.68099999999998,
+      "econ": 8.92086,
+      "wicketProb": 0.09142,
+      "boundaryRate": 0.23194,
+      "sixRate": 0.05898,
+      "fourRate": 0.17296,
+      "dotRate": 0.31366,
+      "aerialRate": 0.5223933394817631,
+      "sixAmongAerialRate": 0.14263948342160632,
+      "groundedInterceptionRate": 0.9415934821711989,
+      "catchConversion": 0.7464771011575239,
+      "catchAttempts": 7948,
+      "cqMean": 0.7953000000009343,
+      "contact": {
+        "middled": 71.17,
+        "edged": 11.019,
+        "missed": 17.811
+      },
+      "dismissals": {
+        "caught": {
+          "count": 5933,
+          "percentage": 64.89827171297308
+        },
+        "run_out": {
+          "count": 662,
+          "percentage": 7.2413038722380225
+        },
+        "lbw": {
+          "count": 426,
+          "percentage": 4.659811857361627
+        },
+        "caught_behind": {
+          "count": 1105,
+          "percentage": 12.087070662874645
+        },
+        "bowled": {
+          "count": 880,
+          "percentage": 9.625902428352658
+        },
+        "stumped": {
+          "count": 136,
+          "percentage": 1.4876394661999561
+        }
+      }
+    },
+    "E3.earlyMiddle.Blockade": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blockade",
+      "phase": "earlyMiddle",
+      "SR": 101.23100000000001,
+      "econ": 6.07386,
+      "wicketProb": 0.07906,
+      "boundaryRate": 0.0942,
+      "sixRate": 0.01295,
+      "fourRate": 0.08125,
+      "dotRate": 0.31838,
+      "aerialRate": 0.25868376488229894,
+      "sixAmongAerialRate": 0.06471440707610814,
+      "groundedInterceptionRate": 0.9578174589334915,
+      "catchConversion": 0.7479246811095364,
+      "catchAttempts": 4939,
+      "cqMean": -5.98888,
+      "contact": {
+        "middled": 70.551,
+        "edged": 11.128,
+        "missed": 18.321
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 538,
+          "percentage": 6.804958259549709
+        },
+        "caught": {
+          "count": 3694,
+          "percentage": 46.72400708322793
+        },
+        "caught_behind": {
+          "count": 1567,
+          "percentage": 19.820389577536048
+        },
+        "bowled": {
+          "count": 1093,
+          "percentage": 13.82494308120415
+        },
+        "run_out": {
+          "count": 807,
+          "percentage": 10.207437389324564
+        },
+        "stumped": {
+          "count": 207,
+          "percentage": 2.6182646091576016
+        }
+      }
+    },
+    "E3.earlyMiddle.Build": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Build",
+      "phase": "earlyMiddle",
+      "SR": 99.444,
+      "econ": 5.96664,
+      "wicketProb": 0.08467,
+      "boundaryRate": 0.10003,
+      "sixRate": 0.01462,
+      "fourRate": 0.08541,
+      "dotRate": 0.34421,
+      "aerialRate": 0.29970737108509965,
+      "sixAmongAerialRate": 0.06430047939481902,
+      "groundedInterceptionRate": 0.9649895533344627,
+      "catchConversion": 0.7409860191317145,
+      "catchAttempts": 5436,
+      "cqMean": -7.00939,
+      "contact": {
+        "middled": 69.21300000000001,
+        "edged": 11.385000000000002,
+        "missed": 19.402
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 599,
+          "percentage": 7.074524625014764
+        },
+        "bowled": {
+          "count": 1171,
+          "percentage": 13.830164166765089
+        },
+        "caught": {
+          "count": 4028,
+          "percentage": 47.57293019959844
+        },
+        "caught_behind": {
+          "count": 1632,
+          "percentage": 19.274831699539387
+        },
+        "run_out": {
+          "count": 832,
+          "percentage": 9.826384788000473
+        },
+        "stumped": {
+          "count": 205,
+          "percentage": 2.421164521081847
+        }
+      }
+    },
+    "E3.earlyMiddle.Rotate": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Rotate",
+      "phase": "earlyMiddle",
+      "SR": 108.061,
+      "econ": 6.4836599999999995,
+      "wicketProb": 0.09116,
+      "boundaryRate": 0.11849,
+      "sixRate": 0.0176,
+      "fourRate": 0.10088999999999998,
+      "dotRate": 0.31937,
+      "aerialRate": 0.3600677921908611,
+      "sixAmongAerialRate": 0.06372424780042724,
+      "groundedInterceptionRate": 0.9665077618872998,
+      "catchConversion": 0.7446070297179062,
+      "catchAttempts": 6629,
+      "cqMean": -5.94904,
+      "contact": {
+        "middled": 70.028,
+        "edged": 11.122,
+        "missed": 18.85
+      },
+      "dismissals": {
+        "caught": {
+          "count": 4936,
+          "percentage": 54.14655550680123
+        },
+        "run_out": {
+          "count": 825,
+          "percentage": 9.050021939447126
+        },
+        "caught_behind": {
+          "count": 1583,
+          "percentage": 17.365072400175517
+        },
+        "stumped": {
+          "count": 157,
+          "percentage": 1.7222465993856955
+        },
+        "bowled": {
+          "count": 1129,
+          "percentage": 12.384817902588855
+        },
+        "lbw": {
+          "count": 486,
+          "percentage": 5.33128565160158
+        }
+      }
+    },
+    "E3.earlyMiddle.Cruise": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Cruise",
+      "phase": "earlyMiddle",
+      "SR": 123.79599999999999,
+      "econ": 7.427759999999999,
+      "wicketProb": 0.08545,
+      "boundaryRate": 0.16578,
+      "sixRate": 0.026390000000000004,
+      "fourRate": 0.13939,
+      "dotRate": 0.32338,
+      "aerialRate": 0.42266488553617265,
+      "sixAmongAerialRate": 0.08177113996219751,
+      "groundedInterceptionRate": 0.9288160969081052,
+      "catchConversion": 0.7472472472472472,
+      "catchAttempts": 5994,
+      "cqMean": -5.04879,
+      "contact": {
+        "middled": 69.25099999999999,
+        "edged": 11.381,
+        "missed": 19.368
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 536,
+          "percentage": 6.272674078408426
+        },
+        "caught": {
+          "count": 4479,
+          "percentage": 52.416617905207715
+        },
+        "caught_behind": {
+          "count": 1489,
+          "percentage": 17.425394967817436
+        },
+        "run_out": {
+          "count": 753,
+          "percentage": 8.812170860152136
+        },
+        "bowled": {
+          "count": 1099,
+          "percentage": 12.86132241076653
+        },
+        "stumped": {
+          "count": 189,
+          "percentage": 2.2118197776477473
+        }
+      }
+    },
+    "E3.earlyMiddle.Blitz": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blitz",
+      "phase": "earlyMiddle",
+      "SR": 126.322,
+      "econ": 7.579319999999999,
+      "wicketProb": 0.09681,
+      "boundaryRate": 0.17584,
+      "sixRate": 0.03444,
+      "fourRate": 0.1414,
+      "dotRate": 0.32256,
+      "aerialRate": 0.47091179706205916,
+      "sixAmongAerialRate": 0.09465439054555448,
+      "groundedInterceptionRate": 0.9569471624266145,
+      "catchConversion": 0.7403628117913832,
+      "catchAttempts": 7938,
+      "cqMean": -2.92825,
+      "contact": {
+        "middled": 69.49499999999999,
+        "edged": 11.533999999999999,
+        "missed": 18.971
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 482,
+          "percentage": 4.978824501601074
+        },
+        "caught": {
+          "count": 5877,
+          "percentage": 60.70653858072513
+        },
+        "bowled": {
+          "count": 990,
+          "percentage": 10.22621629996901
+        },
+        "caught_behind": {
+          "count": 1335,
+          "percentage": 13.789897737837
+        },
+        "run_out": {
+          "count": 824,
+          "percentage": 8.511517405226734
+        },
+        "stumped": {
+          "count": 173,
+          "percentage": 1.7870054746410495
+        }
+      }
+    },
+    "E3.earlyMiddle.Hit Out/Get Out": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Hit Out/Get Out",
+      "phase": "earlyMiddle",
+      "SR": 133.293,
+      "econ": 7.997579999999999,
+      "wicketProb": 0.10087,
+      "boundaryRate": 0.19799,
+      "sixRate": 0.04242,
+      "fourRate": 0.15557,
+      "dotRate": 0.32511,
+      "aerialRate": 0.5226340128965024,
+      "sixAmongAerialRate": 0.10573280159521435,
+      "groundedInterceptionRate": 0.9548642379587938,
+      "catchConversion": 0.7381487173424754,
+      "catchAttempts": 8459,
+      "cqMean": -4.00614,
+      "contact": {
+        "middled": 69.33500000000001,
+        "edged": 11.373999999999999,
+        "missed": 19.291
+      },
+      "dismissals": {
+        "caught": {
+          "count": 6244,
+          "percentage": 61.901457321304655
+        },
+        "caught_behind": {
+          "count": 1398,
+          "percentage": 13.859423019728363
+        },
+        "bowled": {
+          "count": 1033,
+          "percentage": 10.240904134033906
+        },
+        "run_out": {
+          "count": 697,
+          "percentage": 6.909884009120651
+        },
+        "lbw": {
+          "count": 541,
+          "percentage": 5.36333895112521
+        },
+        "stumped": {
+          "count": 174,
+          "percentage": 1.724992564687221
+        }
+      }
+    },
+    "E3.death.Blockade": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blockade",
+      "phase": "death",
+      "SR": 93.399,
+      "econ": 5.60394,
+      "wicketProb": 0.08586,
+      "boundaryRate": 0.0753,
+      "sixRate": 0.00732,
+      "fourRate": 0.06798,
+      "dotRate": 0.32391,
+      "aerialRate": 0.24482177750825415,
+      "sixAmongAerialRate": 0.040292838663510765,
+      "groundedInterceptionRate": 0.9687711909775509,
+      "catchConversion": 0.7319631770498822,
+      "catchAttempts": 4671,
+      "cqMean": -11.62629999999638,
+      "contact": {
+        "middled": 68.87100000000001,
+        "edged": 11.573,
+        "missed": 19.556
+      },
+      "dismissals": {
+        "bowled": {
+          "count": 1304,
+          "percentage": 15.187514558583743
+        },
+        "caught": {
+          "count": 3419,
+          "percentage": 39.820638248311205
+        },
+        "caught_behind": {
+          "count": 2163,
+          "percentage": 25.192173305380855
+        },
+        "lbw": {
+          "count": 664,
+          "percentage": 7.733519683205217
+        },
+        "stumped": {
+          "count": 226,
+          "percentage": 2.632191940368041
+        },
+        "run_out": {
+          "count": 810,
+          "percentage": 9.433962264150944
+        }
+      }
+    },
+    "E3.death.Build": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Build",
+      "phase": "death",
+      "SR": 91.815,
+      "econ": 5.5089,
+      "wicketProb": 0.0937,
+      "boundaryRate": 0.08272,
+      "sixRate": 0.0095,
+      "fourRate": 0.07322,
+      "dotRate": 0.35135,
+      "aerialRate": 0.29155133236934516,
+      "sixAmongAerialRate": 0.04487270322611119,
+      "groundedInterceptionRate": 0.9753324002799161,
+      "catchConversion": 0.7416120323949094,
+      "catchAttempts": 5186,
+      "cqMean": -12.633369999988302,
+      "contact": {
+        "middled": 67.377,
+        "edged": 11.952,
+        "missed": 20.671
+      },
+      "dismissals": {
+        "caught": {
+          "count": 3846,
+          "percentage": 41.04589114194237
+        },
+        "run_out": {
+          "count": 852,
+          "percentage": 9.092849519743863
+        },
+        "caught_behind": {
+          "count": 2323,
+          "percentage": 24.79188900747065
+        },
+        "stumped": {
+          "count": 246,
+          "percentage": 2.625400213447172
+        },
+        "bowled": {
+          "count": 1398,
+          "percentage": 14.919957310565636
+        },
+        "lbw": {
+          "count": 705,
+          "percentage": 7.524012806830309
+        }
+      }
+    },
+    "E3.death.Rotate": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Rotate",
+      "phase": "death",
+      "SR": 97.624,
+      "econ": 5.8574399999999995,
+      "wicketProb": 0.1002,
+      "boundaryRate": 0.09556,
+      "sixRate": 0.01121,
+      "fourRate": 0.08434999999999998,
+      "dotRate": 0.3317,
+      "aerialRate": 0.3526745487808208,
+      "sixAmongAerialRate": 0.043395788169711985,
+      "groundedInterceptionRate": 0.9766946471506306,
+      "catchConversion": 0.7365123032248204,
+      "catchAttempts": 6543,
+      "cqMean": -11.54840999999712,
+      "contact": {
+        "middled": 67.694,
+        "edged": 11.891,
+        "missed": 20.415
+      },
+      "dismissals": {
+        "caught": {
+          "count": 4819,
+          "percentage": 48.0938123752495
+        },
+        "run_out": {
+          "count": 746,
+          "percentage": 7.445109780439122
+        },
+        "caught_behind": {
+          "count": 2260,
+          "percentage": 22.55489021956088
+        },
+        "lbw": {
+          "count": 681,
+          "percentage": 6.796407185628743
+        },
+        "stumped": {
+          "count": 214,
+          "percentage": 2.1357285429141717
+        },
+        "bowled": {
+          "count": 1300,
+          "percentage": 12.974051896207584
+        }
+      }
+    },
+    "E3.death.Cruise": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Cruise",
+      "phase": "death",
+      "SR": 110.792,
+      "econ": 6.647519999999999,
+      "wicketProb": 0.09855,
+      "boundaryRate": 0.13758,
+      "sixRate": 0.01592,
+      "fourRate": 0.12166,
+      "dotRate": 0.33195,
+      "aerialRate": 0.4197170017482518,
+      "sixAmongAerialRate": 0.051806052717214446,
+      "groundedInterceptionRate": 0.9450877936261357,
+      "catchConversion": 0.7484492327783219,
+      "catchAttempts": 6126,
+      "cqMean": -10.682650000005628,
+      "contact": {
+        "middled": 67.417,
+        "edged": 11.903,
+        "missed": 20.68
+      },
+      "dismissals": {
+        "caught": {
+          "count": 4585,
+          "percentage": 46.5246067985794
+        },
+        "run_out": {
+          "count": 814,
+          "percentage": 8.259766615931
+        },
+        "caught_behind": {
+          "count": 2162,
+          "percentage": 21.938102486047693
+        },
+        "bowled": {
+          "count": 1364,
+          "percentage": 13.840690005073567
+        },
+        "lbw": {
+          "count": 685,
+          "percentage": 6.950786402841197
+        },
+        "stumped": {
+          "count": 245,
+          "percentage": 2.486047691527143
+        }
+      }
+    },
+    "E3.death.Blitz": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Blitz",
+      "phase": "death",
+      "SR": 112.553,
+      "econ": 6.7531799999999995,
+      "wicketProb": 0.10943,
+      "boundaryRate": 0.14569,
+      "sixRate": 0.02265,
+      "fourRate": 0.12304,
+      "dotRate": 0.33206,
+      "aerialRate": 0.4661148543728649,
+      "sixAmongAerialRate": 0.06561413673232909,
+      "groundedInterceptionRate": 0.9685373934596222,
+      "catchConversion": 0.7369384765625,
+      "catchAttempts": 8192,
+      "cqMean": -8.625710000007354,
+      "contact": {
+        "middled": 67.73,
+        "edged": 11.777999999999999,
+        "missed": 20.491999999999997
+      },
+      "dismissals": {
+        "caught_behind": {
+          "count": 1903,
+          "percentage": 17.3901124006214
+        },
+        "bowled": {
+          "count": 1316,
+          "percentage": 12.025952663803345
+        },
+        "caught": {
+          "count": 6037,
+          "percentage": 55.16768710591246
+        },
+        "run_out": {
+          "count": 827,
+          "percentage": 7.557342593438728
+        },
+        "lbw": {
+          "count": 662,
+          "percentage": 6.049529379512017
+        },
+        "stumped": {
+          "count": 198,
+          "percentage": 1.8093758567120533
+        }
+      }
+    },
+    "E3.death.Hit Out/Get Out": {
+      "striker": "Brian Bennett",
+      "bowler": "Sompal Kami",
+      "tier": "Hit Out/Get Out",
+      "phase": "death",
+      "SR": 118.823,
+      "econ": 7.129379999999999,
+      "wicketProb": 0.11601,
+      "boundaryRate": 0.16662,
+      "sixRate": 0.02818,
+      "fourRate": 0.13844,
+      "dotRate": 0.33051,
+      "aerialRate": 0.516125981273054,
+      "sixAmongAerialRate": 0.07377156470064661,
+      "groundedInterceptionRate": 0.9662124427566179,
+      "catchConversion": 0.7402942152416768,
+      "catchAttempts": 9041,
+      "cqMean": -9.580640000007522,
+      "contact": {
+        "middled": 67.857,
+        "edged": 11.846,
+        "missed": 20.297
+      },
+      "dismissals": {
+        "lbw": {
+          "count": 647,
+          "percentage": 5.577105421946384
+        },
+        "caught_behind": {
+          "count": 1987,
+          "percentage": 17.12783380743039
+        },
+        "caught": {
+          "count": 6693,
+          "percentage": 57.693302301525726
+        },
+        "run_out": {
+          "count": 737,
+          "percentage": 6.352900612016206
+        },
+        "bowled": {
+          "count": 1332,
+          "percentage": 11.481768813033359
+        },
+        "stumped": {
+          "count": 205,
+          "percentage": 1.767089044047927
+        }
+      }
+    }
+  }
+}

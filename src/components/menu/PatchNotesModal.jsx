@@ -7,11 +7,27 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.3.0';
+const CURRENT_VERSION = '1.3.1';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'The Press Box — WPL Times Launch';
+const RELEASE_TAGLINE = 'Match Engine Balance Pass';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.3.1 Match Engine Balance Pass',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
+    items: [
+      '⚖️ **Acceleration tier risk/reward fixed** — Hit Out / Get Out and Blitz now carry a real wicket cost. Cruise is the new neutral-context optimum. The "always pick HOGO" exploit is gone.',
+      '🎯 **Aggressive bowling plans bite** — Attacking Line, Bouncer Barrage, Stumps Attack, Turn Candy Bag now visibly increase wicket chance per ball. Defensive plans trade wickets for runs as they should.',
+      '🏏 **Death overs feel like death overs** — Striker strength bonus ramps over 17→20. Pace bowlers lose swing on the old ball. Spinners hold up better. Match-mode death RR finally lands in IRL T20 range.',
+      '🌅 **New ball graduated** — Swing boost for pace bowlers now decays linearly across the powerplay (over 1: +5 swing, over 6: +0), instead of a flat +2 cliff at over 4.',
+      '🔧 **Engine cleanup** — Dropped a stub config-loader and dead probability-engine that were never invoked. Removed five unused config files. The match engine is the same shape, just lighter.',
+      '🧪 **Browser balance-test suite at `/testing`** — Ball Mode for single-context sweeps, Match Mode for full-innings batches, archetype presets for one-click matchup loading, and IRL benchmark pass/fail checks.',
+    ],
+    note: 'A focused balance pass. Tier choice now matters. Bowling plans now matter. Death overs now feel like death overs. Open the in-match tactics panel and try different tiers — you\'ll feel it. ⚖️'
+  },
   {
     icon: Newspaper,
     title: 'v1.3.0 The Press Box — WPL Times Launch',

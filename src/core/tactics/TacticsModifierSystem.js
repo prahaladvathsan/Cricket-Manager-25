@@ -123,11 +123,14 @@ class TacticsModifierSystem {
     // ========== STAGE 7: Contextual Modifiers ==========
     const contextualResult = this.applyContextualModifiers(modifiedBowler, modifiedStriker, nonStriker, matchSituation);
     modifiedBowler = contextualResult.bowler;
+    modifiedStriker = contextualResult.striker;
     modifierMetadata.stages.push({
       stage: 7,
       name: 'Contextual',
       leftRightActive: contextualResult.leftRightActive,
-      newBallActive: contextualResult.newBallActive
+      newBallActive: contextualResult.newBallActive,
+      oldBallActive: contextualResult.oldBallActive,
+      deathPowerActive: contextualResult.deathPowerActive
     });
 
     // ========== Calculate Mentalities ==========
@@ -420,9 +423,25 @@ class TacticsModifierSystem {
           if (stage.newBallActive) {
             bowlerBreakdown.contextModifiers.push({
               name: 'New Ball Bonus',
-              value: 2,
-              description: '+2 swing',
-              condition: 'over <= 6 (new ball)'
+              value: 0, // value per ball varies — actual swing delta is config.swingByOver[over]
+              description: '+swing (graduated, overs 1-6)',
+              condition: 'pace bowler, overs 1-6'
+            });
+          }
+          if (stage.oldBallActive) {
+            bowlerBreakdown.contextModifiers.push({
+              name: 'Old Ball Penalty',
+              value: 0, // value per ball varies — actual swing delta is config.swingByOver[over]
+              description: '-swing (graduated, overs 17-20)',
+              condition: 'pace bowler, overs 17-20'
+            });
+          }
+          if (stage.deathPowerActive) {
+            strikerBreakdown.contextModifiers.push({
+              name: 'Death Overs Power',
+              value: 0, // varies per over (0/+1/+2/+3)
+              description: '+strength (graduated, overs 17-20)',
+              condition: 'overs 17-20'
             });
           }
           break;
@@ -565,20 +584,24 @@ class TacticsModifierSystem {
   }
 
   /**
-   * Stage 7: Apply contextual modifiers
+   * Stage 7: Apply contextual modifiers (bowler + striker).
+   *
+   * Wraps ContextualModifierManager.applyAllContextualModifiers, which now
+   * returns BOTH a modified bowler and a modified striker (the striker gets
+   * the death-overs strength bonus).
    */
   applyContextualModifiers(bowler, striker, nonStriker, matchSituation) {
     const over = matchSituation.over;
-
-    const leftRightActive = contextualModifierManager.checkLeftRightCombo(striker, nonStriker);
-    const newBallActive = contextualModifierManager.checkNewBallBoost(over, bowler.bowlingType);
-
-    const modifiedBowler = contextualModifierManager.applyAllContextualModifiers(bowler, striker, nonStriker, over);
+    const { bowler: modifiedBowler, striker: modifiedStriker, flags } =
+      contextualModifierManager.applyAllContextualModifiers(bowler, striker, nonStriker, over);
 
     return {
       bowler: modifiedBowler,
-      leftRightActive,
-      newBallActive
+      striker: modifiedStriker,
+      leftRightActive: flags.leftRightActive,
+      newBallActive: flags.newBallActive,
+      oldBallActive: flags.oldBallActive,
+      deathPowerActive: flags.deathPowerActive
     };
   }
 

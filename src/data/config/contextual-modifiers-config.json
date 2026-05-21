@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Contextual modifiers for situational match effects in T20 cricket",
   "lastUpdated": "2025-01-10",
 
@@ -17,18 +17,49 @@
   },
 
   "newBallBoost": {
-    "description": "Swing boost for pace bowlers with new ball in early overs",
+    "description": "Swing boost for pace bowlers across the powerplay, decaying linearly",
     "trigger": {
-      "oversRange": [1, 4],
-      "bowlerType": "pace",
-      "condition": "over >= 1 && over <= 4 && bowlerType === 'pace'"
+      "oversRange": [1, 6],
+      "bowlerType": "pace"
     },
-    "effects": {
-      "bowler": {
-        "swing": 2
-      }
+    "swingByOver": {
+      "1": 5,
+      "2": 4,
+      "3": 3,
+      "4": 2,
+      "5": 1,
+      "6": 0
     },
-    "reasoning": "New ball swings more in first 4 overs"
+    "reasoning": "New ball swings most in over 1 and progressively loses movement through over 6"
+  },
+
+  "oldBallPenalty": {
+    "description": "Old-ball swing penalty for pace bowlers in the death overs",
+    "trigger": {
+      "oversRange": [17, 20],
+      "bowlerType": "pace"
+    },
+    "swingByOver": {
+      "17": 0,
+      "18": -1,
+      "19": -2,
+      "20": -3
+    },
+    "reasoning": "Old ball loses shape and shine — pace bowlers can't get the same movement"
+  },
+
+  "deathOversBatterPower": {
+    "description": "Striker strength bonus in the death overs (batter goes for power hitting)",
+    "trigger": {
+      "oversRange": [17, 20]
+    },
+    "strengthByOver": {
+      "17": 0,
+      "18": 1,
+      "19": 2,
+      "20": 3
+    },
+    "reasoning": "Death-overs intent — batters back themselves to hit harder as the innings closes"
   },
 
   "usage": {
