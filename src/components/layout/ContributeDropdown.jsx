@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Coffee, Bug, MessageSquare, Heart, ChevronDown } from 'lucide-react';
 import BugReportModal from '../shared/BugReportModal';
 import FeedbackModal from '../shared/FeedbackModal';
+import SupportModal from '../shared/SupportModal';
 
 const ContributeDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [showBugReport, setShowBugReport] = useState(false);
     const [showFeedback, setShowFeedback] = useState(false);
+    const [showSupport, setShowSupport] = useState(false);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -26,6 +28,7 @@ const ContributeDropdown = () => {
         setIsOpen(false);
         if (action === 'bug') setShowBugReport(true);
         if (action === 'feedback') setShowFeedback(true);
+        if (action === 'support') setShowSupport(true);
     };
 
     return (
@@ -50,16 +53,13 @@ const ContributeDropdown = () => {
                             <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Support & Help</p>
                         </div>
 
-                        <a
-                            href="https://ko-fi.com/prahaladvathsan"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-amber-500/10 hover:text-amber-500 transition-colors cursor-pointer"
-                            onClick={() => setIsOpen(false)}
+                        <button
+                            onClick={() => handleAction('support')}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-amber-500/10 hover:text-amber-500 transition-colors text-left"
                         >
                             <Coffee className="w-4 h-4 text-amber-500" />
-                            <span>Buy me a coffee</span>
-                        </a>
+                            <span>Support the developer</span>
+                        </button>
 
                         <button
                             onClick={() => handleAction('bug')}
@@ -82,6 +82,7 @@ const ContributeDropdown = () => {
 
             <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />
             <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+            <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />
         </>
     );
 };
