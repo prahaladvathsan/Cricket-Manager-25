@@ -27,30 +27,15 @@
     }
   },
 
-  "bowling": {
-    "attacking": {
-      "wicketProbability": 0.70,
-      "description": "Aggressive bowling approach targeting wickets"
-    },
-    "neutral": {
-      "wicketProbability": 0.50,
-      "description": "Balanced bowling approach"
-    },
-    "defensive": {
-      "wicketProbability": 0.30,
-      "description": "Conservative bowling approach focusing on containment"
-    }
-  },
-
   "contactThresholds": {
     "description": "Contact type probability thresholds based on decision score delta",
     "baseProbabilityMatrix": {
       "description": "Base probabilities based on batting decision score minus bowling decision score",
-      "-2": { "missed": 0.32, "edged": 0.17, "middled": 0.51 },
-      "-1": { "missed": 0.26, "edged": 0.15, "middled": 0.59 },
-      "0": { "missed": 0.20, "edged": 0.13, "middled": 0.67 },
-      "1": { "missed": 0.14, "edged": 0.11, "middled": 0.75 },
-      "2": { "missed": 0.08, "edged": 0.09, "middled": 0.83 } 
+      "-2": { "missed": 0.30, "edged": 0.15, "middled": 0.55 },
+      "-1": { "missed": 0.24, "edged": 0.13, "middled": 0.63 },
+      "0": { "missed": 0.18, "edged": 0.11, "middled": 0.71 },
+      "1": { "missed": 0.12, "edged": 0.09, "middled": 0.79 },
+      "2": { "missed": 0.06, "edged": 0.07, "middled": 0.87 } 
     },
     "executionAdjustments": {
       "description": "Probability adjustments per execution score difference",
@@ -85,11 +70,6 @@
       "speedLimits": {
         "min": 10,
         "max": 35
-      },
-      "fieldingResolution": {
-        "speedLow": { "caught": 0.50, "runs": 0.40, "boundary": 0.10 },
-        "speedMedium": { "caught": 0.30, "runs": 0.50, "boundary": 0.20 },
-        "speedHigh": { "caught": 0.15, "runs": 0.35, "boundary": 0.50 }
       }
     }
   },
@@ -102,7 +82,7 @@
       "stumped": 0.1
     },
     "wicketProbability": {
-      "base": 0.08,
+      "base": 0.05,
       "maxProbability": 0.9,
       "adjustmentScale": 100,
       "contactQualityAdjustment": {
@@ -112,6 +92,15 @@
         "negative": {
           "divisor": 3
         }
+      },
+      "tierWicketBonus": {
+        "description": "Additive % wicket-probability bonus per acceleration tier. Range 0% (Blockade) to 2% (HOGO).",
+        "Blockade": 0.000,
+        "Build": 0.004,
+        "Rotate": 0.008,
+        "Cruise": 0.012,
+        "Blitz": 0.016,
+        "Hit Out/Get Out": 0.020
       }
     }
   }

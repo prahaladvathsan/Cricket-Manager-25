@@ -1,0 +1,31 @@
+[
+  {
+    "when": { "stageLabel": "Final" },
+    "body": [
+      "It was the Final. There is no second chance, no qualifier safety net — ${winner.name} have the trophy, ${loser.name} have the long winter to study what one extra partnership or one tighter over might have done."
+    ]
+  },
+  {
+    "when": { "stageLabel": "Qualifier 1" },
+    "body": [
+      "Qualifier 1 done. ${winner.name} go straight through to the Final and get four days to recover; ${loser.name} drop to Qualifier 2, where the survival math gets cruel quickly."
+    ]
+  },
+  {
+    "when": { "stageLabel": "Qualifier 2" },
+    "body": [
+      "Qualifier 2 settled. ${winner.name} book the second berth in the Final; ${loser.name}'s season ends here, with all the obvious lessons and a few less-obvious ones for the offseason notebook."
+    ]
+  },
+  {
+    "when": { "stageLabel": "Eliminator" },
+    "body": [
+      "The Eliminator delivered the night's most efficient cruelty. ${winner.name} march into Qualifier 2 with their season still alive; ${loser.name} are out, the campaign ended at the first knock-out hurdle."
+    ]
+  },
+  {
+    "body": [
+      "Playoff cricket has its own gravity. ${winner.name} survive the round and turn their attention to the next; ${loser.name} are left to weigh what carries forward and what does not."
+    ]
+  }
+]

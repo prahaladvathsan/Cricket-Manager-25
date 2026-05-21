@@ -19,6 +19,7 @@ import { getTransferManager, getHasRunPreReleases, setHasRunPreReleases } from '
 import { indexedDBStorage } from '../../utils/indexedDBStorage';
 import RetentionEngine from '../retention/RetentionEngine';
 import RetentionAI from '../retention/RetentionAI';
+import { getNewsDispatcher } from '../news/newsDispatcherSingleton';
 // Retention state now lives in gameStore + teamStore
 
 /**
@@ -909,6 +910,70 @@ class SimulationEngine {
     this.gameStore.setState({ calendarEvents: updatedEvents });
 
     console.log(`✅ Playoffs populated: ${top4[0].clubName} vs ${top4[1].clubName} (Q1), ${top4[2].clubName} vs ${top4[3].clubName} (Eliminator)`);
+
+    this.emitPlayoffQualifiedNews(top4);
+  }
+
+  /**
+   * Emit a `playoff.qualified` news event for each of the top-4 teams.
+   * @private
+   */
+  emitPlayoffQualifiedNews(top4) {
+    try {
+      const gs = this.gameStore.getState();
+      const season = gs.currentSeason || 0;
+      const gameDay = gs.gameDay || 0;
+      const date = gs.currentDate || new Date().toISOString();
+      const userTeamId = this.teamStore.getState().userTeamId;
+      const dispatcher = getNewsDispatcher();
+
+      const topFour = top4.map((t, idx) => ({
+        teamId: t.clubId,
+        name: t.clubName,
+        seed: idx + 1,
+        points: t.points
+      }));
+
+      top4.forEach((team, idx) => {
+        const seed = idx + 1;
+        const qualifiedAs =
+          seed === 1 ? 'Q1' :
+          seed === 2 ? 'Q1' :
+          'Eliminator';
+
+        dispatcher.emit({
+          type: 'playoff.qualified',
+          season,
+          gameDay,
+          date,
+          payload: {
+            team: {
+              id: team.clubId,
+              name: team.clubName
+            },
+            qualification: {
+              seed,
+              points: team.points,
+              wins: team.won,
+              losses: team.lost,
+              netRunRate: (team.netRunRate >= 0 ? '+' : '') + team.netRunRate.toFixed(2),
+              qualifiedAs
+            },
+            standings: {
+              leagueLeader: {
+                teamId: top4[0].clubId,
+                name: top4[0].clubName,
+                points: top4[0].points
+              },
+              topFour
+            },
+            isUserTeam: userTeamId === team.clubId
+          }
+        });
+      });
+    } catch (err) {
+      console.error('[SimulationEngine] Failed to emit playoff.qualified news:', err);
+    }
   }
 
   /**
@@ -1051,14 +1116,10 @@ class SimulationEngine {
         playerOfMatch: result.playerOfMatch
       };
 
-      // Record result with full scorecard for clickable results
+      // Record result with full scorecard for clickable results.
+      // Standings are now updated atomically inside recordResult() — no
+      // separate updateStandingsForMatch call needed.
       this.leagueStore.getState().recordResult(result, fullScorecard);
-      // Standings reflect the regular season only — playoff results must not pollute the table
-      const isPlayoffMatch = result.type === 'playoff' || result.matchId?.startsWith('playoff_');
-      if (!isPlayoffMatch) {
-        // Use incremental standings update (O(1)) instead of full recalculation (O(n))
-        this.leagueStore.getState().updateStandingsForMatch(result);
-      }
 
       // Emit match event for live feed
       this.emitEvent('match', {

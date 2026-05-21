@@ -41,6 +41,7 @@ import { getGameLogo } from './utils/assetHelpers';
 import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBStorage';
 import { waitForHydration } from './utils/storeHydration';
 import memoryDebugger from './utils/MemoryDebugger';
+import { registerInboxSubscriber } from './core/news/newsDispatcherSingleton';
 
 /**
  * Validate that game state is properly populated
@@ -175,6 +176,10 @@ function App() {
 
                         initializePlayers(e.data.players);
                         console.log('✅ Players loaded:', e.data.players.length);
+
+                        // Wire NewsDispatcher → inboxStore bridge once stores are hydrated.
+                        // Subscriber is idempotent so safe across HMR.
+                        await registerInboxSubscriber();
 
                         setDataLoaded(true);
                         playerWorker.terminate(); // Clean up worker

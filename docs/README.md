@@ -18,6 +18,7 @@ This documentation provides comprehensive guides for developing and understandin
 - **[Auction System](core-systems/auction-system.md)** - Player trading mechanics
 - **[Calendar System](core-systems/calendar-system.md)** - Day-by-day progression and event scheduling
 - **[Messaging System](core-systems/messaging-system.md)** - Inbox notifications and in-game communications
+- **[News System](core-systems/news-system.md)** - News Dispatcher, block-based match reports, reporter personas, inline clickable entities
 - **[AI Opponents](core-systems/ai-opponents.md)** - Computer team management *(Coming Soon)*
 
 ### 🎨 Frontend & UI
@@ -97,6 +98,17 @@ This documentation provides comprehensive guides for developing and understandin
   - Navigation history for back button
   - League fixtures calendar grid view
   - Player card modal component
+- **News System & Home Dashboard Redesign** (May 2026)
+  - NewsDispatcher pub/sub + inboxSubscriber bridge
+  - Template-pool engine + block-based assembler for match reports
+  - 9 deep cricket flags (milestone heartbreak, lone wolf, captain's innings, etc.)
+  - Reporter persona pool (Bhogle, Kimber, Monga, Manjrekar, Bishop, Nicholas, Benaud, Naya Singh)
+  - Inline clickable entity sentinels (`[[PLAYER:id|name]]`)
+  - Importance scoring + user-team boost on the Home news carousel
+  - Home dashboard rewrite — eyebrows replace card headers, marquee/data tiers, equal-height pairs
+  - Standings Form column for every team; League page Form column added
+  - Atomic standings update inside `recordResult` so news closing lines reflect post-match table
+  - Thin Next Match card replacing the larger best-performers grid
 
 ### 🔄 In Progress
 - UI component library documentation (additional components)
@@ -128,5 +140,5 @@ This documentation is actively maintained. When adding new features or modifying
 
 ---
 
-**Last Updated**: September 2024
-**Version**: 1.0.0
+**Last Updated**: May 2026
+**Version**: 1.2.5

@@ -70,7 +70,11 @@
       "Bash(python3:*)",
       "Bash(grep -n \"select\\\\|Select\\\\|dropdown\\\\|Dropdown\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/tabs/FieldVisualEditor.jsx 2>/dev/null | head -5\ngrep -n \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/TacticsPage.jsx 2>/dev/null | head -5\ngrep -rn \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/squad 2>/dev/null | head -5\ngrep -rn \"<select\" /c/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/team/Squad.jsx 2>/dev/null | head -5)",
       "Bash(grep -rn \"<select\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/match/matchday/\" 2>/dev/null | head -5\ngrep -rn \"className.*select\\\\|select.*className\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/\" 2>/dev/null | grep -v \".jsx:.*select\\\\b\" | head -5\ngrep -n \"bg-bg-secondary\\\\|bg-bg-tertiary\" \"C:/Users/Praha/Documents/Projects/Cricket-Manager-25/src/components/tactics/TacticsPage.jsx\" | head -5)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(gh run *)",
+      "Bash(mkdir -p \"/c/Users/Vathsan Prahalad/.claude/projects/C--Users-Vathsan-Prahalad-Documents-Cricket-Manager-25/memory/\")",
+      "Bash(mv \"C:/Users/Vathsan Prahalad/Documents/Cricket-Manager-25/memory/feedback_no_push_without_approval.md\" \"/c/Users/Vathsan Prahalad/.claude/projects/C--Users-Vathsan-Prahalad-Documents-Cricket-Manager-25/memory/feedback_no_push_without_approval.md\")",
+      "Skill(frontend-design:frontend-design)"
     ],
     "deny": []
   }

@@ -16,6 +16,44 @@ class EnergyManager {
     this.depletionRates = energyConfig.depletionRates;
     this.limits = energyConfig.limits;
     this.fatigueInjuryRules = energyConfig.fatigueAndInjury;
+    this.staminaScalingFactor = energyConfig.depletionRates.staminaScaling.factorPerPoint;
+    this.injurySeverity = energyConfig.fatigueAndInjury.injurySeverity;
+  }
+
+  /**
+   * Classify injury severity by duration using config thresholds
+   * @param {number} duration - Injury duration in days
+   * @returns {string|null} 'minor' | 'major' | 'severe' | null
+   */
+  getInjurySeverity(duration) {
+    if (!duration || duration <= 0) return null;
+    if (duration <= this.injurySeverity.minorMaxDuration) return 'minor';
+    if (duration <= this.injurySeverity.majorMaxDuration) return 'major';
+    return 'severe';
+  }
+
+  /**
+   * Describe an energy band for UI breakdown purposes.
+   * Returns null when there are no penalties (Fresh).
+   * @param {number} energy - Energy value (0-100)
+   * @returns {{name: string, modifier: number, scope: 'all'|'physical', conditionStr: string, range: number[]}|null}
+   */
+  describeBand(energy) {
+    const name = this.getEnergyLevel(energy);
+    const levelData = this.levels[name];
+    if (!levelData) return null;
+    const penalties = levelData.penalties || {};
+    if (Object.keys(penalties).length === 0) return null;
+
+    const isAll = penalties.allAttributes !== undefined;
+    const modifier = isAll
+      ? penalties.allAttributes
+      : Object.values(penalties)[0];
+    const scope = isAll ? 'all' : 'physical';
+    const [min, max] = levelData.range;
+    const conditionStr = max >= 100 ? `energy >= ${min}` : `energy >= ${min} and <= ${max}`;
+
+    return { name, modifier, scope, conditionStr, range: levelData.range };
   }
 
   /**
@@ -128,8 +166,8 @@ class EnergyManager {
    * @returns {number} Scaled depletion (negative)
    */
   calculateStaminaScaledDepletion(baseDepletion, stamina) {
-    // Formula: actualDepletion = baseDepletion × (1 - 0.01 × stamina)
-    const scalingFactor = 1 - (0.01 * stamina);
+    // Formula: actualDepletion = baseDepletion × (1 - factorPerPoint × stamina)
+    const scalingFactor = 1 - (this.staminaScalingFactor * stamina);
     return baseDepletion * scalingFactor;
   }
 

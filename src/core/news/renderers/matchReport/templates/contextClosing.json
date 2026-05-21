@@ -1,0 +1,25 @@
+[
+  {
+    "when": { "isPlayoff": true },
+    "body": [
+      "The bracket's next instalment is already inked. Tonight's result is filed, the trophy still pending, and the road through the WPL playoffs has one fewer team on it."
+    ]
+  },
+  {
+    "when": { "hasStandings": true },
+    "body": [
+      "The win lifts ${winner.name} to ${winnerPosition} on ${winnerPoints} points. ${loser.name} stay where they were on ${loserPoints} — the league table updates without much drama, but the gap at the top is rarely as steady as it looks."
+    ]
+  },
+  {
+    "when": { "hasStandings": true },
+    "body": [
+      "${winner.name} climb the table to ${winnerPosition} on ${winnerPoints} points; ${loser.name} are left to weigh how the night could have gone differently. Plenty of cricket still to be played."
+    ]
+  },
+  {
+    "body": [
+      "${winner.name} bank the win and the points; ${loser.name} regroup. The WPL grind continues — every result is a single brick in the season's wall, and tonight's just went into place."
+    ]
+  }
+]

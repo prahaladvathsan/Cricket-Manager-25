@@ -1,0 +1,25 @@
+[
+  {
+    "when": { "hasClutchDetail": true, "clutch.finisher.isSix": true },
+    "body": [
+      "${clutch.finisher.linked} closed it with a six off ${clutch.bowler.linked}. ${clutch.dots} dots and ${clutch.boundaries} boundaries in the final stretch — the kind of last over you replay until the rest of the match makes sense."
+    ]
+  },
+  {
+    "when": { "hasClutchDetail": true, "clutch.finisher.isFour": true },
+    "body": [
+      "${clutch.finisher.linked} laced the winning boundary off ${clutch.bowler.linked}, settling a closing burst that featured ${clutch.dots} dot balls and ${clutch.boundaries} boundaries. Terse, declarative cricket."
+    ]
+  },
+  {
+    "when": { "hasClutchDetail": true },
+    "body": [
+      "It came down to ${clutch.finisher.linked} and ${clutch.bowler.linked}, who exchanged the closing balls. ${clutch.finisher.runs} off the deciding delivery, ${clutch.dots} dots in the final passage — fine margins, decided at the very end."
+    ]
+  },
+  {
+    "body": [
+      "${winner.name} held their nerve at the death. ${margin} doesn't quite capture how tight the closing overs felt — the win was earned ball by ball, with both sides knowing the next mistake would decide it."
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "when": { "anchor.type": "batting" },
+    "body": [
+      "The anchor was ${anchor.player.linked}. ${anchor.stats.runs} off ${anchor.stats.balls}, ${anchor.stats.fours} fours and ${anchor.stats.sixes} maximums — the kind of innings that drags a total into a winning bracket and refuses to leave the captain a single awkward conversation in the dressing room."
+    ]
+  },
+  {
+    "when": { "anchor.type": "batting" },
+    "body": [
+      "${anchor.player.linked} was the difference for ${anchor.team.linked}. ${anchor.stats.runs} (${anchor.stats.balls}) at a strike rate of ${anchor.stats.strikeRate}, played with a clarity that the scorecard alone undersells. What a player, what a knock when it mattered most."
+    ]
+  },
+  {
+    "when": { "anchor.type": "batting" },
+    "body": [
+      "The night belonged to ${anchor.player.linked}. ${anchor.stats.runs} from ${anchor.stats.balls} balls, ${anchor.stats.fours} fours and ${anchor.stats.sixes} sixes, and a tempo that bent the match's spine without ever announcing it."
+    ]
+  },
+  {
+    "when": { "anchor.type": "bowling" },
+    "body": [
+      "${anchor.player.linked} dictated terms with the ball — ${anchor.stats.wickets} for ${anchor.stats.runs} from ${anchor.stats.overs} overs at an economy of ${anchor.stats.economy}. Precision, patience, and a captain who set the field exactly the way the spell needed."
+    ]
+  },
+  {
+    "when": { "anchor.type": "bowling" },
+    "body": [
+      "Pick of the bowlers was ${anchor.player.linked} of ${anchor.team.linked}. ${anchor.stats.wickets}-${anchor.stats.runs} from ${anchor.stats.overs} — the kind of spell that bends a match's spine without ever asking for the spotlight."
+    ]
+  },
+  {
+    "when": { "anchor.type": "bowling" },
+    "body": [
+      "${anchor.player.linked} produced the spell of the night. ${anchor.stats.wickets} for ${anchor.stats.runs}, ${anchor.stats.economy} runs an over, and a few balls that the batters will be watching back well into next week."
+    ]
+  }
+]

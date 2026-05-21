@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "description": "Energy system configuration for player fatigue and performance degradation in matches",
-  "lastUpdated": "2025-01-10",
+  "version": "1.1.0",
+  "description": "Single source of truth for the energy / fitness / fatigue / injury subsystem. All consumers (EnergyManager, gameStore, playerStore, MatchEngine) read from this file — no hardcoded values in code.",
+  "lastUpdated": "2026-05-20",
   "energyLevels": {
     "Fresh": {
       "range": [
@@ -98,53 +98,58 @@
       }
     },
     "staminaScaling": {
-      "formula": "actualDepletion = baseDepletion ×- (1 - 0.01 × staminaAttribute)",
-      "description": "Energy depletion is reduced by 1% per stamina point",
+      "factorPerPoint": 0.01,
+      "formula": "actualDepletion = baseDepletion × (1 - factorPerPoint × stamina)",
+      "description": "Energy depletion is reduced by factorPerPoint per stamina point (default: 1% per stamina point)",
       "example": "Player with stamina=10 loses 0.9 energy instead of 1.0 per action"
     }
   },
-  "matchLevelTracking": {
-    "matchStart": {
-      "description": "Energy = current fitness value at match start",
-      "initialization": "energy = player.condition.fitness"
+  "fitness": {
+    "cap": {
+      "base": 50,
+      "multiplier": 2.5,
+      "maxValue": 100,
+      "formula": "min(base + maxFitness × multiplier, maxValue)",
+      "description": "Universal fitness ceiling — used for both initial fitness (playerStore.initializeAllPlayerConditions) and daily rest-day recovery (gameStore advanceDay)."
     },
-    "matchEnd": {
-      "description": "Fitness = energy value at match end",
-      "update": "player.condition.fitness = energy"
+    "recoveryRule": {
+      "source": "endurance",
+      "description": "On each rest day (non-match), fitness += player.attributes.physical.endurance, capped at fitness.cap. Paused while injured."
     },
-    "recovery": {
-      "description": "Fitness recovers per rest day (non-match days) based on endurance",
-      "formula": "fitness += endurance",
-      "cap": "min(maxFitness × 5, 100)",
-      "conditions": [
-        "Only on rest days (not match days)",
-        "Player must not be injured"
-      ]
+    "matchLevelTracking": {
+      "matchStart": "energy = player.condition.fitness",
+      "matchEnd": "player.condition.fitness = clampEnergy(endOfMatchEnergy)"
     }
   },
   "fatigueAndInjury": {
     "fatigueIncrease": {
-      "description": "After each match, fatigue increases based on energy depletion",
-      "probability": "1 - (energyAtMatchEnd / 100)",
+      "description": "After each match, fatigue increases probabilistically based on energy depletion",
+      "probabilityFormula": "(100 - energyAtMatchEnd) / 100",
       "change": 1,
       "example": "If energy=40 at match end, 60% chance fatigue increases by 1"
     },
     "fatigueRecovery": {
-      "description": "Fatigue reduces after 10 days of rest. Base 0.2/day from day 11, with +1.0 bonus every 7th rest day (starting from Day 14).",
-      "reduction": "0.2 per day (after day 10) + 1.0 bonus (every 7 days, after 10 day threshold)",
-      "limits": {
-        "min": 0,
-        "max": 100
-      }
+      "startDay": 6,
+      "baseRecoveryPerDay": 0.2,
+      "bonusInterval": 7,
+      "bonusAmount": 1,
+      "description": "Fatigue recovery kicks in on rest day >= startDay. Recovers baseRecoveryPerDay/day, plus bonusAmount every bonusInterval-th rest day (gated by startDay).",
+      "example": "With startDay=6, bonusInterval=7: base recovery from day 6; first bonus on day 7, then day 14, 21, ..."
     },
     "injuryTrigger": {
-      "description": "Injury probability equals fatigue percentage",
-      "probability": "fatigue / 100",
+      "description": "On match finalize, injury rolls with probability = fatigue/100; duration is inverse-linear weighted (shorter injuries more likely)",
+      "probabilityFormula": "fatigue / 100",
       "duration": {
         "min": 1,
         "max": 90,
-        "description": "Random duration in days with inverse linear weighting (shorter injuries more likely)"
-      }
+        "weighting": "inverse-linear: weight(d) = (max - d + 1)"
+      },
+      "fatigueResetOnInjury": true
+    },
+    "injurySeverity": {
+      "minorMaxDuration": 30,
+      "majorMaxDuration": 60,
+      "description": "Severity classification by duration: <= minorMaxDuration => 'minor'; <= majorMaxDuration => 'major'; else 'severe'"
     }
   },
   "limits": {

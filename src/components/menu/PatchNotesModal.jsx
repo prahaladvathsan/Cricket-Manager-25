@@ -4,14 +4,46 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.2.5';
+const CURRENT_VERSION = '1.3.1';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Matchday Polish & Bug Fixes';
+const RELEASE_TAGLINE = 'Match Engine Balance Pass';
 
 const PATCH_NOTES = [
+  {
+    icon: Wrench,
+    title: 'v1.3.1 Match Engine Balance Pass',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
+    items: [
+      '⚖️ **Acceleration tier risk/reward fixed** — Hit Out / Get Out and Blitz now carry a real wicket cost. Cruise is the new neutral-context optimum. The "always pick HOGO" exploit is gone.',
+      '🎯 **Aggressive bowling plans bite** — Attacking Line, Bouncer Barrage, Stumps Attack, Turn Candy Bag now visibly increase wicket chance per ball. Defensive plans trade wickets for runs as they should.',
+      '🏏 **Death overs feel like death overs** — Striker strength bonus ramps over 17→20. Pace bowlers lose swing on the old ball. Spinners hold up better. Match-mode death RR finally lands in IRL T20 range.',
+      '🌅 **New ball graduated** — Swing boost for pace bowlers now decays linearly across the powerplay (over 1: +5 swing, over 6: +0), instead of a flat +2 cliff at over 4.',
+      '🔧 **Engine cleanup** — Dropped a stub config-loader and dead probability-engine that were never invoked. Removed five unused config files. The match engine is the same shape, just lighter.',
+      '🧪 **Browser balance-test suite at `/testing`** — Ball Mode for single-context sweeps, Match Mode for full-innings batches, archetype presets for one-click matchup loading, and IRL benchmark pass/fail checks.',
+    ],
+    note: 'A focused balance pass. Tier choice now matters. Bowling plans now matter. Death overs now feel like death overs. Open the in-match tactics panel and try different tiers — you\'ll feel it. ⚖️'
+  },
+  {
+    icon: Newspaper,
+    title: 'v1.3.0 The Press Box — WPL Times Launch',
+    color: 'text-amber-300',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    items: [
+      '📰 **The WPL Times has launched** — Cricket Manager 25 finally has its own in-game newspaper. *Est. MMXXV. "All The Cricket That\'s Fit To Print."* Every match, transfer, injury, retention, playoff and season opener is now a full written-up article you can open and read.',
+      '🎙️ **A press box of 8 named journalists** — Harsha Bhogle, Jarrod Kimber, Sid Monga, Sanjay Manjrekar, Ian Bishop, Mark Nicholas, Richie Benaud, and WPL beat reporter Naya Singh. Each has their own beat: Ian Bishop turns up for finals, Sid Monga drills the tactics, Jarrod Kimber works the form guide, Mark Nicholas sets the scene on openers, Richie Benaud surfaces on the laconic blowouts. Bylines + reporter bios appear on every article.',
+      '🏏 **Match reports that read like cricket writing** — Reports are now block-assembled prose: headline hook, anchor performance, turning point, colour commentary, clutch finish, player of the match, post-match quotes, plus a legacy-echo block that weaves in attributed tributes from cricket\'s greatest voices. No more mail-merge mush.',
+      '🗞️ **Home dashboard news carousel** — The 8 biggest stories of the moment, sorted by importance with a boost for anything involving your club. Tap any card to read the full article in full newspaper layout. Auto-rotates every 10s; manual nav on hover.',
+      '🎤 **Ball-by-ball commentary engine** — Live match view now uses a template-driven commentary system that varies by outcome, phase, and tactical state. No more identical lines every over.',
+      '🛠️ **Energy / Fitness / Fatigue / Injury config consolidation** — Every tuning knob for the player-condition system now lives in one config file (`energy-config.json`). First balance change shipped with it: fatigue recovery now kicks in from rest day 6 instead of day 11.',
+    ],
+    note: 'The WPL finally has a press box. Open the Home dashboard and watch your league cover itself — eight journalists, one masthead, every match, every season. 🗞️'
+  },
   {
     icon: Sparkles,
     title: 'v1.2.5 Matchday Polish & Bug Fixes',

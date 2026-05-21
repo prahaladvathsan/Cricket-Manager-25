@@ -1,0 +1,17 @@
+[
+  {
+    "body": [
+      "${potm.linked} took the Player of the Match award for ${potm.performance} — a quietly decisive shift that the result probably understates."
+    ]
+  },
+  {
+    "body": [
+      "Player of the Match honours went to ${potm.linked} (${potm.performance}). The trophy for the night, and a line on the season's leaderboards worth remembering."
+    ]
+  },
+  {
+    "body": [
+      "${potm.linked} walked away with the Player of the Match plaque — ${potm.performance}. The reward for the kind of shift that wins matches even when it doesn't make the highlight reel."
+    ]
+  }
+]

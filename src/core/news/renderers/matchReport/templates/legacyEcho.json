@@ -1,0 +1,5 @@
+[
+  {
+    "_note": "legacyEcho doesn't read templates from this file — quotes live in famousQuotes.js. This stub exists for parity with the other blocks' file layout."
+  }
+]

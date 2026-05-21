@@ -44,7 +44,7 @@ src/
 │   │   ├── core/           # MatchEngine, SimpleBallSimulator
 │   │   ├── simulation/     # Decision, Contact, Trajectory, Fielding calculators
 │   │   ├── physics/        # Ball physics, fielder movement
-│   │   ├── systems/        # AttributeModifier, ProbabilityEngine
+│   │   ├── systems/        # AttributeModifierSystem
 │   │   ├── interactive/    # User input, AI controller, formatting
 │   │   └── utils/          # QuickSimMatch, validation
 │   ├── tactics/            # 7-stage modifier chain (TacticsModifierSystem + 7 managers)
@@ -306,15 +306,38 @@ import('/src/test/advanceDayTest.js')            # Load advanceDay batching test
 window.__CM25_TEST.runAll()                      # Run all 9 tests (set calls, conditions, memory, persistence)
 ```
 
+### Balance testing suite
+
+Browser UI at `/testing` route (`src/components/testing/`):
+- **Ball Mode**: 10k/100k/1M single-context ball runs to study a specific matchup. Includes archetype-preset dropdown for one-click load of representative batters (Russell, SKY, Abhishek, etc.) and bowlers (Bumrah, Rashid Khan, etc.).
+- **Match Mode**: 10/100/1000 full-innings runs via `quickSimMatch` with selectable home/away teams. Includes IRL benchmark pass/fail panel.
+
+Node-runnable variants in `scripts/` (output to `docs/dev/active/balance-analysis/`):
+```bash
+# Full E1-E5 sweep — single-context ball experiments (~6 min at 100k balls/cell)
+BALLS=100000 node --import ./scripts/register-json-loader.mjs scripts/run-balance-experiments.mjs
+
+# 1000-match orchestrator with percentile-based team builder
+MATCHES=1000 node --import ./scripts/register-json-loader.mjs scripts/run-match-mode.mjs
+
+# Per-contact-type outcome breakdown
+BALLS=100000 node --import ./scripts/register-json-loader.mjs scripts/run-e1-conditional-outcomes.mjs
+
+# End-to-end engine smoke test
+node --import ./scripts/register-json-loader.mjs scripts/smoke-test-engine.mjs
+```
+
+See `docs/dev/active/balance-analysis/SESSION-CHANGES.md` for the full balance-tuning history and engine architecture changes from the latest tuning pass.
+
 See `docs/dev/testing.md` for testing guidelines.
 
 ## Version Updates & Patch Notes
 
-**Current Version**: 1.2.1 (March 2026)
+**Current Version**: 1.3.1 (May 2026)
 
 **When releasing a new version**, update these files:
 1. `src/components/menu/PatchNotesModal.jsx` - Update `CURRENT_VERSION`, `RELEASE_DATE`, `RELEASE_TAGLINE`, and `PATCH_NOTES` array
-2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.2.1`)
+2. `src/components/menu/StartMenu.jsx` - Update version badge text in footer (search for `v1.3.1`)
 
 The version indicator on the start menu is an animated, clickable badge that opens a patch notes modal with feature highlights, improvements, and release notes.
 

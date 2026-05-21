@@ -6,6 +6,8 @@
 
 import retentionConfig from '../../data/config/retentionConfig.json';
 import RetentionAI from './RetentionAI.js';
+import { getNewsDispatcher } from '../news/newsDispatcherSingleton.js';
+import useGameStore from '../../stores/gameStore.js';
 
 export default class RetentionEngine {
   constructor() {
@@ -135,5 +137,73 @@ export default class RetentionEngine {
     }));
 
     console.log(`✅ Retentions finalized: ${allRetainedIds.size} players retained across ${Object.keys(retentionResults).length} teams`);
+
+    this.emitRetentionNews(retentionResults, stores);
+  }
+
+  /**
+   * Emit per-team retention news (one event per retained player).
+   * Marquee-tier (rating >= 85 or salary >= 1.5M) gets the headline template;
+   * the rest get the standard variant.
+   * @private
+   */
+  emitRetentionNews(retentionResults, stores) {
+    try {
+      const { playerStore, teamStore } = stores;
+      const gs = useGameStore.getState();
+      const season = gs.currentSeason || 0;
+      const gameDay = gs.gameDay || 0;
+      const date = gs.currentDate || new Date().toISOString();
+      const userTeamId = teamStore.getState().userTeamId;
+      const dispatcher = getNewsDispatcher();
+      const formatMoney = (n) => `$${(n / 1000).toFixed(0)}K`;
+
+      for (const [teamId, result] of Object.entries(retentionResults)) {
+        const team = teamStore.getState().teams?.[teamId];
+        const teamRetentionSummary = {
+          totalRetained: result.retainedPlayers.length,
+          totalReleased: result.releasedPlayers?.length || 0,
+          totalSalaryCommitted: formatMoney(result.totalSalary || 0),
+          auctionPurseRemaining: formatMoney(result.auctionPurse || 0)
+        };
+
+        for (const retention of result.retainedPlayers) {
+          const player = playerStore.getState().players?.[retention.playerId];
+          if (!player) continue;
+          const previousSalary = retention.previousSalary ?? player.soldPrice ?? 0;
+          const salaryDelta = retention.salary - previousSalary;
+          const retentionTier = (retention.salary >= 1_500_000 || (player.rating || 0) >= 85)
+            ? 'marquee'
+            : 'standard';
+
+          dispatcher.emit({
+            type: 'retention.player_retained',
+            season,
+            gameDay,
+            date,
+            payload: {
+              player: {
+                id: player.id,
+                name: player.name,
+                primaryRole: player.primaryRole || player.role || 'Player',
+                rating: player.rating || 0
+              },
+              team: { id: teamId, name: team?.name || teamId },
+              contract: {
+                salary: formatMoney(retention.salary),
+                salaryRaw: retention.salary,
+                previousSalary: formatMoney(previousSalary),
+                salaryDelta: (salaryDelta >= 0 ? '+' : '') + formatMoney(salaryDelta),
+                retentionTier
+              },
+              teamRetentionSummary,
+              isUserTeam: userTeamId === teamId
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[RetentionEngine] Failed to emit retention news:', err);
+    }
   }
 }

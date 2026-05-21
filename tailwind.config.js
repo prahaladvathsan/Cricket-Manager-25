@@ -35,15 +35,17 @@ export default {
           accent: '#4D5560',
         },
 
-        // Text colors
+        // Text colors — shifted one step lighter (Mar 2026) to lift body-text
+        // contrast on the dark dashboard. Old tertiary was ~3.5:1 (below AA);
+        // new tertiary is ~5:1, and new secondary clears 9:1.
         text: {
           primary: '#E8EAED',
-          secondary: '#9AA0A6',
-          tertiary: '#5F6368',
+          secondary: '#C5C8CC',
+          tertiary: '#9AA0A6',
           inverse: '#0F1419',
           positive: '#34A853',
           negative: '#EA4335',
-          neutral: '#9AA0A6',
+          neutral: '#C5C8CC',
           highlight: '#D4AF37',
         },
 

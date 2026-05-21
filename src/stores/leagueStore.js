@@ -9,6 +9,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import PlayoffGenerator from '../core/league/PlayoffGenerator.js';
 import MatchWeekScheduleGenerator from '../core/league/MatchWeekScheduleGenerator.js';
 import useGameStore from './gameStore';
+import { getNewsDispatcher } from '../core/news/newsDispatcherSingleton.js';
 import { compressedStorageOptions } from '../utils/compression.js';
 import { indexedDBStorage } from '../utils/indexedDBStorage.js';
 import { markHydrated } from '../utils/storeHydration.js';
@@ -23,6 +24,107 @@ import { markHydrated } from '../utils/storeHydration.js';
  * @property {Array} standings - Current league standings
  * @property {Object} clubs - Club data indexed by ID
  */
+
+// Pure helper: apply a single match result to a standings array and return a new,
+// sorted standings array. No side effects — used by both `recordResult` (so the
+// news emit inside the same set() sees post-match standings) and the legacy
+// `updateStandingsForMatch` action.
+function applyResultToStandings(standings, result) {
+  if (!Array.isArray(standings) || !result) return standings;
+
+  const updated = standings.map(team => ({ ...team }));
+  const byId = {};
+  updated.forEach(t => { byId[t.clubId] = t; });
+
+  const homeTeam = byId[result.homeTeam];
+  const awayTeam = byId[result.awayTeam];
+  if (!homeTeam || !awayTeam) {
+    console.warn('[applyResultToStandings] Team not found:', result.homeTeam, result.awayTeam);
+    return standings;
+  }
+
+  homeTeam.played++;
+  awayTeam.played++;
+
+  const innings1 = result.innings1;
+  const innings2 = result.innings2;
+  const homeTeamBattedFirst = innings1?.battingTeam === result.homeTeam;
+
+  // Balls calculation (mirrors recalculateStandings)
+  const calculateBalls = (innings) => {
+    if (!innings) return 0;
+    if (innings.ballsBowled != null && innings.ballsBowled > 0) return innings.ballsBowled;
+    if (innings.ballsFaced != null && innings.ballsFaced > 0) return innings.ballsFaced;
+    if (innings.overs != null && innings.balls != null) {
+      return (parseInt(innings.overs, 10) || 0) * 6 + (parseInt(innings.balls, 10) || 0);
+    }
+    if (innings.overs != null) {
+      const oversFloat = parseFloat(innings.overs);
+      const completeOvers = Math.floor(oversFloat);
+      const ballsInOver = Math.round((oversFloat - completeOvers) * 10);
+      return completeOvers * 6 + ballsInOver;
+    }
+    if (innings.oversCompleted != null) {
+      return innings.oversCompleted * 6 + (innings.ballsInCurrentOver || 0);
+    }
+    if (innings.balls != null && innings.balls > 0) return innings.balls;
+    return 0;
+  };
+
+  const innings1Balls = calculateBalls(innings1);
+  const innings2Balls = calculateBalls(innings2);
+  // T20 NRR rule: all-out side gets credited the full 120-ball quota
+  const innings1BallsForNRR = innings1?.wickets === 10 ? 120 : innings1Balls;
+  const innings2BallsForNRR = innings2?.wickets === 10 ? 120 : innings2Balls;
+
+  if (homeTeamBattedFirst) {
+    homeTeam.runsScored += innings1?.totalScore || 0;
+    homeTeam.ballsFaced += innings1BallsForNRR;
+    homeTeam.runsConceded += innings2?.totalScore || 0;
+    homeTeam.ballsBowled += innings2BallsForNRR;
+    awayTeam.runsScored += innings2?.totalScore || 0;
+    awayTeam.ballsFaced += innings2BallsForNRR;
+    awayTeam.runsConceded += innings1?.totalScore || 0;
+    awayTeam.ballsBowled += innings1BallsForNRR;
+  } else {
+    homeTeam.runsScored += innings2?.totalScore || 0;
+    homeTeam.ballsFaced += innings2BallsForNRR;
+    homeTeam.runsConceded += innings1?.totalScore || 0;
+    homeTeam.ballsBowled += innings1BallsForNRR;
+    awayTeam.runsScored += innings1?.totalScore || 0;
+    awayTeam.ballsFaced += innings1BallsForNRR;
+    awayTeam.runsConceded += innings2?.totalScore || 0;
+    awayTeam.ballsBowled += innings2BallsForNRR;
+  }
+
+  if (result.winner === result.homeTeam) {
+    homeTeam.won++;
+    awayTeam.lost++;
+  } else if (result.winner === result.awayTeam) {
+    awayTeam.won++;
+    homeTeam.lost++;
+  } else if (result.winner === 'tie') {
+    homeTeam.tied++;
+    awayTeam.tied++;
+  } else {
+    homeTeam.noResult++;
+    awayTeam.noResult++;
+  }
+
+  [homeTeam, awayTeam].forEach(team => {
+    team.points = (team.won * 2) + team.tied + team.noResult;
+    const runRateScored = team.ballsFaced > 0 ? (team.runsScored / team.ballsFaced) * 6 : 0;
+    const runRateConceded = team.ballsBowled > 0 ? (team.runsConceded / team.ballsBowled) * 6 : 0;
+    team.netRunRate = runRateScored - runRateConceded;
+  });
+
+  updated.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return b.netRunRate - a.netRunRate;
+  });
+
+  return updated;
+}
 
 // Pure helper: given current fixtures + calendar events + clubs + a playoff result,
 // returns the updated fixtures and calendar events. No side effects — caller applies them.
@@ -149,10 +251,17 @@ const useLeagueStore = create(
    * @param {Object} fullScorecard - Optional full scorecard data (for match result modal)
    */
   recordResult: (result, fullScorecard = null) => set((state) => {
-    // Store result with optional full scorecard
-    const resultToStore = fullScorecard
-      ? { ...result, fullScorecard }
-      : result;
+    // Store result with optional full scorecard. Tag with gameDay/date from
+    // the gameStore so downstream consumers (weekly roundup, news context)
+    // can filter recent results without re-deriving the calendar.
+    const gsForTag = useGameStore.getState();
+    const resultToStore = {
+      ...result,
+      ...(fullScorecard ? { fullScorecard } : {}),
+      gameDay: result.gameDay ?? gsForTag.gameDay,
+      recordedDate: result.recordedDate ?? gsForTag.currentDate ?? new Date().toISOString(),
+      season: result.season ?? gsForTag.currentSeason
+    };
 
     const newResults = [...state.results, resultToStore];
     const newStats = { ...state.stats };
@@ -234,8 +343,10 @@ const useLeagueStore = create(
         const runnerUpTeam = state.clubs[runnerUpId];
 
         let margin = '';
-        if (result.winByRuns) margin = `${result.margin} runs`;
-        else if (result.winByWickets) margin = `${result.margin} wickets`;
+        const finalNumeric = typeof result.winMargin === 'number' ? result.winMargin : Number(result.margin);
+        if (result.winByRuns || result.winType === 'runs') margin = `${finalNumeric} runs`;
+        else if (result.winByWickets || result.winType === 'wickets') margin = `${finalNumeric} wickets`;
+        else if (typeof result.margin === 'string') margin = result.margin.replace(/^by\s+/, '');
 
         const championInfo = {
           championId,
@@ -256,12 +367,151 @@ const useLeagueStore = create(
         console.log(`✅ Champion: ${championInfo.championName} defeated ${championInfo.runnerUpName}`);
 
         extraStateUpdate = { stage: 'completed', champion: championInfo };
+
+        // Emit champion crowned news event (covers both Normal UI and Sim-to-Date paths)
+        try {
+          getNewsDispatcher().emit({
+            type: 'playoff.champion_crowned',
+            season: gameStore.currentSeason,
+            gameDay: gameStore.gameDay,
+            date: gameStore.currentDate || new Date().toISOString(),
+            payload: {
+              champion: { id: championId, name: championInfo.championName },
+              runnerUp: { id: runnerUpId, name: championInfo.runnerUpName },
+              margin: championInfo.margin,
+              finalMatchId: result.matchId
+            }
+          });
+        } catch (err) {
+          console.error('[leagueStore] Failed to emit playoff.champion_crowned news:', err);
+        }
       }
+    }
+
+    // Apply the result to the standings IN THE SAME set() callback so the news
+    // emit below sees the post-match table (winner credited their +2 points
+    // already). Previously the standings update lived in a separate
+    // `updateStandingsForMatch` action that callers ran AFTER recordResult,
+    // which meant the news fired with stale pre-match standings — articles
+    // would say "climbed to 6th on 0 points" even when the team had just won.
+    // Playoff matches don't move the regular-season table — skip the update.
+    const updatedStandings = isPlayoffMatch
+      ? state.standings
+      : applyResultToStandings(state.standings, result);
+
+    // Emit per-match news for EVERY recorded match (sim + Normal UI both reach here).
+    // This is the canonical source for the Home news carousel — replaces the AI-vs-AI
+    // match result modal flash (gated by `settings.matchResultModalMode`).
+    try {
+      const gs = useGameStore.getState();
+      const clubsMap = state.clubs || {};
+      const homeName = clubsMap[result.homeTeam]?.name || result.homeTeam;
+      const awayName = clubsMap[result.awayTeam]?.name || result.awayTeam;
+      const winnerId = result.winner;
+      const loserId = winnerId === result.homeTeam ? result.awayTeam : result.homeTeam;
+      const winnerName = clubsMap[winnerId]?.name || winnerId;
+      const loserName = clubsMap[loserId]?.name || loserId;
+
+      const homeRuns = result.innings1?.totalScore ?? 0;
+      const homeWkts = result.innings1?.wickets ?? 0;
+      const awayRuns = result.innings2?.totalScore ?? 0;
+      const awayWkts = result.innings2?.wickets ?? 0;
+      const winnerScore = winnerId === result.homeTeam ? `${homeRuns}/${homeWkts}` : `${awayRuns}/${awayWkts}`;
+      const loserScore = winnerId === result.homeTeam ? `${awayRuns}/${awayWkts}` : `${homeRuns}/${homeWkts}`;
+      const totalRuns = homeRuns + awayRuns;
+
+      // QuickSimMatch produces `winType` ('runs' | 'wickets' | 'super over') +
+      // `winMargin` (numeric) + `margin` (pre-formatted "by 8 wickets"). The
+      // older code only knew `winByRuns/winByWickets` and fell through to the
+      // pre-formatted string, producing "Lose by by 8 wickets". Handle both.
+      const numericMargin = typeof result.winMargin === 'number'
+        ? result.winMargin
+        : Number(result.margin);
+      const isRunsMargin = result.winByRuns || result.winType === 'runs';
+      const isWicketsMargin = result.winByWickets || result.winType === 'wickets';
+      const marginLabel = isRunsMargin
+        ? `${numericMargin} runs`
+        : isWicketsMargin
+          ? `${numericMargin} wickets`
+          : (typeof result.margin === 'string'
+              ? result.margin.replace(/^by\s+/, '')
+              : 'an unknown margin');
+
+      // Classify the match for template predicate matching
+      const isPlayoff = isPlayoffMatch;
+      const stageLabel = result.matchId === 'playoff_q1' ? 'Qualifier 1'
+        : result.matchId === 'playoff_q2' ? 'Qualifier 2'
+        : result.matchId === 'playoff_eliminator' ? 'Eliminator'
+        : result.matchId === 'playoff_final' ? 'Final'
+        : '';
+      const stageTag = result.matchId?.replace('playoff_', '') || '';
+      const isHighScoring = totalRuns >= 360;
+      const marginRuns = isRunsMargin ? numericMargin : null;
+      const marginWkts = isWicketsMargin ? numericMargin : null;
+      const isCloseFinish = (marginRuns != null && marginRuns <= 10) || (marginWkts != null && marginWkts <= 2);
+      const isOneSided = (marginRuns != null && marginRuns >= 60) || (marginWkts != null && marginWkts >= 8);
+      const potmName = result.playerOfMatch?.name || result.playerOfMatch?.id;
+      const potmLine = potmName
+        ? `${potmName} was named Player of the Match for a standout performance.`
+        : 'Both sides will reflect on key passages of play before the next round of fixtures.';
+
+      const venue = result.venue || clubsMap[result.homeTeam]?.homeGround || 'the ground';
+      // Matchday should be a plain number. If the fixture didn't carry one,
+      // try to extract it from a matchId like "match_6"; otherwise fall back
+      // to the matchId as-is. Prevents "Matchday match_6" leaking into copy.
+      let matchday = '';
+      if (typeof result.matchday === 'number' || (typeof result.matchday === 'string' && result.matchday.length > 0)) {
+        matchday = result.matchday;
+      } else if (typeof result.matchId === 'string') {
+        const m = result.matchId.match(/^(?:match|playoff)_(\w+)$/);
+        matchday = m ? m[1] : result.matchId;
+      }
+
+      getNewsDispatcher().emit({
+        type: 'match.result',
+        season: gs.currentSeason,
+        gameDay: gs.gameDay,
+        date: gs.currentDate || new Date().toISOString(),
+        payload: {
+          matchId: result.matchId,
+          matchday,
+          venue,
+          home: { id: result.homeTeam, name: homeName, score: `${homeRuns}/${homeWkts}` },
+          away: { id: result.awayTeam, name: awayName, score: `${awayRuns}/${awayWkts}` },
+          winner: { id: winnerId, name: winnerName, score: winnerScore },
+          loser: { id: loserId, name: loserName, score: loserScore },
+          margin: marginLabel,
+          marginRuns,
+          marginWkts,
+          totalRuns,
+          isPlayoff,
+          stageLabel,
+          stageTag,
+          isHighScoring,
+          isCloseFinish,
+          isOneSided,
+          potmLine,
+          playerOfMatch: result.playerOfMatch || null
+        },
+        // Heavy render-only data — the block assembler reads this, inboxSubscriber
+        // strips it before persisting so IndexedDB doesn't get bloated by per-ball logs.
+        context: {
+          fullScorecard,
+          ballByBall: Array.isArray(result.ballByBall) ? result.ballByBall : [],
+          // Post-match standings so the closing-line block reads the table
+          // the team will be on AFTER tonight, not before.
+          standingsSnapshot: updatedStandings,
+          playoffResults: state.playoffResults
+        }
+      });
+    } catch (err) {
+      console.error('[leagueStore] Failed to emit match.result news:', err);
     }
 
     return {
       results: newResults,
       stats: newStats,
+      standings: updatedStandings,
       playoffResults: updatedPlayoffResults,
       fixtures: updatedFixtures,
       ...extraStateUpdate
@@ -498,139 +748,16 @@ const useLeagueStore = create(
   }),
 
   /**
-   * Incrementally update standings for a single match result (O(1) instead of O(n))
-   * Use this for performance during simulation instead of recalculateStandings
+   * @deprecated `recordResult()` now updates the standings atomically in the
+   * same `set()` so that the news emit sees post-match data. Existing call
+   * sites have been removed; this action is kept only for any external/legacy
+   * callers and is a thin wrapper over the shared `applyResultToStandings`
+   * helper. Calling it after `recordResult` will double-count.
    * @param {Object} result - Single match result object
    */
-  updateStandingsForMatch: (result) => set((state) => {
-    const { standings } = state;
-
-    // Create mutable copy of standings
-    const updatedStandings = standings.map(team => ({ ...team }));
-
-    // Create a map for quick lookup
-    const standingsMap = {};
-    updatedStandings.forEach(team => {
-      standingsMap[team.clubId] = team;
-    });
-
-    const homeTeam = standingsMap[result.homeTeam];
-    const awayTeam = standingsMap[result.awayTeam];
-
-    if (!homeTeam || !awayTeam) {
-      console.warn('Team not found in standings:', result.homeTeam, result.awayTeam);
-      return state;
-    }
-
-    // Update matches played
-    homeTeam.played++;
-    awayTeam.played++;
-
-    // Get innings data
-    const innings1 = result.innings1;
-    const innings2 = result.innings2;
-
-    // Determine which team batted first
-    const homeTeamBattedFirst = innings1.battingTeam === result.homeTeam;
-
-    // Calculate balls from innings data (same logic as recalculateStandings)
-    const calculateBalls = (innings) => {
-      if (innings.ballsBowled !== undefined && innings.ballsBowled !== null && innings.ballsBowled > 0) {
-        return innings.ballsBowled;
-      }
-      if (innings.ballsFaced !== undefined && innings.ballsFaced !== null && innings.ballsFaced > 0) {
-        return innings.ballsFaced;
-      }
-      if (innings.overs !== undefined && innings.overs !== null &&
-          innings.balls !== undefined && innings.balls !== null) {
-        const completeOvers = parseInt(innings.overs, 10) || 0;
-        const ballsInOver = parseInt(innings.balls, 10) || 0;
-        return completeOvers * 6 + ballsInOver;
-      }
-      if (innings.overs !== undefined && innings.overs !== null) {
-        const oversFloat = parseFloat(innings.overs);
-        const completeOvers = Math.floor(oversFloat);
-        const ballsInOver = Math.round((oversFloat - completeOvers) * 10);
-        return completeOvers * 6 + ballsInOver;
-      }
-      if (innings.oversCompleted !== undefined && innings.oversCompleted !== null) {
-        const ballsInCurrentOver = innings.ballsInCurrentOver || 0;
-        return innings.oversCompleted * 6 + ballsInCurrentOver;
-      }
-      if (innings.balls !== undefined && innings.balls !== null && innings.balls > 0) {
-        return innings.balls;
-      }
-      return 0;
-    };
-
-    const innings1Balls = calculateBalls(innings1);
-    const innings2Balls = calculateBalls(innings2);
-
-    // NRR rule: If team was all out (10 wickets), use full quota (120 balls for T20)
-    const innings1BallsForNRR = innings1.wickets === 10 ? 120 : innings1Balls;
-    const innings2BallsForNRR = innings2.wickets === 10 ? 120 : innings2Balls;
-
-    // Update home team stats
-    if (homeTeamBattedFirst) {
-      homeTeam.runsScored += innings1.totalScore;
-      homeTeam.ballsFaced += innings1BallsForNRR;
-      homeTeam.runsConceded += innings2.totalScore;
-      homeTeam.ballsBowled += innings2BallsForNRR;
-    } else {
-      homeTeam.runsScored += innings2.totalScore;
-      homeTeam.ballsFaced += innings2BallsForNRR;
-      homeTeam.runsConceded += innings1.totalScore;
-      homeTeam.ballsBowled += innings1BallsForNRR;
-    }
-
-    // Update away team stats (opposite of home team)
-    if (homeTeamBattedFirst) {
-      awayTeam.runsScored += innings2.totalScore;
-      awayTeam.ballsFaced += innings2BallsForNRR;
-      awayTeam.runsConceded += innings1.totalScore;
-      awayTeam.ballsBowled += innings1BallsForNRR;
-    } else {
-      awayTeam.runsScored += innings1.totalScore;
-      awayTeam.ballsFaced += innings1BallsForNRR;
-      awayTeam.runsConceded += innings2.totalScore;
-      awayTeam.ballsBowled += innings2BallsForNRR;
-    }
-
-    // Update win/loss/tie
-    if (result.winner === result.homeTeam) {
-      homeTeam.won++;
-      awayTeam.lost++;
-    } else if (result.winner === result.awayTeam) {
-      awayTeam.won++;
-      homeTeam.lost++;
-    } else if (result.winner === 'tie') {
-      homeTeam.tied++;
-      awayTeam.tied++;
-    } else {
-      homeTeam.noResult++;
-      awayTeam.noResult++;
-    }
-
-    // Recalculate points and NRR for both teams
-    [homeTeam, awayTeam].forEach(team => {
-      team.points = (team.won * 2) + team.tied + team.noResult;
-      const runRateScored = team.ballsFaced > 0 ? (team.runsScored / team.ballsFaced) * 6 : 0;
-      const runRateConceded = team.ballsBowled > 0 ? (team.runsConceded / team.ballsBowled) * 6 : 0;
-      team.netRunRate = runRateScored - runRateConceded;
-    });
-
-    // Sort standings: Points DESC, then NRR DESC
-    updatedStandings.sort((a, b) => {
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
-      return b.netRunRate - a.netRunRate;
-    });
-
-    return {
-      standings: updatedStandings
-    };
-  }),
+  updateStandingsForMatch: (result) => set((state) => ({
+    standings: applyResultToStandings(state.standings, result)
+  })),
 
   /**
    * Advance to next matchday

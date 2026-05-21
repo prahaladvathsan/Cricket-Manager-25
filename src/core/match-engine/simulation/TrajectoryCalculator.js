@@ -8,6 +8,7 @@ import mentalityConfig from '../../../data/config/mentality-config.json';
 import trajectoryConfig from '../../../data/config/trajectory-config.json';
 import shotAnglesConfig from '../../../data/config/shot_angles_config.json';
 import physicsConfig from '../../../data/config/physics-config.json';
+import bowlingPlansConfig from '../../../data/config/bowling-plans-config.json';
 
 // DEBUG: Set to true to enable trajectory calculation debugging
 const DEBUG_TRAJECTORY = false;
@@ -35,7 +36,6 @@ class TrajectoryCalculator {
   constructor() {
     // Load configuration
     this.battingConfig = mentalityConfig.batting;
-    this.bowlingConfig = mentalityConfig.bowling;
     this.edgeConfig = mentalityConfig.edgeBehavior;
     this.wicketConfig = mentalityConfig.wicketTypes;
     this.trajectoryConfig = trajectoryConfig;
@@ -60,13 +60,18 @@ class TrajectoryCalculator {
       wicketKeeper,
       fieldingTeam,
       ballPhysics,
-      fielderMovement
+      fielderMovement,
+      // New: passed through from SimpleBallSimulator so handleMissedBall can
+      // apply tier + bowling-plan wicket bonuses to the base wicket probability.
+      strikerTier,
+      bowlerPlans,
+      bowlerType
     } = context;
 
     // Handle different contact types
     switch (contactResult.type) {
       case 'MISSED':
-        return this.handleMissedBall(contactResult, bowlingMentality);
+        return this.handleMissedBall(contactResult, bowlingMentality, strikerTier, bowlerPlans, bowlerType);
 
       case 'EDGED':
         return this.handleEdgedBall(contactResult, striker, bowler, wicketKeeper);
@@ -80,25 +85,55 @@ class TrajectoryCalculator {
   }
 
   /**
-   * Handle missed ball - determine wicket probability based on Contact Quality
-   * @param {Object} contactResult - Contact result
-   * @param {string} bowlingMentality - Bowling mentality
-   * @returns {TrajectoryResult} Trajectory result
+   * Look up the per-plan wicketBonus from bowling-plans-config.
+   * Returns 0 if the plan or wicketBonus is not defined.
+   * @param {string} planName
+   * @param {'pace'|'spin'} bowlerType
+   * @param {'lineLengthPlans'|'variationPlans'} planKind
    */
-  handleMissedBall(contactResult, bowlingMentality) {
+  getPlanWicketBonus(planName, bowlerType, planKind) {
+    if (!planName || !bowlerType) return 0;
+    const typeKey = bowlerType === 'spin' ? 'spinBowling' : 'paceBowling';
+    const plan = bowlingPlansConfig?.[typeKey]?.[planKind]?.[planName];
+    return plan?.wicketBonus || 0;
+  }
+
+  /**
+   * Handle missed ball - determine wicket probability.
+   *
+   * Formula (additive components, then CQ adjustment):
+   *   wicketProb = base
+   *              + tierBonus[strikerTier]          (0% Blockade → +2% HOGO)
+   *              + planBonus[lineLength]           (0% defensive → +1% most attacking)
+   *              + planBonus[variation]            (0% defensive → +1% most attacking)
+   *              + CQ adjustment (positive CQ → subtract, negative CQ → add)
+   *   clamped to [0, maxProbability]
+   */
+  handleMissedBall(contactResult, bowlingMentality, strikerTier = null, bowlerPlans = null, bowlerType = null) {
     const { contactQuality } = contactResult;
     const wicketConfig = this.wicketConfig.wicketProbability;
 
-    // Base wicket probability from config
+    // 1. Base wicket probability
     let wicketProbability = wicketConfig.base;
 
-    // Adjust based on Contact Quality
+    // 2. Tier bonus (additive)
+    const tierBonus = (strikerTier && wicketConfig.tierWicketBonus?.[strikerTier]) || 0;
+    wicketProbability += tierBonus;
+
+    // 3. Bowling-plan bonuses (additive — line-length + variation)
+    let lineLengthBonus = 0;
+    let variationBonus = 0;
+    if (bowlerPlans && bowlerType) {
+      lineLengthBonus = this.getPlanWicketBonus(bowlerPlans.lineLength, bowlerType, 'lineLengthPlans');
+      variationBonus = this.getPlanWicketBonus(bowlerPlans.variation, bowlerType, 'variationPlans');
+      wicketProbability += lineLengthBonus + variationBonus;
+    }
+
+    // 4. CQ adjustment (existing logic)
     if (contactQuality > 0) {
-      // Better contact reduces wicket chance
       const adjustment = contactQuality / wicketConfig.contactQualityAdjustment.positive.divisor;
       wicketProbability = Math.max(0, wicketProbability - adjustment / wicketConfig.adjustmentScale);
     } else {
-      // Poor contact increases wicket chance
       const adjustment = Math.abs(contactQuality) / wicketConfig.contactQualityAdjustment.negative.divisor;
       wicketProbability = Math.min(wicketConfig.maxProbability, wicketProbability + adjustment / wicketConfig.adjustmentScale);
     }
@@ -116,6 +151,12 @@ class TrajectoryCalculator {
         bowlingMentality,
         contactQuality,
         wicketProbability,
+        components: {
+          base: wicketConfig.base,
+          tierBonus,
+          lineLengthBonus,
+          variationBonus
+        },
         result: isWicket ? 'wicket' : 'dot'
       }
     };
@@ -274,25 +315,23 @@ class TrajectoryCalculator {
   calculateShotSpeedWithContactQuality(contactQuality, strength) {
     const speedConfig = this.trajectoryConfig.shotSpeedCalculation;
 
-    // Roll d(strength) - dice with number of sides = strength attribute
+    // EXPERIMENTAL TUNING (balance pass): lower base + uniform random + smaller CQ pull + larger strength multiplier
+    // Old: baseSpeed(12) + sign(CQ)*sqrt(|CQ|)*1.5 + sqrt(strengthRoll)*sqrt(20)*0.65
+    // New: 9 + uniform(0,10) + sign(CQ)*sqrt(|CQ|) + sqrt(strengthRoll)*2
     const effectiveStrength = strength >= 1 ? strength : 1;
     const strengthRoll = Math.floor(Math.random() * effectiveStrength) + 1;
 
-    // Base Speed = configurable values
-    // Formula: baseSpeed + sqrt(abs(contactQuality)) * sign(contactQuality) * multiplier + (d(strength) * multiplier)
-    // Square root gives diminishing returns - can still hit hard with imperfect contact
-    // Negative contact quality reduces speed: -sqrt(abs(CQ))
-    const contactQualityComponent = contactQuality >= 0
-      ? Math.sqrt(contactQuality) * speedConfig.contactQualityMultiplier
-      : -Math.sqrt(Math.abs(contactQuality)) * speedConfig.contactQualityMultiplier;
+    const cqContribution = contactQuality >= 0
+      ? Math.sqrt(contactQuality)
+      : -Math.sqrt(Math.abs(contactQuality));
 
-    const baseSpeed = speedConfig.baseSpeed +
-                     contactQualityComponent +
-                     (Math.sqrt(strengthRoll) * Math.sqrt(20) * speedConfig.shotPowerMultiplier);
+    const randomBonus = Math.random() * 10;  // uniform [0, 10)
+    const strengthContribution = Math.sqrt(strengthRoll) * 2;
 
-    // Clamp to configurable range
+    const computed = 12 + randomBonus + cqContribution + strengthContribution;
+
     return Math.max(speedConfig.speedLimits.min,
-                   Math.min(speedConfig.speedLimits.max, Math.round(baseSpeed)));
+                   Math.min(speedConfig.speedLimits.max, Math.round(computed)));
   }
 
   /**
@@ -303,8 +342,8 @@ class TrajectoryCalculator {
   calculateKeeperCatchProbability(wicketKeeper) {
     const catchingAttribute = wicketKeeper?.attributes?.fielding?.catching || 10;
 
-    // Divisor of 25 means catching=10 gives 40% catch rate (reduced from 50% at divisor 20)
-    return Math.min(1, Math.max(0, catchingAttribute / 25));
+    // catching/20 — keeper catches 50% at catching=10, 100% at catching=20.
+    return Math.min(1, Math.max(0, catchingAttribute / 20));
   }
 
   /**
@@ -365,10 +404,15 @@ class TrajectoryCalculator {
       );
     }
 
-    // Step 5: Use placement attribute directly to determine rank in evaluated list
-    // placement=20 → rank 1 (index 0, best), placement=1 → rank 20 (index 19, worst)
-    // Formula: rankIndex = 20 - placement
-    const rankIndex = 20 - placement; // 0 (placement=20) to 19 (placement=1)
+    // Step 5: Determine rank index from placement, with a d10 dice roll for variance.
+    // EXPERIMENTAL TUNING: rankIndex = 20 - (placement/2 + d10)
+    //   placement=20 → 20 - (10 + d10) = 0..9   (picks from top 10)
+    //   placement=10 → 20 - (5  + d10) = 5..14  (picks from middle)
+    //   placement=1  → 20 - (0.5+ d10) = 9.5..18.5 → clamped to top ~half-bottom
+    // This stops elite placement from ALWAYS picking the optimal gap.
+    const d10 = Math.floor(Math.random() * 10) + 1;
+    const rankIndexRaw = 20 - (placement / 2 + d10);
+    const rankIndex = Math.max(0, Math.min(19, Math.round(rankIndexRaw)));
 
     let chosenEvaluation;
     if (directionEvaluations.length === 0) {

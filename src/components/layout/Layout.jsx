@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
         }`}>
         <Header />
 
-        <main className="flex-1 overflow-auto p-3" aria-label="Main content">
+        <main className="flex-1 overflow-auto px-3 pt-1 pb-3" aria-label="Main content">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

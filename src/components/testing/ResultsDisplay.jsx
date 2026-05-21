@@ -48,12 +48,41 @@ const ResultsDisplay = ({ results, isRunning }) => {
     );
   }
 
-  const { outcomeDistribution, contactDistribution, dismissalDistribution } = results;
+  const {
+    outcomeDistribution,
+    contactDistribution,
+    dismissalDistribution,
+    cqDistribution,
+    shotSpeedDistribution,
+    fielderDistanceDistribution,
+    hitZoneDistribution,
+    decisionDeltaDistribution,
+    executionDeltaDistribution,
+    shotTypeDistribution,
+    contactQualityMean,
+    contactQualityStdDev,
+    aerialRate,
+    sixAmongAerialRate,
+    catchAttempts,
+    catchConversion,
+    groundedInterceptionRate
+  } = results;
+
   const maxOutcome = Math.max(...Object.values(outcomeDistribution).map(v => v.percentage));
   const maxContact = Math.max(...Object.values(contactDistribution).map(v => v.percentage));
   const maxDismissal = Object.keys(dismissalDistribution).length > 0
     ? Math.max(...Object.values(dismissalDistribution).map(v => v.percentage))
     : 0;
+
+  const maxOf = (dist) => dist
+    ? Math.max(0.0001, ...Object.values(dist).map(v => v.percentage || 0))
+    : 0.0001;
+  const maxCQ = maxOf(cqDistribution);
+  const maxSpeed = maxOf(shotSpeedDistribution);
+  const maxFielderDist = maxOf(fielderDistanceDistribution);
+  const maxHitZone = maxOf(hitZoneDistribution);
+  const maxDecision = maxOf(decisionDeltaDistribution);
+  const maxExecution = maxOf(executionDeltaDistribution);
 
   return (
     <div className="card p-2 space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 70px)' }}>
@@ -150,6 +179,161 @@ const ResultsDisplay = ({ results, isRunning }) => {
                 />
               ))}
           </div>
+        </div>
+      )}
+
+      {/* Derived Scalar Metrics */}
+      <div className="grid grid-cols-3 gap-1 bg-bg-tertiary rounded p-1.5">
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">CQ μ ± σ</div>
+          <div className="text-xs font-bold text-text-primary">
+            {contactQualityMean?.toFixed(1) ?? '—'} ± {contactQualityStdDev?.toFixed(1) ?? '—'}
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">Aerial %</div>
+          <div className="text-xs font-bold text-purple-400">{((aerialRate || 0) * 100).toFixed(1)}%</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">6 / Aerial</div>
+          <div className="text-xs font-bold text-purple-400">{((sixAmongAerialRate || 0) * 100).toFixed(1)}%</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">Catch Att</div>
+          <div className="text-xs font-bold text-yellow-400">{(catchAttempts || 0).toLocaleString()}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">Catch %</div>
+          <div className="text-xs font-bold text-yellow-400">{((catchConversion || 0) * 100).toFixed(1)}%</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[10px] text-text-muted">Grnd Intcpt</div>
+          <div className="text-xs font-bold text-blue-400">{((groundedInterceptionRate || 0) * 100).toFixed(1)}%</div>
+        </div>
+      </div>
+
+      {/* Contact Quality Histogram */}
+      {cqDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">CONTACT QUALITY</div>
+          <div className="space-y-0.5">
+            {Object.entries(cqDistribution).map(([bucket, data]) => (
+              <Bar
+                key={bucket}
+                label={bucket}
+                value={data.percentage}
+                maxValue={maxCQ}
+                color={
+                  bucket.startsWith('<-') || bucket.startsWith('-5') || bucket.startsWith('-4') || bucket.startsWith('-3') ? 'bg-red-500' :
+                  bucket.startsWith('-2') || bucket.startsWith('-1') ? 'bg-orange-400' :
+                  bucket.startsWith('0_') || bucket.startsWith('10_') ? 'bg-cricket-accent' :
+                  'bg-green-500'
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Shot Speed Histogram */}
+      {shotSpeedDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">SHOT SPEED (m/s)</div>
+          <div className="space-y-0.5">
+            {Object.entries(shotSpeedDistribution).map(([bucket, data]) => (
+              <Bar
+                key={bucket}
+                label={bucket}
+                value={data.percentage}
+                maxValue={maxSpeed}
+                color="bg-blue-500"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hit Zone Distribution */}
+      {hitZoneDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">HIT ZONE</div>
+          <div className="space-y-0.5">
+            {Object.entries(hitZoneDistribution).map(([zone, data]) => (
+              <Bar
+                key={zone}
+                label={zone.slice(0, 5)}
+                value={data.percentage}
+                maxValue={maxHitZone}
+                color="bg-cyan-500"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Decision Delta */}
+      {decisionDeltaDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">DECISION DELTA (bat − bowl)</div>
+          <div className="space-y-0.5">
+            {Object.entries(decisionDeltaDistribution).map(([bucket, data]) => (
+              <Bar
+                key={bucket}
+                label={bucket}
+                value={data.percentage}
+                maxValue={maxDecision}
+                color={Number(bucket) > 0 ? 'bg-green-500' : Number(bucket) < 0 ? 'bg-red-500' : 'bg-gray-500'}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Execution Delta */}
+      {executionDeltaDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">EXECUTION DELTA (bat − bowl)</div>
+          <div className="space-y-0.5">
+            {Object.entries(executionDeltaDistribution).map(([bucket, data]) => (
+              <Bar
+                key={bucket}
+                label={bucket}
+                value={data.percentage}
+                maxValue={maxExecution}
+                color={Number(bucket) > 0 ? 'bg-green-500' : Number(bucket) < 0 ? 'bg-red-500' : 'bg-gray-500'}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Closest Fielder Distance */}
+      {fielderDistanceDistribution && (
+        <div>
+          <div className="text-[10px] font-semibold text-text-secondary mb-1">CLOSEST FIELDER DISTANCE (m)</div>
+          <div className="space-y-0.5">
+            {Object.entries(fielderDistanceDistribution).map(([bucket, data]) => (
+              <Bar
+                key={bucket}
+                label={bucket}
+                value={data.percentage}
+                maxValue={maxFielderDist}
+                color="bg-amber-500"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Shot Type Breakdown */}
+      {shotTypeDistribution && (
+        <div className="grid grid-cols-4 gap-1 bg-bg-tertiary rounded p-1.5">
+          {Object.entries(shotTypeDistribution).map(([type, data]) => (
+            <div key={type} className="text-center">
+              <div className="text-[10px] text-text-muted">{type.replace('_', ' ').slice(0, 8)}</div>
+              <div className="text-xs font-bold text-text-primary">{data.percentage.toFixed(1)}%</div>
+            </div>
+          ))}
         </div>
       )}
 

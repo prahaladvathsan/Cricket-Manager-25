@@ -37,11 +37,11 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
     return acc;
   }, {});
 
-  // Get outcome color and icon
-  const getOutcomeStyle = (outcome) => {
-    const runs = outcome?.runs || 0;
-    const isWicket = outcome?.isWicket;
-    const isExtra = outcome?.isWide || outcome?.isNoBall;
+  // Get outcome color and icon from top-level ball fields
+  const getOutcomeStyle = (ball) => {
+    const runs = ball?.runs || 0;
+    const isWicket = ball?.isWicket;
+    const isExtra = ball?.isWide || ball?.isNoBall;
 
     if (isWicket) {
       return {
@@ -87,40 +87,6 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
     };
   };
 
-  // Format ball commentary
-  const getBallCommentary = (ball) => {
-    const outcome = ball.outcome;
-    const bowler = ball.bowler?.name || 'Unknown';
-    const batsman = ball.batsman?.name || 'Unknown';
-
-    if (outcome.isWicket) {
-      const dismissalType = outcome.dismissal?.type || 'out';
-      return `WICKET! ${batsman} ${dismissalType}. ${outcome.commentary || ''}`;
-    }
-
-    if (outcome.runs === 6) {
-      return `SIX! ${batsman} smashes it for six. ${outcome.commentary || ''}`;
-    }
-
-    if (outcome.runs === 4) {
-      return `FOUR! ${batsman} finds the boundary. ${outcome.commentary || ''}`;
-    }
-
-    if (outcome.isWide) {
-      return `Wide ball from ${bowler}. ${outcome.commentary || ''}`;
-    }
-
-    if (outcome.isNoBall) {
-      return `No ball from ${bowler}. ${outcome.commentary || ''}`;
-    }
-
-    if (outcome.runs === 0) {
-      return `Dot ball. ${outcome.commentary || batsman + ' defends.'}`;
-    }
-
-    return `${batsman} scores ${outcome.runs} run${outcome.runs > 1 ? 's' : ''}. ${outcome.commentary || ''}`;
-  };
-
   return (
     <div className="space-y-3">
       {/* Header */}
@@ -151,7 +117,7 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
                 </span>
                 <div className="flex gap-1 ml-auto">
                   {overBalls.map((ball, idx) => {
-                    const style = getOutcomeStyle(ball.outcome);
+                    const style = getOutcomeStyle(ball);
                     return (
                       <div
                         key={idx}
@@ -168,7 +134,8 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
               {/* Balls in Over */}
               <div className="space-y-2">
                 {overBalls.map((ball, idx) => {
-                  const style = getOutcomeStyle(ball.outcome);
+                  const style = getOutcomeStyle(ball);
+                  const shotType = ball.metadata?.trajectoryResult?.shotType;
                   return (
                     <div key={idx} className="flex gap-2">
                       {/* Ball Number */}
@@ -183,11 +150,11 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
                             <p className="text-sm text-text-primary">
-                              {getBallCommentary(ball)}
+                              {ball.commentary || ''}
                             </p>
-                            {ball.outcome.shotType && (
+                            {shotType && (
                               <p className="text-xs text-text-secondary mt-0.5">
-                                Shot: {ball.outcome.shotType}
+                                Shot: {shotType}
                               </p>
                             )}
                           </div>
@@ -196,17 +163,14 @@ const CommentaryFeed = ({ ballByBall = [], autoScroll = true }) => {
                           </span>
                         </div>
 
-                        {/* Score After Ball */}
-                        <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
-                          <span className="font-mono">
-                            {ball.score?.totalScore || 0}/{ball.score?.wickets || 0}
-                          </span>
-                          {ball.outcome.isWicket && ball.outcome.dismissal && (
+                        {/* Wicket marker */}
+                        {ball.isWicket && ball.dismissalType && (
+                          <div className="flex items-center gap-3 mt-1 text-xs">
                             <span className="text-red-400">
-                              {ball.outcome.dismissal.type}
+                              {ball.dismissalType}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

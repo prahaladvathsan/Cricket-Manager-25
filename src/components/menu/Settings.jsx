@@ -32,6 +32,10 @@ const Settings = () => {
     updateSettings({ tutorialEnabled: !settings.tutorialEnabled });
   };
 
+  const handleModalModeChange = (e) => {
+    updateSettings({ matchResultModalMode: e.target.value });
+  };
+
   const handleReset = () => {
     if (window.confirm('Reset all settings to default values?')) {
       resetSettings();
@@ -125,6 +129,28 @@ const Settings = () => {
 
               <p className="text-sm text-cricket-text-secondary mt-2">
                 Controls the delay between each ball during match simulation.
+              </p>
+            </div>
+
+            {/* Match Result Modal Mode */}
+            <div className="bg-cricket-secondary rounded-lg p-4 mt-3">
+              <div className="flex items-center justify-between">
+                <label className="text-cricket-text-primary font-medium">
+                  Match Result Pop-ups
+                </label>
+                <select
+                  value={settings.matchResultModalMode ?? 'user_only'}
+                  onChange={handleModalModeChange}
+                  className="bg-cricket-primary border border-cricket-primary/50 rounded px-3 py-1.5
+                    text-cricket-text-primary focus:outline-none focus:ring-2 focus:ring-cricket-accent/50"
+                >
+                  <option value="all">All matches</option>
+                  <option value="user_only">Only my team</option>
+                  <option value="none">Never — use news feed</option>
+                </select>
+              </div>
+              <p className="text-sm text-cricket-text-secondary mt-2">
+                When to show the full match result modal. Hidden matches always appear as articles in the Home news feed.
               </p>
             </div>
           </div>

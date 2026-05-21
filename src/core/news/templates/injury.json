@@ -1,0 +1,58 @@
+{
+  "injury.onset": [
+    {
+      "when": { "injury.severity": "severe" },
+      "headline": "${player.name} ruled out — ${injury.durationDays} days",
+      "subhead": "${team.name} suffer major blow as ${player.primaryRole} stretchered off",
+      "body": [
+        "${team.name} have been dealt a significant setback as ${player.name} was forced off the field with a severe ${injury.type} injury during the match.",
+        "Medical staff have confirmed the ${player.primaryRole} will be unavailable for the next ${injury.durationDays} days, missing an estimated ${impact.missesMatches} fixtures.",
+        "The player is expected to return to availability on ${impact.nextAvailableDate}. Coaching staff will be assessing replacement options in the coming days."
+      ],
+      "inboxSubject": "SEVERE INJURY — ${player.name} out ${injury.durationDays}d",
+      "inboxType": "injury",
+      "sender": "${team.name} Medical Team",
+      "tags": ["injury", "severe", "${team.id}"]
+    },
+    {
+      "when": { "injury.severity": "major" },
+      "headline": "${player.name} sidelined with ${injury.type} injury",
+      "subhead": "${team.name} face ${injury.durationDays}-day absence",
+      "body": [
+        "${player.name} picked up a ${injury.type} injury during ${team.name}'s recent fixture and will be unavailable for an extended period.",
+        "Initial assessments suggest a ${injury.durationDays}-day recovery window, likely sidelining the ${player.primaryRole} for around ${impact.missesMatches} matches.",
+        "The medical team has scheduled a return-to-play review for ${impact.nextAvailableDate}."
+      ],
+      "inboxSubject": "Injury blow: ${player.name} out ${injury.durationDays}d",
+      "inboxType": "injury",
+      "sender": "${team.name} Medical Team",
+      "tags": ["injury", "major"]
+    },
+    {
+      "headline": "${player.name} picks up minor knock",
+      "subhead": "Short-term absence expected at ${team.name}",
+      "body": [
+        "${player.name} sustained a minor ${injury.type} issue and will be unavailable for the next ${injury.durationDays} days.",
+        "The ${player.primaryRole} is expected back in contention by ${impact.nextAvailableDate}."
+      ],
+      "inboxSubject": "${player.name} injury update",
+      "inboxType": "injury",
+      "sender": "${team.name} Medical Team",
+      "tags": ["injury", "minor"]
+    }
+  ],
+  "injury.recovery": [
+    {
+      "headline": "${player.name} cleared to return",
+      "subhead": "${team.name} ${player.primaryRole} fit and available for selection",
+      "body": [
+        "${player.name} has been declared fully fit following a successful rehabilitation programme and is available for ${team.name}'s next fixture.",
+        "The ${player.primaryRole} has completed all required fitness benchmarks and rejoins the senior squad effective immediately."
+      ],
+      "inboxSubject": "${player.name} returns from injury",
+      "inboxType": "recovery",
+      "sender": "${team.name} Medical Team",
+      "tags": ["recovery"]
+    }
+  ]
+}

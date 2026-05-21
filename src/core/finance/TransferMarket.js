@@ -7,6 +7,7 @@
 import transferConfig from '../../data/config/transferConfig.json';
 import { getPlayerRating } from '../../utils/ratingHelper.js';
 import useTransferStore from '../../stores/transferStore.js';
+import { getNewsDispatcher } from '../news/newsDispatcherSingleton.js';
 
 export default class TransferMarket {
   constructor(financeStore = null, teamStore = null, playerStore = null) {
@@ -408,6 +409,9 @@ export default class TransferMarket {
       this.listings.delete(listing.id);
 
       console.log(`✅ Transfer completed: ${listing.player.name} to ${buyerTeamId} for $${(bidAmount / 1000).toFixed(0)}K (${listing.bids.length} bids)`);
+
+      this.emitTransferCompleted(listing, buyerTeamId, bidAmount);
+
       return { success: true, transfer };
     }
 
@@ -416,6 +420,51 @@ export default class TransferMarket {
     listing.status = 'expired';
     this.listings.delete(listing.id);
     return { success: false, error: 'All bidders failed validation' };
+  }
+
+  /**
+   * Emit a transfer.completed news event with denormalized team/player context.
+   * @private
+   */
+  emitTransferCompleted(listing, buyerTeamId, bidAmount) {
+    try {
+      const teamStoreState = this.teamStore?.getState();
+      const fromTeam = teamStoreState?.teams?.[listing.teamId];
+      const toTeam = teamStoreState?.teams?.[buyerTeamId];
+      const userTeamId = teamStoreState?.userTeamId;
+
+      const formatMoney = (n) => `$${(n / 1000).toFixed(0)}K`;
+      const rating = listing.player.rating || 0;
+      const isMarquee = rating >= 80 || bidAmount >= 1_500_000;
+
+      const dispatcher = getNewsDispatcher();
+      dispatcher.emit({
+        type: 'transfer.completed',
+        payload: {
+          player: {
+            id: listing.playerId,
+            name: listing.player.name,
+            primaryRole: listing.player.primaryRole || listing.player.role || 'Player',
+            rating
+          },
+          fromTeam: {
+            id: listing.teamId,
+            name: fromTeam?.name || listing.teamId
+          },
+          toTeam: {
+            id: buyerTeamId,
+            name: toTeam?.name || buyerTeamId
+          },
+          transferFee: formatMoney(bidAmount),
+          transferFeeRaw: bidAmount,
+          totalBids: listing.bids.length,
+          isMarquee,
+          isUserTeam: userTeamId && (userTeamId === listing.teamId || userTeamId === buyerTeamId)
+        }
+      });
+    } catch (err) {
+      console.error('[TransferMarket] Failed to emit transfer.completed news:', err);
+    }
   }
 
   /**

@@ -1,0 +1,482 @@
+{
+  "matchCount": 1000,
+  "generatedAt": "2026-05-21T14:40:43.597Z",
+  "inn1Stats": {
+    "mean": 143.293,
+    "std": 45.535295661717186,
+    "p10": 87,
+    "p50": 140,
+    "p90": 207,
+    "min": 32,
+    "max": 271
+  },
+  "inn2Stats": {
+    "mean": 118.622,
+    "std": 36.009625324349024,
+    "p10": 76,
+    "p50": 114,
+    "p90": 170,
+    "min": 29,
+    "max": 241
+  },
+  "allTotals": {
+    "mean": 130.9575,
+    "std": 42.86306911258216,
+    "p10": 80,
+    "p50": 125,
+    "p90": 192,
+    "min": 29,
+    "max": 271
+  },
+  "allWkts": {
+    "mean": 7.867,
+    "std": 3.0035497332323304,
+    "p10": 3,
+    "p50": 10,
+    "p90": 10,
+    "min": 0,
+    "max": 10
+  },
+  "phaseStats": {
+    "powerplay": {
+      "balls": 71858,
+      "runs": 121371,
+      "wickets": 4881,
+      "dots": 19966,
+      "fours": 13776,
+      "sixes": 3812
+    },
+    "earlyMiddle": {
+      "balls": 55600,
+      "runs": 74969,
+      "wickets": 5112,
+      "dots": 15959,
+      "fours": 7210,
+      "sixes": 1338
+    },
+    "lateMiddle": {
+      "balls": 31713,
+      "runs": 41247,
+      "wickets": 3273,
+      "dots": 9190,
+      "fours": 3644,
+      "sixes": 766
+    },
+    "death": {
+      "balls": 18809,
+      "runs": 24328,
+      "wickets": 2468,
+      "dots": 5595,
+      "fours": 2356,
+      "sixes": 496
+    }
+  },
+  "topScorerStats": {
+    "runs": {
+      "mean": 54.6335,
+      "std": 29.94956056021524,
+      "p10": 24,
+      "p50": 48,
+      "p90": 97,
+      "min": 9,
+      "max": 176
+    },
+    "SR": {
+      "mean": 187.0143390410556,
+      "std": 41.3849225148422,
+      "p10": 133.33333333333331,
+      "p50": 186.20689655172413,
+      "p90": 240,
+      "min": 75,
+      "max": 371.42857142857144
+    }
+  },
+  "topBowlerStats": {
+    "wickets": {
+      "mean": 3.4885,
+      "std": 1.4020940588990451,
+      "p10": 2,
+      "p50": 4,
+      "p90": 5,
+      "min": 0,
+      "max": 8
+    },
+    "econ": {
+      "mean": 7.180352462301908,
+      "std": 2.4694772326410703,
+      "p10": 4.5,
+      "p50": 6.857142857142857,
+      "p90": 10.5,
+      "min": 0,
+      "max": 17.714285714285715
+    }
+  },
+  "wins": {
+    "TeamA": 539,
+    "TeamB": 457,
+    "ties": 4
+  },
+  "batLeaders": [
+    {
+      "id": "1070173",
+      "name": "Shubman Gill",
+      "runs": 44025,
+      "balls": 21678,
+      "innings": 1000,
+      "dismissals": 866,
+      "fours": 5485,
+      "sixes": 1643,
+      "SR": 203.08607805148077,
+      "avg": 50.83718244803695,
+      "runsPerInn": 44.025
+    },
+    {
+      "id": "272450",
+      "name": "Mitchell Marsh",
+      "runs": 37251,
+      "balls": 19085,
+      "innings": 1000,
+      "dismissals": 878,
+      "fours": 4632,
+      "sixes": 1364,
+      "SR": 195.18470002619858,
+      "avg": 42.42710706150341,
+      "runsPerInn": 37.251
+    },
+    {
+      "id": "581379",
+      "name": "Shai Hope",
+      "runs": 25319,
+      "balls": 14811,
+      "innings": 1000,
+      "dismissals": 926,
+      "fours": 2789,
+      "sixes": 784,
+      "SR": 170.94726892174734,
+      "avg": 27.34233261339093,
+      "runsPerInn": 25.319
+    },
+    {
+      "id": "1175488",
+      "name": "Dhruv Jurel",
+      "runs": 18787,
+      "balls": 11989,
+      "innings": 970,
+      "dismissals": 823,
+      "fours": 1897,
+      "sixes": 461,
+      "SR": 156.70197681207773,
+      "avg": 22.827460510328066,
+      "runsPerInn": 19.368041237113403
+    },
+    {
+      "id": "321777",
+      "name": "David Miller",
+      "runs": 18729,
+      "balls": 11871,
+      "innings": 972,
+      "dismissals": 901,
+      "fours": 1923,
+      "sixes": 493,
+      "SR": 157.7710386656558,
+      "avg": 20.786903440621533,
+      "runsPerInn": 19.26851851851852
+    },
+    {
+      "id": "605661",
+      "name": "Ryan Rickelton",
+      "runs": 16082,
+      "balls": 11600,
+      "innings": 993,
+      "dismissals": 921,
+      "fours": 1614,
+      "sixes": 350,
+      "SR": 138.63793103448276,
+      "avg": 17.4614549402823,
+      "runsPerInn": 16.195367573011076
+    },
+    {
+      "id": "595790",
+      "name": "Nikolaas Davin",
+      "runs": 14553,
+      "balls": 9937,
+      "innings": 940,
+      "dismissals": 819,
+      "fours": 1469,
+      "sixes": 334,
+      "SR": 146.4526517057462,
+      "avg": 17.76923076923077,
+      "runsPerInn": 15.481914893617022
+    },
+    {
+      "id": "1193310",
+      "name": "Saiteja Mukkamalla",
+      "runs": 14546,
+      "balls": 10611,
+      "innings": 1000,
+      "dismissals": 974,
+      "fours": 1527,
+      "sixes": 292,
+      "SR": 137.0841579492979,
+      "avg": 14.93429158110883,
+      "runsPerInn": 14.546
+    },
+    {
+      "id": "431901",
+      "name": "Evin Lewis",
+      "runs": 12343,
+      "balls": 8823,
+      "innings": 898,
+      "dismissals": 762,
+      "fours": 1285,
+      "sixes": 257,
+      "SR": 139.89572707695794,
+      "avg": 16.198162729658794,
+      "runsPerInn": 13.744988864142538
+    },
+    {
+      "id": "391485",
+      "name": "Jason Holder",
+      "runs": 7814,
+      "balls": 6789,
+      "innings": 877,
+      "dismissals": 762,
+      "fours": 600,
+      "sixes": 146,
+      "SR": 115.09795257033437,
+      "avg": 10.254593175853019,
+      "runsPerInn": 8.909920182440137
+    },
+    {
+      "id": "793463",
+      "name": "Rashid Khan",
+      "runs": 7435,
+      "balls": 6300,
+      "innings": 843,
+      "dismissals": 722,
+      "fours": 622,
+      "sixes": 123,
+      "SR": 118.01587301587301,
+      "avg": 10.297783933518005,
+      "runsPerInn": 8.819691577698695
+    },
+    {
+      "id": "681117",
+      "name": "Faheem Ashraf",
+      "runs": 7850,
+      "balls": 7032,
+      "innings": 917,
+      "dismissals": 837,
+      "fours": 642,
+      "sixes": 108,
+      "SR": 111.63253697383391,
+      "avg": 9.37873357228196,
+      "runsPerInn": 8.56052344601963
+    },
+    {
+      "id": "940973",
+      "name": "Mohammed Siraj",
+      "runs": 4875,
+      "balls": 4671,
+      "innings": 776,
+      "dismissals": 670,
+      "fours": 334,
+      "sixes": 14,
+      "SR": 104.36737315350032,
+      "avg": 7.276119402985074,
+      "runsPerInn": 6.282216494845361
+    },
+    {
+      "id": "1182529",
+      "name": "Noor Ahmad",
+      "runs": 5148,
+      "balls": 5032,
+      "innings": 822,
+      "dismissals": 747,
+      "fours": 338,
+      "sixes": 5,
+      "SR": 102.30524642289349,
+      "avg": 6.891566265060241,
+      "runsPerInn": 6.262773722627737
+    },
+    {
+      "id": "326016",
+      "name": "Bhuvneshwar Kumar",
+      "runs": 4693,
+      "balls": 4928,
+      "innings": 788,
+      "dismissals": 705,
+      "fours": 296,
+      "sixes": 5,
+      "SR": 95.23133116883116,
+      "avg": 6.656737588652482,
+      "runsPerInn": 5.9555837563451774
+    }
+  ],
+  "bowLeaders": [
+    {
+      "id": "928067",
+      "name": "Josh Little",
+      "runs": 7781,
+      "balls": 6584,
+      "wickets": 933,
+      "innings": 395,
+      "econ": 7.0908262454435,
+      "avg": 8.339764201500536,
+      "SR": 7.056806002143623,
+      "wPerInn": 2.3620253164556964
+    },
+    {
+      "id": "793463",
+      "name": "Rashid Khan",
+      "runs": 29320,
+      "balls": 22703,
+      "wickets": 2101,
+      "innings": 992,
+      "econ": 7.7487556710566885,
+      "avg": 13.955259400285579,
+      "SR": 10.805806758686339,
+      "wPerInn": 2.117943548387097
+    },
+    {
+      "id": "553821",
+      "name": "JJ Smit",
+      "runs": 17309,
+      "balls": 13910,
+      "wickets": 1553,
+      "innings": 736,
+      "econ": 7.466139468008627,
+      "avg": 11.145524790727624,
+      "SR": 8.956857694784288,
+      "wPerInn": 2.110054347826087
+    },
+    {
+      "id": "1182529",
+      "name": "Noor Ahmad",
+      "runs": 31651,
+      "balls": 22684,
+      "wickets": 2050,
+      "innings": 986,
+      "econ": 8.371803914653501,
+      "avg": 15.439512195121951,
+      "SR": 11.065365853658536,
+      "wPerInn": 2.079107505070994
+    },
+    {
+      "id": "942645",
+      "name": "Khaleel Ahmed",
+      "runs": 9237,
+      "balls": 6806,
+      "wickets": 851,
+      "innings": 411,
+      "econ": 8.14310902145166,
+      "avg": 10.854289071680377,
+      "SR": 7.99764982373678,
+      "wPerInn": 2.070559610705596
+    },
+    {
+      "id": "8917",
+      "name": "Moeen Ali",
+      "runs": 25093,
+      "balls": 17824,
+      "wickets": 1688,
+      "innings": 871,
+      "econ": 8.446925493716337,
+      "avg": 14.865521327014218,
+      "SR": 10.559241706161137,
+      "wPerInn": 1.9380022962112515
+    },
+    {
+      "id": "391485",
+      "name": "Jason Holder",
+      "runs": 31822,
+      "balls": 21710,
+      "wickets": 1853,
+      "innings": 996,
+      "econ": 8.794656840165821,
+      "avg": 17.17323259579061,
+      "SR": 11.716135995682677,
+      "wPerInn": 1.8604417670682731
+    },
+    {
+      "id": "698317",
+      "name": "Ruben Trumpelmann",
+      "runs": 24040,
+      "balls": 17772,
+      "wickets": 1779,
+      "innings": 1000,
+      "econ": 8.11613774476705,
+      "avg": 13.513209668353007,
+      "SR": 9.989881956155143,
+      "wPerInn": 1.779
+    },
+    {
+      "id": "326016",
+      "name": "Bhuvneshwar Kumar",
+      "runs": 42236,
+      "balls": 24000,
+      "wickets": 1524,
+      "innings": 1000,
+      "econ": 10.559,
+      "avg": 27.713910761154857,
+      "SR": 15.748031496062993,
+      "wPerInn": 1.524
+    },
+    {
+      "id": "940973",
+      "name": "Mohammed Siraj",
+      "runs": 43426,
+      "balls": 23987,
+      "wickets": 1402,
+      "innings": 1000,
+      "econ": 10.862383791220244,
+      "avg": 30.97432239657632,
+      "SR": 17.10912981455064,
+      "wPerInn": 1.402
+    }
+  ],
+  "benchmarkChecks": [
+    {
+      "label": "Innings total mean",
+      "value": 130.9575,
+      "ok": false,
+      "target": "155-180"
+    },
+    {
+      "label": "Innings total p10",
+      "value": 80,
+      "ok": false,
+      "target": "110-140"
+    },
+    {
+      "label": "Innings total p90",
+      "value": 192,
+      "ok": false,
+      "target": "195-220"
+    },
+    {
+      "label": "Wickets/inn",
+      "value": 7.867,
+      "ok": true,
+      "target": "6-8"
+    },
+    {
+      "label": "PP RR",
+      "value": 10.134236967352278,
+      "ok": false,
+      "target": "8.0-8.5"
+    },
+    {
+      "label": "Middle RR",
+      "value": 7.986164717739626,
+      "ok": true,
+      "target": "7.5-8.5"
+    },
+    {
+      "label": "Death RR",
+      "value": 7.760540166941357,
+      "ok": false,
+      "target": "9.5-11.0"
+    }
+  ]
+}

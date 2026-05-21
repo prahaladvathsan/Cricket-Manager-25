@@ -20,8 +20,7 @@ SimpleBallSimulator
 ├── BallTrajectoryPhysics (Algebraic trajectory calculations)
 ├── FieldPositioningSystem (Fielder formation management)
 ├── FielderMovementCalculator (Interception analysis)
-├── RunningDecisionCalculator (Running decisions & outcomes)
-└── ProbabilityEngine (Configurable probability calculations)
+└── RunningDecisionCalculator (Running decisions & outcomes)
 ```
 
 **Single Import**: Users only need `import SimpleBallSimulator` - all calculators are managed internally.
@@ -524,7 +523,7 @@ See the interactive Mermaid flowchart: [`match-engine-flow.mmd`](./match-engine-
 ```
 SimpleBallSimulator
 ├── DecisionCalculator (independent)
-├── ContactCalculator → ProbabilityEngine
+├── ContactCalculator (independent)
 ├── TrajectoryCalculator → BallTrajectoryPhysics + FielderMovementCalculator
 └── FieldingCalculator2D → FieldPositioningSystem + FielderMovementCalculator + RunningDecisionCalculator
 ```

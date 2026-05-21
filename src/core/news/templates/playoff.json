@@ -1,0 +1,71 @@
+{
+  "playoff.qualified": [
+    {
+      "when": { "qualification.seed": 1 },
+      "headline": "${team.name} finish top of the table",
+      "subhead": "League leaders take the top seed into the playoffs",
+      "body": [
+        "${team.name} have wrapped up the WPL regular season as league leaders on ${qualification.points} points with a net run rate of ${qualification.netRunRate}.",
+        "As the top seed, ${team.name} earn the first crack at the final via Qualifier 1, where they will face the second-placed team.",
+        "A win in Q1 books a direct ticket to the final; a loss drops them to Q2 for a second chance."
+      ],
+      "inboxSubject": "${team.name} finish top of the table",
+      "inboxType": "board",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "qualified", "top_seed"]
+    },
+    {
+      "when": { "qualification.qualifiedAs": "Q1" },
+      "headline": "${team.name} qualify for Qualifier 1",
+      "subhead": "Seed ${qualification.seed} secures direct path to the final",
+      "body": [
+        "${team.name} have booked their place in Qualifier 1 of the WPL playoffs, finishing the regular season in position ${qualification.seed} on ${qualification.points} points.",
+        "Net run rate of ${qualification.netRunRate} and a record of ${qualification.wins}W-${qualification.losses}L sees them earn the prized two-life route into the final."
+      ],
+      "inboxSubject": "${team.name} qualify for playoffs",
+      "inboxType": "board",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "qualified", "q1"]
+    },
+    {
+      "when": { "qualification.qualifiedAs": "Eliminator" },
+      "headline": "${team.name} clinch playoff berth",
+      "subhead": "Eliminator route awaits seed ${qualification.seed}",
+      "body": [
+        "${team.name} have squeezed into the WPL playoffs on the final day of the regular season, finishing in position ${qualification.seed} on ${qualification.points} points.",
+        "Their reward is the high-stakes Eliminator — win, and they live to fight in Q2. Lose, and the season is over."
+      ],
+      "inboxSubject": "${team.name} qualify for Eliminator",
+      "inboxType": "board",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "qualified", "eliminator"]
+    },
+    {
+      "headline": "${team.name} qualify for the playoffs",
+      "subhead": "Seed ${qualification.seed} confirmed on ${qualification.points} points",
+      "body": [
+        "${team.name} have officially qualified for the WPL playoffs at seed ${qualification.seed}.",
+        "Their regular-season record stands at ${qualification.wins}W-${qualification.losses}L with a net run rate of ${qualification.netRunRate}."
+      ],
+      "inboxSubject": "${team.name} qualify for playoffs",
+      "inboxType": "board",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "qualified"]
+    }
+  ],
+  "playoff.champion_crowned": [
+    {
+      "headline": "${champion.name} crowned WPL champions",
+      "subhead": "Final won by ${margin} over ${runnerUp.name}",
+      "body": [
+        "${champion.name} are the new champions of the World Premier League after defeating ${runnerUp.name} by ${margin} in tonight's final.",
+        "It caps a memorable season ${season} campaign and writes another chapter into franchise history.",
+        "${runnerUp.name} finish as runners-up after a hard-fought playoff run."
+      ],
+      "inboxSubject": "🏆 ${champion.name} win the WPL!",
+      "inboxType": "season_summary",
+      "sender": "WPL Newsdesk",
+      "tags": ["playoff", "final", "champion"]
+    }
+  ]
+}

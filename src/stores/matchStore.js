@@ -8,6 +8,24 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { indexedDBStorage } from '../utils/indexedDBStorage.js';
 import { markHydrated } from '../utils/storeHydration.js';
+import { generateCommentary } from '../core/match-engine/commentary/index.js';
+
+/**
+ * Compute chase-context tension variables for a 2nd-innings ball.
+ * @param {number|null} target - innings.target (null in 1st innings)
+ * @param {number} totalScore - batting team's total runs after the ball
+ * @param {number} ballsRemaining - legal balls left after this ball
+ * @returns {Object|null} { target, runsRequired, ballsRemaining, requiredRunRate } or null
+ */
+function computeChaseContext(target, totalScore, ballsRemaining) {
+  if (target == null) return null;
+  const runsRequired = Math.max(0, target - totalScore);
+  const safeBallsRemaining = Math.max(0, ballsRemaining);
+  const requiredRunRate = safeBallsRemaining > 0
+    ? (runsRequired / safeBallsRemaining) * 6
+    : null;
+  return { target, runsRequired, ballsRemaining: safeBallsRemaining, requiredRunRate };
+}
 
 /**
  * @typedef {Object} MatchState
@@ -349,9 +367,6 @@ const useMatchStore = create(
       nonStriker: state.innings.nonStriker
     };
 
-    const newBallByBall = [...state.ballByBall, enrichedBallResult];
-    const newCommentary = [...state.commentary, ballResult.commentary];
-
     // Update scores
     const newTeams = { ...state.teams };
     newTeams.batting.totalScore += ballResult.runs || 0;
@@ -390,6 +405,30 @@ const useMatchStore = create(
     if (totalBalls > 72) phase = 'lateMiddle';  // After 12 overs
     if (totalBalls > 96) phase = 'death';        // After 16 overs
 
+    // Chase context (2nd innings only): tension variables for chase-aware commentary
+    const ballsLeft = 120 - totalBalls;
+    if (state.innings.number === 2) {
+      enrichedBallResult.chaseContext = computeChaseContext(
+        state.innings.target,
+        newTeams.batting.totalScore,
+        ballsLeft
+      );
+
+      // Regenerate commentary now that chaseContext is available. Only re-run
+      // when the simulator already produced a line (i.e. live mode — quick-sim
+      // skips commentary entirely).
+      if (enrichedBallResult.commentary && enrichedBallResult.chaseContext) {
+        enrichedBallResult.commentary = generateCommentary(enrichedBallResult, {
+          strikerName: enrichedBallResult.strikerName,
+          bowlerName: enrichedBallResult.bowlerName,
+          nonStrikerName: enrichedBallResult.nonStrikerName
+        });
+      }
+    }
+
+    const newBallByBall = [...state.ballByBall, enrichedBallResult];
+    const newCommentary = [...state.commentary, enrichedBallResult.commentary];
+
     return {
       teams: newTeams,
       currentBall: {
@@ -399,7 +438,7 @@ const useMatchStore = create(
         matchSituation: {
           ...state.currentBall.matchSituation,
           phase,
-          ballsLeft: 120 - totalBalls
+          ballsLeft
         }
       },
       ballByBall: newBallByBall,
@@ -623,16 +662,20 @@ const useMatchStore = create(
   getCurrentSituation: () => {
     const state = get();
     const { teams, currentBall, innings } = state;
+    const chase = computeChaseContext(
+      innings.target,
+      teams.batting.totalScore,
+      currentBall.matchSituation.ballsLeft
+    );
 
     return {
       score: `${teams.batting.totalScore}/${teams.batting.wickets}`,
       overs: `${currentBall.over}.${currentBall.ball}`,
       phase: currentBall.matchSituation.phase,
-      required: innings.target ? innings.target - teams.batting.totalScore : null,
+      required: chase ? chase.runsRequired : null,
       ballsLeft: currentBall.matchSituation.ballsLeft,
       runRate: teams.batting.totalScore / ((currentBall.over * 6 + currentBall.ball) / 6),
-      requiredRate: innings.target ?
-        ((innings.target - teams.batting.totalScore) / (currentBall.matchSituation.ballsLeft / 6)) : null
+      requiredRate: chase ? chase.requiredRunRate : null
     };
   },
 
