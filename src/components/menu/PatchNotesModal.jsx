@@ -7,14 +7,14 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.4.0';
+const CURRENT_VERSION = '1.3.2';
 const RELEASE_DATE = 'May 2026';
 const RELEASE_TAGLINE = 'The Auction Intelligence Pass';
 
 const PATCH_NOTES = [
   {
     icon: Sparkles,
-    title: 'v1.4.0 The Auction Intelligence Pass',
+    title: 'v1.3.2 The Auction Intelligence Pass',
     color: 'text-cricket-accent',
     bgColor: 'bg-cricket-accent/10',
     borderColor: 'border-cricket-accent/30',
