@@ -17,6 +17,7 @@ import { buildFielderArray } from '../../../utils/fielderArrayBuilder.js';
 import { applyPlaystyleOverrides, restoreOriginalPlaystyles } from '../../TacticsLoader.js';
 import { getNewsDispatcher } from '../../news/newsDispatcherSingleton.js';
 import useGameStore from '../../../stores/gameStore.js';
+import { computeAiBuffs, DIFFICULTY } from '../../tactics/DifficultyBuffs.js';
 
 // DEBUG: Set to true to enable match engine debugging
 const DEBUG_MATCH_ENGINE = false;
@@ -66,6 +67,12 @@ class MatchEngine {
     // State
     this.isSimulating = false;
     this.isPaused = false;
+
+    // Difficulty buff context — read once per engine instance. Hard/Impossible
+    // mode AI buffs only fire when the user's team is one of the two sides
+    // (computeAiBuffs returns no-op for AI-vs-AI fixtures).
+    this.userTeamId = this.teamStore?.getState?.()?.userTeamId ?? null;
+    this.difficulty = useGameStore.getState().settings?.difficulty || DIFFICULTY.NORMAL;
   }
 
   /**
@@ -685,7 +692,13 @@ class MatchEngine {
       },
       wicketKeeper,
       matchSituation: enhancedMatchSituation,
-      tacticsState: matchState.tacticsState
+      tacticsState: matchState.tacticsState,
+      aiBuffs: computeAiBuffs({
+        difficulty: this.difficulty,
+        userTeamId: this.userTeamId,
+        battingTeamId: innings.battingTeam,
+        bowlingTeamId: innings.bowlingTeam
+      })
     };
 
     // DEBUG: Log fielding team context on first few balls

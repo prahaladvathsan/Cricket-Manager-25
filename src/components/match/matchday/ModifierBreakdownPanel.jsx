@@ -337,6 +337,9 @@ export default function ModifierBreakdownPanel({
 
       {/* Striker Content - Scrollable */}
       <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+        {/* Difficulty (Impossible-mode AI baseline buff) */}
+        {renderModifierSection('Difficulty', strikerBreakdown?.difficultyModifiers)}
+
         {/* Tactical modifiers */}
         {renderStrikerTactical()}
 
@@ -409,6 +412,9 @@ export default function ModifierBreakdownPanel({
 
       {/* Bowler Content - Scrollable */}
       <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+        {/* Difficulty (Impossible-mode AI baseline buff) */}
+        {renderModifierSection('Difficulty', bowlerBreakdown?.difficultyModifiers)}
+
         {/* Tactical modifiers */}
         {renderBowlerTactical()}
 
@@ -479,6 +485,9 @@ export default function ModifierBreakdownPanel({
 
               {/* Striker Content - Scrollable */}
               <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+                {/* Difficulty (Impossible-mode AI baseline buff) */}
+                {renderModifierSection('Difficulty', strikerBreakdown?.difficultyModifiers)}
+
                 {/* Tactical modifiers */}
                 {renderStrikerTactical()}
 

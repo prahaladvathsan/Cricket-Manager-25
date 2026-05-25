@@ -110,12 +110,29 @@ class PressureCalculator {
    * @param {Object} player - Player object
    * @param {number} pressure - Pressure value (0-100)
    * @param {string} role - 'batting' or 'bowling'
+   * @param {Object} [options]
+   * @param {boolean} [options.suppressPenalty] - Skip the playstyle-rating deduction but still stamp metadata (AI buff)
    * @returns {Object} Modified player (copy)
    */
-  applyPressureToPlaystyleRating(player, pressure, role) {
+  applyPressureToPlaystyleRating(player, pressure, role, options = {}) {
+    const { suppressPenalty = false } = options;
     // If pressure <= 50, no penalty
     if (pressure <= 50) {
       return player;
+    }
+
+    if (suppressPenalty) {
+      // Surface the actual pressure for the UI without touching the rating.
+      const stamped = {
+        ...player,
+        pressureMetadata: {
+          ...(player.pressureMetadata || {}),
+          [role === 'batting' ? 'battingPressure' : 'bowlingPressure']: pressure,
+          penaltyApplied: 0,
+          suppressed: true
+        }
+      };
+      return stamped;
     }
 
     // Deep clone player to avoid mutating original (must clone nested attribute objects)

@@ -189,15 +189,22 @@ class EnergyManager {
    * Apply energy penalties to player attributes
    * @param {Object} player - Player object
    * @param {number} energy - Current energy value
+   * @param {Object} [options]
+   * @param {boolean} [options.suppressPenalty] - Skip attribute deductions but leave depletion tracking intact (AI buff)
    * @returns {Object} Modified player (copy)
    */
-  applyEnergyModifiers(player, energy) {
+  applyEnergyModifiers(player, energy, options = {}) {
+    const { suppressPenalty = false } = options;
     const levelName = this.getEnergyLevel(energy);
     const levelData = this.levels[levelName];
     const penalties = levelData.penalties;
 
     if (!penalties || Object.keys(penalties).length === 0) {
       return player; // No penalties for Fresh
+    }
+
+    if (suppressPenalty) {
+      return player; // Band still surfaces via describeBand() for UI; no attribute deduction.
     }
 
     // Deep clone player to avoid mutating original (must clone nested attribute objects)
