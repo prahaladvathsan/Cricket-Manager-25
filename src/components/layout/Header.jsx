@@ -54,11 +54,9 @@ const Header = () => {
   const [buttonSuccess, setButtonSuccess] = useState(false);
   const prevDateRef = useRef(null);
 
-  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal({
-    onClose: () => {
-      advanceDay();
-    }
-  });
+  // Modal is purely informational — match-completion state changes (advanceDay,
+  // autosave) happen inline before the modal opens, so closing it is a no-op.
+  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal();
 
   const {
     currentSeason,
@@ -357,21 +355,16 @@ const Header = () => {
 
       advanceToNextMatch();
 
-      // Show result modal using hook (respect user's matchResultModalMode setting:
-      // 'none' suppresses entirely — news feed covers it instead.)
-      const modalMode = useGameStore.getState().settings?.matchResultModalMode ?? 'user_only';
-      if (modalMode !== 'none') {
-        showResult(fullScorecard);
-      } else {
-        // No modal → advance day directly (modal's onClose normally does this)
-        advanceDay();
-      }
-
       // Send match result inbox message
       const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
       addMessage(MessageGenerator.generateMatchResultMessage(fullScorecard, userTeamId, opponentTeam.name));
       const userWon = result.winner === userTeamId;
       const score = `${result.innings1.totalScore}/${result.innings1.wickets} vs ${result.innings2.totalScore}/${result.innings2.wickets}`;
+
+      // Advance the day BEFORE autosave so the snapshot captures the new
+      // gameDay / processed calendar event. Modal display happens after,
+      // and is decoupled from game-state progression.
+      advanceDay();
 
       SaveGameManager.autosaveAfterMatch(
         {
@@ -396,7 +389,12 @@ const Header = () => {
         }
       });
 
-      // Don't advance day yet - wait for user to close modal
+      // Show result modal — purely informational, no game-state side-effects.
+      // Respects user's matchResultModalMode ('none' suppresses entirely).
+      const modalMode = useGameStore.getState().settings?.matchResultModalMode ?? 'user_only';
+      if (modalMode !== 'none') {
+        showResult(fullScorecard);
+      }
     } catch (error) {
       console.error('Error simulating user match:', error);
       // Still advance day on error
