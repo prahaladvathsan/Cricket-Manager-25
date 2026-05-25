@@ -500,7 +500,7 @@ const LoadGame = () => {
           <button onClick={() => navigate('/')} className="btn-secondary flex items-center gap-2 text-sm">
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h1 className="text-xl font-bold text-cricket-text-primary">Save Games</h1>
+          <h1 className="text-xl font-bold text-cricket-text-primary">Career Saves</h1>
           <button onClick={loadSaves} className="btn-secondary p-2" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -514,9 +514,9 @@ const LoadGame = () => {
           <div className="mb-3 px-4 py-3 rounded-lg bg-yellow-900/30 border border-yellow-600/50 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-yellow-400 font-semibold text-sm">Game State Reset Detected</p>
+              <p className="text-yellow-400 font-semibold text-sm">Career State Reset Detected</p>
               <p className="text-yellow-200/80 text-xs mt-1">
-                Your game state was reset, possibly due to a page refresh or browser data clearing.
+                Your career state was reset, possibly due to a page refresh or browser data clearing.
                 Load your most recent save below to continue where you left off.
               </p>
             </div>
@@ -544,7 +544,7 @@ const LoadGame = () => {
               <div className="w-12 flex-shrink-0 text-center">Pos</div>
               <div className="w-10 flex-shrink-0 text-center">Season</div>
               <div className="w-14 flex-shrink-0 text-center">Record</div>
-              <div className="w-14 flex-shrink-0 text-center">Game Date</div>
+              <div className="w-14 flex-shrink-0 text-center">Career Date</div>
               <div className="w-12 flex-shrink-0 text-right">Saved</div>
               <div className="w-28 flex-shrink-0 text-right">Actions</div>
             </div>
@@ -757,14 +757,14 @@ const LoadGame = () => {
           /* No existing save */
           <div className="bg-black/40 border border-gray-600/50 rounded-lg p-8 text-center">
             <AlertCircle className="w-12 h-12 text-cricket-text-secondary mx-auto mb-3 opacity-50" />
-            <h3 className="text-lg font-semibold text-cricket-text-primary mb-1">No Saved Game</h3>
+            <h3 className="text-lg font-semibold text-cricket-text-primary mb-1">No Saved Career</h3>
             <p className="text-cricket-text-secondary text-sm mb-4">Start a new career or import a save.</p>
             <div className="flex flex-col gap-2 max-w-xs mx-auto">
               <button
                 onClick={() => navigate('/team-selection')}
                 className="btn-primary flex items-center justify-center gap-2"
               >
-                <Play className="w-4 h-4" /> New Game
+                <Play className="w-4 h-4" /> New Career
               </button>
               <button
                 onClick={handleImportClick}
@@ -787,7 +787,7 @@ const LoadGame = () => {
 
         {(loading || importing) && (
           <LoadingScreen
-            message={loading ? "Loading Game" : "Importing Save"}
+            message={loading ? "Loading Career" : "Importing Save"}
             submessage={loading ? "Preparing..." : "Reading file..."}
           />
         )}

@@ -214,6 +214,14 @@ class AuctionEngine {
     const batsmenRounds = this.splitCategoryIntoRounds(batsmen, 'batsmen', playersPerRound);
     const bowlerRounds = this.splitCategoryIntoRounds(bowlers, 'bowlers', playersPerRound);
 
+    // Tag marquee players with their round index so AI valuation can apply a star-player multiplier
+    marqueeRounds.forEach((round, idx) => {
+      round.players.forEach(p => {
+        p.marqueeRoundIndex = idx;
+        p.totalMarqueeRounds = marqueeRounds.length;
+      });
+    });
+
     // Build final round order
     const orderedRounds = [];
 

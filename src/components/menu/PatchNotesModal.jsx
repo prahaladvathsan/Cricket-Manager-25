@@ -7,11 +7,29 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.4.0';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Match Engine Balance Pass';
+const RELEASE_TAGLINE = 'The Auction Intelligence Pass';
 
 const PATCH_NOTES = [
+  {
+    icon: Sparkles,
+    title: 'v1.4.0 The Auction Intelligence Pass',
+    color: 'text-cricket-accent',
+    bgColor: 'bg-cricket-accent/10',
+    borderColor: 'border-cricket-accent/30',
+    items: [
+      '🛒 **Auction bid panel overhaul** — Set Max is no longer locked when auto-bid is on, and you can manually click Bid even with auto-bid running. The input has +/- arrows that step by the same tiered increment the engine uses ($5K / $10K / $20K depending on price), defaults to the next legal bid, and shows a yellow warning when you\'ve set a max but auto-bid is off. Per-player max bid now overrides AI logic, falling back to AI when you haven\'t set one.',
+      '⭐ **Marquee round multiplier on AI bids** — AI teams now apply a star-player premium when bidding on marquee-round players, linearly interpolated from 1.5× in marquee round 1 down to 1.2× in the final marquee round. Marquee rounds finally feel like the splurge phase they were meant to be.',
+      '🎚️ **Auction valuation is fully config-driven** — Every tuning knob (fit multiplier, squad-gap urgency, budget penalty range, reserve buffer, marquee endpoints, performance-bonus clamp) now lives in `auctionConfig.valuation`. No more hardcoded constants in the bidding code. Budget penalty floor lifted from 0.4 to 0.6 — cash-strapped AI teams will no longer lowball as hard.',
+      '💀 **Difficulty modes — Normal / Hard / Impossible** — Hard locks AI confidence at Sky-High and suppresses AI energy + pressure penalties (values still tracked). Impossible additionally stacks a +2 baseline on every AI attribute as a new Stage 0 in the modifier chain. Persisted in saves; modifier panel surfaces the changes for transparency.',
+      '🏏 **Matchday over-strip fix** — End-of-over view no longer jumps to a prior over the new bowler happened to bowl earlier in the innings. The just-completed over now holds through the change-of-bowler beat as it should.',
+      '💝 **UPI / GPay donations** — Contribute menu now offers a UPI QR + copy-to-clipboard ID for India users, alongside the existing Ko-fi card.',
+      '🏃 **Running judgment retune** — Base running-error rate dropped from 3.2% to 2.5%, with new judgment-weighted risk margins for conservative vs aggressive calls. Stingy singles and risky doubles should sort themselves better.',
+      '📛 **Career terminology pass** — Load screen now consistently says "Career" instead of "Game" ("Career Saves", "Career Date", "No Saved Career"). Cricket Manager isn\'t a single game — it\'s a career.',
+    ],
+    note: 'The auction is the most consequential 90 minutes of your season. This pass makes it interactive (you can finally set a max while letting auto-bid do the boring stuff), smarter (AI knows a marquee round when it sees one), and tunable (every valuation knob is in one config block). Plus difficulty modes if you want a fight. 🛒'
+  },
   {
     icon: Wrench,
     title: 'v1.3.1 Match Engine Balance Pass',

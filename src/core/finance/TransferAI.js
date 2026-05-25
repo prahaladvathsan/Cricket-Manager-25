@@ -669,13 +669,14 @@ export default class TransferAI {
       ? (primaryRating / 100) * soldPrice
       : (primaryRating / 100) * auctionAI.calculateBasePrice(player);
 
-    const fitValue = playerFit.fitScore * 500;
+    const valCfg = auctionAI.config.valuation;
+    const fitValue = playerFit.fitScore * valCfg.fitValueMultiplier;
     const performanceBonus = auctionAI.calculatePerformanceBonus(fullPlayer, squad, this.teamStore);
 
     // Squad gap urgency
     const minSquad = auctionAI.config.squadSize?.min || 18;
     const squadGap = minSquad - squad.length;
-    const squadMultiplier = squadGap > 0 ? 1.3 : 1.0;
+    const squadMultiplier = squadGap > 0 ? valCfg.squadGapMultiplier : 1.0;
 
     const budgetPenalty = auctionAI.calculateBudgetPenalty(annualBudget, squad.length);
 
