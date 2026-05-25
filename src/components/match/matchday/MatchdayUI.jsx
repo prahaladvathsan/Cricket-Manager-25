@@ -34,7 +34,6 @@ import ManhattanChart from './StatsHub/ManhattanChart';
 import PartnershipsPanel from './StatsHub/PartnershipsPanel';
 import MatchEngine from '../../../core/match-engine/core/MatchEngine';
 import { updatePlayerStats, calculatePlayerOfMatch, findTopScorer, findTopBowler, extractPlayerStatsFromBalls } from '../../../utils/MatchStatsUpdater';
-import { useMatchResultModal } from '../../../hooks/useMatchResultModal';
 import { getTeamIcon } from '../../../utils/assetHelpers';
 import SuperOverSelectionModal from '../SuperOverSelectionModal';
 import { TutorialSpotlight } from '../../tutorial';
@@ -764,23 +763,24 @@ const formatDismissalShort = (dismissal, getPlayer) => {
 };
 
 /**
- * Compact innings-break scorecard. Derives batting + bowling stats from ballByBall for
- * innings 1, drops boundary-count columns (4s/6s/0s) the user said aren't useful here,
- * and shows dismissals under each batsman name (ScorecardModal pattern).
+ * Compact ball-by-ball-derived scorecard for one innings. Drops boundary-count
+ * columns (4s/6s/0s) the user said aren't useful here and shows dismissals
+ * under each batsman name (ScorecardModal pattern). `innings` defaults to 1 so
+ * existing innings-break call sites stay unchanged.
  */
-const InningsBreakScorecard = () => {
+const InningsBreakScorecard = ({ innings = 1 } = {}) => {
   const ballByBall = useMatchStore(state => state.ballByBall);
   const getPlayer = usePlayerStore(state => state.getPlayer);
 
-  const innings1Balls = React.useMemo(
-    () => (ballByBall || []).filter(b => b.innings === 1),
-    [ballByBall]
+  const inningsBalls = React.useMemo(
+    () => (ballByBall || []).filter(b => b.innings === innings),
+    [ballByBall, innings]
   );
 
   const battingRows = React.useMemo(() => {
     const stats = {};
     const order = [];
-    innings1Balls.forEach(ball => {
+    inningsBalls.forEach(ball => {
       const sid = ball.striker;
       if (!sid) return;
       if (!stats[sid]) {
@@ -798,12 +798,12 @@ const InningsBreakScorecard = () => {
       }
     });
     return order.map(id => stats[id]);
-  }, [innings1Balls]);
+  }, [inningsBalls]);
 
   const bowlingRows = React.useMemo(() => {
     const stats = {};
     const order = [];
-    innings1Balls.forEach(ball => {
+    inningsBalls.forEach(ball => {
       const bid = ball.bowler;
       if (!bid) return;
       if (!stats[bid]) {
@@ -815,7 +815,7 @@ const InningsBreakScorecard = () => {
       if (ball.isLegal !== false) stats[bid].balls += 1;
     });
     return order.map(id => stats[id]);
-  }, [innings1Balls]);
+  }, [inningsBalls]);
 
   const sr = (runs, balls) => balls === 0 ? '0.0' : ((runs / balls) * 100).toFixed(1);
   const econ = (runs, balls) => balls === 0 ? '0.00' : ((runs / balls) * 6).toFixed(2);
@@ -1264,6 +1264,273 @@ const InningsBreakModalLayout = ({
   );
 };
 
+/**
+ * End-of-match screen. Reuses the innings-break 3-column layout but:
+ *  - Header announces the result (winner banner replaces "End of First Innings").
+ *  - Scorecard panel adds an Innings 1 / Innings 2 toggle.
+ *  - Center column shows match summary (both team scores, margin, player of match)
+ *    instead of the first-innings target/RRR block.
+ *  - Bottom CTA navigates back to the home dashboard.
+ * Right column charts (worm/manhattan/partnerships) auto-render full match.
+ */
+const MatchEndScreen = ({ result, onContinue }) => {
+  const [selectedInnings, setSelectedInnings] = useState(1);
+  const [statIndex, setStatIndex] = useState(0);
+  const userTeamId = useTeamStore(state => state.userTeamId);
+  const clubs = useLeagueStore(state => state.clubs);
+
+  if (!result) return null;
+
+  const {
+    firstBattingTeam, secondBattingTeam,
+    innings1Data, innings2Data,
+    winner, margin, playerOfMatch
+  } = result;
+
+  const firstColor = firstBattingTeam?.colors?.primary || clubs?.[firstBattingTeam?.id]?.colors?.primary || '#2D5F3F';
+  const secondColor = secondBattingTeam?.colors?.primary || clubs?.[secondBattingTeam?.id]?.colors?.primary || '#2D5F3F';
+
+  const winnerIsFirst = winner === firstBattingTeam?.id;
+  const winnerTeam = winnerIsFirst ? firstBattingTeam : secondBattingTeam;
+  const loserTeam = winnerIsFirst ? secondBattingTeam : firstBattingTeam;
+  const winnerColor = winnerIsFirst ? firstColor : secondColor;
+  const loserColor = winnerIsFirst ? secondColor : firstColor;
+  const userWon = userTeamId && userTeamId === winner;
+  const userInvolved = userTeamId && (userTeamId === firstBattingTeam?.id || userTeamId === secondBattingTeam?.id);
+
+  // Result gradient: solid winner color tilted heavily toward them
+  const resultGradient = {
+    background: `linear-gradient(to right, ${winnerColor} 0%, ${winnerColor} 65%, ${loserColor}80 100%)`
+  };
+
+  const totalPanels = INNINGS_BREAK_STAT_PANELS.length;
+  const currentPanel = INNINGS_BREAK_STAT_PANELS[statIndex];
+  const CurrentPanelComponent = currentPanel?.Component;
+  const CurrentPanelIcon = currentPanel?.icon;
+  const cyclePrev = () => setStatIndex((statIndex - 1 + totalPanels) % totalPanels);
+  const cycleNext = () => setStatIndex((statIndex + 1) % totalPanels);
+
+  const TeamBadge = ({ teamId, size = 56 }) => (
+    <img
+      src={getTeamIcon(teamId)}
+      alt=""
+      style={{ width: size, height: size }}
+      className="object-contain drop-shadow-lg"
+      onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+    />
+  );
+
+  const inningsTeamName = (innings) => {
+    const team = innings === 1 ? firstBattingTeam : secondBattingTeam;
+    return team?.name || `Innings ${innings}`;
+  };
+
+  const formatOvers = (overs, balls) => {
+    if (typeof overs === 'string') return overs;
+    if (balls) return `${overs}.${balls}`;
+    return `${overs ?? 0}`;
+  };
+
+  const i1 = innings1Data || {};
+  const i2 = innings2Data || {};
+
+  return (
+    <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4">
+      <div className="bg-black/85 backdrop-blur-md border border-border-primary rounded-lg w-[95vw] max-w-7xl h-[92vh] shadow-2xl overflow-hidden flex flex-col">
+        {/* Top banner — both team badges flank a winner declaration */}
+        <div
+          className="px-6 py-4 border-b border-border-primary flex-shrink-0"
+          style={{
+            background: `linear-gradient(to right, ${firstColor}cc 0%, #1a1a1a 50%, ${secondColor}cc 100%)`
+          }}
+        >
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <TeamBadge teamId={firstBattingTeam?.id} size={56} />
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">First Innings</div>
+                <div className="text-sm font-bold text-white truncate" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                  {firstBattingTeam?.name}
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">
+                {userInvolved ? (userWon ? 'Victory' : 'Defeat') : 'Match Complete'}
+              </div>
+              <h3 className="text-xl font-bold text-trophy-gold mt-0.5" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                {winnerTeam?.name} won {margin ? `by ${margin.replace(/^won by\s*/i, '')}` : ''}
+              </h3>
+            </div>
+            <div className="flex items-center gap-3 min-w-0 flex-row-reverse">
+              <TeamBadge teamId={secondBattingTeam?.id} size={56} />
+              <div className="min-w-0 text-right">
+                <div className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">Second Innings</div>
+                <div className="text-sm font-bold text-white truncate" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                  {secondBattingTeam?.name}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body: left (scorecard with innings toggle) | right side (summary + charts + bottom bar) */}
+        <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          {/* LEFT — Scorecard with innings toggle */}
+          <div className="basis-[37%] flex-shrink-0 border-r border-border-primary flex flex-col min-h-0">
+            <div className="px-3 py-2 border-b border-border-primary flex-shrink-0 flex items-center justify-between gap-2">
+              <div className="text-[10px] uppercase tracking-widest text-text-secondary font-semibold">Scorecard</div>
+              <div className="flex items-center gap-1 bg-bg-tertiary/40 rounded p-0.5">
+                {[1, 2].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setSelectedInnings(n)}
+                    className={`px-2.5 py-1 text-[10px] font-semibold rounded transition-colors ${
+                      selectedInnings === n
+                        ? 'bg-cricket-accent text-white'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    title={inningsTeamName(n)}
+                  >
+                    Innings {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              <InningsBreakScorecard innings={selectedInnings} />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE WRAPPER */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Top: summary (center, 26%) + stats hub (right, 37%) */}
+            <div className="flex-1 flex flex-row min-h-0">
+              {/* CENTER — Match summary */}
+              <div className="flex-[26] border-r border-border-primary flex flex-col min-h-0 overflow-y-auto">
+                {/* Both innings scores */}
+                <div className="px-5 py-4 border-b border-border-primary">
+                  <div className="text-[10px] uppercase tracking-wide text-text-secondary mb-2 text-center font-semibold">Final Scores</div>
+                  <div className="space-y-2.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-xs text-text-secondary truncate">{firstBattingTeam?.name}</span>
+                      <span className="text-2xl font-bold text-text-primary font-mono whitespace-nowrap">
+                        {i1.totalScore ?? 0}<span className="text-lg text-text-secondary">/{i1.wickets ?? 0}</span>
+                        <span className="text-[10px] text-text-secondary ml-1.5">({formatOvers(i1.overs, i1.balls)})</span>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-xs text-text-secondary truncate">{secondBattingTeam?.name}</span>
+                      <span className="text-2xl font-bold text-text-primary font-mono whitespace-nowrap">
+                        {i2.totalScore ?? 0}<span className="text-lg text-text-secondary">/{i2.wickets ?? 0}</span>
+                        <span className="text-[10px] text-text-secondary ml-1.5">({formatOvers(i2.overs, i2.balls)})</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Result */}
+                <div className="px-5 py-4 text-center border-b border-border-primary">
+                  <div className="text-[10px] uppercase tracking-wide text-text-secondary mb-1.5 font-semibold">Result</div>
+                  <div className="text-xl font-bold text-trophy-gold leading-tight">
+                    {winnerTeam?.name}
+                  </div>
+                  <div className="text-sm text-text-primary mt-0.5">
+                    won {margin ? `by ${margin.replace(/^won by\s*/i, '')}` : ''}
+                  </div>
+                </div>
+
+                {/* Player of Match */}
+                {playerOfMatch?.id && (
+                  <div className="px-5 py-4 flex-1 flex flex-col justify-center text-center">
+                    <div className="text-[10px] uppercase tracking-wide text-text-secondary mb-1.5 font-semibold">Player of the Match</div>
+                    <div className="text-base font-bold text-cricket-accent">
+                      <PlayerName playerId={playerOfMatch.id} />
+                    </div>
+                    {playerOfMatch.performance && (
+                      <div className="text-xs text-text-secondary mt-1 px-2">
+                        {playerOfMatch.performance}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT — Cycleable stats panels (full match) */}
+              <div className="flex-[37] flex flex-col min-h-0">
+                <div className="px-3 py-2 border-b border-border-primary flex-shrink-0 flex items-center justify-between gap-2">
+                  <button
+                    onClick={cyclePrev}
+                    className="p-1 rounded hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
+                    aria-label="Previous stat"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+                    {CurrentPanelIcon && <CurrentPanelIcon className="w-3.5 h-3.5 text-cricket-accent" />}
+                    <span>{currentPanel?.label}</span>
+                  </div>
+                  <button
+                    onClick={cycleNext}
+                    className="p-1 rounded hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
+                    aria-label="Next stat"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 [&_.bg-bg-tertiary]:!bg-transparent [&_.bg-bg-tertiary]:!p-0">
+                  {CurrentPanelComponent && <CurrentPanelComponent />}
+                </div>
+                {/* Pagination dots */}
+                <div className="px-3 py-2 border-t border-border-primary flex items-center justify-center gap-1.5 flex-shrink-0">
+                  {INNINGS_BREAK_STAT_PANELS.map((p, idx) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setStatIndex(idx)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        idx === statIndex ? 'w-6 bg-cricket-accent' : 'w-1.5 bg-text-secondary/40 hover:bg-text-secondary'
+                      }`}
+                      aria-label={`Show ${p.label}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: result bar + Continue button */}
+            <div className="border-t border-border-primary flex-shrink-0 px-5 py-4 flex items-center gap-5">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-text-secondary mb-1.5 font-semibold flex items-center justify-between">
+                  <span>Match Result</span>
+                </div>
+                <div
+                  className="h-8 rounded border border-white/20 flex items-center justify-center px-3"
+                  style={resultGradient}
+                >
+                  <span className="text-sm font-bold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}>
+                    {winnerTeam?.name} won{margin ? ` by ${margin.replace(/^won by\s*/i, '')}` : ''}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[10px] text-text-secondary">
+                  <span className="truncate max-w-[45%]">{firstBattingTeam?.name}</span>
+                  <span className="truncate max-w-[45%] text-right">{secondBattingTeam?.name}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={onContinue}
+                className="w-64 flex-shrink-0 px-6 py-3 bg-cricket-primary hover:bg-cricket-primary/80 text-white font-bold rounded transition-colors text-base"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function MatchdayUI() {
   const { matchId } = useParams();
   const navigate = useNavigate();
@@ -1279,15 +1546,10 @@ export default function MatchdayUI() {
   const [tieData, setTieData] = useState(null); // Stores tie match data for super over
   const userTeamId = useTeamStore(state => state.userTeamId);
 
-  // Match result modal hook
-  const { showResult, ModalComponent: MatchResultModalComponent } = useMatchResultModal({
-    onClose: () => {
-      // Navigate to home after viewing result
-      navigate('/game/home');
-      // Advance day
-      advanceDay();
-    }
-  });
+  // Match-end screen state. Screen is purely informational —
+  // match-completion state changes (advanceDay, autosave) run inline in
+  // processMatchResult before the screen opens. Closing it navigates home.
+  const [matchEndResult, setMatchEndResult] = useState(null);
 
   // Matchday tutorial hook
   const {
@@ -1749,8 +2011,69 @@ export default function MatchdayUI() {
 
       advanceToNextMatch();
 
-      // Show result modal using hook - data will be formatted automatically
-      showResult({
+      setHasProcessedResult(true);
+
+      // Send match result inbox message — resolve player names first
+      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
+      const allPlayers = usePlayerStore.getState().players;
+      const resolveName = (id) => allPlayers[id]?.name || id;
+      const scorecardWithNames = {
+        ...fullScorecard,
+        innings1Data: {
+          ...fullScorecard.innings1Data,
+          topBatsmen: (fullScorecard.innings1Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
+          topBowlers: (fullScorecard.innings1Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
+        },
+        innings2Data: {
+          ...fullScorecard.innings2Data,
+          topBatsmen: (fullScorecard.innings2Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
+          topBowlers: (fullScorecard.innings2Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
+        },
+        playerOfMatch: fullScorecard.playerOfMatch ? {
+          ...fullScorecard.playerOfMatch,
+          name: resolveName(fullScorecard.playerOfMatch.id)
+        } : null
+      };
+      useInboxStore.getState().addMessage(
+        MessageGenerator.generateMatchResultMessage(scorecardWithNames, userTeamId, opponentTeam.name)
+      );
+
+      // All match-completion state changes happen here, BEFORE the modal opens.
+      // advanceDay first so the autosave snapshot captures the new gameDay /
+      // processed calendar event; modal is then purely informational.
+      advanceDay();
+
+      const userWon = winner === userTeamId;
+      const score = `${innings1.totalScore}/${innings1.wickets} vs ${innings2.totalScore}/${innings2.wickets}`;
+
+      SaveGameManager.autosaveAfterMatch(
+        {
+          gameStore: useGameStore,
+          teamStore: useTeamStore,
+          playerStore: usePlayerStore,
+          leagueStore: useLeagueStore,
+          financeStore: useFinanceStore,
+          matchStore: useMatchStore,
+          auctionStore: useAuctionStore,
+          inboxStore: useInboxStore,
+          transferStore: useTransferStore
+        },
+        {
+          opponentName: opponentTeam.name,
+          result: userWon ? 'win' : 'loss',
+          score
+        }
+      ).then(result => {
+        if (result.success) {
+          console.log('💾 Autosave created after match');
+        }
+      });
+
+      console.log('✅ Match result processed successfully');
+
+      // Match-end screen opens last — purely informational. Its Continue
+      // button navigates back to /game/home; no game-state side-effects.
+      setMatchEndResult({
         venue: navMatchData.venue || homeTeam.homeGround,
         matchType: 'World Premier League T20',
         firstBattingTeam: {
@@ -1785,63 +2108,6 @@ export default function MatchdayUI() {
           id: playerOfMatch.id,
           performance: formatPlayerOfMatchPerformance(playerOfMatch)
         } : null
-      });
-
-      setHasProcessedResult(true);
-
-      console.log('✅ Match result processed successfully');
-
-      // Send match result inbox message — resolve player names first
-      const opponentTeam = userTeamId === homeTeam.id ? awayTeam : homeTeam;
-      const allPlayers = usePlayerStore.getState().players;
-      const resolveName = (id) => allPlayers[id]?.name || id;
-      const scorecardWithNames = {
-        ...fullScorecard,
-        innings1Data: {
-          ...fullScorecard.innings1Data,
-          topBatsmen: (fullScorecard.innings1Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
-          topBowlers: (fullScorecard.innings1Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
-        },
-        innings2Data: {
-          ...fullScorecard.innings2Data,
-          topBatsmen: (fullScorecard.innings2Data.topBatsmen || []).map(p => ({ ...p, name: resolveName(p.id) })),
-          topBowlers: (fullScorecard.innings2Data.topBowlers || []).map(p => ({ ...p, name: resolveName(p.id) }))
-        },
-        playerOfMatch: fullScorecard.playerOfMatch ? {
-          ...fullScorecard.playerOfMatch,
-          name: resolveName(fullScorecard.playerOfMatch.id)
-        } : null
-      };
-      useInboxStore.getState().addMessage(
-        MessageGenerator.generateMatchResultMessage(scorecardWithNames, userTeamId, opponentTeam.name)
-      );
-
-      // Autosave after user match completion
-      const userTeam = userTeamId === homeTeam.id ? homeTeam : awayTeam;
-      const userWon = winner === userTeamId;
-      const score = `${innings1.totalScore}/${innings1.wickets} vs ${innings2.totalScore}/${innings2.wickets}`;
-
-      SaveGameManager.autosaveAfterMatch(
-        {
-          gameStore: useGameStore,
-          teamStore: useTeamStore,
-          playerStore: usePlayerStore,
-          leagueStore: useLeagueStore,
-          financeStore: useFinanceStore,
-          matchStore: useMatchStore,
-          auctionStore: useAuctionStore,
-          inboxStore: useInboxStore,
-          transferStore: useTransferStore
-        },
-        {
-          opponentName: opponentTeam.name,
-          result: userWon ? 'win' : 'loss',
-          score
-        }
-      ).then(result => {
-        if (result.success) {
-          console.log('💾 Autosave created after match');
-        }
       });
     } catch (error) {
       console.error('Error processing match result:', error);
@@ -2186,8 +2452,11 @@ export default function MatchdayUI() {
         </div>
       </div>
 
-      {/* Match Result Modal */}
-      {MatchResultModalComponent}
+      {/* Match End Screen — innings-break-style layout for match completion */}
+      <MatchEndScreen
+        result={matchEndResult}
+        onContinue={() => navigate('/game/home')}
+      />
 
       {/* Innings Break Modal */}
       <InningsBreakModal matchEngine={matchEngine} />
