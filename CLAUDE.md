@@ -172,6 +172,12 @@ Season 1 uses **`src/components/layout/Home.jsx`** for event scheduling. Subsequ
 - **NEVER hardcode probabilities** in code - import from configs
 - Test field formations with `node src/test/validateFieldTemplates.js`
 
+### Code Comments
+- **Default to no comments** — well-named identifiers are usually enough.
+- **Keep comments terse** — one short line max. No multi-paragraph blocks, no restating what the code already says.
+- **Comment only when the WHY is non-obvious** — a deliberate, counterintuitive choice (e.g. holding the bowler swap in the UI until the new bowler's first ball, mirroring `Home.jsx` ↔ `LeagueInitializer.js`, never pre-scheduling `season_end`) gets a one-liner that future Claude sessions won't trip over and "fix".
+- **Do not** narrate task history, PR numbers, or "added for X flow" — those belong in commits, not source.
+
 ### Game Progression Standardization (CRITICAL)
 
 The game has **two progression modes** that must produce identical outcomes:

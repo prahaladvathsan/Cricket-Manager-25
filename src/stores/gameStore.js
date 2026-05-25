@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS = {
   simulationSpeed: 1000,    // Delay between balls in ms (0-3000)
   currency: 'USD',          // Display currency (USD, EUR, GBP, INR)
   tutorialEnabled: true,    // Show tutorial messages for new games
-  difficulty: 'normal',     // Placeholder for future difficulty system
+  difficulty: 'normal',     // 'normal' | 'hard' | 'impossible' — AI-side buffs in user-vs-AI matches
   autosave: true,           // Auto-save game state
   matchResultModalMode: 'user_only' // 'all' | 'user_only' | 'none' — when to pop the match result modal. Non-shown matches still appear in the Home news feed.
 };

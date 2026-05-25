@@ -7,11 +7,24 @@ import React from 'react';
 import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.3.2';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'Match Engine Balance Pass';
+const RELEASE_TAGLINE = 'The Auction Intelligence Pass';
 
 const PATCH_NOTES = [
+  {
+    icon: Sparkles,
+    title: 'v1.3.2 The Auction Intelligence Pass',
+    color: 'text-cricket-accent',
+    bgColor: 'bg-cricket-accent/10',
+    borderColor: 'border-cricket-accent/30',
+    items: [
+      '🛒 **Auction intelligence pass** — Major auction overhaul on both sides of the table. Set Max is no longer locked when auto-bid is on, and you can still click Bid manually alongside auto-bid. The max-bid input now has +/- arrows that step by the same tiered increment the engine uses ($5K / $10K / $20K depending on price), defaults to the next legal bid, and shows a yellow warning when a max is set while auto-bid is off. Per-player user max overrides AI logic, falling back to AI when unset. On the AI side, marquee-round players now carry a star-player premium (1.5× in marquee round 1, linearly down to 1.2× in the final marquee round), and every valuation knob — fit multiplier, squad-gap urgency, budget penalty range, reserve buffer, marquee endpoints, performance-bonus clamp — lives in one `auctionConfig.valuation` block. Budget penalty floor lifted from 0.4 to 0.6 so cash-strapped AI teams stop lowballing.',
+      '💀 **Difficulty modes — Normal / Hard / Impossible** — Hard locks AI confidence at Sky-High and suppresses AI energy + pressure penalties (values still tracked). Impossible additionally stacks a +2 baseline on every AI attribute as a new Stage 0 in the modifier chain. Persisted in saves; modifier panel surfaces the changes for transparency.',
+      '💝 **UPI / GPay donations** — Contribute menu now offers a UPI QR + copy-to-clipboard ID for India users, alongside the existing Ko-fi card.',
+    ],
+    note: 'The auction is the most consequential 90 minutes of your season. This pass makes it interactive (you can finally set a max while letting auto-bid do the boring stuff), smarter (AI knows a marquee round when it sees one), and tunable (every valuation knob is in one config block). Plus difficulty modes if you want a fight. 🛒'
+  },
   {
     icon: Wrench,
     title: 'v1.3.1 Match Engine Balance Pass',

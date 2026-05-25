@@ -74,7 +74,19 @@
       "Bash(gh run *)",
       "Bash(mkdir -p \"/c/Users/Vathsan Prahalad/.claude/projects/C--Users-Vathsan-Prahalad-Documents-Cricket-Manager-25/memory/\")",
       "Bash(mv \"C:/Users/Vathsan Prahalad/Documents/Cricket-Manager-25/memory/feedback_no_push_without_approval.md\" \"/c/Users/Vathsan Prahalad/.claude/projects/C--Users-Vathsan-Prahalad-Documents-Cricket-Manager-25/memory/feedback_no_push_without_approval.md\")",
-      "Skill(frontend-design:frontend-design)"
+      "Skill(frontend-design:frontend-design)",
+      "Bash(BALLS=1000 node --import ./scripts/register-json-loader.mjs scripts/run-balance-experiments.mjs)",
+      "Bash(BALLS=100000 node --import ./scripts/register-json-loader.mjs scripts/run-balance-experiments.mjs)",
+      "Bash(tee /tmp/sim-output.log)",
+      "Read(//tmp/**)",
+      "Bash(MATCHES=1000 node --import ./scripts/register-json-loader.mjs scripts/run-match-mode.mjs)",
+      "Bash(tee /tmp/match-output.log)",
+      "Bash(tee /tmp/sim-output2.log)",
+      "Bash(tee /tmp/sim-out-tuned.log)",
+      "Bash(BALLS=100000 node --import ./scripts/register-json-loader.mjs scripts/run-e1-conditional-outcomes.mjs)",
+      "Bash(tee /tmp/match-out3.log)",
+      "Bash(BALLS=100000 node --import ./scripts/register-json-loader.mjs scripts/run-e3-only.mjs)",
+      "Bash(BALLS=5000 node --import ./scripts/register-json-loader.mjs scripts/run-e3-only.mjs)"
     ],
     "deny": []
   }

@@ -88,8 +88,30 @@
     "baseValueMultiplier": 1.2,
     "conservativeMode": {
       "enabled": true,
-      "reserveForMinSquad": 0.3,
-      "description": "Reserve 30% of budget to ensure minimum squad completion"
+      "reserveForMinSquad": 0.2,
+      "description": "Reserve 20% of budget to ensure minimum squad completion"
+    }
+  },
+  "valuation": {
+    "description": "AI player valuation tuning — applies to both auction bidding (shouldBid) and transfer-window market value",
+    "fitValueMultiplier": 500,
+    "squadGapMultiplier": 1.5,
+    "budgetPenalty": {
+      "description": "Linearly interpolated from minPenalty (at $0 budget per needed player) up to maxPenalty (at or above stingyThresholdPerPlayer)",
+      "stingyThresholdPerPlayer": 500000,
+      "minPenalty": 0.6,
+      "maxPenalty": 1.0
+    },
+    "reserveBuffer": 1.5,
+    "marqueeMultiplier": {
+      "description": "Star-player multiplier on AI maxBid — linearly interpolated from first (marquee round 1) to last (final marquee round)",
+      "first": 1.5,
+      "last": 1.2
+    },
+    "performanceBonusClamp": {
+      "description": "Clamp on calculatePerformanceBonus output, expressed as ratio of player's soldPrice",
+      "minRatio": -0.4,
+      "maxRatio": 1.0
     }
   },
   "qualityTiers": {

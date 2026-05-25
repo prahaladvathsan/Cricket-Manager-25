@@ -100,6 +100,7 @@ class AuctionTransferAI {
    * @returns {number} Estimated market value
    */
   estimateMarketValue(player, fitScore, annualBudget, currentSquadSize, teamNeeds = null, performanceBonus = 0) {
+    const valCfg = this.config.valuation;
     const basePrice = this.calculateBasePrice(player);
     const primaryRating = this.core.getPrimaryPlaystyleRatingScore(player);
 
@@ -107,12 +108,12 @@ class AuctionTransferAI {
     const baseValue = (primaryRating / 100) * basePrice * this.config.aiStrategy.baseValueMultiplier;
 
     // Fit score contribution - scale appropriately
-    const fitValue = fitScore * 500;
+    const fitValue = fitScore * valCfg.fitValueMultiplier;
 
     // Squad gap urgency - need players to fill minimum squad
     const minSquad = this.config.squadSize.min;
     const squadGap = minSquad - currentSquadSize;
-    const squadMultiplier = squadGap > 0 ? 1.3 : 1.0;
+    const squadMultiplier = squadGap > 0 ? valCfg.squadGapMultiplier : 1.0;
 
     // Budget penalty - uses annual budget (total pre-salary budget)
     const budgetPenalty = this.calculateBudgetPenalty(annualBudget, currentSquadSize);
@@ -123,29 +124,29 @@ class AuctionTransferAI {
   }
 
   /**
-   * Calculate budget penalty based on annual budget vs players needed
-   * If budget per player needed is below $500K, apply stingy multiplier
+   * Calculate budget penalty based on annual budget vs players needed.
+   * Linearly interpolated from minPenalty (at $0/player) to maxPenalty (at or above stingyThresholdPerPlayer).
    * @param {number} annualBudget - Team's total annual budget (pre-salary, pre-spending)
    * @param {number} currentSquadSize - Current squad size
-   * @returns {number} Budget penalty multiplier (0.4 to 1.0)
+   * @returns {number} Budget penalty multiplier in [minPenalty, maxPenalty]
    */
   calculateBudgetPenalty(annualBudget, currentSquadSize) {
+    const { minPenalty, maxPenalty, stingyThresholdPerPlayer } = this.config.valuation.budgetPenalty;
     const minSquad = this.config.squadSize.min;
     const playersNeeded = Math.max(1, minSquad - currentSquadSize);
 
     // If squad is complete, no penalty
-    if (playersNeeded <= 0) return 1.0;
+    if (playersNeeded <= 0) return maxPenalty;
 
     const budgetPerPlayer = annualBudget / playersNeeded;
-    const stingyThreshold = 500000; // $500K per player threshold
 
-    if (budgetPerPlayer >= stingyThreshold) {
-      return 1.0; // No penalty
+    if (budgetPerPlayer >= stingyThresholdPerPlayer) {
+      return maxPenalty;
     }
 
-    // Linear penalty from 1.0 at $500K down to 0.4 at $0
-    const penalty = 0.4 + 0.6 * (budgetPerPlayer / stingyThreshold);
-    return Math.max(0.4, Math.min(1.0, penalty));
+    const range = maxPenalty - minPenalty;
+    const penalty = minPenalty + range * (budgetPerPlayer / stingyThresholdPerPlayer);
+    return Math.max(minPenalty, Math.min(maxPenalty, penalty));
   }
 
   /**
@@ -197,7 +198,8 @@ class AuctionTransferAI {
 
     const soldPrice = player.soldPrice || 0;
     const bonus = justifiedPrice - soldPrice;
-    const clamped = Math.max(-soldPrice * 0.4, Math.min(soldPrice * 1.0, Math.round(bonus)));
+    const { minRatio, maxRatio } = this.config.valuation.performanceBonusClamp;
+    const clamped = Math.max(soldPrice * minRatio, Math.min(soldPrice * maxRatio, Math.round(bonus)));
 
     console.log(`  📊 PERF ${(player.name || '?').padEnd(20)}: IPM=${playerIPM.toFixed(1)}, rank=${rank}/${allIPMs.length}, justifiedPrice=$${(justifiedPrice/1000).toFixed(0)}K, soldPrice=$${(soldPrice/1000).toFixed(0)}K, bonus=$${(clamped/1000).toFixed(0)}K`);
 
@@ -521,6 +523,22 @@ class AuctionTransferAI {
   // =============================================================================
 
   /**
+   * Star-player multiplier for marquee-round players.
+   * Linear from valuation.marqueeMultiplier.first (marquee round 1) down to .last (final marquee round).
+   * Suppressed once a player has dropped into the unsold round.
+   * @param {Object} player - Player object
+   * @returns {number} Multiplier (1.0 if not in a marquee round)
+   */
+  getMarqueeRoundMultiplier(player) {
+    if (player.marqueeRoundIndex === undefined || player.hasBeenInUnsoldRound) return 1.0;
+    const { first, last } = this.config.valuation.marqueeMultiplier;
+    const total = player.totalMarqueeRounds || 1;
+    if (total <= 1) return first;
+    const t = player.marqueeRoundIndex / (total - 1); // 0..1
+    return first - (first - last) * t;
+  }
+
+  /**
    * Decide whether AI team should bid on a player
    * @param {Object} player - Player being auctioned
    * @param {number} currentPrice - Current bid price
@@ -545,9 +563,13 @@ class AuctionTransferAI {
     // For auction bidding, use budgetRemaining as annualBudget proxy (no salary system in auction)
     const marketValue = this.estimateMarketValue(player, playerFit.fitScore, budgetRemaining, squadSize, teamNeeds);
 
+    // Star-player premium for marquee rounds — only on final willingness-to-pay
+    const marqueeMultiplier = this.getMarqueeRoundMultiplier(player);
+    const adjustedValuation = marketValue * marqueeMultiplier;
+
     const reserveAmount = this.calculateReserveAmount(squadSize, budgetRemaining);
     const effectiveBudget = budgetRemaining - reserveAmount;
-    const maxBid = Math.min(marketValue, effectiveBudget);
+    const maxBid = Math.min(adjustedValuation, effectiveBudget);
 
     if (currentPrice >= maxBid) {
       return { shouldBid: false, maxBid: 0, reason: `Price ${this.core.formatPrice(currentPrice)} >= value ${this.core.formatPrice(maxBid)}` };
@@ -577,7 +599,7 @@ class AuctionTransferAI {
     if (playersNeeded === 0) return 0;
 
     const minPrice = this.config.priceSlabs.slabs[this.config.priceSlabs.slabs.length - 1].basePrice;
-    const reserve = playersNeeded * minPrice * 1.5;
+    const reserve = playersNeeded * minPrice * this.config.valuation.reserveBuffer;
 
     return Math.min(reserve, budgetRemaining * this.config.aiStrategy.conservativeMode.reserveForMinSquad);
   }

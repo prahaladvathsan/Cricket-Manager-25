@@ -272,10 +272,19 @@ export default function ModifierBreakdownPanel({
               <div key={idx} className="text-xs">
                 {effects.map((effect, effectIdx) => (
                   <div key={effectIdx} className="grid grid-cols-[180px,1fr,auto] gap-2 items-start">
-                    {/* Modifier name on first row, condition on second row if multiple effects */}
+                    {/* Single-effect: stack condition under name in same cell to avoid a stray
+                        grid row when the attribute column wraps. Multi-effect: condition sits beside
+                        the second attribute. */}
                     <div>
                       {effectIdx === 0 && (
-                        <span className="text-gray-400 font-medium">{mod.name}</span>
+                        <>
+                          <span className="text-gray-400 font-medium block leading-tight">{mod.name}</span>
+                          {effects.length === 1 && (
+                            <span className="text-[10px] text-gray-500 italic block leading-tight">
+                              {mod.condition || 'Always active'}
+                            </span>
+                          )}
+                        </>
                       )}
                       {effectIdx === 1 && effects.length > 1 && (
                         <span className="text-[10px] text-gray-500 italic">
@@ -297,16 +306,6 @@ export default function ModifierBreakdownPanel({
                     </span>
                   </div>
                 ))}
-                {/* If only 1 effect, show condition on its own row */}
-                {effects.length === 1 && (
-                  <div className="grid grid-cols-[180px,1fr,auto] gap-2 items-start">
-                    <span className="text-[10px] text-gray-500 italic">
-                      {mod.condition || 'Always active'}
-                    </span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -338,6 +337,9 @@ export default function ModifierBreakdownPanel({
 
       {/* Striker Content - Scrollable */}
       <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+        {/* Difficulty (Impossible-mode AI baseline buff) */}
+        {renderModifierSection('Difficulty', strikerBreakdown?.difficultyModifiers)}
+
         {/* Tactical modifiers */}
         {renderStrikerTactical()}
 
@@ -410,6 +412,9 @@ export default function ModifierBreakdownPanel({
 
       {/* Bowler Content - Scrollable */}
       <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+        {/* Difficulty (Impossible-mode AI baseline buff) */}
+        {renderModifierSection('Difficulty', bowlerBreakdown?.difficultyModifiers)}
+
         {/* Tactical modifiers */}
         {renderBowlerTactical()}
 
@@ -480,6 +485,9 @@ export default function ModifierBreakdownPanel({
 
               {/* Striker Content - Scrollable */}
               <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '520px' }}>
+                {/* Difficulty (Impossible-mode AI baseline buff) */}
+                {renderModifierSection('Difficulty', strikerBreakdown?.difficultyModifiers)}
+
                 {/* Tactical modifiers */}
                 {renderStrikerTactical()}
 

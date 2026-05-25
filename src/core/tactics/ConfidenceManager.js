@@ -179,12 +179,14 @@ class ConfidenceManager {
    * Apply confidence modifiers to ALL player attributes
    * @param {Object} player - Player object
    * @param {number} confidence - Current confidence value
+   * @param {Object} [options]
+   * @param {boolean} [options.lockToSkyHigh] - Force Sky-High band (+2) regardless of actual confidence (AI buff)
    * @returns {Object} Modified player (copy)
    */
-  applyConfidenceModifiers(player, confidence) {
-    const levelName = this.getConfidenceLevel(confidence);
-    const levelData = this.levels[levelName];
-    const modifier = levelData.attributeModifier;
+  applyConfidenceModifiers(player, confidence, options = {}) {
+    const { lockToSkyHigh = false } = options;
+    // Locked path forces Sky-High +2; otherwise use the band's configured modifier.
+    const modifier = lockToSkyHigh ? 2 : this.levels[this.getConfidenceLevel(confidence)].attributeModifier;
 
     if (modifier === 0) {
       return player; // No modification for Normal confidence

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings as SettingsIcon, Gauge, DollarSign, BookOpen, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Gauge, DollarSign, BookOpen, RotateCcw, Swords } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 import '../../styles/wallpaper.css';
 
@@ -15,6 +15,12 @@ const CURRENCY_OPTIONS = [
   { value: 'GBP', label: 'GBP (£)', symbol: '£' },
   { value: 'INR', label: 'INR (₹)', symbol: '₹' }
 ];
+
+const DIFFICULTY_DESCRIPTIONS = {
+  normal: 'Standard match engine. No AI advantages.',
+  hard: 'In your matches, AI players never tire and never feel pressure, and their confidence is locked at Sky-High (+2 to all attributes).',
+  impossible: 'Everything Hard does, plus an extra +2 to every attribute on AI players in your matches. Effectively +4 on top of zero fatigue and zero pressure.'
+};
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -34,6 +40,10 @@ const Settings = () => {
 
   const handleModalModeChange = (e) => {
     updateSettings({ matchResultModalMode: e.target.value });
+  };
+
+  const handleDifficultyChange = (e) => {
+    updateSettings({ difficulty: e.target.value });
   };
 
   const handleReset = () => {
@@ -151,6 +161,29 @@ const Settings = () => {
               </div>
               <p className="text-sm text-cricket-text-secondary mt-2">
                 When to show the full match result modal. Hidden matches always appear as articles in the Home news feed.
+              </p>
+            </div>
+
+            {/* Difficulty */}
+            <div className="bg-cricket-secondary rounded-lg p-4 mt-3">
+              <div className="flex items-center justify-between">
+                <label className="text-cricket-text-primary font-medium flex items-center gap-2">
+                  <Swords className="w-4 h-4 text-cricket-accent" />
+                  Difficulty
+                </label>
+                <select
+                  value={settings.difficulty ?? 'normal'}
+                  onChange={handleDifficultyChange}
+                  className="bg-cricket-primary border border-cricket-primary/50 rounded px-3 py-1.5
+                    text-cricket-text-primary focus:outline-none focus:ring-2 focus:ring-cricket-accent/50"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="hard">Hard</option>
+                  <option value="impossible">Impossible</option>
+                </select>
+              </div>
+              <p className="text-sm text-cricket-text-secondary mt-2">
+                {DIFFICULTY_DESCRIPTIONS[settings.difficulty ?? 'normal']}
               </p>
             </div>
           </div>

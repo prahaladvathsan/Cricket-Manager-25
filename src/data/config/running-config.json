@@ -13,13 +13,17 @@
   },
 
   "decisionFactors": {
-    "errorProbabilityBase": 0.032,
+    "judgmentWeight": 1,
+    "errorProbabilityBase": 0.025,
     "combinedJudgmentDivisor": 40,
-    "description": "Factors affecting running decisions. Formula: errorProbabilityBase * (1 - combinedJudgment/40). At combinedJudgment=30 (average), errorProbability=1.2%."
+    "description": "Factors affecting running decisions. Formula: errorProbabilityBase * (1 - combinedJudgment/40). At combinedJudgment=30 (average), errorProbability=1.2%. Halved from 0.064 in tuning pass #2."
   },
 
   "riskAssessment": {
     "safeMargin": 0.1,
-    "description": "Time margin (seconds) used in maxSafeRuns calculation"
+    "riskyMargin": 0.2,
+    "conservativeBonus": 0.3,
+    "aggressiveBonus": -0.2,
+    "description": "Time margins for different risk levels"
   }
 }

@@ -160,31 +160,33 @@ const MatchHeader = ({ matchId, matchEngine, onMatchComplete }) => {
     };
   }, [nonStrikerId, ballByBall]);
 
-  // Current bowler (live, from engine)
   const bowlerId = innings?.bowler;
   const currentInningsNumber = innings?.number || 1;
 
-  // Displayed bowler: holds the previous bowler at end-of-over until the new bowler
-  // actually delivers their first ball. This gives users a beat to see the 6th-ball
-  // outcome before the over strip swaps over.
+  // Holds the previous bowler at end-of-over so the over strip keeps showing the
+  // just-completed over until the new bowler's first ball lands.
   const [displayedBowlerId, setDisplayedBowlerId] = useState(bowlerId);
   const [displayedInnings, setDisplayedInnings] = useState(currentInningsNumber);
 
   React.useEffect(() => {
     if (!bowlerId) return;
-    // First time we see a bowler, or innings changed — adopt immediately.
     if (!displayedBowlerId || displayedInnings !== currentInningsNumber) {
       setDisplayedBowlerId(bowlerId);
       setDisplayedInnings(currentInningsNumber);
       return;
     }
     if (bowlerId === displayedBowlerId) return;
-    // Bowler changed — wait until the new bowler has at least one recorded ball
-    // in the current innings before swapping. Until then, keep showing the prior bowler.
-    const newBowlerHasDelivered = ballByBall?.some(
-      b => b.innings === currentInningsNumber && b.bowlerId === bowlerId
-    );
-    if (newBowlerHasDelivered) {
+    // Defer swap until the new bowler's first ball is recorded — engine reassigns
+    // innings.bowler at start-of-over, before the delivery lands. Checking "any ball
+    // this innings" wrongly matches an earlier over by the same bowler.
+    let lastBallInInnings = null;
+    for (let i = ballByBall.length - 1; i >= 0; i--) {
+      if (ballByBall[i].innings === currentInningsNumber) {
+        lastBallInInnings = ballByBall[i];
+        break;
+      }
+    }
+    if (lastBallInInnings?.bowlerId === bowlerId) {
       setDisplayedBowlerId(bowlerId);
     }
   }, [bowlerId, ballByBall, currentInningsNumber, displayedBowlerId, displayedInnings]);

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar, List, Zap, HelpCircle } from 'lucide-react';
+import { Gavel, Users, TrendingUp, Award, ChevronRight, Play, DollarSign, X, FastForward, SkipForward, Trophy, Calendar, List, Zap, HelpCircle, Minus, Plus, AlertTriangle } from 'lucide-react';
 import useTeamStore from '../../stores/teamStore';
 import usePlayerStore from '../../stores/playerStore';
 import useGameStore from '../../stores/gameStore';
@@ -350,22 +350,20 @@ const Transfers = () => {
     for (const team of engine.teams) {
       if (team.squad.length >= engine.config.squadSize.max) continue;
 
-      const isUserTeamWithMaxBid = team.isUserControlled && userMaxBidPlayerId === player.id && userMaxBid;
-
-      if (isUserTeamWithMaxBid) {
-        initialBidders.push({
-          team,
-          maxBid: userMaxBid,
-          isUserAutoBid: true
-        });
-      } else if (!team.isUserControlled) {
+      if (team.isUserControlled) {
+        if (!userAutoBidEnabled) continue;
+        if (userMaxBidPlayerId === player.id && userMaxBid) {
+          initialBidders.push({ team, maxBid: userMaxBid, isUserAutoBid: true });
+        } else {
+          const decision = engine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+          if (decision.shouldBid) {
+            initialBidders.push({ team, maxBid: decision.maxBid, isUserAutoBid: true });
+          }
+        }
+      } else {
         const decision = engine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
         if (decision.shouldBid) {
-          initialBidders.push({
-            team,
-            maxBid: decision.maxBid,
-            isUserAutoBid: false
-          });
+          initialBidders.push({ team, maxBid: decision.maxBid, isUserAutoBid: false });
         }
       }
     }
@@ -487,9 +485,15 @@ const Transfers = () => {
       if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
 
       if (team.isUserControlled) {
-        // Only auto-bid if toggle is ON and max bid is set
-        if (userAutoBidEnabled && userMaxBidPlayerId === currentPlayer.id && userMaxBid) {
-          willingBidders.push({ team, maxBid: userMaxBid });
+        if (userAutoBidEnabled) {
+          if (userMaxBidPlayerId === currentPlayer.id && userMaxBid) {
+            willingBidders.push({ team, maxBid: userMaxBid });
+          } else {
+            const decision = auctionEngine.ai.shouldBid(currentPlayer, price, team, auctionProgress);
+            if (decision.shouldBid) {
+              willingBidders.push({ team, maxBid: decision.maxBid });
+            }
+          }
         }
         // If toggle is OFF, user team never participates in skip bidding
       } else {
@@ -553,7 +557,7 @@ const Transfers = () => {
 
     setUserMaxBid(currentPlayer.id, maxBidAmount);
     addToLog(`Max bid set to ${formatPrice(maxBidAmount)} for ${currentPlayer.name}`, 'info');
-    setMaxBidInput('');
+    setMaxBidInput(String(Math.ceil(minBid / 1000)));
   };
 
   const handleClearMaxBid = () => {
@@ -595,11 +599,14 @@ const Transfers = () => {
         if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
 
         if (team.isUserControlled) {
-          // Only include user team if auto-bid is enabled
           if (userAutoBidEnabled) {
-            const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
-            if (decision.shouldBid) {
-              willingBidders.push({ team, maxBid: decision.maxBid });
+            if (userMaxBidPlayerId === player.id && userMaxBid) {
+              willingBidders.push({ team, maxBid: userMaxBid });
+            } else {
+              const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+              if (decision.shouldBid) {
+                willingBidders.push({ team, maxBid: decision.maxBid });
+              }
             }
           }
         } else {
@@ -696,11 +703,14 @@ const Transfers = () => {
           if (team.squad.length >= auctionEngine.config.squadSize.max) continue;
 
           if (team.isUserControlled) {
-            // Only include user team if auto-bid is enabled
             if (userAutoBidEnabled) {
-              const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
-              if (decision.shouldBid) {
-                willingBidders.push({ team, maxBid: decision.maxBid });
+              if (userMaxBidPlayerId === player.id && userMaxBid) {
+                willingBidders.push({ team, maxBid: userMaxBid });
+              } else {
+                const decision = auctionEngine.ai.shouldBid(player, player.basePrice, team, auctionProgress);
+                if (decision.shouldBid) {
+                  willingBidders.push({ team, maxBid: decision.maxBid });
+                }
               }
             }
           } else {
@@ -1099,6 +1109,26 @@ const Transfers = () => {
   const addToLog = (message, type = 'info') => {
     setAuctionLog(prev => [...prev, { message, type, timestamp: Date.now() }]);
   };
+
+  // Step (in K) for max-bid +/- buttons — mirrors getValidIncrement tiers so the arrow
+  // step always matches the smallest legal raise at the current input level.
+  const getMaxBidStepK = () => {
+    const inputDollars = (parseFloat(maxBidInput) || 0) * 1000;
+    const refPrice = inputDollars > 0 ? inputDollars : currentPrice;
+    return Math.max(1, getValidIncrement(refPrice) / 1000);
+  };
+
+  // Pre-populate max-bid input with next legal bid (matches Bid button) whenever the
+  // current player changes, so the user has a sensible starting amount to nudge.
+  useEffect(() => {
+    if (currentPlayer && auctionEngine) {
+      const nextBidK = (currentPrice + getValidIncrement(currentPrice)) / 1000;
+      setMaxBidInput(String(Math.ceil(nextBidK)));
+    } else {
+      setMaxBidInput('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPlayer?.id]);
 
   useEffect(() => {
     return () => {
@@ -1700,7 +1730,7 @@ const Transfers = () => {
                         <div className="auction-bid-controls flex items-center gap-3 mb-3">
                           <button
                             onClick={handleBid}
-                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining || squadCapReached || userAutoBidEnabled}
+                            disabled={!userTeamData || currentPrice + getValidIncrement(currentPrice) > userTeamData.budgetRemaining || squadCapReached}
                             className="btn-primary flex-1 text-base py-3"
                           >
                             <Gavel className="w-5 h-5 inline mr-2" />
@@ -1709,25 +1739,52 @@ const Transfers = () => {
 
                           <span className="text-sm text-text-tertiary px-2">or</span>
 
-                          <div className="flex-1 flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={maxBidInput}
-                              onChange={(e) => setMaxBidInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSetMaxBid();
-                                }
+                          <div className="flex-1 flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                const cur = parseFloat(maxBidInput) || 0;
+                                const step = getMaxBidStepK();
+                                setMaxBidInput(String(Math.max(0, cur - step)));
                               }}
-                              placeholder="e.g. 900 for 900K"
-                              className="input-field flex-1 text-sm"
-                              min={(currentPrice + getValidIncrement(currentPrice)) / 1000}
-                              disabled={squadCapReached || userAutoBidEnabled}
-                            />
+                              disabled={squadCapReached}
+                              className="btn-secondary px-2 py-2 disabled:opacity-50"
+                              title={`Decrease by ${getMaxBidStepK()}K`}
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <div className="relative flex-1">
+                              <input
+                                type="number"
+                                value={maxBidInput}
+                                onChange={(e) => setMaxBidInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSetMaxBid();
+                                  }
+                                }}
+                                placeholder="Max bid"
+                                className="input-field w-full text-sm pr-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                min={(currentPrice + getValidIncrement(currentPrice)) / 1000}
+                                disabled={squadCapReached}
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-tertiary pointer-events-none font-medium">K</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                const cur = parseFloat(maxBidInput) || 0;
+                                const step = getMaxBidStepK();
+                                setMaxBidInput(String(cur + step));
+                              }}
+                              disabled={squadCapReached}
+                              className="btn-secondary px-2 py-2 disabled:opacity-50"
+                              title={`Increase by ${getMaxBidStepK()}K`}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               onClick={handleSetMaxBid}
-                              disabled={!maxBidInput || squadCapReached || userAutoBidEnabled}
-                              className="btn-secondary px-4 py-2 text-sm whitespace-nowrap"
+                              disabled={!maxBidInput || squadCapReached}
+                              className="btn-secondary px-3 py-2 text-sm whitespace-nowrap ml-1"
                             >
                               Set Max
                             </button>
@@ -1756,11 +1813,11 @@ const Transfers = () => {
                                 <p className="text-cricket-text-primary mb-2">
                                   {userAutoBidEnabled ? (
                                     <>
-                                      <strong className="text-green-400">Auto-bid ON:</strong> AI will bid for you when using skip buttons. Manual bidding is disabled.
+                                      <strong className="text-green-400">Auto-bid ON:</strong> AI bids for you. Set a max to cap the auto-bid; otherwise AI decides. You can still bid manually at any time.
                                     </>
                                   ) : (
                                     <>
-                                      <strong className="text-red-400">Auto-bid OFF:</strong> AI will NOT bid for you when skipping. You must bid manually or skip without acquiring players.
+                                      <strong className="text-red-400">Auto-bid OFF:</strong> AI will NOT bid for you. Bid manually, or set a max bid and turn auto-bid on to activate it.
                                     </>
                                   )}
                                 </p>
@@ -1776,10 +1833,31 @@ const Transfers = () => {
 
                         {/* Max Bid Active Indicator */}
                         {userMaxBid && userMaxBidPlayerId === currentPlayer?.id && (
-                          <div className="p-2 bg-green-900/20 border border-green-700/30 rounded flex items-center justify-between mb-3">
+                          <div className={`p-2 rounded flex items-center justify-between mb-3 border ${
+                            userAutoBidEnabled
+                              ? 'bg-green-900/20 border-green-700/30'
+                              : 'bg-yellow-900/20 border-yellow-700/40'
+                          }`}>
                             <div className="flex items-center gap-2">
-                              <DollarSign className="w-4 h-4 text-green-400" />
-                              <span className="text-xs text-green-400">Auto-bid active: {formatPrice(userMaxBid)}</span>
+                              {userAutoBidEnabled ? (
+                                <>
+                                  <DollarSign className="w-4 h-4 text-green-400" />
+                                  <span className="text-xs text-green-400">Auto-bid active: {formatPrice(userMaxBid)}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                                  <span className="text-xs text-yellow-400">
+                                    Max bid set: {formatPrice(userMaxBid)}
+                                    <button
+                                      onClick={() => setAutoBid(true)}
+                                      className="ml-2 underline hover:text-yellow-300"
+                                    >
+                                      Turn on Auto-bid to activate
+                                    </button>
+                                  </span>
+                                </>
+                              )}
                             </div>
                             <button
                               onClick={handleClearMaxBid}

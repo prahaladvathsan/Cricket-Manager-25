@@ -1293,6 +1293,9 @@ class SaveGameManager {
   _migrateSaveData(saveData) {
     let data = { ...saveData };
 
+    // gameState.settings.difficulty: legacy saves missing this field default to 'normal'
+    // automatically via the gameStore persist `merge` function — no explicit migration needed.
+
     // v1.0.0 to v2.0.0 migration
     if (!data.version || data.version === '1.0.0') {
       console.log('Migrating save from v1.0.0 to v2.0.0');

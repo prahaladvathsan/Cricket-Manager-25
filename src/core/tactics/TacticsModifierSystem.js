@@ -12,6 +12,7 @@ import confidenceManager from './ConfidenceManager.js';
 import energyManager from './EnergyManager.js';
 import pressureCalculator from './PressureCalculator.js';
 import contextualModifierManager from './ContextualModifierManager.js';
+import { applyFlatAttributeBuff, cloneForAttributeMutation } from './DifficultyBuffs.js';
 
 /**
  * @class TacticsModifierSystem
@@ -43,6 +44,7 @@ class TacticsModifierSystem {
     let modifiedStriker = ballContext.striker;
     let modifiedBowler = ballContext.bowler;
     const nonStriker = ballContext.nonStriker;
+    const aiBuffs = ballContext.aiBuffs || null;
 
     // Build match context for playstyle evaluation
     const matchContext = this.buildMatchContext(ballContext, matchSituation);
@@ -51,6 +53,26 @@ class TacticsModifierSystem {
     const modifierMetadata = {
       stages: []
     };
+
+    // ========== STAGE 0: Difficulty Baseline (Impossible-mode AI only) ==========
+    if (aiBuffs && aiBuffs.baselineBuff > 0) {
+      if (aiBuffs.strikerBuffed) {
+        modifiedStriker = cloneForAttributeMutation(modifiedStriker);
+        applyFlatAttributeBuff(modifiedStriker, aiBuffs.baselineBuff);
+      }
+      if (aiBuffs.bowlerBuffed) {
+        modifiedBowler = cloneForAttributeMutation(modifiedBowler);
+        applyFlatAttributeBuff(modifiedBowler, aiBuffs.baselineBuff);
+      }
+      modifierMetadata.stages.push({
+        stage: 0,
+        name: 'Difficulty',
+        strikerBuffed: aiBuffs.strikerBuffed,
+        bowlerBuffed: aiBuffs.bowlerBuffed,
+        baselineBuff: aiBuffs.baselineBuff,
+        difficulty: aiBuffs.difficulty
+      });
+    }
 
     // ========== STAGE 1: Playstyle Modifiers ==========
     const playstyleResult = this.applyPlaystyleModifiers(modifiedStriker, modifiedBowler, matchContext);
@@ -86,29 +108,33 @@ class TacticsModifierSystem {
     });
 
     // ========== STAGE 4: Confidence Modifiers ==========
-    const confidenceResult = this.applyConfidenceModifiers(modifiedStriker, modifiedBowler);
+    const confidenceResult = this.applyConfidenceModifiers(modifiedStriker, modifiedBowler, aiBuffs);
     modifiedStriker = confidenceResult.striker;
     modifiedBowler = confidenceResult.bowler;
     modifierMetadata.stages.push({
       stage: 4,
       name: 'Confidence',
       strikerConfidence: confidenceResult.strikerConfidence,
-      bowlerConfidence: confidenceResult.bowlerConfidence
+      bowlerConfidence: confidenceResult.bowlerConfidence,
+      strikerLocked: !!(aiBuffs?.confidenceLocked && aiBuffs.strikerBuffed),
+      bowlerLocked: !!(aiBuffs?.confidenceLocked && aiBuffs.bowlerBuffed)
     });
 
     // ========== STAGE 5: Energy Modifiers ==========
-    const energyResult = this.applyEnergyModifiers(modifiedStriker, modifiedBowler);
+    const energyResult = this.applyEnergyModifiers(modifiedStriker, modifiedBowler, aiBuffs);
     modifiedStriker = energyResult.striker;
     modifiedBowler = energyResult.bowler;
     modifierMetadata.stages.push({
       stage: 5,
       name: 'Energy',
       strikerEnergy: energyResult.strikerEnergy,
-      bowlerEnergy: energyResult.bowlerEnergy
+      bowlerEnergy: energyResult.bowlerEnergy,
+      strikerSuppressed: !!(aiBuffs?.energyNoPenalty && aiBuffs.strikerBuffed),
+      bowlerSuppressed: !!(aiBuffs?.energyNoPenalty && aiBuffs.bowlerBuffed)
     });
 
     // ========== STAGE 6: Pressure Modifiers (Playstyle Rating ONLY) ==========
-    const pressureResult = this.applyPressureModifiers(modifiedStriker, modifiedBowler, tacticsState);
+    const pressureResult = this.applyPressureModifiers(modifiedStriker, modifiedBowler, tacticsState, aiBuffs);
     modifiedStriker = pressureResult.striker;
     modifiedBowler = pressureResult.bowler;
     modifierMetadata.stages.push({
@@ -117,7 +143,9 @@ class TacticsModifierSystem {
       battingPressure: tacticsState.pressureIndex.batting,
       bowlingPressure: tacticsState.pressureIndex.bowling,
       strikerMetadata: pressureResult.strikerPressureMetadata,
-      bowlerMetadata: pressureResult.bowlerPressureMetadata
+      bowlerMetadata: pressureResult.bowlerPressureMetadata,
+      strikerSuppressed: !!(aiBuffs?.pressureNoPenalty && aiBuffs.strikerBuffed),
+      bowlerSuppressed: !!(aiBuffs?.pressureNoPenalty && aiBuffs.bowlerBuffed)
     });
 
     // ========== STAGE 7: Contextual Modifiers ==========
@@ -176,6 +204,7 @@ class TacticsModifierSystem {
    */
   createModifierBreakdown(metadata, striker, bowler, tierPlanResult, matchupResult) {
     const strikerBreakdown = {
+      difficultyModifiers: [],
       playstyleModifiers: [],
       tacticalModifiers: [],
       matchupModifiers: [],
@@ -186,6 +215,7 @@ class TacticsModifierSystem {
     };
 
     const bowlerBreakdown = {
+      difficultyModifiers: [],
       playstyleModifiers: [],
       tacticalModifiers: [],
       matchupModifiers: [],
@@ -198,6 +228,25 @@ class TacticsModifierSystem {
     // Process each stage
     metadata.stages.forEach(stage => {
       switch (stage.stage) {
+        case 0: // Difficulty baseline (Impossible-mode AI only)
+          if (stage.strikerBuffed) {
+            strikerBreakdown.difficultyModifiers.push({
+              name: 'AI Difficulty',
+              value: stage.baselineBuff,
+              description: `+${stage.baselineBuff} to all attributes`,
+              condition: 'Impossible mode'
+            });
+          }
+          if (stage.bowlerBuffed) {
+            bowlerBreakdown.difficultyModifiers.push({
+              name: 'AI Difficulty',
+              value: stage.baselineBuff,
+              description: `+${stage.baselineBuff} to all attributes`,
+              condition: 'Impossible mode'
+            });
+          }
+          break;
+
         case 1: // Playstyle
           // Striker playstyle - show each applied modifier with its effects
           if (stage.striker?.appliedModifiers && stage.striker.appliedModifiers.length > 0) {
@@ -323,15 +372,16 @@ class TacticsModifierSystem {
           if (strikerConfidence > 60 || strikerConfidence < 40) {
             const level = strikerConfidence >= 81 ? 'Sky-High' : strikerConfidence >= 61 ? 'High' : strikerConfidence >= 41 ? 'Normal' : strikerConfidence >= 21 ? 'Low' : 'Shattered';
             const modifier = strikerConfidence >= 81 ? 2 : strikerConfidence >= 61 ? 1 : strikerConfidence >= 41 ? 0 : strikerConfidence >= 21 ? -1 : -2;
-            let conditionStr = null;
-            if (strikerConfidence >= 81) conditionStr = 'confidence >= 81';
+            let conditionStr;
+            if (stage.strikerLocked) conditionStr = 'locked by AI difficulty';
+            else if (strikerConfidence >= 81) conditionStr = 'confidence >= 81';
             else if (strikerConfidence >= 61) conditionStr = 'confidence >= 61';
             else if (strikerConfidence >= 21) conditionStr = 'confidence >= 21';
             else conditionStr = 'confidence < 21';
 
             if (modifier !== 0) {
               strikerBreakdown.confidenceModifiers.push({
-                name: `${level} Confidence`,
+                name: stage.strikerLocked ? `${level} Confidence (locked)` : `${level} Confidence`,
                 value: modifier,
                 description: `${modifier > 0 ? '+' : ''}${modifier} to all attributes`,
                 condition: conditionStr
@@ -342,15 +392,16 @@ class TacticsModifierSystem {
           if (bowlerConfidence > 60 || bowlerConfidence < 40) {
             const level = bowlerConfidence >= 81 ? 'Sky-High' : bowlerConfidence >= 61 ? 'High' : bowlerConfidence >= 41 ? 'Normal' : bowlerConfidence >= 21 ? 'Low' : 'Shattered';
             const modifier = bowlerConfidence >= 81 ? 2 : bowlerConfidence >= 61 ? 1 : bowlerConfidence >= 41 ? 0 : bowlerConfidence >= 21 ? -1 : -2;
-            let conditionStr = null;
-            if (bowlerConfidence >= 81) conditionStr = 'confidence >= 81';
+            let conditionStr;
+            if (stage.bowlerLocked) conditionStr = 'locked by AI difficulty';
+            else if (bowlerConfidence >= 81) conditionStr = 'confidence >= 81';
             else if (bowlerConfidence >= 61) conditionStr = 'confidence >= 61';
             else if (bowlerConfidence >= 21) conditionStr = 'confidence >= 21';
             else conditionStr = 'confidence < 21';
 
             if (modifier !== 0) {
               bowlerBreakdown.confidenceModifiers.push({
-                name: `${level} Confidence`,
+                name: stage.bowlerLocked ? `${level} Confidence (locked)` : `${level} Confidence`,
                 value: modifier,
                 description: `${modifier > 0 ? '+' : ''}${modifier} to all attributes`,
                 condition: conditionStr
@@ -367,26 +418,37 @@ class TacticsModifierSystem {
 
           if (strikerBand) {
             strikerBreakdown.energyModifiers.push({
-              name: strikerBand.name,
-              value: strikerBand.modifier,
-              description: `${strikerBand.modifier} to ${strikerBand.scope} attributes`,
-              condition: strikerBand.conditionStr
+              name: stage.strikerSuppressed ? `${strikerBand.name} (suppressed)` : strikerBand.name,
+              value: stage.strikerSuppressed ? 0 : strikerBand.modifier,
+              description: stage.strikerSuppressed
+                ? `+0 (penalty suppressed by AI difficulty)`
+                : `${strikerBand.modifier} to ${strikerBand.scope} attributes`,
+              condition: stage.strikerSuppressed ? 'AI difficulty' : strikerBand.conditionStr
             });
           }
 
           if (bowlerBand) {
             bowlerBreakdown.energyModifiers.push({
-              name: bowlerBand.name,
-              value: bowlerBand.modifier,
-              description: `${bowlerBand.modifier} to ${bowlerBand.scope} attributes`,
-              condition: bowlerBand.conditionStr
+              name: stage.bowlerSuppressed ? `${bowlerBand.name} (suppressed)` : bowlerBand.name,
+              value: stage.bowlerSuppressed ? 0 : bowlerBand.modifier,
+              description: stage.bowlerSuppressed
+                ? `+0 (penalty suppressed by AI difficulty)`
+                : `${bowlerBand.modifier} to ${bowlerBand.scope} attributes`,
+              condition: stage.bowlerSuppressed ? 'AI difficulty' : bowlerBand.conditionStr
             });
           }
           break;
         }
 
         case 6: // Pressure
-          if (stage.strikerMetadata && stage.strikerMetadata.penaltyApplied > 0) {
+          if (stage.strikerSuppressed && stage.battingPressure > 50) {
+            strikerBreakdown.pressureModifiers.push({
+              name: 'High Pressure (suppressed)',
+              value: 0,
+              description: `+0 to playstyle rating (penalty suppressed by AI difficulty)`,
+              condition: `pressure = ${stage.battingPressure.toFixed(0)}`
+            });
+          } else if (stage.strikerMetadata && stage.strikerMetadata.penaltyApplied > 0) {
             const penalty = stage.strikerMetadata.penaltyApplied;
             const pressure = stage.battingPressure || 50;
 
@@ -398,7 +460,14 @@ class TacticsModifierSystem {
             });
           }
 
-          if (stage.bowlerMetadata && stage.bowlerMetadata.penaltyApplied > 0) {
+          if (stage.bowlerSuppressed && stage.bowlingPressure > 50) {
+            bowlerBreakdown.pressureModifiers.push({
+              name: 'High Pressure (suppressed)',
+              value: 0,
+              description: `+0 to playstyle rating (penalty suppressed by AI difficulty)`,
+              condition: `pressure = ${stage.bowlingPressure.toFixed(0)}`
+            });
+          } else if (stage.bowlerMetadata && stage.bowlerMetadata.penaltyApplied > 0) {
             const penalty = stage.bowlerMetadata.penaltyApplied;
             const pressure = stage.bowlingPressure || 50;
 
@@ -532,30 +601,37 @@ class TacticsModifierSystem {
   /**
    * Stage 4: Apply confidence modifiers
    */
-  applyConfidenceModifiers(striker, bowler) {
+  applyConfidenceModifiers(striker, bowler, aiBuffs = null) {
     const strikerConfidence = striker.condition?.confidence ?? 50;
     const bowlerConfidence = bowler.condition?.confidence ?? 50;
 
-    const modifiedStriker = confidenceManager.applyConfidenceModifiers(striker, strikerConfidence);
-    const modifiedBowler = confidenceManager.applyConfidenceModifiers(bowler, bowlerConfidence);
+    const lockStriker = !!(aiBuffs?.confidenceLocked && aiBuffs.strikerBuffed);
+    const lockBowler = !!(aiBuffs?.confidenceLocked && aiBuffs.bowlerBuffed);
+
+    const modifiedStriker = confidenceManager.applyConfidenceModifiers(striker, strikerConfidence, { lockToSkyHigh: lockStriker });
+    const modifiedBowler = confidenceManager.applyConfidenceModifiers(bowler, bowlerConfidence, { lockToSkyHigh: lockBowler });
 
     return {
       striker: modifiedStriker,
       bowler: modifiedBowler,
-      strikerConfidence,
-      bowlerConfidence
+      // Effective confidence used for downstream UI — locked AI players surface as 100.
+      strikerConfidence: lockStriker ? 100 : strikerConfidence,
+      bowlerConfidence: lockBowler ? 100 : bowlerConfidence
     };
   }
 
   /**
    * Stage 5: Apply energy modifiers
    */
-  applyEnergyModifiers(striker, bowler) {
+  applyEnergyModifiers(striker, bowler, aiBuffs = null) {
     const strikerEnergy = striker.condition?.energy ?? 100;
     const bowlerEnergy = bowler.condition?.energy ?? 100;
 
-    const modifiedStriker = energyManager.applyEnergyModifiers(striker, strikerEnergy);
-    const modifiedBowler = energyManager.applyEnergyModifiers(bowler, bowlerEnergy);
+    const suppressStriker = !!(aiBuffs?.energyNoPenalty && aiBuffs.strikerBuffed);
+    const suppressBowler = !!(aiBuffs?.energyNoPenalty && aiBuffs.bowlerBuffed);
+
+    const modifiedStriker = energyManager.applyEnergyModifiers(striker, strikerEnergy, { suppressPenalty: suppressStriker });
+    const modifiedBowler = energyManager.applyEnergyModifiers(bowler, bowlerEnergy, { suppressPenalty: suppressBowler });
 
     return {
       striker: modifiedStriker,
@@ -568,12 +644,15 @@ class TacticsModifierSystem {
   /**
    * Stage 6: Apply pressure modifiers (playstyle rating ONLY)
    */
-  applyPressureModifiers(striker, bowler, tacticsState) {
+  applyPressureModifiers(striker, bowler, tacticsState, aiBuffs = null) {
     const battingPressure = tacticsState.pressureIndex?.batting ?? 50;
     const bowlingPressure = tacticsState.pressureIndex?.bowling ?? 50;
 
-    const modifiedStriker = pressureCalculator.applyPressureToPlaystyleRating(striker, battingPressure, 'batting');
-    const modifiedBowler = pressureCalculator.applyPressureToPlaystyleRating(bowler, bowlingPressure, 'bowling');
+    const suppressStriker = !!(aiBuffs?.pressureNoPenalty && aiBuffs.strikerBuffed);
+    const suppressBowler = !!(aiBuffs?.pressureNoPenalty && aiBuffs.bowlerBuffed);
+
+    const modifiedStriker = pressureCalculator.applyPressureToPlaystyleRating(striker, battingPressure, 'batting', { suppressPenalty: suppressStriker });
+    const modifiedBowler = pressureCalculator.applyPressureToPlaystyleRating(bowler, bowlingPressure, 'bowling', { suppressPenalty: suppressBowler });
 
     return {
       striker: modifiedStriker,
