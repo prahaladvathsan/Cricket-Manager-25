@@ -64,8 +64,12 @@
         "increment": 20000
       },
       {
+        "maxPrice": 500000,
+        "increment": 50000
+      },
+      {
         "maxPrice": 999999999,
-        "increment": 20000
+        "increment": 100000
       }
     ]
   },
@@ -88,8 +92,8 @@
     "baseValueMultiplier": 1.2,
     "conservativeMode": {
       "enabled": true,
-      "reserveForMinSquad": 0.2,
-      "description": "Reserve 20% of budget to ensure minimum squad completion"
+      "reserveForMinSquad": 0.3,
+      "description": "Reserve 30% of budget to ensure minimum squad completion"
     }
   },
   "valuation": {
