@@ -1118,17 +1118,21 @@ const Transfers = () => {
     return Math.max(1, getValidIncrement(refPrice) / 1000);
   };
 
-  // Pre-populate max-bid input with next legal bid (matches Bid button) whenever the
-  // current player changes, so the user has a sensible starting amount to nudge.
+  // Keep max-bid input synced with the live Bid-button amount. On player
+  // change, snap to next legal bid. While bidding, only bump up when the
+  // typed value is now below the floor (user-typed higher caps are preserved).
   useEffect(() => {
-    if (currentPlayer && auctionEngine) {
-      const nextBidK = (currentPrice + getValidIncrement(currentPrice)) / 1000;
-      setMaxBidInput(String(Math.ceil(nextBidK)));
-    } else {
+    if (!currentPlayer || !auctionEngine) {
       setMaxBidInput('');
+      return;
+    }
+    const minLegalK = Math.ceil((currentPrice + getValidIncrement(currentPrice)) / 1000);
+    const currentInputK = parseFloat(maxBidInput) || 0;
+    if (currentInputK < minLegalK) {
+      setMaxBidInput(String(minLegalK));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPlayer?.id]);
+  }, [currentPrice, currentPlayer?.id]);
 
   useEffect(() => {
     return () => {
@@ -1739,56 +1743,64 @@ const Transfers = () => {
 
                           <span className="text-sm text-text-tertiary px-2">or</span>
 
-                          <div className="flex-1 flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                const cur = parseFloat(maxBidInput) || 0;
-                                const step = getMaxBidStepK();
-                                setMaxBidInput(String(Math.max(0, cur - step)));
-                              }}
-                              disabled={squadCapReached}
-                              className="btn-secondary px-2 py-2 disabled:opacity-50"
-                              title={`Decrease by ${getMaxBidStepK()}K`}
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <div className="relative flex-1">
-                              <input
-                                type="number"
-                                value={maxBidInput}
-                                onChange={(e) => setMaxBidInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleSetMaxBid();
-                                  }
-                                }}
-                                placeholder="Max bid"
-                                className="input-field w-full text-sm pr-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                min={(currentPrice + getValidIncrement(currentPrice)) / 1000}
-                                disabled={squadCapReached}
-                              />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-tertiary pointer-events-none font-medium">K</span>
-                            </div>
-                            <button
-                              onClick={() => {
-                                const cur = parseFloat(maxBidInput) || 0;
-                                const step = getMaxBidStepK();
-                                setMaxBidInput(String(cur + step));
-                              }}
-                              disabled={squadCapReached}
-                              className="btn-secondary px-2 py-2 disabled:opacity-50"
-                              title={`Increase by ${getMaxBidStepK()}K`}
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={handleSetMaxBid}
-                              disabled={!maxBidInput || squadCapReached}
-                              className="btn-secondary px-3 py-2 text-sm whitespace-nowrap ml-1"
-                            >
-                              Set Max
-                            </button>
-                          </div>
+                          {(() => {
+                            const minLegalK = Math.ceil((currentPrice + getValidIncrement(currentPrice)) / 1000);
+                            const currentK = parseFloat(maxBidInput) || 0;
+                            const stepK = getMaxBidStepK();
+                            const minusDisabled = squadCapReached || currentK <= minLegalK;
+                            return (
+                              <div className="flex-1 flex items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    const next = Math.max(minLegalK, currentK - stepK);
+                                    setMaxBidInput(String(next));
+                                  }}
+                                  disabled={minusDisabled}
+                                  className="btn-secondary px-2 py-2 disabled:opacity-50"
+                                  title={`Decrease by ${stepK}K`}
+                                >
+                                  <Minus className="w-3.5 h-3.5" />
+                                </button>
+                                <div className="relative flex-1">
+                                  <input
+                                    type="number"
+                                    value={maxBidInput}
+                                    onChange={(e) => setMaxBidInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleSetMaxBid();
+                                      }
+                                    }}
+                                    placeholder="Max bid"
+                                    className="input-field w-full text-sm pr-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    min={minLegalK}
+                                    disabled={squadCapReached}
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-tertiary pointer-events-none font-medium">K</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    // If input is below the legal floor, jump straight to it.
+                                    // Otherwise nudge up by one tier-appropriate step.
+                                    const next = currentK < minLegalK ? minLegalK : currentK + stepK;
+                                    setMaxBidInput(String(next));
+                                  }}
+                                  disabled={squadCapReached}
+                                  className="btn-secondary px-2 py-2 disabled:opacity-50"
+                                  title={currentK < minLegalK ? `Snap to ${minLegalK}K (next legal bid)` : `Increase by ${stepK}K`}
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={handleSetMaxBid}
+                                  disabled={!maxBidInput || squadCapReached}
+                                  className="btn-secondary px-3 py-2 text-sm whitespace-nowrap ml-1"
+                                >
+                                  Set Max
+                                </button>
+                              </div>
+                            );
+                          })()}
 
                           <div className="flex items-center gap-2 border-l border-border-primary pl-3">
                             <span className={`text-xs font-medium whitespace-nowrap ${userAutoBidEnabled ? 'text-green-400' : 'text-red-400'}`}>
