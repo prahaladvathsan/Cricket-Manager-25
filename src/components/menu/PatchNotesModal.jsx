@@ -4,14 +4,31 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper, Package } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.3.2';
+const CURRENT_VERSION = '1.4.0';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'The Auction Intelligence Pass';
+const RELEASE_TAGLINE = 'The Skins Update';
 
 const PATCH_NOTES = [
+  {
+    icon: Package,
+    title: 'v1.4.0 The Skins Update',
+    color: 'text-rose-400',
+    bgColor: 'bg-rose-500/10',
+    borderColor: 'border-rose-500/30',
+    items: [
+      '🎨 **Skins — shareable league re-themes** — New `.cm25skin` pack format lets you replace all 10 WPL teams in one click. Per-team badges, icons, banners, colors, names, coach, and venue, plus league-wide wallpaper and game logo. Layered overlay (skin + your own tweaks) so applying a skin never wipes your personal customizations.',
+      '🏏 **Bundled IPL & BBL skins** — Ship with the game. Apply IPL and your league becomes Chennai Super Kings, Mumbai Indians, RCB and the rest with real logos, coaches verified for the 2025/26 season, and authentic home venues (M. A. Chidambaram, Wankhede, Eden Gardens, ...). Apply BBL for an 8-franchise Aussie remix. Switchable on the fly from the new **Skin Manager** screen on the main menu.',
+      '📤 **Export & share your customizations** — Open Customize Teams, hit "Export as Skin", and download a `.cm25skin` file you can send to friends, post on Discord, or back up. They drop it into Skin Manager → Import and the league looks exactly like yours.',
+      '🖼️ **Icons + banners are now editable** — Club Customizer used to only let you upload a badge. Now you can upload a square icon and a wide banner per team too, plus global wallpaper and game logo light/dark variants. All bundled with the skin on export.',
+      '🛡️ **Apply mid-career, no restart needed** — Apply a skin and it immediately re-themes your active career. Standings, scorecards, team-selection screen, news templates — all rendered with the new branding. Skins persist across saves and devices.',
+      '🌈 **Plain-color banner fallback** — When you apply a skin that doesn\'t ship its own team banners (or you\'ve customized colors but not banners), the league hero strips fall back to a primary-color block instead of bleeding the old WPL banner art through. Looks cleaner and matches the team\'s new identity.',
+      '🔧 **Fixed: custom badges now actually showing** — A long-standing latent bug meant custom badges uploaded via Club Customizer were saved but not displayed in standings or match UI (only colors and names came through). Asset helpers now correctly read the overlay everywhere.',
+    ],
+    note: 'The WPL is fictional, your favourite league isn\'t. Apply IPL, BBL, or build your own and share it around. The `.cm25skin` format is open — author one for your friends\' fantasy league and watch the AI play out the season in your colours. 🎨'
+  },
   {
     icon: Sparkles,
     title: 'v1.3.2 The Auction Intelligence Pass',
