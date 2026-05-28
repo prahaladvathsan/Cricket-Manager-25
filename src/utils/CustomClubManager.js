@@ -1,30 +1,31 @@
 /**
  * @file CustomClubManager.js
- * @description Manages custom club cosmetics (badge, colors) stored outside game saves.
- * Uses a dedicated IndexedDB key so customizations persist across all saves.
+ * @description Manages custom club cosmetics (badge, icon, banner, colors, names)
+ * stored outside game saves. Uses a dedicated IndexedDB key so customizations
+ * persist across all saves. Highest-priority overlay in the layered Skins model
+ * (defaults < active skin < custom-clubs).
  */
 
-import { get, set, del } from 'idb-keyval';
+import { get, set } from 'idb-keyval';
+import { sanitizeSvgDataUrl } from './sanitizeSvg';
 
 const STORAGE_KEY = 'cm25-custom-clubs';
 
 /**
  * @typedef {Object} CustomClub
- * @property {string} teamId - Which WPL team is customized (e.g. 't_chennai')
- * @property {string|null} badgeDataUrl - base64 PNG/JPG/SVG data URL, or null for default
- * @property {string} primaryColor - Hex color string (e.g. '#FF0000')
- * @property {string} secondaryColor - Hex color string
- * @property {string|null} teamName - Custom team name, or null for default
- * @property {string|null} shortName - Custom short name (3 chars), or null for default
- * @property {string|null} coachName - Custom coach name, or null for default
- * @property {string|null} homeVenue - Custom home venue name, or null for default
- * @property {string} createdAt - ISO timestamp
+ * @property {string} teamId
+ * @property {string|null} badgeDataUrl
+ * @property {string|null} iconDataUrl
+ * @property {string|null} bannerDataUrl
+ * @property {string} primaryColor
+ * @property {string} secondaryColor
+ * @property {string|null} teamName
+ * @property {string|null} shortName
+ * @property {string|null} coachName
+ * @property {string|null} homeVenue
+ * @property {string} createdAt
  */
 
-/**
- * Load all custom club data from IndexedDB
- * @returns {Promise<Record<string, CustomClub>>} Map of teamId -> CustomClub
- */
 async function loadAll() {
   try {
     const data = await get(STORAGE_KEY);
@@ -35,11 +36,6 @@ async function loadAll() {
   }
 }
 
-/**
- * Save a custom club configuration
- * @param {CustomClub} customClub
- * @returns {Promise<void>}
- */
 export async function saveCustomClub(customClub) {
   if (!customClub?.teamId) throw new Error('customClub.teamId is required');
 
@@ -52,29 +48,15 @@ export async function saveCustomClub(customClub) {
   await set(STORAGE_KEY, existing);
 }
 
-/**
- * Get custom club for a specific team
- * @param {string} teamId
- * @returns {Promise<CustomClub|null>}
- */
 export async function getCustomClub(teamId) {
   const all = await loadAll();
   return all[teamId] || null;
 }
 
-/**
- * Get all custom clubs
- * @returns {Promise<Record<string, CustomClub>>}
- */
 export async function getCustomClubs() {
   return loadAll();
 }
 
-/**
- * Delete custom club for a team (resets to default)
- * @param {string} teamId
- * @returns {Promise<void>}
- */
 export async function deleteCustomClub(teamId) {
   const existing = await loadAll();
   delete existing[teamId];
@@ -82,11 +64,8 @@ export async function deleteCustomClub(teamId) {
 }
 
 /**
- * Apply custom club overlay to a team object.
- * Returns a new team object with custom colors/badge merged in.
- * @param {Object} team - Original team object
- * @param {CustomClub|null} customClub - Custom club data, or null
- * @returns {Object} Team with custom cosmetics applied
+ * Apply custom club overlay to a team object (pure merger).
+ * Used as the highest-priority layer; called after applying any active skin.
  */
 export function applyCustomClubToTeam(team, customClub) {
   if (!customClub) return team;
@@ -98,7 +77,9 @@ export function applyCustomClubToTeam(team, customClub) {
       primary: customClub.primaryColor || team.colors?.primary,
       secondary: customClub.secondaryColor || team.colors?.secondary
     },
-    customBadgeDataUrl: customClub.badgeDataUrl || null,
+    customBadgeDataUrl: customClub.badgeDataUrl || team.customBadgeDataUrl || null,
+    customIconDataUrl: customClub.iconDataUrl || team.customIconDataUrl || null,
+    customBannerDataUrl: customClub.bannerDataUrl || team.customBannerDataUrl || null,
     name: customClub.teamName || team.name,
     shortName: customClub.shortName || team.shortName,
     coachName: customClub.coachName || team.coachName,
@@ -107,30 +88,39 @@ export function applyCustomClubToTeam(team, customClub) {
   };
 }
 
-/**
- * Validate badge file before storage
- * @param {File} file - Image file from input
- * @returns {{ valid: boolean, error?: string }}
- */
-export function validateBadgeFile(file) {
-  const MAX_SIZE = 500 * 1024; // 500KB
-  const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+const ASSET_KIND_LIMITS = {
+  badge: 500 * 1024,
+  icon: 250 * 1024,
+  banner: 500 * 1024,
+  wallpaper: 1 * 1024 * 1024,
+  logo: 500 * 1024
+};
 
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
+
+/**
+ * Validate an image file against a per-kind size limit.
+ * @param {File} file
+ * @param {'badge'|'icon'|'banner'|'wallpaper'|'logo'} kind
+ * @returns {{valid: boolean, error?: string}}
+ */
+export function validateAssetFile(file, kind = 'badge') {
   if (!file) return { valid: false, error: 'No file selected' };
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return { valid: false, error: 'Only PNG, JPG, and SVG files are supported' };
+    return { valid: false, error: 'Only PNG, JPG, SVG, or WebP files are supported' };
   }
-  if (file.size > MAX_SIZE) {
-    return { valid: false, error: 'File size must be under 500KB' };
+  const limit = ASSET_KIND_LIMITS[kind] ?? ASSET_KIND_LIMITS.badge;
+  if (file.size > limit) {
+    return { valid: false, error: `File size must be under ${(limit / 1024).toFixed(0)}KB for ${kind}` };
   }
   return { valid: true };
 }
 
-/**
- * Read a file as a base64 data URL
- * @param {File} file
- * @returns {Promise<string>} Data URL
- */
+/** Backwards-compat wrapper used by existing call sites. */
+export function validateBadgeFile(file) {
+  return validateAssetFile(file, 'badge');
+}
+
 export function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -140,6 +130,21 @@ export function fileToDataUrl(file) {
   });
 }
 
+/**
+ * Read a file as data URL and reject if SVG contains script vectors.
+ * @param {File} file
+ * @param {'badge'|'icon'|'banner'|'wallpaper'|'logo'} kind
+ * @returns {Promise<{dataUrl?: string, error?: string}>}
+ */
+export async function fileToSafeDataUrl(file, kind = 'badge') {
+  const validation = validateAssetFile(file, kind);
+  if (!validation.valid) return { error: validation.error };
+  const dataUrl = await fileToDataUrl(file);
+  const sanitize = sanitizeSvgDataUrl(dataUrl);
+  if (!sanitize.valid) return { error: sanitize.reason };
+  return { dataUrl };
+}
+
 export default {
   saveCustomClub,
   getCustomClub,
@@ -147,5 +152,7 @@ export default {
   deleteCustomClub,
   applyCustomClubToTeam,
   validateBadgeFile,
-  fileToDataUrl
+  validateAssetFile,
+  fileToDataUrl,
+  fileToSafeDataUrl
 };

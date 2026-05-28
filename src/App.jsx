@@ -24,6 +24,7 @@ import StartMenu from './components/menu/StartMenu';
 import LoadGame from './components/menu/LoadGame';
 import PlayerBrowser from './components/menu/PlayerBrowser';
 import ClubEditorScreen from './components/menu/ClubEditorScreen';
+import SkinManagerScreen from './components/menu/SkinManagerScreen';
 import Credits from './components/menu/Credits';
 import Settings from './components/menu/Settings';
 import { GameManual } from './components/manual';
@@ -42,6 +43,7 @@ import { migrateFromLocalStorage, isMigrationComplete } from './utils/indexedDBS
 import { waitForHydration } from './utils/storeHydration';
 import memoryDebugger from './utils/MemoryDebugger';
 import { registerInboxSubscriber } from './core/news/newsDispatcherSingleton';
+import useOfficialSkinsBootstrap from './hooks/useOfficialSkinsBootstrap';
 
 /**
  * Validate that game state is properly populated
@@ -111,6 +113,9 @@ function App() {
     const [dataLoaded, setDataLoaded] = useState(false);
     const { initializeTeams } = useTeamStore();
     const { initializePlayers } = usePlayerStore();
+
+    // Install bundled official skins on first run; reapply active skin on every load.
+    useOfficialSkinsBootstrap();
 
     useEffect(() => {
         // Initialize memory debugger
@@ -235,6 +240,7 @@ function App() {
                     <Route path="/load-game" element={<LoadGame />} />
                     <Route path="/player-browser" element={<PlayerBrowser />} />
                     <Route path="/club-editor" element={<ClubEditorScreen />} />
+                    <Route path="/skins" element={<SkinManagerScreen />} />
                     <Route path="/credits" element={<Credits />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/manual" element={<GameManual />} />

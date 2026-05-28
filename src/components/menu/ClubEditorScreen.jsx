@@ -2,78 +2,135 @@
  * @file ClubEditorScreen.jsx
  * @description Pre-game club customization screen.
  * 3-column layout: team selector | live preview | editor controls.
- * Everything fits in one viewport — no scrolling.
+ * Now supports badge / icon / banner per-team plus global wallpaper & game logo.
+ * "Export as Skin" packages the current state into a .cm25skin file.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, RotateCcw, Save, Check, AlertCircle, Pencil, X } from 'lucide-react';
+import {
+  ArrowLeft, Upload, RotateCcw, Save, Check, AlertCircle, Pencil, X, Package, Share2, Image as ImageIcon
+} from 'lucide-react';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
 import { getTeamBadge } from '../../utils/assetHelpers';
 import {
   saveCustomClub,
   getCustomClubs,
   deleteCustomClub,
-  validateBadgeFile,
-  fileToDataUrl
+  fileToSafeDataUrl
 } from '../../utils/CustomClubManager';
+import { get, set } from 'idb-keyval';
+import { applyActiveSkinToStores, getActiveSkin } from '../../utils/SkinManager';
+import SkinExportModal from './SkinExportModal';
+
+const GLOBAL_KEY = 'cm25-global-cosmetics';
 
 const ClubEditorScreen = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const badgeInputRef = useRef(null);
+  const iconInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
+  const wallpaperInputRef = useRef(null);
+  const logoLightInputRef = useRef(null);
+  const logoDarkInputRef = useRef(null);
 
   const [customClubs, setCustomClubs] = useState({});
+  const [activeSkinTeams, setActiveSkinTeams] = useState({}); // teamId → skin's team override
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [primaryColor, setPrimaryColor] = useState('#1a1a2e');
   const [secondaryColor, setSecondaryColor] = useState('#ffffff');
   const [badgeDataUrl, setBadgeDataUrl] = useState(null);
+  const [iconDataUrl, setIconDataUrl] = useState(null);
+  const [bannerDataUrl, setBannerDataUrl] = useState(null);
   const [teamName, setTeamName] = useState('');
   const [shortName, setShortName] = useState('');
   const [coachName, setCoachName] = useState('');
   const [homeVenue, setHomeVenue] = useState('');
-  const [saveStatus, setSaveStatus] = useState(null); // 'saved' | 'error' | null
-  const [badgeError, setBadgeError] = useState(null);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [assetError, setAssetError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showExport, setShowExport] = useState(false);
+
+  // Global cosmetics (wallpaper + logos) — used to seed Export-as-Skin.
+  const [globalCosmetics, setGlobalCosmetics] = useState({
+    wallpaperDataUrl: null,
+    gameLogoLightDataUrl: null,
+    gameLogoDarkDataUrl: null
+  });
 
   useEffect(() => {
     getCustomClubs().then(clubs => {
       setCustomClubs(clubs);
       setLoading(false);
     });
+    getActiveSkin().then(skin => {
+      setActiveSkinTeams(skin?.teams || {});
+    }).catch(() => {});
+    get(GLOBAL_KEY).then((g) => {
+      if (g) setGlobalCosmetics({ wallpaperDataUrl: g.wallpaperDataUrl || null, gameLogoLightDataUrl: g.gameLogoLightDataUrl || null, gameLogoDarkDataUrl: g.gameLogoDarkDataUrl || null });
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!selectedTeamId) return;
     const originalTeam = wplTeamsData.find(t => t.id === selectedTeamId);
+    const skin = activeSkinTeams[selectedTeamId] || {};
     const custom = customClubs[selectedTeamId];
-    setPrimaryColor(custom?.primaryColor || originalTeam?.colors?.primary || '#1a1a2e');
-    setSecondaryColor(custom?.secondaryColor || originalTeam?.colors?.secondary || '#ffffff');
+    // Form inputs hold the USER's tweak only (empty string = no tweak).
+    // Color pickers seed from the effective value (custom > skin > WPL) so
+    // they reflect what's currently displayed; only changes get saved.
+    setPrimaryColor(custom?.primaryColor || skin.primaryColor || originalTeam?.colors?.primary || '#1a1a2e');
+    setSecondaryColor(custom?.secondaryColor || skin.secondaryColor || originalTeam?.colors?.secondary || '#ffffff');
     setBadgeDataUrl(custom?.badgeDataUrl || null);
+    setIconDataUrl(custom?.iconDataUrl || null);
+    setBannerDataUrl(custom?.bannerDataUrl || null);
     setTeamName(custom?.teamName || '');
     setShortName(custom?.shortName || '');
     setCoachName(custom?.coachName || '');
     setHomeVenue(custom?.homeVenue || '');
-    setBadgeError(null);
+    setAssetError(null);
     setSaveStatus(null);
-  }, [selectedTeamId, customClubs]);
+  }, [selectedTeamId, customClubs, activeSkinTeams]);
 
   const selectedTeam = wplTeamsData.find(t => t.id === selectedTeamId);
+  const selectedSkin = activeSkinTeams[selectedTeamId] || {};
   const hasCustomization = !!customClubs[selectedTeamId];
 
-  const displayName = teamName || selectedTeam?.name || '';
-  const displayShort = shortName || selectedTeam?.shortName || '';
-  const displayCoach = coachName || selectedTeam?.coachName || '';
-  const displayVenue = homeVenue || selectedTeam?.homeVenue || '';
-  const displayBadge = badgeDataUrl || getTeamBadge(selectedTeamId || '');
+  // Effective fallback for display when no user tweak: skin > WPL default.
+  const skinName = selectedSkin.teamName || selectedTeam?.name || '';
+  const skinShort = selectedSkin.shortName || selectedTeam?.shortName || '';
+  const skinCoach = selectedSkin.coachName || selectedTeam?.coachName || '';
+  const skinVenue = selectedSkin.homeVenue || selectedTeam?.homeVenue || '';
 
-  const handleBadgeUpload = async (e) => {
+  const displayName = teamName || skinName;
+  const displayShort = shortName || skinShort;
+  const displayCoach = coachName || skinCoach;
+  const displayVenue = homeVenue || skinVenue;
+  // Badge: user tweak > skin badge > WPL bundled file via assetHelpers (which
+  // also reads the live teamStore overlay, so skin badge resolves there too).
+  const displayBadge = badgeDataUrl || selectedSkin.badgeDataUrl || getTeamBadge(selectedTeamId || '');
+
+  const handleAssetUpload = useCallback(async (e, kind, setter) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const validation = validateBadgeFile(file);
-    if (!validation.valid) { setBadgeError(validation.error); return; }
-    setBadgeError(null);
-    setBadgeDataUrl(await fileToDataUrl(file));
-  };
+    const { dataUrl, error } = await fileToSafeDataUrl(file, kind);
+    if (error) { setAssetError(`${kind}: ${error}`); return; }
+    setAssetError(null);
+    setter(dataUrl);
+    e.target.value = '';
+  }, []);
+
+  const handleGlobalUpload = useCallback(async (e, key, kind) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const { dataUrl, error } = await fileToSafeDataUrl(file, kind);
+    if (error) { setAssetError(`${kind}: ${error}`); return; }
+    setAssetError(null);
+    const next = { ...globalCosmetics, [key]: dataUrl };
+    setGlobalCosmetics(next);
+    await set(GLOBAL_KEY, next);
+    e.target.value = '';
+  }, [globalCosmetics]);
 
   const handleSave = async () => {
     if (!selectedTeamId) return;
@@ -81,6 +138,8 @@ const ClubEditorScreen = () => {
       await saveCustomClub({
         teamId: selectedTeamId,
         badgeDataUrl,
+        iconDataUrl,
+        bannerDataUrl,
         primaryColor,
         secondaryColor,
         teamName: teamName.trim() || null,
@@ -89,6 +148,8 @@ const ClubEditorScreen = () => {
         homeVenue: homeVenue.trim() || null,
       });
       setCustomClubs(await getCustomClubs());
+      // Push the change into the live teamStore so any other open screens see it.
+      applyActiveSkinToStores().catch(() => {});
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(null), 2000);
     } catch (err) {
@@ -101,7 +162,14 @@ const ClubEditorScreen = () => {
     if (!selectedTeamId) return;
     await deleteCustomClub(selectedTeamId);
     setCustomClubs(await getCustomClubs());
+    applyActiveSkinToStores().catch(() => {});
     setSaveStatus(null);
+  };
+
+  const removeGlobal = async (key) => {
+    const next = { ...globalCosmetics, [key]: null };
+    setGlobalCosmetics(next);
+    await set(GLOBAL_KEY, next);
   };
 
   return (
@@ -118,9 +186,23 @@ const ClubEditorScreen = () => {
         </button>
         <div className="w-px h-4 bg-border-primary" />
         <h1 className="text-sm font-semibold text-text-primary">Club Customization</h1>
-        <span className="text-xs text-text-tertiary ml-auto">
+        <span className="text-xs text-text-tertiary">
           Customizations persist across all game saves
         </span>
+        <button
+          onClick={() => setShowExport(true)}
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded bg-cricket-accent/10 border border-cricket-accent/30 text-xs text-cricket-accent hover:bg-cricket-accent/20 transition-colors"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+          Export as Skin
+        </button>
+        <button
+          onClick={() => navigate('/skins')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-bg-tertiary border border-border-primary text-xs text-text-secondary hover:text-text-primary transition-colors"
+        >
+          <Package className="w-3.5 h-3.5" />
+          Skin Manager
+        </button>
       </div>
 
       {/* ── Body: 3 columns ── */}
@@ -136,9 +218,13 @@ const ClubEditorScreen = () => {
               <p className="p-3 text-xs text-text-tertiary text-center">Loading…</p>
             ) : wplTeamsData.map(team => {
               const custom = customClubs[team.id];
+              const skin = activeSkinTeams[team.id] || {};
               const isSelected = selectedTeamId === team.id;
-              const pri = custom?.primaryColor || team.colors?.primary;
-              const sec = custom?.secondaryColor || team.colors?.secondary;
+              const pri = custom?.primaryColor || skin.primaryColor || team.colors?.primary;
+              const sec = custom?.secondaryColor || skin.secondaryColor || team.colors?.secondary;
+              const displayedName = custom?.teamName || skin.teamName || team.name;
+              const displayedShort = custom?.shortName || skin.shortName || team.shortName;
+              const displayedBadge = custom?.badgeDataUrl || skin.badgeDataUrl || getTeamBadge(team.id);
               return (
                 <button
                   key={team.id}
@@ -149,13 +235,12 @@ const ClubEditorScreen = () => {
                       : 'hover:bg-bg-tertiary border border-transparent'
                   }`}
                 >
-                  {/* Tiny kit swatch */}
                   <div
                     className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden border-2"
                     style={{ borderColor: pri }}
                   >
                     <img
-                      src={custom?.badgeDataUrl || getTeamBadge(team.id)}
+                      src={displayedBadge}
                       alt=""
                       className="w-full h-full object-cover"
                       onError={(e) => { e.target.style.display = 'none'; }}
@@ -163,11 +248,10 @@ const ClubEditorScreen = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs font-medium truncate leading-tight ${isSelected ? 'text-cricket-accent' : 'text-text-primary'}`}>
-                      {custom?.teamName || team.name}
+                      {displayedName}
                     </p>
-                    <p className="text-xxs text-text-tertiary">{custom?.shortName || team.shortName}</p>
+                    <p className="text-xxs text-text-tertiary">{displayedShort}</p>
                   </div>
-                  {/* Color pip pair */}
                   <div className="flex flex-col gap-0.5 flex-shrink-0">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pri }} />
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: sec }} />
@@ -175,6 +259,36 @@ const ClubEditorScreen = () => {
                 </button>
               );
             })}
+          </div>
+
+          {/* Global Cosmetics block — wallpaper / logos */}
+          <div className="flex-none border-t border-border-primary p-3 space-y-2">
+            <p className="text-xxs text-text-tertiary font-semibold uppercase tracking-wider">Global Assets</p>
+            <GlobalAssetRow
+              label="Wallpaper"
+              dataUrl={globalCosmetics.wallpaperDataUrl}
+              onUpload={(e) => handleGlobalUpload(e, 'wallpaperDataUrl', 'wallpaper')}
+              onRemove={() => removeGlobal('wallpaperDataUrl')}
+              inputRef={wallpaperInputRef}
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+            />
+            <GlobalAssetRow
+              label="Logo (light)"
+              dataUrl={globalCosmetics.gameLogoLightDataUrl}
+              onUpload={(e) => handleGlobalUpload(e, 'gameLogoLightDataUrl', 'logo')}
+              onRemove={() => removeGlobal('gameLogoLightDataUrl')}
+              inputRef={logoLightInputRef}
+              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            />
+            <GlobalAssetRow
+              label="Logo (dark)"
+              dataUrl={globalCosmetics.gameLogoDarkDataUrl}
+              onUpload={(e) => handleGlobalUpload(e, 'gameLogoDarkDataUrl', 'logo')}
+              onRemove={() => removeGlobal('gameLogoDarkDataUrl')}
+              inputRef={logoDarkInputRef}
+              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            />
+            <p className="text-xxs text-text-tertiary">Bundled with the skin on export.</p>
           </div>
         </div>
 
@@ -188,10 +302,8 @@ const ClubEditorScreen = () => {
               <p className="text-sm">Select a team to preview</p>
             </div>
           ) : (
-            /* Kit Card */
-            <div className="relative w-72 rounded-2xl overflow-hidden shadow-2xl border border-white/10" style={{ height: '460px' }}>
+            <div id="skin-preview-card" className="relative w-72 rounded-2xl overflow-hidden shadow-2xl border border-white/10" style={{ height: '460px' }}>
 
-              {/* Banner — diagonal split */}
               <div className="absolute inset-0">
                 <div
                   className="absolute inset-0"
@@ -199,7 +311,6 @@ const ClubEditorScreen = () => {
                     background: `linear-gradient(145deg, ${primaryColor} 55%, ${secondaryColor} 55%)`
                   }}
                 />
-                {/* Subtle texture lines */}
                 <div
                   className="absolute inset-0 opacity-10"
                   style={{
@@ -214,7 +325,6 @@ const ClubEditorScreen = () => {
                 />
               </div>
 
-              {/* Short name badge — top left */}
               <div
                 className="absolute top-4 left-4 px-2.5 py-1 rounded font-bold text-xs tracking-widest"
                 style={{ backgroundColor: secondaryColor + 'cc', color: primaryColor }}
@@ -222,14 +332,12 @@ const ClubEditorScreen = () => {
                 {displayShort}
               </div>
 
-              {/* Customized pill — top right */}
               {hasCustomization && (
                 <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-black/40 text-xxs text-white/70 border border-white/20">
                   Customized
                 </div>
               )}
 
-              {/* Badge — centered, prominent */}
               <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '60px' }}>
                 <div
                   className="w-36 h-36 rounded-full border-4 overflow-hidden shadow-xl bg-bg-primary/20 backdrop-blur-sm"
@@ -244,42 +352,40 @@ const ClubEditorScreen = () => {
                 </div>
               </div>
 
-              {/* Bottom info panel */}
               <div
                 className="absolute bottom-0 left-0 right-0 px-5 py-5"
                 style={{ background: `linear-gradient(to top, ${primaryColor}f0 60%, transparent)` }}
               >
-                {/* Team name */}
                 <p
                   className="text-2xl font-black tracking-tight leading-tight"
                   style={{ color: secondaryColor }}
                 >
                   {displayName}
                 </p>
-
-                {/* Venue */}
                 <p className="text-xs mt-1 font-medium" style={{ color: secondaryColor + 'aa' }}>
                   {displayVenue}
                 </p>
-
-                {/* Coach */}
                 <p className="text-xs mt-0.5" style={{ color: secondaryColor + '77' }}>
                   Coach: {displayCoach}
                 </p>
-
-                {/* Color swatches strip */}
                 <div className="flex items-center gap-2 mt-3">
-                  <div
-                    className="h-3 flex-1 rounded-full border border-white/20"
-                    style={{ backgroundColor: primaryColor }}
-                  />
-                  <div
-                    className="h-3 flex-1 rounded-full border border-white/20"
-                    style={{ backgroundColor: secondaryColor }}
-                  />
+                  <div className="h-3 flex-1 rounded-full border border-white/20" style={{ backgroundColor: primaryColor }} />
+                  <div className="h-3 flex-1 rounded-full border border-white/20" style={{ backgroundColor: secondaryColor }} />
                 </div>
-
-                {/* Perk chip */}
+                {(iconDataUrl || bannerDataUrl) && (
+                  <div className="flex items-center gap-2 mt-3">
+                    {iconDataUrl && (
+                      <div className="flex items-center gap-1 text-xxs text-white/70">
+                        <ImageIcon className="w-3 h-3" /> Icon set
+                      </div>
+                    )}
+                    {bannerDataUrl && (
+                      <div className="flex items-center gap-1 text-xxs text-white/70">
+                        <ImageIcon className="w-3 h-3" /> Banner set
+                      </div>
+                    )}
+                  </div>
+                )}
                 {selectedTeam?.perk && (
                   <div
                     className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xxs font-semibold border"
@@ -300,16 +406,15 @@ const ClubEditorScreen = () => {
               <p className="text-xs text-text-tertiary text-center px-4">Pick a team on the left to edit</p>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col overflow-hidden p-4 gap-4">
+            <div className="flex-1 flex flex-col overflow-hidden p-4 gap-3 overflow-y-auto">
 
               {/* ── Colors ── */}
               <div>
                 <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Kit Colors</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Primary */}
                   <div
                     className="relative rounded-lg overflow-hidden cursor-pointer group border-2 border-transparent hover:border-cricket-accent/50 transition-colors"
-                    style={{ backgroundColor: primaryColor, height: '72px' }}
+                    style={{ backgroundColor: primaryColor, height: '56px' }}
                     onClick={() => document.getElementById('picker-primary').click()}
                   >
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center">
@@ -324,11 +429,9 @@ const ClubEditorScreen = () => {
                       className="absolute opacity-0 w-0 h-0"
                     />
                   </div>
-
-                  {/* Secondary */}
                   <div
                     className="relative rounded-lg overflow-hidden cursor-pointer group border-2 border-transparent hover:border-cricket-accent/50 transition-colors"
-                    style={{ backgroundColor: secondaryColor, height: '72px' }}
+                    style={{ backgroundColor: secondaryColor, height: '56px' }}
                     onClick={() => document.getElementById('picker-secondary').click()}
                   >
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center">
@@ -344,44 +447,46 @@ const ClubEditorScreen = () => {
                     />
                   </div>
                 </div>
-                <p className="text-xxs text-text-tertiary mt-1.5">Click a swatch to change color</p>
               </div>
 
-              {/* ── Badge ── */}
+              {/* ── Assets: Badge / Icon / Banner ── */}
               <div>
-                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Badge</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-bg-tertiary border border-border-primary text-xs text-text-primary hover:border-cricket-accent/50 transition-colors"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    Upload
-                  </button>
-                  {badgeDataUrl && (
-                    <button
-                      onClick={() => setBadgeDataUrl(null)}
-                      className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-primary transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                      Remove
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/svg+xml"
-                    className="hidden"
-                    onChange={handleBadgeUpload}
+                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Assets</p>
+                <div className="space-y-1.5">
+                  <AssetRow
+                    label="Badge"
+                    hint="PNG/JPG/SVG · 500KB"
+                    dataUrl={badgeDataUrl}
+                    onUpload={(e) => handleAssetUpload(e, 'badge', setBadgeDataUrl)}
+                    onRemove={() => setBadgeDataUrl(null)}
+                    inputRef={badgeInputRef}
+                    accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                  />
+                  <AssetRow
+                    label="Icon"
+                    hint="PNG/JPG/SVG · 250KB"
+                    dataUrl={iconDataUrl}
+                    onUpload={(e) => handleAssetUpload(e, 'icon', setIconDataUrl)}
+                    onRemove={() => setIconDataUrl(null)}
+                    inputRef={iconInputRef}
+                    accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                  />
+                  <AssetRow
+                    label="Banner"
+                    hint="PNG/JPG/SVG · 500KB"
+                    dataUrl={bannerDataUrl}
+                    onUpload={(e) => handleAssetUpload(e, 'banner', setBannerDataUrl)}
+                    onRemove={() => setBannerDataUrl(null)}
+                    inputRef={bannerInputRef}
+                    accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
                   />
                 </div>
-                {badgeError && (
+                {assetError && (
                   <p className="mt-1 text-xxs text-red-400 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    {badgeError}
+                    {assetError}
                   </p>
                 )}
-                {!badgeError && <p className="mt-1 text-xxs text-text-tertiary">PNG, JPG, or SVG · Max 500KB</p>}
               </div>
 
               {/* ── Club Identity ── */}
@@ -395,7 +500,7 @@ const ClubEditorScreen = () => {
                         type="text"
                         value={teamName}
                         onChange={(e) => setTeamName(e.target.value)}
-                        placeholder={selectedTeam?.name}
+                        placeholder={skinName}
                         maxLength={40}
                         className="w-full bg-bg-tertiary border border-border-primary rounded px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-cricket-accent"
                       />
@@ -406,7 +511,7 @@ const ClubEditorScreen = () => {
                         type="text"
                         value={shortName}
                         onChange={(e) => setShortName(e.target.value.toUpperCase().slice(0, 3))}
-                        placeholder={selectedTeam?.shortName}
+                        placeholder={skinShort}
                         maxLength={3}
                         className="w-full bg-bg-tertiary border border-border-primary rounded px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-cricket-accent font-mono tracking-widest text-center"
                       />
@@ -418,7 +523,7 @@ const ClubEditorScreen = () => {
                       type="text"
                       value={coachName}
                       onChange={(e) => setCoachName(e.target.value)}
-                      placeholder={selectedTeam?.coachName}
+                      placeholder={skinCoach}
                       maxLength={50}
                       className="w-full bg-bg-tertiary border border-border-primary rounded px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-cricket-accent"
                     />
@@ -429,7 +534,7 @@ const ClubEditorScreen = () => {
                       type="text"
                       value={homeVenue}
                       onChange={(e) => setHomeVenue(e.target.value)}
-                      placeholder={selectedTeam?.homeVenue}
+                      placeholder={skinVenue}
                       maxLength={60}
                       className="w-full bg-bg-tertiary border border-border-primary rounded px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary/50 focus:outline-none focus:border-cricket-accent"
                     />
@@ -437,7 +542,6 @@ const ClubEditorScreen = () => {
                 </div>
               </div>
 
-              {/* ── Actions ── */}
               <div className="flex-none border-t border-border-primary pt-3 space-y-2">
                 <button
                   onClick={handleSave}
@@ -474,8 +578,76 @@ const ClubEditorScreen = () => {
         </div>
 
       </div>
+
+      {showExport && (
+        <SkinExportModal
+          customClubs={customClubs}
+          globalCosmetics={globalCosmetics}
+          previewElementId="skin-preview-card"
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 };
+
+function AssetRow({ label, hint, dataUrl, onUpload, onRemove, inputRef, accept }) {
+  return (
+    <div className="flex items-center gap-2 bg-bg-tertiary border border-border-primary rounded px-2 py-1.5">
+      <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-bg-primary border border-border-primary flex items-center justify-center">
+        {dataUrl
+          ? <img src={dataUrl} alt={label} className="w-full h-full object-cover" />
+          : <ImageIcon className="w-4 h-4 text-text-tertiary opacity-50" />
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xxs font-medium text-text-primary">{label}</p>
+        <p className="text-[10px] text-text-tertiary leading-tight">{hint}</p>
+      </div>
+      <button
+        onClick={() => inputRef.current?.click()}
+        className="text-xxs text-text-secondary hover:text-text-primary flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-bg-secondary transition-colors"
+      >
+        <Upload className="w-3 h-3" />
+        Upload
+      </button>
+      {dataUrl && (
+        <button
+          onClick={onRemove}
+          className="text-text-tertiary hover:text-red-400 transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onUpload} />
+    </div>
+  );
+}
+
+function GlobalAssetRow({ label, dataUrl, onUpload, onRemove, inputRef, accept }) {
+  return (
+    <div className="flex items-center gap-2 text-xxs">
+      <div className="w-6 h-6 flex-shrink-0 rounded overflow-hidden bg-bg-primary border border-border-primary flex items-center justify-center">
+        {dataUrl
+          ? <img src={dataUrl} alt={label} className="w-full h-full object-cover" />
+          : <ImageIcon className="w-3 h-3 text-text-tertiary opacity-50" />
+        }
+      </div>
+      <span className="flex-1 truncate text-text-secondary">{label}</span>
+      <button
+        onClick={() => inputRef.current?.click()}
+        className="text-text-secondary hover:text-text-primary"
+      >
+        <Upload className="w-3 h-3" />
+      </button>
+      {dataUrl && (
+        <button onClick={onRemove} className="text-text-tertiary hover:text-red-400">
+          <X className="w-3 h-3" />
+        </button>
+      )}
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onUpload} />
+    </div>
+  );
+}
 
 export default ClubEditorScreen;

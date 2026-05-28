@@ -102,31 +102,62 @@ const useTeamStore = create(
       }),
 
       /**
-       * Apply custom club cosmetics (colors/badge) to team objects in the store.
-       * Call this after initializeTeams when custom club data has been loaded.
-       * @param {Record<string, {primaryColor, secondaryColor, badgeDataUrl}>} customClubs
+       * Apply layered cosmetic overlays to team objects.
+       * Precedence: bundled defaults < active skin < user manual tweaks (customClubs).
+       *
+       * Backwards-compatible: a single object argument is treated as customClubs only.
+       *
+       * @param {Object|Record<string, Object>} skinTeamsOrLegacy - Skin teams map OR legacy customClubs
+       * @param {Record<string, Object>} [customClubs] - User manual tweaks (highest priority)
        */
-      applyCustomOverlays: (customClubs) => set((state) => {
-        if (!customClubs || Object.keys(customClubs).length === 0) return state;
+      applyCustomOverlays: (skinTeamsOrLegacy, customClubs) => set((state) => {
+        const skinTeams = customClubs !== undefined ? skinTeamsOrLegacy : null;
+        const userTweaks = customClubs !== undefined ? customClubs : skinTeamsOrLegacy;
+
+        const skinHas = skinTeams && Object.keys(skinTeams).length > 0;
+        const tweaksHas = userTweaks && Object.keys(userTweaks).length > 0;
+        if (!skinHas && !tweaksHas) return state;
 
         const updatedTeams = { ...state.teams };
-        Object.entries(customClubs).forEach(([teamId, custom]) => {
-          if (!updatedTeams[teamId]) return;
+        const teamIds = new Set([
+          ...Object.keys(skinTeams || {}),
+          ...Object.keys(userTweaks || {})
+        ]);
+
+        for (const teamId of teamIds) {
+          if (!updatedTeams[teamId]) continue;
+          const base = updatedTeams[teamId];
+          const skin = (skinTeams && skinTeams[teamId]) || null;
+          const tweak = (userTweaks && userTweaks[teamId]) || null;
+
+          // Tweaks take precedence; skin fills in; base is fallback.
+          const primaryColor = tweak?.primaryColor || skin?.primaryColor || base.colors?.primary;
+          const secondaryColor = tweak?.secondaryColor || skin?.secondaryColor || base.colors?.secondary;
+          const teamName = tweak?.teamName || skin?.teamName || null;
+          const shortName = tweak?.shortName || skin?.shortName || null;
+          const coachName = tweak?.coachName || skin?.coachName || null;
+          const homeVenue = tweak?.homeVenue || skin?.homeVenue || null;
+          const customBadgeDataUrl = tweak?.badgeDataUrl || skin?.badgeDataUrl || null;
+          const customIconDataUrl = tweak?.iconDataUrl || skin?.iconDataUrl || null;
+          const customBannerDataUrl = tweak?.bannerDataUrl || skin?.bannerDataUrl || null;
+
           updatedTeams[teamId] = {
-            ...updatedTeams[teamId],
+            ...base,
             colors: {
-              ...(updatedTeams[teamId].colors || {}),
-              primary: custom.primaryColor || updatedTeams[teamId].colors?.primary,
-              secondary: custom.secondaryColor || updatedTeams[teamId].colors?.secondary
+              ...(base.colors || {}),
+              primary: primaryColor,
+              secondary: secondaryColor
             },
-            customBadgeDataUrl: custom.badgeDataUrl || null,
-            ...(custom.teamName && { name: custom.teamName }),
-            ...(custom.shortName && { shortName: custom.shortName }),
-            ...(custom.coachName && { coachName: custom.coachName }),
-            ...(custom.homeVenue && { homeVenue: custom.homeVenue }),
+            customBadgeDataUrl,
+            customIconDataUrl,
+            customBannerDataUrl,
+            ...(teamName && { name: teamName }),
+            ...(shortName && { shortName }),
+            ...(coachName && { coachName }),
+            ...(homeVenue && { homeVenue }),
             hasCustomization: true
           };
-        });
+        }
 
         return { teams: updatedTeams };
       }),

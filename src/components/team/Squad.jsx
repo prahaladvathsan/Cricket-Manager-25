@@ -17,7 +17,7 @@ import PlayerName from '../shared/PlayerName';
 import PlayerStatsTable from './PlayerStatsTable';
 import SortableTable from '../shared/SortableTable';
 import { getPrimaryBattingRating, getPrimaryBowlingRating, getPrimaryFieldingRating, formatRating } from '../../utils/ratingHelper';
-import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
+import { getTeamBadge, getTeamBannerStyle } from '../../utils/assetHelpers';
 import { ContextualTip, useScreenTip, screenTips } from '../tutorial';
 
 const Squad = () => {
@@ -501,11 +501,7 @@ const Squad = () => {
           {squadPlayers.length > 0 && (
             <div
               className="absolute inset-0 opacity-70 rounded-lg pointer-events-none"
-              style={{
-                backgroundImage: `url(${getTeamBanner(userTeam.id)})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
+              style={getTeamBannerStyle(userTeam.id)}
             />
           )}
 

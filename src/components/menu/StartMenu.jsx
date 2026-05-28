@@ -15,7 +15,8 @@ import {
   Info,
   Globe,
   Sparkles,
-  Palette
+  Palette,
+  Package
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
@@ -68,6 +69,13 @@ const StartMenu = () => {
       icon: Palette,
       description: 'Rename teams, change colors, upload badges — make the league yours',
       action: () => navigate('/club-editor')
+    },
+    {
+      id: 'skins',
+      label: 'Skins',
+      icon: Package,
+      description: 'Apply, import, and share .cm25skin packs — IPL, BBL, or your own',
+      action: () => navigate('/skins')
     },
     {
       id: 'player-browser',
