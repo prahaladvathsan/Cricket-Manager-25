@@ -15,7 +15,8 @@ import {
   Info,
   Globe,
   Sparkles,
-  Palette
+  Palette,
+  Package
 } from 'lucide-react';
 import '../../styles/wallpaper.css';
 import { getGameLogo } from '../../utils/assetHelpers';
@@ -68,6 +69,13 @@ const StartMenu = () => {
       icon: Palette,
       description: 'Rename teams, change colors, upload badges — make the league yours',
       action: () => navigate('/club-editor')
+    },
+    {
+      id: 'skins',
+      label: 'Skins',
+      icon: Package,
+      description: 'Apply, import, and share .cm25skin packs — IPL, BBL, or your own',
+      action: () => navigate('/skins')
     },
     {
       id: 'player-browser',
@@ -170,7 +178,7 @@ const StartMenu = () => {
           >
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-cricket-accent animate-pulse" />
-              <span className="text-cricket-accent font-semibold">v1.3.2</span>
+              <span className="text-cricket-accent font-semibold">v1.4.0</span>
               <span className="text-cricket-text-tertiary text-[10px]">NEW!</span>
             </div>
             {/* Tooltip */}

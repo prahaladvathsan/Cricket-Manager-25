@@ -255,6 +255,16 @@ class SaveGameManager {
       // Restore states
       this._restoreStoreStates(saveData, stores);
 
+      // Re-apply active skin + user custom-clubs overlay so cosmetic data
+      // lands on the freshly-restored team objects. Skins are device-local
+      // user prefs, not part of the save snapshot.
+      try {
+        const { applyActiveSkinToStores } = await import('./SkinManager.js');
+        await applyActiveSkinToStores();
+      } catch (err) {
+        console.warn('Could not re-apply active skin after load:', err);
+      }
+
       console.log(`Game loaded: ${saveData.label}`);
 
       if (warnings.length > 0) {

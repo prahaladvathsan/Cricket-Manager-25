@@ -6,7 +6,7 @@
 import React from 'react';
 import { X, Trophy, Zap } from 'lucide-react';
 import PlayerName from './PlayerName';
-import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
+import { getTeamBadge, getTeamBannerStyle } from '../../utils/assetHelpers';
 
 const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
   if (!isOpen || !matchResult) return null;
@@ -62,11 +62,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               {/* Banner Background */}
               <div
                 className="absolute inset-0 opacity-70"
-                style={{
-                  backgroundImage: `url(${getTeamBanner(innings1.teamId)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
+                style={getTeamBannerStyle(innings1.teamId)}
               />
 
               {/* Innings Header */}
@@ -144,11 +140,7 @@ const MatchResultModal = ({ isOpen, onClose, matchResult }) => {
               {/* Banner Background */}
               <div
                 className="absolute inset-0 opacity-70"
-                style={{
-                  backgroundImage: `url(${getTeamBanner(innings2.teamId)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
+                style={getTeamBannerStyle(innings2.teamId)}
               />
 
               {/* Innings Header */}

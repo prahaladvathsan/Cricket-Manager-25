@@ -19,7 +19,7 @@ import useUIStore from '../../stores/uiStore';
 import { resetTransferManager } from '../../core/finance/transferManagerSingleton';
 import MessageGenerator from '../../utils/MessageGenerator';
 import wplTeamsData from '../../data/teams/wpl-teams.json';
-import { getTeamBadge, getTeamBanner } from '../../utils/assetHelpers';
+import { getTeamBadge, getTeamBanner, getTeamBannerStyle } from '../../utils/assetHelpers';
 import LoadingScreen from './LoadingScreen';
 import { getCustomClubs } from '../../utils/CustomClubManager';
 
@@ -37,7 +37,7 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [customClubs, setCustomClubs] = useState({});
-  const { teams, initializeTeams, setUserTeam, resetAllTactics, applyCustomOverlays } = useTeamStore();
+  const { teams, initializeTeams, setUserTeam, resetAllTactics } = useTeamStore();
   const { resetForNewGame, scheduleEvent } = useGameStore();
   const gameState = useGameStore();
   const { clearHistory } = useNavigationStore();
@@ -81,18 +81,16 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     }
   }, [teams, initializeTeams]);
 
-  // Load custom club cosmetics from IndexedDB on mount
+  // Apply active skin + user custom-clubs overlay on mount so badges/colors/names
+  // reflect the player's installed skin from the moment team selection opens.
   useEffect(() => {
     getCustomClubs().then(clubs => {
       setCustomClubs(clubs);
-      // Apply to team store so custom colors show in standings/header during game
-      if (Object.keys(clubs).length > 0) {
-        applyCustomOverlays(clubs);
-      }
-    }).catch(() => {
-      // Non-critical — fall back to defaults silently
+    }).catch(() => {});
+    import('../../utils/SkinManager.js').then(({ applyActiveSkinToStores }) => {
+      applyActiveSkinToStores().catch(() => {});
     });
-  }, [applyCustomOverlays]);
+  }, []);
 
   // Preload images once teams are available
   useEffect(() => {
@@ -164,10 +162,10 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
     // Re-initialize teams with fresh data from JSON (resets squadLists)
     initializeTeams(wplTeamsData);
 
-    // Re-apply custom club cosmetics after re-initialization
-    if (Object.keys(customClubs).length > 0) {
-      applyCustomOverlays(customClubs);
-    }
+    // Re-apply active skin + user tweaks after re-initialization clears overlays
+    import('../../utils/SkinManager.js').then(({ applyActiveSkinToStores }) => {
+      applyActiveSkinToStores().catch(() => {});
+    });
 
     // Initialize finances for all teams at game start
     const teamsForFinances = Object.values(teams).map(team => ({
@@ -258,12 +256,10 @@ const TeamSelectionModal = ({ isOpen, onClose }) => {
               onClick={() => handleTeamSelect(team.id)}
             >
               {/* Banner - Top section with 3:1 aspect ratio */}
-              <div className="relative w-full" style={{ aspectRatio: '3/1' }}>
-                <img
-                  src={getTeamBanner(team.id)}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+              <div
+                className="relative w-full"
+                style={{ aspectRatio: '3/1', ...getTeamBannerStyle(team.id) }}
+              >
                 {/* Gradient fade to card */}
                 <div
                   className="absolute inset-x-0 bottom-0 h-1/2"

@@ -1,17 +1,18 @@
 /**
  * @file wallpaper.css
- * @description Wallpaper background styles with dark overlay effect
+ * @description Wallpaper background. Reads --wallpaper-url from :root if a
+ * skin has set one (via assetHelpers.applyWallpaper), otherwise falls back to
+ * the bundled image.
  */
 
-/* Base wallpaper container with dark overlay */
 .app-wallpaper {
-  /* Modern browsers get WebP, fallback to JPG for older browsers */
-  background-image: image-set(
-    url('/wallpaper.webp') type('image/webp'),
-    url('/wallpaper.jpg') type('image/jpeg')
+  background-image: var(
+    --wallpaper-url,
+    image-set(
+      url('/wallpaper.webp') type('image/webp'),
+      url('/wallpaper.jpg') type('image/jpeg')
+    )
   );
-  /* Fallback for browsers without image-set support */
-  background-image: url('/wallpaper.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
