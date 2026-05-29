@@ -3,14 +3,15 @@
  * @description Main auction orchestration - player categorization, bidding logic, winner determination
  */
 
-import auctionConfig from '../../data/config/auctionConfig.json';
+import { getAuctionConfigForDifficulty } from '../../data/config/auctionConfigSelector.js';
 import AuctionTransferAI from '../ai/AuctionTransferAI.js';
 import aiCore from '../ai/AICore.js';
 
 class AuctionEngine {
   constructor(options = {}) {
-    this.config = auctionConfig;
-    this.ai = new AuctionTransferAI();
+    this.difficulty = options.difficulty || 'normal';
+    this.config = getAuctionConfigForDifficulty(this.difficulty);
+    this.ai = new AuctionTransferAI(this.difficulty);
     this.core = aiCore;
 
     // Auction state

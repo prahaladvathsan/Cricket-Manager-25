@@ -57,6 +57,22 @@ const IPL_MAPPING = {
   t_kabul:      { code: 'GT',   teamName: 'Gujarat Titans',               shortName: 'GT',  primaryColor: '#1B2133', secondaryColor: '#B7965B', coachName: 'Ashish Nehra',       homeVenue: 'Narendra Modi Stadium' }
 };
 
+// Canonical WPL identity — matches src/data/teams/wpl-teams.json. Shipping
+// these as a skin means Classic is a true overlay alongside IPL/BBL rather
+// than the absence of one, and lets Unapply revert here cleanly.
+const WPL_MAPPING = {
+  t_chennai:    { code: 'CHE', teamName: 'Chennai Cobras',     shortName: 'CHE', primaryColor: '#4B0082', secondaryColor: '#FFD700', coachName: 'Kapil Dev',         homeVenue: "Chennai's Pit" },
+  t_london:     { code: 'LON', teamName: 'London Lions',       shortName: 'LON', primaryColor: '#C41E3A', secondaryColor: '#FFFFFF', coachName: 'Ian Botham',        homeVenue: "London's Den" },
+  t_sydney:     { code: 'SYD', teamName: 'Sydney Sharks',      shortName: 'SYD', primaryColor: '#C0C0C0', secondaryColor: '#000080', coachName: 'Ricky Ponting',     homeVenue: "Sydney's Reef" },
+  t_pretoria:   { code: 'PRE', teamName: 'Pretoria Pythons',   shortName: 'PRE', primaryColor: '#9ACD32', secondaryColor: '#000000', coachName: 'Jacques Kallis',    homeVenue: "Pretoria's Nest" },
+  t_multan:     { code: 'MUL', teamName: 'Multan Markhors',    shortName: 'MUL', primaryColor: '#006400', secondaryColor: '#B87333', coachName: 'Wasim Akram',       homeVenue: "Multan's Mountains" },
+  t_colombo:    { code: 'COL', teamName: 'Colombo Crocodiles', shortName: 'COL', primaryColor: '#3D2B1F', secondaryColor: '#7FFF00', coachName: 'Sanath Jayasuriya', homeVenue: "Colombo's Swamp" },
+  t_dhaka:      { code: 'DHA', teamName: 'Dhaka Dolphins',     shortName: 'DHA', primaryColor: '#00FFFF', secondaryColor: '#CC5500', coachName: 'Shakib Al Hasan',   homeVenue: "Dhaka's Bay" },
+  t_georgetown: { code: 'GEO', teamName: 'Georgetown Jaguars', shortName: 'GEO', primaryColor: '#FFBF00', secondaryColor: '#1A1A1A', coachName: 'Clive Lloyd',       homeVenue: "Georgetown's Jungle" },
+  t_auckland:   { code: 'AUC', teamName: 'Auckland Orcas',     shortName: 'AUC', primaryColor: '#000000', secondaryColor: '#F0F8FF', coachName: 'Richard Hadlee',    homeVenue: "Auckland's Ocean" },
+  t_kabul:      { code: 'KAB', teamName: 'Kabul Kites',        shortName: 'KAB', primaryColor: '#87CEEB', secondaryColor: '#DC143C', coachName: 'Don Bradman',       homeVenue: "Kabul's Sky" }
+};
+
 // Coach + venue verified against Wikipedia for BBL|15 / 2025-26.
 const BBL_MAPPING = {
   t_sydney:     { code: 'SIX',     teamName: 'Sydney Sixers',          shortName: 'SIX', primaryColor: '#E6005B', secondaryColor: '#000000', coachName: 'James Hopes',     homeVenue: 'Sydney Cricket Ground' },
@@ -213,9 +229,24 @@ async function main() {
   await ensureDir(OUT_DIR);
   await ensureDir(path.join(ASSETS_ROOT, 'ipl', 'teams'));
   await ensureDir(path.join(ASSETS_ROOT, 'bbl', 'teams'));
+  await ensureDir(path.join(ASSETS_ROOT, 'wpl', 'teams'));
 
   const iplDir = path.join(ASSETS_ROOT, 'ipl');
   const bblDir = path.join(ASSETS_ROOT, 'bbl');
+  const wplDir = path.join(ASSETS_ROOT, 'wpl');
+
+  console.log('WPL Classic skin:');
+  const wplPack = await buildPack({
+    id: 'wpl-classic',
+    name: 'World Premier League (Classic)',
+    author: 'Cricket Manager 25',
+    description: 'The original WPL look. Equipped by default and the target of Unapply on themed skins.',
+    version: '1.0.0',
+    leagueDir: wplDir,
+    mapping: WPL_MAPPING,
+    previewBg: ['#1a3a1a', '#0a1f0a'] // cricket green
+  });
+  await writeSkin('wpl-classic.cm25skin', wplPack);
 
   console.log('IPL skin:');
   const iplPack = await buildPack({

@@ -1,6 +1,7 @@
 {
   "version": "1.0.0",
-  "description": "Configuration for WPL Auction System",
+  "description": "Configuration for WPL Auction System — Impossible difficulty (hyper-aggressive AI valuation)",
+  "difficulty": "impossible",
   "budget": {
     "total": 10000000,
     "description": "$10M USD per team"
@@ -88,29 +89,29 @@
     "description": "Number of players auctioned per round (shuffled within round)"
   },
   "aiStrategy": {
-    "description": "AI bidding behavior configuration",
+    "description": "AI bidding behavior configuration — Impossible: AI overshoots fair value, burns reserve aggressively",
     "baseValueMultiplier": 1.2,
     "conservativeMode": {
       "enabled": true,
       "reserveForMinSquad": 0.3,
-      "description": "Reserve 30% of budget to ensure minimum squad completion"
+      "description": "Reserve 20% of budget to ensure minimum squad completion"
     }
   },
   "valuation": {
-    "description": "AI player valuation tuning — applies to both auction bidding (shouldBid) and transfer-window market value",
+    "description": "AI player valuation tuning — Impossible difficulty (aggressive)",
     "fitValueMultiplier": 500,
-    "squadGapMultiplier": 1.5,
+    "squadGapMultiplier": 1.7,
     "budgetPenalty": {
       "description": "Linearly interpolated from minPenalty (at $0 budget per needed player) up to maxPenalty (at or above stingyThresholdPerPlayer)",
       "stingyThresholdPerPlayer": 500000,
       "minPenalty": 0.6,
       "maxPenalty": 1.0
     },
-    "reserveBuffer": 1.5,
+    "reserveBuffer": 1.2,
     "marqueeMultiplier": {
-      "description": "Star-player multiplier on AI maxBid — linearly interpolated from first (marquee round 1) to last (final marquee round)",
-      "first": 1.4,
-      "last": 1.1
+      "description": "Star-player multiplier on AI maxBid — Impossible: hard chase on marquees",
+      "first": 1.5,
+      "last": 1.2
     },
     "performanceBonusClamp": {
       "description": "Clamp on calculatePerformanceBonus output, expressed as ratio of player's soldPrice",

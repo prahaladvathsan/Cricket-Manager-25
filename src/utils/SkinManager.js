@@ -23,6 +23,11 @@ const LIBRARY_KEY = 'cm25-skin-library';
 const ACTIVE_KEY = 'cm25-active-skin-id';
 const FILE_EXT = '.cm25skin';
 
+// v1.4.1: wpl-classic is the canonical "default" skin. Unapply on themed
+// skins reverts here rather than to a null state, so the skin manager UI is
+// always anchored to a real skin pack.
+export const DEFAULT_SKIN_ID = 'wpl-classic';
+
 async function loadLibrary() {
   try {
     return (await get(LIBRARY_KEY)) || {};
@@ -316,15 +321,22 @@ export async function applyActiveSkinToStores() {
 
 /**
  * Switch which skin is active and immediately apply it everywhere.
- * Pass null to unapply (reverts to defaults + user custom-clubs only).
+ * Passing null reverts to DEFAULT_SKIN_ID (wpl-classic) when it's installed,
+ * which is the canonical "no themed skin" state in v1.4.1+. Falls back to
+ * the legacy null state only if Classic isn't in the library yet (e.g. very
+ * early during bootstrap or a manual library purge).
  * @param {string|null} skinId
  */
 export async function activateSkin(skinId) {
-  if (skinId !== null) {
-    const lib = await loadLibrary();
-    if (!lib[skinId]) throw new Error(`Skin '${skinId}' not in library`);
+  const lib = await loadLibrary();
+  let target = skinId;
+  if (target === null && lib[DEFAULT_SKIN_ID]) {
+    target = DEFAULT_SKIN_ID;
   }
-  await setActiveSkinId(skinId);
+  if (target !== null && !lib[target]) {
+    throw new Error(`Skin '${target}' not in library`);
+  }
+  await setActiveSkinId(target);
   await applyActiveSkinToStores();
 }
 

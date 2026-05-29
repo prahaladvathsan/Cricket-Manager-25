@@ -49,7 +49,8 @@ class LeagueSimulator {
     console.log('='.repeat(80) + '\n');
 
     const auctionEngine = new AuctionEngine({
-      fastMode: options.fastMode || false
+      fastMode: options.fastMode || false,
+      difficulty: options.difficulty || 'normal'
     });
 
     // Prepare teams for auction

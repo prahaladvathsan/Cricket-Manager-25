@@ -4,14 +4,26 @@
  */
 
 import React from 'react';
-import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper, Package } from 'lucide-react';
+import { X, Zap, Save, Users, Heart, Wrench, Sparkles, Palette, Newspaper, Package, Swords } from 'lucide-react';
 
 // IMPORTANT: Update this for each major release
-const CURRENT_VERSION = '1.4.0';
+const CURRENT_VERSION = '1.4.1';
 const RELEASE_DATE = 'May 2026';
-const RELEASE_TAGLINE = 'The Skins Update';
+const RELEASE_TAGLINE = 'Difficulty + Classic Skin';
 
 const PATCH_NOTES = [
+  {
+    icon: Swords,
+    title: 'v1.4.1 Difficulty + Classic Skin',
+    color: 'text-amber-300',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    items: [
+      '⚔️ **Per-difficulty auction AI** — The Normal / Hard / Impossible setting now actually drives the auction. Normal AI undervalues players and keeps a fatter reserve so you win more bids cheaply. Impossible AI overshoots fair value on marquees and burns reserve aggressively. Hard remains the previous baseline. Previously the auction was hardcoded at Hard regardless of difficulty.',
+      '🏏 **Classic WPL skin** — The original World Premier League look ships as a third official `.cm25skin` alongside IPL and BBL. Equipped by default on first launch and is now the canonical target of the Unapply button on themed skins — clicking "Revert to Classic" on an IPL career switches back to WPL in one click instead of leaving you in an undefined no-skin state.',
+    ],
+    note: 'Difficulty is now end-to-end: the same setting that buffs AI in your matches also makes AI bid harder at auction. And the WPL look is finally a real swappable skin. ⚔️🏏'
+  },
   {
     icon: Package,
     title: 'v1.4.0 The Skins Update',
