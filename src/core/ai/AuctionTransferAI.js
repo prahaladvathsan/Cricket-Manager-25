@@ -5,12 +5,20 @@
  */
 
 import aiCore from './AICore.js';
-import auctionConfig from '../../data/config/auctionConfig.json';
+import { getAuctionConfigForDifficulty } from '../../data/config/auctionConfigSelector.js';
+import useGameStore from '../../stores/gameStore.js';
 
 class AuctionTransferAI {
-  constructor() {
+  constructor(difficulty = undefined) {
     this.core = aiCore;
-    this.config = auctionConfig;
+    // Auto-resolve from gameStore when caller doesn't pass difficulty so
+    // transfer + retention paths inherit the user's chosen tier without
+    // every call site needing to plumb it.
+    const resolved = (difficulty === undefined || difficulty === null)
+      ? (useGameStore.getState().settings?.difficulty || 'normal')
+      : difficulty;
+    this.difficulty = resolved;
+    this.config = getAuctionConfigForDifficulty(resolved);
   }
 
   // =============================================================================

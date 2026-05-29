@@ -202,7 +202,8 @@ const Transfers = () => {
   useEffect(() => {
     if (savedAuction.auctionState === 'in_progress' && savedAuction.rounds.length > 0) {
       console.log('📦 Restoring saved auction state...');
-      const engine = new AuctionEngine({ fastMode: false });
+      const difficulty = useGameStore.getState().settings?.difficulty || 'normal';
+      const engine = new AuctionEngine({ fastMode: false, difficulty });
       const teamsArray = Object.values(teams).map(team => ({
         ...team,
         isUserControlled: team.id === userTeamId
@@ -282,7 +283,8 @@ const Transfers = () => {
       savedAuction.resetAuction();
       // Clear any lingering transfer window summary
       useTransferStore.getState().clearTransferWindowSummary();
-      const engine = new AuctionEngine({ fastMode: false });
+      const difficulty = useGameStore.getState().settings?.difficulty || 'normal';
+      const engine = new AuctionEngine({ fastMode: false, difficulty });
       const teamsArray = Object.values(teams).map(team => ({
         ...team,
         isUserControlled: team.id === userTeamId

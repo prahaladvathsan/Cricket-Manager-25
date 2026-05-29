@@ -270,7 +270,8 @@ class SimulationEngine {
     }
 
     // Initialize auction engine
-    const auctionEngine = new AuctionEngine({ fastMode: true });
+    const difficulty = this.gameStore.getState().settings?.difficulty || 'normal';
+    const auctionEngine = new AuctionEngine({ fastMode: true, difficulty });
     auctionEngine.initializeAuction(teams, allPlayers, auctionOptions);
 
     // Categorize players

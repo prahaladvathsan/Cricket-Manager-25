@@ -16,7 +16,8 @@ import {
   deleteSkin,
   exportSkinPack,
   getLibrarySizeBytes,
-  LIBRARY_WARN_BYTES
+  LIBRARY_WARN_BYTES,
+  DEFAULT_SKIN_ID
 } from '../../utils/SkinManager';
 import SkinImportModal from './SkinImportModal';
 
@@ -150,13 +151,18 @@ const SkinManagerScreen = () => {
           <Sparkles className="w-3.5 h-3.5 text-cricket-accent" />
           <span className="text-text-primary">
             Active: <strong>{skins[activeId].skin?.name || activeId}</strong>
+            {activeId === DEFAULT_SKIN_ID && (
+              <span className="ml-2 text-text-tertiary">(default)</span>
+            )}
           </span>
-          <button
-            onClick={handleUnapply}
-            className="ml-auto text-xxs text-text-secondary hover:text-text-primary px-2 py-0.5 rounded hover:bg-bg-primary transition-colors"
-          >
-            Unapply
-          </button>
+          {activeId !== DEFAULT_SKIN_ID && (
+            <button
+              onClick={handleUnapply}
+              className="ml-auto text-xxs text-text-secondary hover:text-text-primary px-2 py-0.5 rounded hover:bg-bg-primary transition-colors"
+            >
+              Revert to Classic
+            </button>
+          )}
         </div>
       )}
 
@@ -180,6 +186,7 @@ const SkinManagerScreen = () => {
                 id={id}
                 skin={skin}
                 isActive={id === activeId}
+                isDefault={id === DEFAULT_SKIN_ID}
                 onApply={() => handleApply(id)}
                 onUnapply={handleUnapply}
                 onDelete={() => handleDelete(id)}
@@ -212,7 +219,7 @@ const SkinManagerScreen = () => {
   );
 };
 
-function SkinCard({ id, skin, isActive, onApply, onUnapply, onDelete, onExport }) {
+function SkinCard({ id, skin, isActive, isDefault, onApply, onUnapply, onDelete, onExport }) {
   const meta = skin.skin || {};
   const teamCount = Object.keys(skin.teams || {}).length;
   const hasGlobal = !!(skin.global?.wallpaperDataUrl || skin.global?.gameLogoLightDataUrl || skin.global?.gameLogoDarkDataUrl);
@@ -257,12 +264,21 @@ function SkinCard({ id, skin, isActive, onApply, onUnapply, onDelete, onExport }
 
         <div className="flex items-center gap-1 mt-3">
           {isActive ? (
-            <button
-              onClick={onUnapply}
-              className="flex-1 text-xxs px-2 py-1.5 rounded bg-bg-tertiary border border-border-primary text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Unapply
-            </button>
+            isDefault ? (
+              <div
+                className="flex-1 text-xxs px-2 py-1.5 rounded bg-bg-tertiary border border-border-primary text-text-tertiary text-center"
+                title="The default skin — applied when no themed skin is active."
+              >
+                Default
+              </div>
+            ) : (
+              <button
+                onClick={onUnapply}
+                className="flex-1 text-xxs px-2 py-1.5 rounded bg-bg-tertiary border border-border-primary text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Unapply
+              </button>
+            )
           ) : (
             <button
               onClick={onApply}

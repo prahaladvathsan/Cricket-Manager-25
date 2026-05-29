@@ -11,12 +11,15 @@
  */
 
 import { useEffect } from 'react';
-import { listSkins, installSkinFromUrl, applyActiveSkinToStores } from '../utils/SkinManager';
+import { listSkins, installSkinFromUrl, applyActiveSkinToStores, getActiveSkinId, setActiveSkinId } from '../utils/SkinManager';
 
 const OFFICIAL_SKINS = [
+  { id: 'wpl-classic', url: '/skins/official/wpl-classic.cm25skin' },
   { id: 'ipl-2026', url: '/skins/official/ipl-2026.cm25skin' },
   { id: 'bbl-2026', url: '/skins/official/bbl-2026.cm25skin' }
 ];
+
+const DEFAULT_ACTIVE_SKIN = 'wpl-classic';
 
 let bootstrapped = false;
 
@@ -87,6 +90,23 @@ export default function useOfficialSkinsBootstrap() {
               console.warn(`[Skins] Could not update ${id}: ${result.error}`);
             }
           }
+        }
+
+        // Auto-equip wpl-classic on first run when nothing is active. We
+        // skip this for users who actively unapplied a skin in v1.4.0 — the
+        // null-state is no longer reachable through the UI in v1.4.1, so
+        // anyone landing here is a fresh install or pre-existing default.
+        try {
+          const currentActive = await getActiveSkinId();
+          if (!currentActive) {
+            const installed = await listSkins();
+            if (installed[DEFAULT_ACTIVE_SKIN]) {
+              await setActiveSkinId(DEFAULT_ACTIVE_SKIN);
+              console.log(`[Skins] Set ${DEFAULT_ACTIVE_SKIN} as default active skin`);
+            }
+          }
+        } catch (err) {
+          console.warn('[Skins] Could not set default active skin:', err);
         }
 
         // Re-apply active skin (if any) to live stores. Idempotent.
